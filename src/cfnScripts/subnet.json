@@ -8,11 +8,11 @@
   	},
   	"Mappings" : {
       "environMap" : {
-        "test" : { "vpc" : "vpc-38d62752" }
+        "Test" : { "vpc" : "vpc-38d62752" }
       }
     },
 	"Resources" : {
-		"webSubnetZoneA" : {
+		"testSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
 			"Properties" : {
       			"AvailabilityZone" : { "Ref" : "zoneA" },

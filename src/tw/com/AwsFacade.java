@@ -1,19 +1,21 @@
 package tw.com;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
-import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
@@ -23,7 +25,6 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
-import com.amazonaws.services.storagegateway.model.ErrorCode;
 
 public class AwsFacade implements AwsProvider {
 	
@@ -32,9 +33,9 @@ public class AwsFacade implements AwsProvider {
 	// id subnet by cidr & vpc
 	// id sg by TAG and VPC
 	// id VPC by TAG
-	// auto create stackname based on supplied filename?
 	
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 200;
+	private static final String PARAMETER_ENV = "env";
 	private AmazonCloudFormationClient cfnClient;
 	private Region euRegion = Region.getRegion(Regions.EU_WEST_1);
 
@@ -57,15 +58,47 @@ public class AwsFacade implements AwsProvider {
 		return validateTemplate(contents);
 	}
 	
-	public String applyTemplate(File file, String stackName, Collection<Parameter> parameters) throws FileNotFoundException, IOException {
+	@Override
+	public String applyTemplate(File file, String env)
+			throws FileNotFoundException, IOException,
+			InvalidParameterException {
+		return applyTemplate(file, env, new HashSet<Parameter>());
+	}
+	
+	public String applyTemplate(File file, String env, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException {
+		// TODO logging
 		String contents = loadFileContents(file);
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
+		String stackName = createStackName(file, env);
+		
+		checkParameters(parameters);
+		
+		Parameter envParameter = new Parameter();
+		envParameter.setParameterKey(PARAMETER_ENV);
+		envParameter.setParameterValue(env);
+		parameters.add(envParameter);
+		
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
 		
-		CreateStackResult result = cfnClient.createStack(createStackRequest);	
-		return result.getStackId();
+		cfnClient.createStack(createStackRequest);	
+		return stackName;
+	}
+
+	private void checkParameters(Collection<Parameter> parameters) throws InvalidParameterException {
+		for(Parameter param : parameters) {
+			if (param.getParameterKey().equals(PARAMETER_ENV)) {
+				throw new InvalidParameterException(PARAMETER_ENV);
+			}
+		}	
+	}
+
+	public String createStackName(File file, String env) {
+		// note: aws only allows [a-zA-Z][-a-zA-Z0-9]* in stacknames
+		String filename = file.getName();
+		String name = FilenameUtils.removeExtension(filename);
+		return env+name;
 	}
 	
 	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
@@ -112,24 +145,8 @@ public class AwsFacade implements AwsProvider {
 		cfnClient.deleteStack(deleteStackRequest);	
 	}
 
-	private String loadFileContents(File file) throws FileNotFoundException,
-			IOException {
-		String contents;
-		BufferedReader br = new BufferedReader(new FileReader(file));
-		try {
-			StringBuilder sb = new StringBuilder();
-			String line = br.readLine();
-
-			while (line != null) {
-				sb.append(line);
-				sb.append('\n');
-				line = br.readLine();
-			}
-			contents = sb.toString();
-		} finally {
-			br.close();
-		}
-		return contents;
+	private String loadFileContents(File file) throws IOException {
+		return FileUtils.readFileToString(file, Charset.defaultCharset());
 	}
 
 

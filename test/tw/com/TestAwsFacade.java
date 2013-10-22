@@ -19,7 +19,9 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 public class TestAwsFacade {
 
-	private AwsFacade aws;
+	private static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
+	private static final String ENV = "Test";
+	private AwsProvider aws;
 
 	@Before
 	public void beforeTestsRun() {
@@ -29,7 +31,7 @@ public class TestAwsFacade {
 
 	@Test
 	public void testReturnCorrectParametersFromValidation() throws FileNotFoundException, IOException {
-		List<TemplateParameter> result = aws.validateTemplate(new File("src/cfnScripts/subnet.json"));
+		List<TemplateParameter> result = aws.validateTemplate(new File(SUBNET_FILENAME));
 		
 		assertEquals(3, result.size());
 		
@@ -46,7 +48,21 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void createsSubnetFromTemplateAndParamters() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
+	public void createStacknameFromEnvAndFile() {
+		String stackName = aws.createStackName(new File(SUBNET_FILENAME),ENV);
+		assertEquals("Testsubnet", stackName);
+	}
+	
+	@Test
+	public void createsSubnetFromTemplateAndParamters() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {
+		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), ENV);	
+		
+		String status = aws.waitForCreateFinished(stackName);
+		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+	}
+	
+	@Test
+	public void cannotAddenvParameter() throws FileNotFoundException, IOException {
 		Collection<Parameter> parameters = new HashSet<Parameter>();
 		
 		Parameter envParameter = new Parameter();
@@ -54,15 +70,18 @@ public class TestAwsFacade {
 		envParameter.setParameterValue("test");
 		parameters.add(envParameter);
 		
-		String stackName = "TestAwsFacade";
-		aws.applyTemplate(new File("src/cfnScripts/subnet.json"), stackName, parameters);	
-		
-		String status = aws.waitForCreateFinished(stackName);
-		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+		try {
+			aws.applyTemplate(new File(SUBNET_FILENAME), ENV , parameters);	
+			fail("Should have thrown exception");
+		}
+		catch (InvalidParameterException exception) {
+			// expected
+		}
 	}
 	
 	@Test
 	public void deleteStackByName() {
-		aws.deleteStack("TestAwsFacade");	
+		String stackName = aws.createStackName(new File(SUBNET_FILENAME),ENV);
+		aws.deleteStack(stackName);
 	}
 }

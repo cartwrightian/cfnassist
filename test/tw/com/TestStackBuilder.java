@@ -14,7 +14,7 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 
 public class TestStackBuilder {
 	private AwsProvider awsProvider;
-	String stackName = "TestStackBuilderStack";
+	private static final String ENV = "Test";
 
 	@Before
 	public void beforeTestsRun() {
@@ -23,10 +23,10 @@ public class TestStackBuilder {
 	}
 
 	@Test
-	public void canBuildAndDeleteSimpleStack() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {	
+	public void canBuildAndDeleteSimpleStack() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {	
 		File templateFile = new File("src/cfnScripts/subnet.json");
-		StackBuilder builder = new StackBuilder(awsProvider, templateFile);
-		builder.addParameter("env", "test").createStack(stackName);
+		StackBuilder builder = new StackBuilder(awsProvider, ENV, templateFile);
+		String stackName = builder.createStack();
 		
 		String status = awsProvider.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
@@ -35,6 +35,11 @@ public class TestStackBuilder {
 		
 		status = awsProvider.waitForDeleteFinished(stackName);
 		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
+	}
+	
+	@Test
+	public void canPassInSimpleParameter() {
+		// TODO
 	}
 
 }
