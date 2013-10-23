@@ -24,7 +24,7 @@ public class TestHaveValidTemplateFiles {
 
 	@Test
 	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException {
-		AwsFacade facade = new AwsFacade(credentialsProvider);
+		AwsFacade facade = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 		File folder = new File("src/cfnScripts");
 		
 		assertTrue(folder.exists());

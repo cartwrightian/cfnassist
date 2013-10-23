@@ -14,18 +14,18 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 
 public class TestStackBuilder {
 	private AwsProvider awsProvider;
-	private static final String ENV = "Test";
+	private String env = TestAwsFacade.ENV;
 
 	@Before
 	public void beforeTestsRun() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		awsProvider = new AwsFacade(credentialsProvider);
+		awsProvider = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 	}
 
 	@Test
 	public void canBuildAndDeleteSimpleStack() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {	
 		File templateFile = new File("src/cfnScripts/subnet.json");
-		StackBuilder builder = new StackBuilder(awsProvider, ENV, templateFile);
+		StackBuilder builder = new StackBuilder(awsProvider, env , templateFile);
 		String stackName = builder.createStack();
 		
 		validateCreateAndDeleteWorks(stackName);
@@ -35,7 +35,7 @@ public class TestStackBuilder {
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 
 			WrongNumberOfStacksException, InterruptedException {
 		File templateFile = new File("src/cfnScripts/subnetWithParam.json");
-		StackBuilder builder = new StackBuilder(awsProvider, ENV, templateFile);
+		StackBuilder builder = new StackBuilder(awsProvider, env, templateFile);
 		String stackName = builder.addParameter("zoneA", "eu-west-1a").createStack();
 		
 		validateCreateAndDeleteWorks(stackName);

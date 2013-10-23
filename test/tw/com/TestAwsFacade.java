@@ -13,6 +13,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
@@ -20,24 +22,28 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public class TestAwsFacade {
 
 	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
-	private static final String ENV = "Test";
+	public static final String ENV = "CfnAssistTest";
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsProvider aws;
 	
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider);
+		aws = new AwsFacade(credentialsProvider, getRegion());
+	}
+
+	public static Region getRegion() {
+		return Region.getRegion(Regions.EU_WEST_1);
 	}
 
 	@Test
 	public void testReturnCorrectParametersFromValidation() throws FileNotFoundException, IOException {
 		List<TemplateParameter> result = aws.validateTemplate(new File(SUBNET_FILENAME));
 		
-		assertEquals(3, result.size());
+		assertEquals(4, result.size());
 		
 		int i = 0;
-		for(i=0; i<3; i++) {
+		for(i=0; i<4; i++) {
 			TemplateParameter parameter = result.get(i);
 			if (parameter.getParameterKey().equals("zoneA")) break;		
 		}
@@ -51,7 +57,7 @@ public class TestAwsFacade {
 	@Test
 	public void createStacknameFromEnvAndFile() {
 		String stackName = aws.createStackName(new File(SUBNET_FILENAME),ENV);
-		assertEquals("Testsubnet", stackName);
+		assertEquals("CfnAssistTestsubnet", stackName);
 	}
 	
 	@Test
@@ -77,6 +83,24 @@ public class TestAwsFacade {
 		
 		Parameter envParameter = new Parameter();
 		envParameter.setParameterKey("env");
+		envParameter.setParameterValue("test");
+		parameters.add(envParameter);
+		
+		try {
+			aws.applyTemplate(new File(SUBNET_FILENAME), ENV , parameters);	
+			fail("Should have thrown exception");
+		}
+		catch (InvalidParameterException exception) {
+			// expected
+		}
+	}
+	
+	@Test
+	public void cannotAddvpcParameter() throws FileNotFoundException, IOException {
+		Collection<Parameter> parameters = new HashSet<Parameter>();
+		
+		Parameter envParameter = new Parameter();
+		envParameter.setParameterKey("vpc");
 		envParameter.setParameterValue("test");
 		parameters.add(envParameter);
 		

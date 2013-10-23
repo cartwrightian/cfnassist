@@ -3,6 +3,7 @@
 	"Description" : "test template for cnfassist - creates a single subnet",
 	"Parameters" : {
     	"env" : { "Type" : "String" },
+    	"vpc" : { "Type" : "String" },
     	"zoneA" : { "Type" : "String" , "Description" : "zoneADescription" },
     	"zoneB" : { "Type" : "String" , "Default" : "eu-west-1b" }
   	},
@@ -18,7 +19,7 @@
       			"AvailabilityZone" : { "Ref" : "zoneA" },
 	      		"CidrBlock" : "10.0.10.0/24",
       			"Tags" : [ { "Key" : "Name", "Value": "webSubnetZoneA" } ],
-      			"VpcId" : { "Fn::FindInMap" : [ "environMap", { "Ref" : "env" }, "vpc" ]}
+      			"VpcId" : { "Ref": "vpc" }
    			}
     	}
 	}

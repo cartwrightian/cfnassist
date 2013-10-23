@@ -5,18 +5,14 @@
 		"env":{
 			"Type":"String"
 		},
+		"vpc":{
+			"Type":"String"
+		},
 		"subnet":{
 			"Type":"String",
 			"Description":"::testSubnet"
 		}
 		
-	},
-	"Mappings":{
-		"environMap":{
-			"Test":{
-				"vpc":"vpc-38d62752"
-			}		
-		}
 	},
 	"Resources":{
 		"assocAclWebSubnet":{
@@ -41,14 +37,7 @@
 					
 				],
 				"VpcId":{
-					"Fn::FindInMap":[
-						"environMap",
-						{
-							"Ref":"env"
-						},
-						"vpc"
-					]
-					
+					"Ref":"vpc"
 				}
 				
 			}

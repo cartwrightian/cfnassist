@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
@@ -31,25 +30,30 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
+import com.amazonaws.services.ec2.model.Vpc;
 
 public class AwsFacade implements AwsProvider {
 	private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
-	private static final String PARAM_PREFIX = "::";
 	
 	// TODO things we need to ID
-	// logical ID
 	// id subnet by cidr & vpc
 	// id sg by TAG and VPC
-	// id VPC by TAG
+	private static final String PARAMETER_ENV = "env";
+	private static final String PARAMETER_VPC = "vpc";
+	private static final String PARAM_PREFIX = "::";
 	
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 200;
-	private static final String PARAMETER_ENV = "env";
 	private AmazonCloudFormationClient cfnClient;
-	private Region euRegion = Region.getRegion(Regions.EU_WEST_1);
+	private List<String> reservedParameters;
+	private VpcRepository vpcRepository;
 
-	public AwsFacade(AWSCredentialsProvider credentialsProvider) {
+	public AwsFacade(AWSCredentialsProvider credentialsProvider, Region region) {
 		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(euRegion);
+		cfnClient.setRegion(region);
+		vpcRepository = new VpcRepository(credentialsProvider, region);
+		reservedParameters = new LinkedList<String>();
+		reservedParameters.add(PARAMETER_ENV);
+		reservedParameters.add(PARAMETER_VPC);
 	}
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
@@ -77,26 +81,20 @@ public class AwsFacade implements AwsProvider {
 	}
 	
 	public String applyTemplate(File file, String env, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException {
-		logger.info(String.format("Applying template %s for env %s", file.getAbsoluteFile(), env));
-		String contents = loadFileContents(file);
-		CreateStackRequest createStackRequest = new CreateStackRequest();
-		createStackRequest.setTemplateBody(contents);
+		logger.info(String.format("Applying template %s for env %s", file.getAbsoluteFile(), env));	
+		Vpc vpcForEnv = findVpcForEnv(env);
+		
+		String contents = loadFileContents(file);	
 		String stackName = createStackName(file, env);
 		logger.info("Stackname is " + stackName);
 		
 		checkParameters(parameters);
+		addParameterTo(parameters, PARAMETER_ENV, env);
+		addParameterTo(parameters, PARAMETER_VPC, vpcForEnv.getVpcId());
+		addAutoPopulatedParameters(file, env, parameters);
 		
-		logger.info(String.format("Setting %s parameter to %s", PARAMETER_ENV, env));
-		Parameter envParameter = new Parameter();
-		envParameter.setParameterKey(PARAMETER_ENV);
-		envParameter.setParameterValue(env);
-		parameters.add(envParameter);
-		
-		List<Parameter> autoPopulatedParametes = this.fetchParametersFor(file, env);
-		for (Parameter autoPop : autoPopulatedParametes) {
-			parameters.add(autoPop);
-		}
-		
+		CreateStackRequest createStackRequest = new CreateStackRequest();
+		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
 		
@@ -105,11 +103,39 @@ public class AwsFacade implements AwsProvider {
 		return stackName;
 	}
 
+	private Vpc findVpcForEnv(String env) throws InvalidParameterException {
+		Vpc vpcForEnv = vpcRepository.findVpcForEnv(env);
+		if (vpcForEnv==null) {
+			logger.error("Unable to find VPC tagged as environment:" + env);
+			throw new InvalidParameterException(env);
+		}
+		logger.info(String.format("Found VPC %s corresponding to environment %s", vpcForEnv.getVpcId(), env));
+		return vpcForEnv;
+	}
+
+	private void addAutoPopulatedParameters(File file, String env,
+			Collection<Parameter> parameters) throws FileNotFoundException,
+			IOException, InvalidParameterException {
+		List<Parameter> autoPopulatedParametes = this.fetchParametersFor(file, env);
+		for (Parameter autoPop : autoPopulatedParametes) {
+			parameters.add(autoPop);
+		}
+	}
+
+	private void addParameterTo(Collection<Parameter> parameters, String parameterName, String parameterValue) {
+		logger.info(String.format("Setting %s parameter to %s", parameterName, parameterValue));
+		Parameter parameter = new Parameter();
+		parameter.setParameterKey(parameterName);
+		parameter.setParameterValue(parameterValue);
+		parameters.add(parameter);
+	}
+
 	private void checkParameters(Collection<Parameter> parameters) throws InvalidParameterException {
 		for(Parameter param : parameters) {
-			if (param.getParameterKey().equals(PARAMETER_ENV)) {
-				logger.error("Attempt to overide autoset parameter called " + PARAMETER_ENV);
-				throw new InvalidParameterException(PARAMETER_ENV);
+			String parameterKey = param.getParameterKey();
+			if (reservedParameters.contains(parameterKey)) {
+				logger.error("Attempt to overide autoset parameter called " + parameterKey);
+				throw new InvalidParameterException(parameterKey);
 			}
 		}	
 	}
@@ -182,21 +208,23 @@ public class AwsFacade implements AwsProvider {
 			logger.info("Checking if parameter should be auto-populated, param name is " + name);
 			String description = templateParam.getDescription();
 			if (shouldPopulateFor(description)) {
-				String logicalId = description.substring(PARAM_PREFIX.length());
-				logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
-				String value = findPhysicalIdByLogicalId(logicalId);
-				if (value==null) {
-					logger.error(String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" + logicalId, name));
-					throw new InvalidParameterException(name);
-				}
-				logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, name));
-				Parameter match = new Parameter();
-				match.setParameterKey(name);
-				match.setParameterValue(value);
-				matches.add(match);
+				populateParameter(matches, name, description);
 			}
 		}
 		return matches;
+	}
+
+	private void populateParameter(List<Parameter> matches, String parameterName, String parameterDescription)
+			throws InvalidParameterException {
+		String logicalId = parameterDescription.substring(PARAM_PREFIX.length());
+		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
+		String value = findPhysicalIdByLogicalId(logicalId);
+		if (value==null) {
+			logger.error(String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" + logicalId, parameterName));
+			throw new InvalidParameterException(parameterName);
+		}
+		logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, parameterName));
+		addParameterTo(matches, parameterName, value);
 	}
 
 	public String findPhysicalIdByLogicalId(String logicalId) {

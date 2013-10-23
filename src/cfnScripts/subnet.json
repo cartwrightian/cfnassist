@@ -3,22 +3,18 @@
 	"Description" : "test template for cnfassist - creates a single subnet",
 	"Parameters" : {
     	"env" : { "Type" : "String" },
+    	"vpc" : { "Type" : "String" },
     	"zoneA" : { "Type" : "String" , "Default" : "eu-west-1a", "Description" : "zoneADescription" },
     	"zoneB" : { "Type" : "String" , "Default" : "eu-west-1b" }
   	},
-  	"Mappings" : {
-      "environMap" : {
-        "Test" : { "vpc" : "vpc-38d62752" }
-      }
-    },
 	"Resources" : {
 		"testSubnet" : {
 			"Type" : "AWS::EC2::Subnet",
 			"Properties" : {
       			"AvailabilityZone" : { "Ref" : "zoneA" },
 	      		"CidrBlock" : "10.0.10.0/24",
-      			"Tags" : [ { "Key" : "Name", "Value": "webSubnetZoneA" } ],
-      			"VpcId" : { "Fn::FindInMap" : [ "environMap", { "Ref" : "env" }, "vpc" ]}
+      			"Tags" : [ { "Key" : "Name", "Value": "testSubnet" } ],
+      			"VpcId" : { "Ref": "vpc" }
    			}
     	}
 	}
