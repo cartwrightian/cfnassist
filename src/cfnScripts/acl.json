@@ -7,7 +7,7 @@
 		},
 		"subnet":{
 			"Type":"String",
-			"Description":"testSubnet"
+			"Description":"::testSubnet"
 		}
 		
 	},

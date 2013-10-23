@@ -28,7 +28,7 @@ public class TestStackBuilder {
 		StackBuilder builder = new StackBuilder(awsProvider, ENV, templateFile);
 		String stackName = builder.createStack();
 		
-		validateCheckAndDeleteWorks(stackName);
+		validateCreateAndDeleteWorks(stackName);
 	}
 	
 	@Test
@@ -38,10 +38,10 @@ public class TestStackBuilder {
 		StackBuilder builder = new StackBuilder(awsProvider, ENV, templateFile);
 		String stackName = builder.addParameter("zoneA", "eu-west-1a").createStack();
 		
-		validateCheckAndDeleteWorks(stackName);
+		validateCreateAndDeleteWorks(stackName);
 	}
 
-	private void validateCheckAndDeleteWorks(String stackName)
+	private void validateCreateAndDeleteWorks(String stackName)
 			throws WrongNumberOfStacksException, InterruptedException {
 		String status = awsProvider.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);

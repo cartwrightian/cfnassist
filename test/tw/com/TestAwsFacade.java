@@ -19,13 +19,14 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 public class TestAwsFacade {
 
-	private static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
+	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
 	private static final String ENV = "Test";
+	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsProvider aws;
-
+	
 	@Before
 	public void beforeTestsRun() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		aws = new AwsFacade(credentialsProvider);
 	}
 
@@ -54,11 +55,20 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void createsSubnetFromTemplateAndParamters() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {
+	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {
 		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), ENV);	
 		
 		String status = aws.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+		
+		validatedDelete(stackName, aws);
+	}
+
+	public static void validatedDelete(String stackName, AwsProvider provider)
+			throws WrongNumberOfStacksException, InterruptedException {
+		provider.deleteStack(stackName);
+		String status = provider.waitForDeleteFinished(stackName);
+		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 	}
 	
 	@Test
@@ -79,9 +89,5 @@ public class TestAwsFacade {
 		}
 	}
 	
-	@Test
-	public void deleteStackByName() {
-		String stackName = aws.createStackName(new File(SUBNET_FILENAME),ENV);
-		aws.deleteStack(stackName);
-	}
+	
 }

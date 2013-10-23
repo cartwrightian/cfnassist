@@ -22,4 +22,5 @@ public interface AwsProvider {
 	String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	String createStackName(File templateFile, String env);
+	List<Parameter> fetchParametersFor(File file, String env) throws FileNotFoundException, IOException, InvalidParameterException;
 }
