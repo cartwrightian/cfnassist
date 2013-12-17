@@ -22,7 +22,8 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public class TestAwsFacade {
 
 	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
-	public static final String ENV = "CfnAssistTest";
+	public static final String ENV = "Test";
+	public static final String PROJECT = "CfnAssist";
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsProvider aws;
 	
@@ -56,13 +57,14 @@ public class TestAwsFacade {
 	
 	@Test
 	public void createStacknameFromEnvAndFile() {
-		String stackName = aws.createStackName(new File(SUBNET_FILENAME),ENV);
+		String stackName = aws.createStackName(new File(SUBNET_FILENAME),PROJECT, ENV);
 		assertEquals("CfnAssistTestsubnet", stackName);
 	}
 	
 	@Test
-	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {
-		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), ENV);	
+	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
+		InterruptedException, InvalidParameterException {
+		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), PROJECT, ENV);	
 		
 		String status = aws.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
@@ -78,7 +80,7 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void cannotAddenvParameter() throws FileNotFoundException, IOException {
+	public void cannotAddEnvParameter() throws FileNotFoundException, IOException {
 		Collection<Parameter> parameters = new HashSet<Parameter>();
 		
 		Parameter envParameter = new Parameter();
@@ -87,7 +89,7 @@ public class TestAwsFacade {
 		parameters.add(envParameter);
 		
 		try {
-			aws.applyTemplate(new File(SUBNET_FILENAME), ENV , parameters);	
+			aws.applyTemplate(new File(SUBNET_FILENAME), PROJECT, ENV , parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {
@@ -105,7 +107,7 @@ public class TestAwsFacade {
 		parameters.add(envParameter);
 		
 		try {
-			aws.applyTemplate(new File(SUBNET_FILENAME), ENV , parameters);	
+			aws.applyTemplate(new File(SUBNET_FILENAME), PROJECT, ENV , parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {

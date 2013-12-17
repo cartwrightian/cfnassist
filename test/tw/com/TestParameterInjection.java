@@ -25,6 +25,7 @@ public class TestParameterInjection {
 	private static VpcRepository vpcRepository;
 	private static String subnetStackName;
 	private static String env = TestAwsFacade.ENV;
+	private static String proj = TestAwsFacade.PROJECT;
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
@@ -32,7 +33,7 @@ public class TestParameterInjection {
 		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 		vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
 		
-		subnetStackName = aws.applyTemplate(new File(TestAwsFacade.SUBNET_FILENAME), env);
+		subnetStackName = aws.applyTemplate(new File(TestAwsFacade.SUBNET_FILENAME), proj, env);
 		String status = aws.waitForCreateFinished(subnetStackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 	}
@@ -44,7 +45,9 @@ public class TestParameterInjection {
 
 	@Test
 	public void shouldBeAbleToFetchValuesForParameters() throws FileNotFoundException, IOException, InvalidParameterException {
-		List<Parameter> result = aws.fetchParametersFor(new File(ACL_FILENAME), env);
+		Vpc vpc = vpcRepository.findVpcForEnv(proj, env);
+		
+		List<Parameter> result = aws.fetchAutopopulateParametersFor(new File(ACL_FILENAME), vpc.getVpcId());
 		
 		assertEquals(1, result.size());
 		
@@ -52,9 +55,9 @@ public class TestParameterInjection {
 		assertEquals("subnet", expectedParam.getParameterKey());
 		
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		AmazonEC2Client ec2Client = EnvironmentSetup.createEC2Client(credentialsProvider); 
-		Vpc vpc = vpcRepository.findVpcForEnv(env);
-		List<Subnet> subnets = EnvironmentSetup.getSubnetFors(ec2Client, vpc);
+		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider); 
+		
+		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
 		
 		assertEquals(1,subnets.size());
 		Subnet testSubnet = subnets.get(0);
@@ -65,7 +68,7 @@ public class TestParameterInjection {
 	
 	@Test
 	public void autoInjectParameterTemplate() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {			
-		String aclStackName = aws.applyTemplate(new File(ACL_FILENAME), env);	
+		String aclStackName = aws.applyTemplate(new File(ACL_FILENAME), proj, env);	
 		
 		String status = aws.waitForCreateFinished(aclStackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);

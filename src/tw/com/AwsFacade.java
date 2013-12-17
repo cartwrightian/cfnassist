@@ -2,8 +2,11 @@ package tw.com;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -19,14 +22,9 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesResult;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
@@ -38,19 +36,23 @@ public class AwsFacade implements AwsProvider {
 	// TODO things we need to ID
 	// id subnet by cidr & vpc
 	// id sg by TAG and VPC
+	
+	public static final String ENVIRONMENT_TAG = "CFN_ASSIST_ENV";
+	public static final String PROJECT_TAG = "CFN_ASSIST_PROJECT"; 
 	private static final String PARAMETER_ENV = "env";
 	private static final String PARAMETER_VPC = "vpc";
 	private static final String PARAM_PREFIX = "::";
 	
-	private static final long STATUS_CHECK_INTERVAL_MILLIS = 200;
 	private AmazonCloudFormationClient cfnClient;
 	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
+	private CfnRepository cfnRepository;
 
 	public AwsFacade(AWSCredentialsProvider credentialsProvider, Region region) {
 		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(region);
 		vpcRepository = new VpcRepository(credentialsProvider, region);
+		cfnRepository = new CfnRepository(cfnClient);
 		reservedParameters = new LinkedList<String>();
 		reservedParameters.add(PARAMETER_ENV);
 		reservedParameters.add(PARAMETER_VPC);
@@ -74,37 +76,59 @@ public class AwsFacade implements AwsProvider {
 	}
 	
 	@Override
-	public String applyTemplate(File file, String env)
+	public String applyTemplate(File file, String project, String env)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException {
-		return applyTemplate(file, env, new HashSet<Parameter>());
+		return applyTemplate(file, project, env, new HashSet<Parameter>());
 	}
 	
-	public String applyTemplate(File file, String env, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException {
+	public String applyTemplate(File file, String project, String env, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException {
 		logger.info(String.format("Applying template %s for env %s", file.getAbsoluteFile(), env));	
-		Vpc vpcForEnv = findVpcForEnv(env);
+		Vpc vpcForEnv = findVpcForEnv(project, env);
 		
 		String contents = loadFileContents(file);	
-		String stackName = createStackName(file, env);
+		String stackName = createStackName(file, project, env);
 		logger.info("Stackname is " + stackName);
 		
+		String vpcId = vpcForEnv.getVpcId();
 		checkParameters(parameters);
-		addParameterTo(parameters, PARAMETER_ENV, env);
-		addParameterTo(parameters, PARAMETER_VPC, vpcForEnv.getVpcId());
-		addAutoPopulatedParameters(file, env, parameters);
+		addBuiltInParameters(env, parameters, vpcId);
+		addAutoDiscoveryParameters(vpcId, file, parameters);
 		
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
+		Collection<Tag> tags = createTags(project, env);
+		createStackRequest.setTags(tags );
 		
 		logger.info("Making createStack call to AWS");
-		cfnClient.createStack(createStackRequest);	
+		cfnClient.createStack(createStackRequest);
+		cfnRepository.updateRepositoryFor(stackName);
 		return stackName;
 	}
 
-	private Vpc findVpcForEnv(String env) throws InvalidParameterException {
-		Vpc vpcForEnv = vpcRepository.findVpcForEnv(env);
+	private Collection<Tag> createTags(String project, String env) {
+		Collection<Tag> tags = new ArrayList<Tag>();
+		tags.add(createTag(PROJECT_TAG, project));
+		tags.add(createTag(ENVIRONMENT_TAG, env));
+		return tags;
+	}
+
+	private Tag createTag(String key, String value) {
+		Tag tag = new Tag();
+		tag.setKey(key);
+		tag.setValue(value);
+		return tag;
+	}
+
+	private void addBuiltInParameters(String env, Collection<Parameter> parameters, String vpcId) {
+		addParameterTo(parameters, PARAMETER_ENV, env);
+		addParameterTo(parameters, PARAMETER_VPC, vpcId);
+	}
+
+	private Vpc findVpcForEnv(String project, String env) throws InvalidParameterException {
+		Vpc vpcForEnv = vpcRepository.findVpcForEnv(project, env);
 		if (vpcForEnv==null) {
 			logger.error("Unable to find VPC tagged as environment:" + env);
 			throw new InvalidParameterException(env);
@@ -113,10 +137,10 @@ public class AwsFacade implements AwsProvider {
 		return vpcForEnv;
 	}
 
-	private void addAutoPopulatedParameters(File file, String env,
+	private void addAutoDiscoveryParameters(String vpcId, File file, 
 			Collection<Parameter> parameters) throws FileNotFoundException,
 			IOException, InvalidParameterException {
-		List<Parameter> autoPopulatedParametes = this.fetchParametersFor(file, env);
+		List<Parameter> autoPopulatedParametes = this.fetchAutopopulateParametersFor(file, vpcId);
 		for (Parameter autoPop : autoPopulatedParametes) {
 			parameters.add(autoPop);
 		}
@@ -140,22 +164,22 @@ public class AwsFacade implements AwsProvider {
 		}	
 	}
 
-	public String createStackName(File file, String env) {
+	public String createStackName(File file, String project, String env) {
 		// note: aws only allows [a-zA-Z][-a-zA-Z0-9]* in stacknames
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
-		return env+name;
+		return project+env+name;
 	}
 	
 	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus inProgressStatus = StackStatus.CREATE_IN_PROGRESS;
-		return waitForStatusToChange(stackName, inProgressStatus);
+		return cfnRepository.waitForStatusToChange(stackName, inProgressStatus);
 	}
 	
 	public String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus inProgressStatus = StackStatus.DELETE_IN_PROGRESS;
 		try {
-			return waitForStatusToChange(stackName, inProgressStatus);
+			return cfnRepository.waitForStatusToChange(stackName, inProgressStatus);
 		}
 		catch(com.amazonaws.AmazonServiceException awsException) {
 			String errorCode = awsException.getErrorCode();
@@ -164,24 +188,6 @@ public class AwsFacade implements AwsProvider {
 			}
 			return StackStatus.DELETE_FAILED.toString();
 		}	
-	}
-
-	private String waitForStatusToChange(String stackName, StackStatus inProgressStatus) 
-			throws WrongNumberOfStacksException, InterruptedException {
-		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(stackName);
-		
-		String status = inProgressStatus.toString();
-		while (status.equals(inProgressStatus.toString())) {
-			Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
-			DescribeStacksResult result = cfnClient.describeStacks(describeStacksRequest);
-			List<Stack> stacks = result.getStacks();
-			if (stacks.size()!=1) {
-				throw new WrongNumberOfStacksException(1, stacks.size());
-			}
-			status = stacks.get(0).getStackStatus();			
-		}
-		return status;
 	}
 	
 	public void deleteStack(String stackName) {
@@ -196,79 +202,44 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
-	public List<Parameter> fetchParametersFor(File file, String env) throws FileNotFoundException, IOException, InvalidParameterException {
-		logger.info(String.format("Discover and populate parameters for %s and env %s", file.getAbsolutePath(), env));
+	public List<Parameter> fetchAutopopulateParametersFor(File file, String vpcId) throws FileNotFoundException, IOException, InvalidParameterException {
+		logger.info(String.format("Discover and populate parameters for %s and VPC: %s", file.getAbsolutePath(), vpcId));
 		List<TemplateParameter> allParameters = validateTemplate(file);
 		List<Parameter> matches = new LinkedList<Parameter>();
 		for(TemplateParameter templateParam : allParameters) {
 			String name = templateParam.getParameterKey();
-			if (name.equals(PARAMETER_ENV)) {
+			if (isBuiltInParamater(name))
+			{
 				continue;
 			}
-			logger.info("Checking if parameter should be auto-populated, param name is " + name);
+			logger.info("Checking if parameter should be auto-populated from an existing resource, param name is " + name);
 			String description = templateParam.getDescription();
 			if (shouldPopulateFor(description)) {
-				populateParameter(matches, name, description);
+				populateParameter(vpcId, matches, name, description);
 			}
 		}
 		return matches;
 	}
 
-	private void populateParameter(List<Parameter> matches, String parameterName, String parameterDescription)
+	private boolean isBuiltInParamater(String name) {
+		boolean result = name.equals(PARAMETER_ENV);
+		if (result) {
+			logger.info("Found built in parameter");
+		}
+		return result;
+	}
+
+	private void populateParameter(String vpcId, List<Parameter> matches, String parameterName, String parameterDescription)
 			throws InvalidParameterException {
 		String logicalId = parameterDescription.substring(PARAM_PREFIX.length());
 		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
-		String value = findPhysicalIdByLogicalId(logicalId);
+		String value = cfnRepository.findPhysicalIdByLogicalId(vpcId, logicalId);
 		if (value==null) {
-			logger.error(String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" + logicalId, parameterName));
+			logger.error(String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" , logicalId, parameterName));
 			throw new InvalidParameterException(parameterName);
 		}
 		logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, parameterName));
 		addParameterTo(matches, parameterName, value);
-	}
-
-	public String findPhysicalIdByLogicalId(String logicalId) {
-		logger.info("Looking for resource matching logicalID:" + logicalId);
-		List<Stack> stacks = getStacks();
-		for(Stack stack : stacks) {
-			String stackName = stack.getStackName();
-			String maybeHaveId = findPhysicalIdByLogicalId(stackName, logicalId);
-			if (maybeHaveId!=null) {
-				logger.info(String.format("Found physicalID: %s for logical ID: %s", maybeHaveId, logicalId));
-				return maybeHaveId;
-			}
-		}
-		return null;
-	}
-	
-	public String findPhysicalIdByLogicalId(String stackName, String logicalId) {	
-		logger.info(String.format("Check stack %s for logical ID %s", stackName, logicalId));
-		List<StackResource> resources = getResourcesForStack(stackName);
-		for (StackResource resource : resources) {
-			String candidateId = resource.getLogicalResourceId();
-			if (candidateId.equals(logicalId)) {
-				return resource.getPhysicalResourceId();
-			}
-		}
-		return null;		
-	}
-	
-	private List<Stack> getStacks() {
-		// TODO cache stack resources to avoid slow network calls
-		DescribeStacksRequest describeStackRequest = new DescribeStacksRequest();
-		DescribeStacksResult results = cfnClient.describeStacks(describeStackRequest);
-		List<Stack> stacks = results.getStacks();
-		return stacks;
-	}
-
-
-	private List<StackResource> getResourcesForStack(String stackName) {
-		// TODO cache stack resources to avoid slow network calls
-		DescribeStackResourcesRequest request = new DescribeStackResourcesRequest();
-		request.setStackName(stackName);
-		DescribeStackResourcesResult results = cfnClient.describeStackResources(request);
-		
-		return results.getStackResources();
 	}
 
 	private boolean shouldPopulateFor(String description) {
@@ -278,5 +249,34 @@ public class AwsFacade implements AwsProvider {
 		return description.startsWith(PARAM_PREFIX);
 	}
 
+	@Override
+	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
+			String project, String env) throws InvalidParameterException, FileNotFoundException, IOException {
+		ArrayList<String> createdStacks = new ArrayList<>();
+		File folder = new File(folderPath);
+		if (!folder.isDirectory()) {
+			throw new InvalidParameterException(folderPath + " is not a directory");
+		}
+		logger.info("Invoking templates from folder: " + folderPath);
+		
+		FilenameFilter jsonFilter = new JsonExtensionFilter();
+		File[] files = folder.listFiles(jsonFilter);
+		Arrays.sort(files); // place in lexigraphical order
+		
+		logger.info("Attempt to Validate all files");
+		for(File file : files) {
+			validateTemplate(file);
+		}
+		
+		logger.info("Validation ok, apply template files");
+		for(File file : files) {
+			logger.info("Apply template file: " +file.getAbsolutePath());
+			applyTemplate(file, project, env);
+		}
+		
+		logger.info("All templates successfully invoked");
+		
+		return createdStacks;
+	}
 
 }

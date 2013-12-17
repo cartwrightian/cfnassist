@@ -1,0 +1,54 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"01 - creates subnets",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		},
+		"zoneA":{
+			"Type":"String",
+			"Default":"eu-west-1a",
+			"Description":"zoneADescription"
+		},
+		"zoneB":{
+			"Type":"String",
+			"Default":"eu-west-1b"
+		}
+		
+	},
+	"Resources":{
+		"webSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"AvailabilityZone":{
+					"Ref":"zoneA"
+				},
+				"CidrBlock":"10.0.10.0/24",
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":"webSubnet"
+					}
+				],
+				"VpcId":{
+					"Ref":"vpc"
+				}	
+			}
+		},
+		"dbSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"AvailabilityZone":{
+					"Ref":"zoneA"
+				},
+				"CidrBlock":"10.0.60.0/24",
+				"VpcId":{
+					"Ref":"vpc"
+				}		
+			}
+		}	
+	}
+}

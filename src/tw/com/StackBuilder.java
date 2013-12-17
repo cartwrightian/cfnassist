@@ -13,11 +13,13 @@ public class StackBuilder  {
 	private File templateFile;
 	Collection<Parameter> parameters;
 	private String env;
+	private String project;
 
-	public StackBuilder(AwsProvider awsProvider, String env, File templateFile) {
+	public StackBuilder(AwsProvider awsProvider, String project, String env, File templateFile) {
         parameters = new HashSet<Parameter>();
 	
         this.env = env;
+        this.project = project;
 		this.awsProvider = awsProvider;
 		this.templateFile = templateFile;
 	}
@@ -31,7 +33,7 @@ public class StackBuilder  {
 	}
 
 	public String createStack() throws FileNotFoundException, IOException, InvalidParameterException {
-		return awsProvider.applyTemplate(templateFile, env, parameters);
+		return awsProvider.applyTemplate(templateFile, project, env, parameters);
 	}
 
 }

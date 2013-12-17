@@ -15,7 +15,6 @@ import com.amazonaws.services.ec2.model.Vpc;
 public class VpcRepository {
 	private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
 	
-	private static final String ENVIRONMENT_TAG = "CFN_ASSIST_ENV";
 	private static AmazonEC2Client ec2Client;
 	
 	public VpcRepository(AWSCredentialsProvider credentialsProvider, Region region) {
@@ -23,25 +22,31 @@ public class VpcRepository {
 		ec2Client.setRegion(region);
 	}
 	
-	public Vpc findVpcForEnv(String env) {
-		logger.info(String.format("Checking for TAG %s to find VPC for environment %s", ENVIRONMENT_TAG, env));
+	public Vpc findVpcForEnv(String project, String env) {
+		logger.info(String.format("Checking for TAGs %s:%s and %s:%s to find VPC", AwsFacade.PROJECT_TAG, project, AwsFacade.ENVIRONMENT_TAG, env));
 		DescribeVpcsResult describeVpcsResults = ec2Client.describeVpcs();
 		List<Vpc> vpcs = describeVpcsResults.getVpcs();
 
 		for(Vpc vpc : vpcs) {
-			String possibleMatch = getEnvironmentTagFor(vpc);
-			if (possibleMatch.equals(env)) {
-				logger.info("Found VPC with ID " + vpc.getVpcId());
-				return vpc;
+			String vpcId = vpc.getVpcId();
+			String possibleProject = getTagByName(vpc, AwsFacade.PROJECT_TAG);
+			if (possibleProject.equals(project)) {	
+				logger.debug(String.format("Found Possible VPC with %s:%s ID is %s", AwsFacade.PROJECT_TAG, possibleProject, vpcId));
+				String possibleEnv = getTagByName(vpc, AwsFacade.ENVIRONMENT_TAG);
+				logger.debug(String.format("Found Possible VPC with %s:%s ID is %s", AwsFacade.ENVIRONMENT_TAG, possibleEnv, vpcId));
+				if (possibleEnv.equals(env)) {
+					logger.info("Matched tags, vpc id is " + vpcId);
+					return vpc;
+				}
 			}
 		}
 		return null;
 	}
 
-	private static String getEnvironmentTagFor(Vpc vpc) {	
+	private String getTagByName(Vpc vpc, String tagName) {
 		List<Tag> tags = vpc.getTags();
-		for(Tag tag : tags) {
-			if (tag.getKey().equals(ENVIRONMENT_TAG)) {
+		for(Tag tag : tags) {	
+			if (tag.getKey().equals(tagName)) {
 				return tag.getValue();
 			}
 		}
