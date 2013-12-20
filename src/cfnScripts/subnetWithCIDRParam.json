@@ -1,0 +1,21 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description" : "test template for cnfassist - creates a single subnet",
+	"Parameters" : {
+    	"env" : { "Type" : "String" },
+    	"vpc" : { "Type" : "String" },
+    	"cidr" : { "Type" : "String" , "Description" : "cidr to use" },
+    	"zoneA" : { "Type" : "String" , "Default" : "eu-west-1a" }
+  	},
+	"Resources" : {
+		"testCidrSubnet" : {
+			"Type" : "AWS::EC2::Subnet",
+			"Properties" : {
+      			"AvailabilityZone" : { "Ref" : "zoneA" },
+	      		"CidrBlock" : { "Ref" : "cidr" },
+      			"Tags" : [ { "Key" : "Name", "Value": "testSubnet" } ],
+      			"VpcId" : { "Ref": "vpc" }
+   			}
+    	}
+	}
+}

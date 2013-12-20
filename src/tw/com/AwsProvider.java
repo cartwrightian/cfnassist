@@ -13,15 +13,15 @@ public interface AwsProvider {
 	
 	List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException;
 	String applyTemplate(File file, String project, String env) throws FileNotFoundException, IOException, 
-	InvalidParameterException;
+	InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
 	String applyTemplate(File file, String project, String env,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, 
-		InvalidParameterException;
+		InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
 	
 	void deleteStack(String stackName);
 	
 	String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	String createStackName(File templateFile, String project, String env);
-	List<Parameter> fetchAutopopulateParametersFor(File file, String vpcId) throws FileNotFoundException, IOException, InvalidParameterException;
-	ArrayList<String> applyTemplatesFromFolder(String folderPath, String project, String env) throws InvalidParameterException, FileNotFoundException, IOException;
+	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag) throws FileNotFoundException, IOException, InvalidParameterException;
+	ArrayList<String> applyTemplatesFromFolder(String folderPath, String project, String env) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException;
 }

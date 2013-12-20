@@ -19,13 +19,13 @@ public class StackResources {
 	}
 
 	public List<StackResource> getStackResources(String stackName) {
-		return theResources.get(stackName);
+		List<StackResource> resource = theResources.get(stackName);
+		return resource;
 	}
 
 	public void addStackResources(String stackName,
 			List<StackResource> resources) {
-		theResources.put(stackName, resources);
-		
+		theResources.put(stackName, resources);		
 	}
 
 }

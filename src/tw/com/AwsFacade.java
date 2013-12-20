@@ -78,11 +78,11 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public String applyTemplate(File file, String project, String env)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException {
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
 		return applyTemplate(file, project, env, new HashSet<Parameter>());
 	}
 	
-	public String applyTemplate(File file, String project, String env, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException {
+	public String applyTemplate(File file, String project, String env, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
 		logger.info(String.format("Applying template %s for env %s", file.getAbsoluteFile(), env));	
 		Vpc vpcForEnv = findVpcForEnv(project, env);
 		
@@ -93,7 +93,8 @@ public class AwsFacade implements AwsProvider {
 		String vpcId = vpcForEnv.getVpcId();
 		checkParameters(parameters);
 		addBuiltInParameters(env, parameters, vpcId);
-		addAutoDiscoveryParameters(vpcId, file, parameters);
+		EnvironmentTag envTag = new EnvironmentTag(env);
+		addAutoDiscoveryParameters(envTag, file, parameters);
 		
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
@@ -104,6 +105,7 @@ public class AwsFacade implements AwsProvider {
 		
 		logger.info("Making createStack call to AWS");
 		cfnClient.createStack(createStackRequest);
+		waitForCreateFinished(stackName);
 		cfnRepository.updateRepositoryFor(stackName);
 		return stackName;
 	}
@@ -137,10 +139,10 @@ public class AwsFacade implements AwsProvider {
 		return vpcForEnv;
 	}
 
-	private void addAutoDiscoveryParameters(String vpcId, File file, 
+	private void addAutoDiscoveryParameters(EnvironmentTag envTag, File file, 
 			Collection<Parameter> parameters) throws FileNotFoundException,
 			IOException, InvalidParameterException {
-		List<Parameter> autoPopulatedParametes = this.fetchAutopopulateParametersFor(file, vpcId);
+		List<Parameter> autoPopulatedParametes = this.fetchAutopopulateParametersFor(file, envTag);
 		for (Parameter autoPop : autoPopulatedParametes) {
 			parameters.add(autoPop);
 		}
@@ -173,13 +175,13 @@ public class AwsFacade implements AwsProvider {
 	
 	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus inProgressStatus = StackStatus.CREATE_IN_PROGRESS;
-		return cfnRepository.waitForStatusToChange(stackName, inProgressStatus);
+		return cfnRepository.waitForStatusToChangeFrom(stackName, inProgressStatus);
 	}
 	
 	public String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
-		StackStatus inProgressStatus = StackStatus.DELETE_IN_PROGRESS;
+		StackStatus requiredStatus = StackStatus.DELETE_IN_PROGRESS;
 		try {
-			return cfnRepository.waitForStatusToChange(stackName, inProgressStatus);
+			return cfnRepository.waitForStatusToChangeFrom(stackName, requiredStatus);
 		}
 		catch(com.amazonaws.AmazonServiceException awsException) {
 			String errorCode = awsException.getErrorCode();
@@ -202,8 +204,8 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
-	public List<Parameter> fetchAutopopulateParametersFor(File file, String vpcId) throws FileNotFoundException, IOException, InvalidParameterException {
-		logger.info(String.format("Discover and populate parameters for %s and VPC: %s", file.getAbsolutePath(), vpcId));
+	public List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag) throws FileNotFoundException, IOException, InvalidParameterException {
+		logger.info(String.format("Discover and populate parameters for %s and VPC: %s", file.getAbsolutePath(), envTag));
 		List<TemplateParameter> allParameters = validateTemplate(file);
 		List<Parameter> matches = new LinkedList<Parameter>();
 		for(TemplateParameter templateParam : allParameters) {
@@ -215,7 +217,7 @@ public class AwsFacade implements AwsProvider {
 			logger.info("Checking if parameter should be auto-populated from an existing resource, param name is " + name);
 			String description = templateParam.getDescription();
 			if (shouldPopulateFor(description)) {
-				populateParameter(vpcId, matches, name, description);
+				populateParameter(envTag, matches, name, description);
 			}
 		}
 		return matches;
@@ -229,14 +231,15 @@ public class AwsFacade implements AwsProvider {
 		return result;
 	}
 
-	private void populateParameter(String vpcId, List<Parameter> matches, String parameterName, String parameterDescription)
+	private void populateParameter(EnvironmentTag envTag, List<Parameter> matches, String parameterName, String parameterDescription)
 			throws InvalidParameterException {
 		String logicalId = parameterDescription.substring(PARAM_PREFIX.length());
 		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
-		String value = cfnRepository.findPhysicalIdByLogicalId(vpcId, logicalId);
+		String value = cfnRepository.findPhysicalIdByLogicalId(envTag, logicalId);
 		if (value==null) {
-			logger.error(String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" , logicalId, parameterName));
-			throw new InvalidParameterException(parameterName);
+			String msg = String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" , logicalId, parameterName);
+			logger.error(msg);
+			throw new InvalidParameterException(msg);
 		}
 		logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, parameterName));
 		addParameterTo(matches, parameterName, value);
@@ -251,7 +254,7 @@ public class AwsFacade implements AwsProvider {
 
 	@Override
 	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
-			String project, String env) throws InvalidParameterException, FileNotFoundException, IOException {
+			String project, String env) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
 		ArrayList<String> createdStacks = new ArrayList<>();
 		File folder = new File(folderPath);
 		if (!folder.isDirectory()) {
@@ -271,7 +274,9 @@ public class AwsFacade implements AwsProvider {
 		logger.info("Validation ok, apply template files");
 		for(File file : files) {
 			logger.info("Apply template file: " +file.getAbsolutePath());
-			applyTemplate(file, project, env);
+			String stackName = applyTemplate(file, project, env);
+			logger.info("Create stack " + stackName);
+			createdStacks.add(stackName);
 		}
 		
 		logger.info("All templates successfully invoked");
