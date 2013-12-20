@@ -16,6 +16,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	
 	public static final String FOLDER_PATH = "src/cfnScripts/orderedScripts";
 	private static String env = TestAwsFacade.ENV;
+	private static String proj = TestAwsFacade.PROJECT;
 	ArrayList<String> expectedList = new ArrayList<String>();
 	private AwsFacade aws;
 	private int expectedSize;
@@ -55,8 +56,8 @@ public class TestExecuteScriptsInOrderFromDir {
 	}
 
 	private void createExpectedNames() {
-		expectedList.add(env+"01createSubnet");
-		expectedList.add(env+"02createAcls");
+		expectedList.add(proj+env+"01createSubnet");
+		expectedList.add(proj+env+"02createAcls");
 		expectedSize = expectedList.size();
 	}
 

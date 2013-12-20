@@ -15,6 +15,7 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
+import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 
@@ -33,7 +34,7 @@ public class TestStackBuilder {
 	}
 
 	@Test
-	public void canBuildAndDeleteSimpleStack() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {	
+	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {	
 		File templateFile = new File("src/cfnScripts/subnet.json");
 		StackBuilder builder = new StackBuilder(awsProvider, project, env , templateFile);
 		String stackName = builder.createStack();
@@ -58,11 +59,12 @@ public class TestStackBuilder {
 		
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(stackName);
-		DescribeStacksResult stacks = cfnClient.describeStacks(describeStacksRequest);
+		DescribeStacksResult stackResults = cfnClient.describeStacks(describeStacksRequest);
 		
-		assertEquals(1,stacks.getStacks().size());
-	    List<Tag> tags = stacks.getStacks().get(0).getTags(); 
+		List<Stack> stacks = stackResults.getStacks();
+		assertEquals(1,stacks.size());
 	    
+		List<Tag> tags = stacks.get(0).getTags(); 
 	    List<Tag> expectedTags = createCfnExpectedTagList();
 	    assertEquals(expectedTags.size(), tags.size());
 	    assert(tags.containsAll(expectedTags));

@@ -47,7 +47,8 @@ public class TestParameterInjection {
 	public void shouldBeAbleToFetchValuesForParameters() throws FileNotFoundException, IOException, InvalidParameterException {
 		Vpc vpc = vpcRepository.findVpcForEnv(proj, env);
 		
-		List<Parameter> result = aws.fetchAutopopulateParametersFor(new File(ACL_FILENAME), vpc.getVpcId());
+		EnvironmentTag envTag = new EnvironmentTag(env);
+		List<Parameter> result = aws.fetchAutopopulateParametersFor(new File(ACL_FILENAME), envTag);
 		
 		assertEquals(1, result.size());
 		

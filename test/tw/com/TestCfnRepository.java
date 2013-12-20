@@ -2,25 +2,33 @@ package tw.com;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.CreateSubnetRequest;
-import com.amazonaws.services.ec2.model.CreateSubnetResult;
-import com.amazonaws.services.ec2.model.DeleteSubnetRequest;
+import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
+import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
+import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestCfnRepository {
 
-	private static final String CIDR_BLOCK_FOR_SUBNETS = "10.0.11.0/24";
+	private static final String TEST_CIDR_SUBNET = "testCidrSubnet";
 	private AmazonCloudFormationClient cfnClient;
 	private Vpc mainTestVPC;
-	private Vpc otherTestVPC;
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AmazonEC2Client directClient;
+	private AwsFacade awsProvider;
+	private File templateFile;
+	private Vpc otherVPC;
 
 	@Before
 	public void beforeEachTestIsRun() {		
@@ -30,39 +38,77 @@ public class TestCfnRepository {
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
 		VpcRepository vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
-		mainTestVPC = vpcRepository.findVpcForEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);	
-		otherTestVPC = vpcRepository.findVpcForEnv("CfnAssist", EnvironmentSetupForTests.ALT_ENV);
+		mainTestVPC = vpcRepository.findVpcForEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
+		otherVPC = vpcRepository.findVpcForEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+
+		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
+		awsProvider = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 	}
 	
 	@Test
-	public void shouldFindResourceFromCorrectVPC() {	
+	public void shouldFindResourceFromCorrectVPC() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {	
 		String vpcIdA = mainTestVPC.getVpcId();
-		String vpcIdB = otherTestVPC.getVpcId();
+		String vpcIdB = otherVPC.getVpcId();
+		String cidrA = "10.0.10.0/24";
+		String cidrB = "10.0.11.0/24";
+
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+	
+		//create two subnets with same logical id's but different VPCs		
+		String stackA = invokeSubnetCreation(cidrA, TestAwsFacade.ENV);	
+		String stackB = invokeSubnetCreation(cidrB,  EnvironmentSetupForTests.ALT_ENV);
+		awsProvider.waitForCreateFinished(stackA);
+		awsProvider.waitForCreateFinished(stackB);
 		
-		String logicalSubnetId = "cfnAssistDuplicatedSubnetId";
-		String expectedPhysicalId = createSubnet(vpcIdA, logicalSubnetId, CIDR_BLOCK_FOR_SUBNETS);
-		String otherSubnet = createSubnet(vpcIdB, logicalSubnetId, CIDR_BLOCK_FOR_SUBNETS);
+		// find the id's
+		String physicalIdA = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(TestAwsFacade.ENV), TEST_CIDR_SUBNET);
+		String physicalIdB = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(EnvironmentSetupForTests.ALT_ENV), TEST_CIDR_SUBNET);
 		
-		String physicalId = cfnRepository.findPhysicalIdByLogicalId(vpcIdA, logicalSubnetId);
+		// fetch the subnet id directly
+		DescribeSubnetsResult subnetResultsA = getSubnetDetails(physicalIdA);
+		DescribeSubnetsResult subnetResultsB = getSubnetDetails(physicalIdB);
 		
-		deleteSubnet(expectedPhysicalId);
-		deleteSubnet(otherSubnet);
+		// remove the stacks before we do any validation to make sure things left in clean state
+		TestAwsFacade.validatedDelete(stackA, awsProvider);	
+		TestAwsFacade.validatedDelete(stackB, awsProvider);
 		
-		assertEquals(expectedPhysicalId, physicalId);
+		// check we found the physical ids
+		assertNotNull(physicalIdA);
+		assertNotNull(physicalIdB);
+		assert(!physicalIdA.equals(physicalIdB));	
+		
+		// validate the subnets have the expected address block and is from the correct VPC
+		assertEquals(1, subnetResultsA.getSubnets().size());
+		assertEquals(1, subnetResultsB.getSubnets().size());
+		
+		Subnet subnetA = subnetResultsA.getSubnets().get(0);
+		assertEquals(cidrA, subnetA.getCidrBlock());
+		assertEquals(vpcIdA, subnetA.getVpcId());
+		
+		Subnet subnetB = subnetResultsB.getSubnets().get(0);
+		assertEquals(cidrB, subnetB.getCidrBlock());
+		assertEquals(vpcIdB, subnetB.getVpcId());
 	}
 
-	private void deleteSubnet(String physicalId) {
-		DeleteSubnetRequest request = new DeleteSubnetRequest();
-		request.setSubnetId(physicalId);
-		directClient.deleteSubnet(request);	
+	private DescribeSubnetsResult getSubnetDetails(String physicalId) {
+		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
+		Collection<String> subnetIds = new LinkedList<String>();
+		subnetIds.add(physicalId);
+		describeSubnetsRequest.setSubnetIds(subnetIds);
+		DescribeSubnetsResult result = directClient.describeSubnets(describeSubnetsRequest);
+		return result;
 	}
 
-	private String createSubnet(String vpcId, String logicalSubnetId, String cidrBlock) {
-		
-		CreateSubnetRequest subnetCreationReuqest = new CreateSubnetRequest(vpcId, cidrBlock);
-		CreateSubnetResult response = directClient.createSubnet(subnetCreationReuqest );
-		return response.getSubnet().getSubnetId();
+	private String invokeSubnetCreation(String cidr, String env)
+			throws FileNotFoundException, IOException,
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		Parameter cidrParameter = new Parameter();
+		cidrParameter.setParameterKey("cidr");
+		cidrParameter.setParameterValue(cidr);
+		parameters.add(cidrParameter);
+		return awsProvider.applyTemplate(templateFile, TestAwsFacade.PROJECT, env, parameters );
 	}
+
 
 }

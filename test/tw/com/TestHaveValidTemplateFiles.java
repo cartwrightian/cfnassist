@@ -27,11 +27,21 @@ public class TestHaveValidTemplateFiles {
 		AwsFacade facade = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 		File folder = new File("src/cfnScripts");
 		
-		assertTrue(folder.exists());
+		assertTrue(folder.exists());	
+		validateFolder(facade, folder);
+	}
+
+
+	private void validateFolder(AwsFacade facade, File folder)
+			throws FileNotFoundException, IOException {
 		File[] files = folder.listFiles();
-		
 		for(File file : files) {
-			facade.validateTemplate(file);
+			if (file.isDirectory()) {
+				validateFolder(facade, file);
+			} else
+			{
+				facade.validateTemplate(file);
+			}
 		}
 	}
 

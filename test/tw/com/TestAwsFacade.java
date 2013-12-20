@@ -80,7 +80,7 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void cannotAddEnvParameter() throws FileNotFoundException, IOException {
+	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
 		Collection<Parameter> parameters = new HashSet<Parameter>();
 		
 		Parameter envParameter = new Parameter();
@@ -98,7 +98,7 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void cannotAddvpcParameter() throws FileNotFoundException, IOException {
+	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
 		Collection<Parameter> parameters = new HashSet<Parameter>();
 		
 		Parameter envParameter = new Parameter();
