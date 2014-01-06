@@ -142,7 +142,6 @@ public class CfnRepository {
 		populateEntries(results.getStacks());
 	}
 	
-	// TODO polling back off logic
 	public String waitForStatusToChangeFrom(String stackName, StackStatus currentStatus) 
 			throws WrongNumberOfStacksException, InterruptedException {
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();

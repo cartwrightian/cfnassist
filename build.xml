@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="cfnassist">
+    <property environment="env"/>
+    <property name="ECLIPSE_HOME" value="../../../../../Applications/eclipse"/>
+    <property name="junit.output.dir" value="junit"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+    <property name="aws_sdk_loc" value="lib/aws-java-sdk-1.6.1" />
+    <path id="JUnit 4.libraryclasspath">
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.junit_4.10.0.v4_10_0_v20120426-0900/junit.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
+    </path>
+    <path id="aws_sdk_lib">
+        <pathelement location="${aws_sdk_loc}/lib/aws-java-sdk-1.6.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjrt.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjweaver.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/commons-codec-1.3/commons-codec-1.3.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/commons-logging-1.1.1/commons-logging-1.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/freemarker-2.3.18/freemarker-2.3.18.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/httpcomponents-client-4.2.3/httpclient-4.2.3.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/httpcomponents-client-4.2.3/httpcore-4.2.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/jackson-annotations-2.1/jackson-annotations-2.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/jackson-core-2.1/jackson-core-2.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/jackson-databind-2.1/jackson-databind-2.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/java-mail-1.4.3/mail-1.4.3.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-beans-3.0.7.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-context-3.0.7.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-core-3.0.7.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/stax-api-1.0.1/stax-api-1.0.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/stax-ri-1.2.0/stax-1.2.0.jar"/>
+    </path>
+	<path id="logging_libs">
+		<pathelement location="lib/slf4j-api-1.7.5.jar"/>
+		<pathelement location="lib/logback-core-1.0.10.jar"/>
+		<pathelement location="lib/logback-classic-1.0.10.jar"/>
+	</path>
+	<path id="apacheCommons">
+		<pathelement location="lib/commons-io-2.4/commons-io-2.4.jar"/>
+		<pathelement location="lib/commons-cli-1.2/commons-cli-1.2.jar"/>
+	</path>
+    <path id="cfnassist.classpath">
+        <pathelement location="out"/>
+        <path refid="JUnit 4.libraryclasspath"/>
+        <path refid="aws_sdk_lib"/>
+    	<path refid="logging_libs"/>
+    	<path refid="apacheCommons"/>
+    </path>
+	
+    <target name="init">
+        <mkdir dir="out"/>
+        <copy includeemptydirs="false" todir="out">
+            <fileset dir="src">
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy includeemptydirs="false" todir="out">
+            <fileset dir="test">
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+	
+    <target name="clean">
+        <delete dir="out"/>
+    </target>
+	
+    <target depends="init" name="build">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="out" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <src path="test"/>
+            <classpath refid="cfnassist.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    
+    <target name="EnvironmentSetupForTests">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="tw.com.EnvironmentSetupForTests" todir="${junit.output.dir}"/>
+            <classpath refid="cfnassist.classpath"/>
+        </junit>
+    </target>
+	
+    <target name="test">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="tw.com.TestAwsFacade" todir="${junit.output.dir}"/>
+            <test name="tw.com.TestCfnRepository" todir="${junit.output.dir}"/>
+            <test name="tw.com.TestDeltaIndexTagging" todir="${junit.output.dir}"/>
+            <test name="tw.com.TestExecuteScriptsInOrderFromDir" todir="${junit.output.dir}"/>
+            <test name="tw.com.TestHaveValidTemplateFiles" todir="${junit.output.dir}"/>
+            <test name="tw.com.TestParameterInjection" todir="${junit.output.dir}"/>
+            <test name="tw.com.TestStackBuilder" todir="${junit.output.dir}"/>
+            <test name="tw.com.TestVpcRepository" todir="${junit.output.dir}"/>
+            <classpath refid="cfnassist.classpath"/>
+        </junit>
+    </target>
+
+    <target name="junitreport">
+        <junitreport todir="${junit.output.dir}">
+            <fileset dir="${junit.output.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.output.dir}"/>
+        </junitreport>
+    </target>
+	
+	<target name="dist" depends="clean,init,build">
+	        <mkdir dir="bin"/>
+	        <mkdir dir="bin/lib"/>
+	    	<mkdir dir="bin/conf"/>
+	        <copy file="src/cfnassist.sh" todir="bin"/>
+			<chmod file="bin/cfnassist.sh" perm="700"/>
+			<jar destfile="bin/cfnassist.jar">
+			    <fileset dir="out"/>
+			    <manifest>
+			      <attribute name="Main-Class" value="tw.com.Main"/>
+			    </manifest>
+			</jar>
+	        <copy flatten="true" todir="bin/lib">
+	            <path>
+					<path refid="aws_sdk_lib"/>
+		        	<path refid="logging_libs"/>
+	            	<path refid="apacheCommons"/>
+	            </path>
+	        </copy>
+	    	<copy file="conf/logback.xml" todir="bin/conf"/>
+	</target>
+	
+	
+</project>
