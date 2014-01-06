@@ -26,6 +26,7 @@ public class TestAwsFacade {
 	public static final String PROJECT = "CfnAssist";
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsProvider aws;
+	private ProjectAndEnv projectAndEnv = new ProjectAndEnv(PROJECT, ENV);
 	
 	@Before
 	public void beforeTestsRun() {
@@ -57,14 +58,14 @@ public class TestAwsFacade {
 	
 	@Test
 	public void createStacknameFromEnvAndFile() {
-		String stackName = aws.createStackName(new File(SUBNET_FILENAME),PROJECT, ENV);
+		String stackName = aws.createStackName(new File(SUBNET_FILENAME),projectAndEnv);
 		assertEquals("CfnAssistTestsubnet", stackName);
 	}
 	
 	@Test
 	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
 		InterruptedException, InvalidParameterException {
-		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), PROJECT, ENV);	
+		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), projectAndEnv);	
 		
 		String status = aws.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
@@ -89,7 +90,7 @@ public class TestAwsFacade {
 		parameters.add(envParameter);
 		
 		try {
-			aws.applyTemplate(new File(SUBNET_FILENAME), PROJECT, ENV , parameters);	
+			aws.applyTemplate(new File(SUBNET_FILENAME), projectAndEnv , parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {
@@ -107,7 +108,7 @@ public class TestAwsFacade {
 		parameters.add(envParameter);
 		
 		try {
-			aws.applyTemplate(new File(SUBNET_FILENAME), PROJECT, ENV , parameters);	
+			aws.applyTemplate(new File(SUBNET_FILENAME), projectAndEnv, parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {

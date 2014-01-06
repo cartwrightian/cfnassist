@@ -28,20 +28,20 @@ public class VpcRepository {
 		idCache = new HashMap<ProjectAndEnv, String>();
 	}
 	
-	public Vpc getCopyOfVpc(String project, String env) {
-		ProjectAndEnv key = new ProjectAndEnv(project,env);
-		if (idCache.containsKey(key)) {
-			String vpcId = idCache.get(key);
-			logger.info(String.format("Cache hit for %s, found VPC ID %s", key, vpcId));		
+	public Vpc getCopyOfVpc(ProjectAndEnv projectAndEnv) {
+		if (idCache.containsKey(projectAndEnv)) {
+			String vpcId = idCache.get(projectAndEnv);
+			logger.info(String.format("Cache hit for %s, found VPC ID %s", projectAndEnv, vpcId));		
 			return getVpcById(vpcId);
 		} else 
 		{
-			logger.info(String.format("Checking for TAGs %s:%s and %s:%s to find VPC", AwsFacade.PROJECT_TAG, project, AwsFacade.ENVIRONMENT_TAG, env));
-			Vpc result = findVpcUsingProjectAndEnv(key);
+			logger.info(String.format("Checking for TAGs %s:%s and %s:%s to find VPC", AwsFacade.PROJECT_TAG, 
+					projectAndEnv.getProject(), AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv()));
+			Vpc result = findVpcUsingProjectAndEnv(projectAndEnv);
 			if (result==null) {	
-				logger.error("Could not find VPC for " + key);
+				logger.error("Could not find VPC for " + projectAndEnv);
 			} else {
-				idCache.put(key, result.getVpcId());
+				idCache.put(projectAndEnv, result.getVpcId());
 			}
 			return result;
 		}	
@@ -87,9 +87,9 @@ public class VpcRepository {
 		return null;
 	}
 
-	public void setVpcIndexTag(String project, String env, String value) {
-		logger.info(String.format("Attempt to set %s tag to %s for %s and %s",AwsFacade.INDEX_TAG,value,project,env));
-		Vpc vpc = getCopyOfVpc(project, env);
+	public void setVpcIndexTag(ProjectAndEnv projAndEnv, String value) {
+		logger.info(String.format("Attempt to set %s tag to %s for%s",AwsFacade.INDEX_TAG, value, projAndEnv));
+		Vpc vpc = getCopyOfVpc(projAndEnv);
 		
 		List<Tag> tags = new LinkedList<Tag>();
 		List<String> resources = new LinkedList<String>();
@@ -103,8 +103,8 @@ public class VpcRepository {
 		ec2Client.createTags(createTagsRequest);
 	}
 
-	public String getVpcIndexTag(String project, String env) {
-		Vpc vpc = getCopyOfVpc(project, env);
+	public String getVpcIndexTag(ProjectAndEnv projAndEnv) {
+		Vpc vpc = getCopyOfVpc(projAndEnv);
 		return getTagByName(vpc, AwsFacade.INDEX_TAG);
 	}
 

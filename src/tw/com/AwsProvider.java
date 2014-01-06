@@ -12,13 +12,13 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public interface AwsProvider {
 	
 	List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException;
-	String applyTemplate(File file, String project, String env) throws FileNotFoundException, IOException, 
+	String applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, 
 	InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
-	String applyTemplate(File file, String project, String env,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, 
+	String applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, 
 		InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
-	ArrayList<String> applyTemplatesFromFolder(String folderPath, String project, String env) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException;
+	ArrayList<String> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException;
 
-	String createStackName(File templateFile, String project, String env);
+	String createStackName(File templateFile, ProjectAndEnv projAndEnv);
 	void deleteStack(String stackName);
 	
 	String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
@@ -26,7 +26,7 @@ public interface AwsProvider {
 	
 	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag) throws FileNotFoundException, IOException, InvalidParameterException;
 	
-	void resetDeltaIndex(String project, String env);
-	void setDeltaIndex(String project, String env, Integer index);
-	int getDeltaIndex(String project, String env);
+	void resetDeltaIndex(ProjectAndEnv projAndEnv);
+	void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index);
+	int getDeltaIndex(ProjectAndEnv projAndEnv);
 }

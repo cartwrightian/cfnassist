@@ -26,6 +26,8 @@ public class TestExecuteScriptsInOrderFromDir {
 	
 	private static String env = TestAwsFacade.ENV;
 	private static String proj = TestAwsFacade.PROJECT;
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj,env);
+
 	ArrayList<String> expectedList = new ArrayList<String>();
 	private AwsFacade aws;
 	//private int expectedSize;
@@ -36,6 +38,7 @@ public class TestExecuteScriptsInOrderFromDir {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 		Files.deleteIfExists(destFile);
+		aws.resetDeltaIndex(mainProjectAndEnv);
 	}
 	
 	@After
@@ -49,13 +52,13 @@ public class TestExecuteScriptsInOrderFromDir {
 				// nothing we can do now, but do want to try and delete the other stacks
 			}
 		}
-		aws.resetDeltaIndex(TestAwsFacade.PROJECT, env);
+		aws.resetDeltaIndex(mainProjectAndEnv);
 		Files.deleteIfExists(destFile);
 	}
 
 	@Test
 	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
-		ArrayList<String> stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, TestAwsFacade.PROJECT, env);
+		ArrayList<String> stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackNames.size());
 		
@@ -67,12 +70,12 @@ public class TestExecuteScriptsInOrderFromDir {
 		}
 		
 		// we are up to date, should not apply the files again
-		stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, TestAwsFacade.PROJECT, env);
+		stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
 		assertEquals(0, stackNames.size());
 		
 		// copy in extra files to dir
 		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
-		stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, TestAwsFacade.PROJECT, env);
+		stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
 		assertEquals(1, stackNames.size());
 		
 		expectedList.add(proj+env+"03createRoutes");

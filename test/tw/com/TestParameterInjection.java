@@ -26,6 +26,8 @@ public class TestParameterInjection {
 	private static String subnetStackName;
 	private static String env = TestAwsFacade.ENV;
 	private static String proj = TestAwsFacade.PROJECT;
+	private static ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj, env);
+
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
@@ -33,7 +35,7 @@ public class TestParameterInjection {
 		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 		vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
 		
-		subnetStackName = aws.applyTemplate(new File(TestAwsFacade.SUBNET_FILENAME), proj, env);
+		subnetStackName = aws.applyTemplate(new File(TestAwsFacade.SUBNET_FILENAME), mainProjectAndEnv);
 		String status = aws.waitForCreateFinished(subnetStackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 	}
@@ -45,7 +47,7 @@ public class TestParameterInjection {
 
 	@Test
 	public void shouldBeAbleToFetchValuesForParameters() throws FileNotFoundException, IOException, InvalidParameterException {
-		Vpc vpc = vpcRepository.getCopyOfVpc(proj, env);
+		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		
 		EnvironmentTag envTag = new EnvironmentTag(env);
 		List<Parameter> result = aws.fetchAutopopulateParametersFor(new File(ACL_FILENAME), envTag);
@@ -69,7 +71,7 @@ public class TestParameterInjection {
 	
 	@Test
 	public void autoInjectParameterTemplate() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {			
-		String aclStackName = aws.applyTemplate(new File(ACL_FILENAME), proj, env);	
+		String aclStackName = aws.applyTemplate(new File(ACL_FILENAME), mainProjectAndEnv);	
 		
 		String status = aws.waitForCreateFinished(aclStackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);

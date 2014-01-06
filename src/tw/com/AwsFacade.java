@@ -75,31 +75,31 @@ public class AwsFacade implements AwsProvider {
 	}
 	
 	@Override
-	public String applyTemplate(File file, String project, String env)
+	public String applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
-		return applyTemplate(file, project, env, new HashSet<Parameter>());
+		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public String applyTemplate(File file, String project, String env, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
-		logger.info(String.format("Applying template %s for env %s", file.getAbsoluteFile(), env));	
-		Vpc vpcForEnv = findVpcForEnv(project, env);
+	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
+		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		
 		String contents = loadFileContents(file);	
-		String stackName = createStackName(file, project, env);
+		String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
 		
 		String vpcId = vpcForEnv.getVpcId();
 		checkParameters(parameters);
-		addBuiltInParameters(env, parameters, vpcId);
-		EnvironmentTag envTag = new EnvironmentTag(env);
+		addBuiltInParameters(projAndEnv.getEnv(), parameters, vpcId);
+		EnvironmentTag envTag = new EnvironmentTag(projAndEnv.getEnv());
 		addAutoDiscoveryParameters(envTag, file, parameters);
 		
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
-		Collection<Tag> tags = createTags(project, env);
+		Collection<Tag> tags = createTags(projAndEnv.getProject(), projAndEnv.getEnv());
 		createStackRequest.setTags(tags);
 		
 		logger.info("Making createStack call to AWS");
@@ -128,13 +128,13 @@ public class AwsFacade implements AwsProvider {
 		addParameterTo(parameters, PARAMETER_VPC, vpcId);
 	}
 
-	private Vpc findVpcForEnv(String project, String env) throws InvalidParameterException {
-		Vpc vpcForEnv = vpcRepository.getCopyOfVpc(project, env);
+	private Vpc findVpcForEnv(ProjectAndEnv projAndEnv) throws InvalidParameterException {
+		Vpc vpcForEnv = vpcRepository.getCopyOfVpc(projAndEnv);
 		if (vpcForEnv==null) {
-			logger.error("Unable to find VPC tagged as environment:" + env);
-			throw new InvalidParameterException(env);
+			logger.error("Unable to find VPC tagged as environment:" + projAndEnv);
+			throw new InvalidParameterException(projAndEnv.toString());
 		}
-		logger.info(String.format("Found VPC %s corresponding to environment %s", vpcForEnv.getVpcId(), env));
+		logger.info(String.format("Found VPC %s corresponding to %s", vpcForEnv.getVpcId(), projAndEnv));
 		return vpcForEnv;
 	}
 
@@ -165,11 +165,11 @@ public class AwsFacade implements AwsProvider {
 		}	
 	}
 
-	public String createStackName(File file, String project, String env) {
+	public String createStackName(File file, ProjectAndEnv projAndEnv) {
 		// note: aws only allows [a-zA-Z][-a-zA-Z0-9]* in stacknames
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
-		return project+env+name;
+		return projAndEnv.getProject()+projAndEnv.getEnv()+name;
 	}
 	
 	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
@@ -271,7 +271,7 @@ public class AwsFacade implements AwsProvider {
 
 	@Override
 	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
-			String project, String env) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
+			ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
 		ArrayList<String> createdStacks = new ArrayList<>();
 		File folder = new File(folderPath);
 		if (!folder.isDirectory()) {
@@ -288,7 +288,7 @@ public class AwsFacade implements AwsProvider {
 			validateTemplate(file);
 		}
 		
-		int highestAppliedDelta = getDeltaIndex(project, env);
+		int highestAppliedDelta = getDeltaIndex(projAndEnv);
 		logger.info("Current index is " + highestAppliedDelta);
 		
 		logger.info("Validation ok, apply template files");
@@ -296,10 +296,10 @@ public class AwsFacade implements AwsProvider {
 			int deltaIndex = extractIndexFrom(file);
 			if (deltaIndex>highestAppliedDelta) {
 				logger.info(String.format("Apply template file: %s, index is %s",file.getAbsolutePath(), deltaIndex));
-				String stackName = applyTemplate(file, project, env);
+				String stackName = applyTemplate(file, projAndEnv);
 				logger.info("Create stack " + stackName);
 				createdStacks.add(stackName); 
-				setDeltaIndex(project, env, deltaIndex);
+				setDeltaIndex(projAndEnv, deltaIndex);
 			} else {
 				logger.info(String.format("Skipping file %s as already applied, index was %s", file.getAbsolutePath(), deltaIndex));
 			}		
@@ -324,18 +324,18 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
-	public void resetDeltaIndex(String project, String env) {
-		vpcRepository.setVpcIndexTag(project, env, "0");
+	public void resetDeltaIndex(ProjectAndEnv projAndEnv) {
+		vpcRepository.setVpcIndexTag(projAndEnv, "0");
 	}
 
 	@Override
-	public void setDeltaIndex(String project, String env, Integer index) {
-		vpcRepository.setVpcIndexTag(project, env, index.toString());
+	public void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) {
+		vpcRepository.setVpcIndexTag(projAndEnv, index.toString());
 	}
 
 	@Override
-	public int getDeltaIndex(String project, String env) {
-		String tag = vpcRepository.getVpcIndexTag(project, env);
+	public int getDeltaIndex(ProjectAndEnv projAndEnv) {
+		String tag = vpcRepository.getVpcIndexTag(projAndEnv);
 		return Integer.parseInt(tag);
 	}
 

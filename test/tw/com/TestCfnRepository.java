@@ -29,6 +29,8 @@ public class TestCfnRepository {
 	private AwsFacade awsProvider;
 	private File templateFile;
 	private Vpc otherVPC;
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
+	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 
 	@Before
 	public void beforeEachTestIsRun() {		
@@ -38,8 +40,8 @@ public class TestCfnRepository {
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
 		VpcRepository vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
-		mainTestVPC = vpcRepository.getCopyOfVpc(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
-		otherVPC = vpcRepository.getCopyOfVpc(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
+		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 
 		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
 		awsProvider = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
@@ -55,8 +57,8 @@ public class TestCfnRepository {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 	
 		//create two subnets with same logical id's but different VPCs		
-		String stackA = invokeSubnetCreation(cidrA, TestAwsFacade.ENV);	
-		String stackB = invokeSubnetCreation(cidrB,  EnvironmentSetupForTests.ALT_ENV);
+		String stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
+		String stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
 		awsProvider.waitForCreateFinished(stackA);
 		awsProvider.waitForCreateFinished(stackB);
 		
@@ -99,7 +101,7 @@ public class TestCfnRepository {
 		return result;
 	}
 
-	private String invokeSubnetCreation(String cidr, String env)
+	private String invokeSubnetCreation(String cidr, ProjectAndEnv projectAndEnv)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
@@ -107,7 +109,7 @@ public class TestCfnRepository {
 		cidrParameter.setParameterKey("cidr");
 		cidrParameter.setParameterValue(cidr);
 		parameters.add(cidrParameter);
-		return awsProvider.applyTemplate(templateFile, TestAwsFacade.PROJECT, env, parameters );
+		return awsProvider.applyTemplate(templateFile, projectAndEnv, parameters );
 	}
 
 

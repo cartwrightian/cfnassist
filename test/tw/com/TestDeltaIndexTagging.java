@@ -12,9 +12,8 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestDeltaIndexTagging {
-	
-	private static final String PROJECT = TestAwsFacade.PROJECT;
-	private static final String ENV = TestAwsFacade.ENV;
+
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsFacade aws;
 	private VpcRepository vpcRepos;
@@ -28,23 +27,23 @@ public class TestDeltaIndexTagging {
 
 	@Test
 	public void canSetAndResetTheDeltaIndexTagOnVpc() {
-		aws.resetDeltaIndex(PROJECT, ENV);
+		aws.resetDeltaIndex(mainProjectAndEnv);
 		
-		aws.setDeltaIndex(PROJECT, ENV, 42);
+		aws.setDeltaIndex(mainProjectAndEnv, 42);
 		int tagValue = getValueOfTag();
 		assertEquals(42, tagValue);	
-		int result = aws.getDeltaIndex(PROJECT, ENV);
+		int result = aws.getDeltaIndex(mainProjectAndEnv);
 		assertEquals(42, result);
 		
-		aws.resetDeltaIndex(PROJECT, ENV);
+		aws.resetDeltaIndex(mainProjectAndEnv);
 		tagValue = getValueOfTag();
 		assertEquals(0, tagValue);
-		result = aws.getDeltaIndex(PROJECT, ENV);
+		result = aws.getDeltaIndex(mainProjectAndEnv);
 		assertEquals(0, result);
 	}
 
 	private int getValueOfTag() {
-		Vpc vpc = vpcRepos.getCopyOfVpc(TestAwsFacade.PROJECT, ENV);
+		Vpc vpc = vpcRepos.getCopyOfVpc(mainProjectAndEnv);
 		List<Tag> tags = vpc.getTags();
 		for(Tag tag : tags) {
 			if (tag.getKey().equals(AwsFacade.INDEX_TAG)) {

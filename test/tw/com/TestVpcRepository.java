@@ -14,6 +14,10 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestVpcRepository {
 
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
+	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+	
+
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private VpcRepository repository;
 
@@ -25,7 +29,7 @@ public class TestVpcRepository {
 	
 	@Test
 	public void testFindMainVpcForTests() {
-		Vpc vpc = repository.getCopyOfVpc(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
+		Vpc vpc = repository.getCopyOfVpc(mainProjectAndEnv);
 		
 		assertNotNull(vpc);
 		
@@ -36,7 +40,7 @@ public class TestVpcRepository {
 
 	@Test
 	public void testFindOtherVpcForTests() {
-		Vpc vpc = repository.getCopyOfVpc(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+		Vpc vpc = repository.getCopyOfVpc(altProjectAndEnv);
 		
 		assertNotNull(vpc);
 		List<Tag> tags = vpc.getTags();	
@@ -47,12 +51,12 @@ public class TestVpcRepository {
 	
 	@Test
 	public void testCanSetAndResetIndexTagForVpc() {
-		repository.setVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV, "TESTVALUE");
-		String result = repository.getVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV);	
+		repository.setVpcIndexTag(mainProjectAndEnv, "TESTVALUE");
+		String result = repository.getVpcIndexTag(mainProjectAndEnv);	
 		assertEquals("TESTVALUE", result);
 		
-		repository.setVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV, "ANOTHERVALUE");
-		result = repository.getVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV);	
+		repository.setVpcIndexTag(mainProjectAndEnv, "ANOTHERVALUE");
+		result = repository.getVpcIndexTag(mainProjectAndEnv);	
 		assertEquals("ANOTHERVALUE", result);
 	}
 	

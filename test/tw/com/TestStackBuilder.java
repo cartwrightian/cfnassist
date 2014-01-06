@@ -23,6 +23,8 @@ public class TestStackBuilder {
 	private AwsProvider awsProvider;
 	private String env = TestAwsFacade.ENV;
 	private String project = TestAwsFacade.PROJECT;
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(project, env);
+
 	private AmazonCloudFormationClient cfnClient;
 
 	@Before
@@ -36,7 +38,7 @@ public class TestStackBuilder {
 	@Test
 	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {	
 		File templateFile = new File("src/cfnScripts/subnet.json");
-		StackBuilder builder = new StackBuilder(awsProvider, project, env , templateFile);
+		StackBuilder builder = new StackBuilder(awsProvider, mainProjectAndEnv, templateFile);
 		String stackName = builder.createStack();
 		
 		validateCreateAndDeleteWorks(stackName);
@@ -46,7 +48,7 @@ public class TestStackBuilder {
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 
 			WrongNumberOfStacksException, InterruptedException {
 		File templateFile = new File("src/cfnScripts/subnetWithParam.json");
-		StackBuilder builder = new StackBuilder(awsProvider, project, env, templateFile);
+		StackBuilder builder = new StackBuilder(awsProvider, mainProjectAndEnv, templateFile);
 		String stackName = builder.addParameter("zoneA", "eu-west-1a").createStack();
 		
 		validateCreateAndDeleteWorks(stackName);
