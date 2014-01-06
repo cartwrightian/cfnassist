@@ -65,6 +65,7 @@
 	
     <target name="clean">
         <delete dir="out"/>
+    	<delete dir="bin"/>
     </target>
 	
     <target depends="init" name="build">

@@ -20,8 +20,8 @@ import com.amazonaws.services.cloudformation.model.Tag;
 
 public class CfnRepository {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
-	private static final long STATUS_CHECK_INTERVAL_MILLIS = 500;
-	private static final long MAX_CHECK_INTERVAL_MILLIS = 4000;
+	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1000;
+	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 	private AmazonCloudFormationClient cfnClient;
 	
 	private StackResources stackResources;
@@ -137,7 +137,7 @@ public class CfnRepository {
 		logger.info("Update stack repository for stack: " + stackName);
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(stackName);
-		DescribeStacksResult results = cfnClient.describeStacks();
+		DescribeStacksResult results = cfnClient.describeStacks(describeStacksRequest);
 
 		populateEntries(results.getStacks());
 	}
@@ -162,10 +162,9 @@ public class CfnRepository {
 			}
 			stack = stacks.get(0);
 			status = stack.getStackStatus();	
-			logger.debug(String.format("Checking status of stack %s, status was %s", stackName, status));
+			logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was", stackName, status, pause));
 			if (pause<MAX_CHECK_INTERVAL_MILLIS) {
 				pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
-				logger.debug("Increase back off to " + pause);
 			}
 		}
 		logger.info(String.format("Stack status changed, status is now %s and reason was: '%s' ", status, stack.getStackStatusReason()));
