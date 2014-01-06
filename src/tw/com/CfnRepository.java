@@ -6,11 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.model.DescribeStackEventsRequest;
+import com.amazonaws.services.cloudformation.model.DescribeStackEventsResult;
 import com.amazonaws.services.cloudformation.model.DescribeStackResourcesRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStackResourcesResult;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
@@ -138,6 +141,7 @@ public class CfnRepository {
 		populateEntries(results.getStacks());
 	}
 	
+	// TODO polling back off logic
 	public String waitForStatusToChangeFrom(String stackName, StackStatus currentStatus) 
 			throws WrongNumberOfStacksException, InterruptedException {
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
@@ -145,6 +149,7 @@ public class CfnRepository {
 		
 		logger.info(String.format("Waiting for stack %s to change FROM status %s", stackName, currentStatus));
 		String status = currentStatus.toString();
+		Stack stack = null;
 		while (status.equals(currentStatus.toString())) {
 			Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
 			DescribeStacksResult result = cfnClient.describeStacks(describeStacksRequest);
@@ -154,11 +159,19 @@ public class CfnRepository {
 				logger.error("Wrong number of stacks found: " + numberOfStacks);
 				throw new WrongNumberOfStacksException(1, numberOfStacks);
 			}
-			status = stacks.get(0).getStackStatus();	
+			stack = stacks.get(0);
+			status = stack.getStackStatus();	
 			logger.debug(String.format("Checking status of stack %s, status was %s", stackName, status));
 		}
-		logger.info("Stack status changed, status is now " + status);
+		logger.info(String.format("Stack status changed, status is now %s and reason was: '%s' ", status, stack.getStackStatusReason()));
 		return status;
+	}
+
+	public List<StackEvent> getStackEvents(String stackName) {
+		DescribeStackEventsRequest request = new DescribeStackEventsRequest();
+		request.setStackName(stackName);
+		DescribeStackEventsResult result = cfnClient.describeStackEvents(request);
+		return result.getStackEvents();
 	}
 
 }

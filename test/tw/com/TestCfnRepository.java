@@ -38,8 +38,8 @@ public class TestCfnRepository {
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
 		VpcRepository vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
-		mainTestVPC = vpcRepository.findVpcForEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
-		otherVPC = vpcRepository.findVpcForEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+		mainTestVPC = vpcRepository.getCopyOfVpc(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
+		otherVPC = vpcRepository.getCopyOfVpc(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 
 		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
 		awsProvider = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());

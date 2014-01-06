@@ -25,7 +25,7 @@ public class TestVpcRepository {
 	
 	@Test
 	public void testFindMainVpcForTests() {
-		Vpc vpc = repository.findVpcForEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
+		Vpc vpc = repository.getCopyOfVpc(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
 		
 		assertNotNull(vpc);
 		
@@ -36,13 +36,24 @@ public class TestVpcRepository {
 
 	@Test
 	public void testFindOtherVpcForTests() {
-		Vpc vpc = repository.findVpcForEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+		Vpc vpc = repository.getCopyOfVpc(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 		
 		assertNotNull(vpc);
 		List<Tag> tags = vpc.getTags();	
 
 		List<Tag> expectedTags = createExpectedEc2TagList("AdditionalTest");		
 		assertTrue(tags.containsAll(expectedTags));
+	}
+	
+	@Test
+	public void testCanSetAndResetIndexTagForVpc() {
+		repository.setVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV, "TESTVALUE");
+		String result = repository.getVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV);	
+		assertEquals("TESTVALUE", result);
+		
+		repository.setVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV, "ANOTHERVALUE");
+		result = repository.getVpcIndexTag(TestAwsFacade.PROJECT, TestAwsFacade.ENV);	
+		assertEquals("ANOTHERVALUE", result);
 	}
 	
 	private List<Tag> createExpectedEc2TagList(String env) {

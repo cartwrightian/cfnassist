@@ -16,12 +16,17 @@ public interface AwsProvider {
 	InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
 	String applyTemplate(File file, String project, String env,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, 
 		InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
-	
+	ArrayList<String> applyTemplatesFromFolder(String folderPath, String project, String env) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException;
+
+	String createStackName(File templateFile, String project, String env);
 	void deleteStack(String stackName);
 	
 	String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
-	String createStackName(File templateFile, String project, String env);
+	
 	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag) throws FileNotFoundException, IOException, InvalidParameterException;
-	ArrayList<String> applyTemplatesFromFolder(String folderPath, String project, String env) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException;
+	
+	void resetDeltaIndex(String project, String env);
+	void setDeltaIndex(String project, String env, Integer index);
+	int getDeltaIndex(String project, String env);
 }

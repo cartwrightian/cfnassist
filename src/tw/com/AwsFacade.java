@@ -23,6 +23,7 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
@@ -33,12 +34,10 @@ import com.amazonaws.services.ec2.model.Vpc;
 public class AwsFacade implements AwsProvider {
 	private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
 	
-	// TODO things we need to ID
-	// id subnet by cidr & vpc
-	// id sg by TAG and VPC
-	
 	public static final String ENVIRONMENT_TAG = "CFN_ASSIST_ENV";
 	public static final String PROJECT_TAG = "CFN_ASSIST_PROJECT"; 
+	public static final String INDEX_TAG = "CFN_ASSIST_DELTA";
+	
 	private static final String PARAMETER_ENV = "env";
 	private static final String PARAMETER_VPC = "vpc";
 	private static final String PARAM_PREFIX = "::";
@@ -101,7 +100,7 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
 		Collection<Tag> tags = createTags(project, env);
-		createStackRequest.setTags(tags );
+		createStackRequest.setTags(tags);
 		
 		logger.info("Making createStack call to AWS");
 		cfnClient.createStack(createStackRequest);
@@ -130,7 +129,7 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	private Vpc findVpcForEnv(String project, String env) throws InvalidParameterException {
-		Vpc vpcForEnv = vpcRepository.findVpcForEnv(project, env);
+		Vpc vpcForEnv = vpcRepository.getCopyOfVpc(project, env);
 		if (vpcForEnv==null) {
 			logger.error("Unable to find VPC tagged as environment:" + env);
 			throw new InvalidParameterException(env);
@@ -174,22 +173,40 @@ public class AwsFacade implements AwsProvider {
 	}
 	
 	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
-		StackStatus inProgressStatus = StackStatus.CREATE_IN_PROGRESS;
-		return cfnRepository.waitForStatusToChangeFrom(stackName, inProgressStatus);
+		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS);
+		if (!result.equals(StackStatus.CREATE_COMPLETE.toString())) {
+			logger.error(String.format("Failed to create stack %s, status is %s", stackName, result));
+			logStackEvents(cfnRepository.getStackEvents(stackName));
+		}
+		return result;
 	}
 	
+	private void logStackEvents(List<StackEvent> stackEvents) {
+		for(StackEvent event : stackEvents) {
+			logger.info(event.toString());
+		}	
+	}
+
 	public String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus requiredStatus = StackStatus.DELETE_IN_PROGRESS;
+		String result = StackStatus.DELETE_FAILED.toString();
 		try {
-			return cfnRepository.waitForStatusToChangeFrom(stackName, requiredStatus);
+			result = cfnRepository.waitForStatusToChangeFrom(stackName, requiredStatus);
 		}
 		catch(com.amazonaws.AmazonServiceException awsException) {
 			String errorCode = awsException.getErrorCode();
 			if (errorCode.equals("ValidationError")) {
-				return StackStatus.DELETE_COMPLETE.toString();
-			}
-			return StackStatus.DELETE_FAILED.toString();
+				result = StackStatus.DELETE_COMPLETE.toString();
+			} else {
+				result = StackStatus.DELETE_FAILED.toString();
+			}		
 		}	
+		
+		if (!result.equals(StackStatus.DELETE_COMPLETE.toString())) {
+			logger.error("Failed to delete stack, status is " + result);
+			logStackEvents(cfnRepository.getStackEvents(stackName));
+		}
+		return result;
 	}
 	
 	public void deleteStack(String stackName) {
@@ -271,17 +288,56 @@ public class AwsFacade implements AwsProvider {
 			validateTemplate(file);
 		}
 		
+		int highestAppliedDelta = getDeltaIndex(project, env);
+		logger.info("Current index is " + highestAppliedDelta);
+		
 		logger.info("Validation ok, apply template files");
 		for(File file : files) {
-			logger.info("Apply template file: " +file.getAbsolutePath());
-			String stackName = applyTemplate(file, project, env);
-			logger.info("Create stack " + stackName);
-			createdStacks.add(stackName);
+			int deltaIndex = extractIndexFrom(file);
+			if (deltaIndex>highestAppliedDelta) {
+				logger.info(String.format("Apply template file: %s, index is %s",file.getAbsolutePath(), deltaIndex));
+				String stackName = applyTemplate(file, project, env);
+				logger.info("Create stack " + stackName);
+				createdStacks.add(stackName); 
+				setDeltaIndex(project, env, deltaIndex);
+			} else {
+				logger.info(String.format("Skipping file %s as already applied, index was %s", file.getAbsolutePath(), deltaIndex));
+			}		
 		}
 		
 		logger.info("All templates successfully invoked");
 		
 		return createdStacks;
 	}
+
+	private int extractIndexFrom(File file) {
+		StringBuilder indexPart = new StringBuilder();
+		String name = file.getName();
+		
+		int i = 0;
+		while(Character.isDigit(name.charAt(i)))  {
+			indexPart.append(name.charAt(i));
+			i++;
+		}
+		
+		return Integer.parseInt(indexPart.toString());
+	}
+
+	@Override
+	public void resetDeltaIndex(String project, String env) {
+		vpcRepository.setVpcIndexTag(project, env, "0");
+	}
+
+	@Override
+	public void setDeltaIndex(String project, String env, Integer index) {
+		vpcRepository.setVpcIndexTag(project, env, index.toString());
+	}
+
+	@Override
+	public int getDeltaIndex(String project, String env) {
+		String tag = vpcRepository.getVpcIndexTag(project, env);
+		return Integer.parseInt(tag);
+	}
+
 
 }
