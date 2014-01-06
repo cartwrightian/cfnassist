@@ -20,7 +20,8 @@ import com.amazonaws.services.cloudformation.model.Tag;
 
 public class CfnRepository {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
-	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1500;
+	private static final long STATUS_CHECK_INTERVAL_MILLIS = 500;
+	private static final long MAX_CHECK_INTERVAL_MILLIS = 4000;
 	private AmazonCloudFormationClient cfnClient;
 	
 	private StackResources stackResources;
@@ -146,12 +147,13 @@ public class CfnRepository {
 			throws WrongNumberOfStacksException, InterruptedException {
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(stackName);
+		long pause = STATUS_CHECK_INTERVAL_MILLIS;
 		
 		logger.info(String.format("Waiting for stack %s to change FROM status %s", stackName, currentStatus));
 		String status = currentStatus.toString();
 		Stack stack = null;
 		while (status.equals(currentStatus.toString())) {
-			Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
+			Thread.sleep(pause);
 			DescribeStacksResult result = cfnClient.describeStacks(describeStacksRequest);
 			List<Stack> stacks = result.getStacks();
 			int numberOfStacks = stacks.size();
@@ -162,6 +164,10 @@ public class CfnRepository {
 			stack = stacks.get(0);
 			status = stack.getStackStatus();	
 			logger.debug(String.format("Checking status of stack %s, status was %s", stackName, status));
+			if (pause<MAX_CHECK_INTERVAL_MILLIS) {
+				pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
+				logger.debug("Increase back off to " + pause);
+			}
 		}
 		logger.info(String.format("Stack status changed, status is now %s and reason was: '%s' ", status, stack.getStackStatusReason()));
 		return status;
