@@ -162,12 +162,12 @@ public class CfnRepository {
 			}
 			stack = stacks.get(0);
 			status = stack.getStackStatus();	
-			logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was", stackName, status, pause));
+			logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was %s", stackName, status, pause));
 			if (pause<MAX_CHECK_INTERVAL_MILLIS) {
 				pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
 			}
 		}
-		logger.info(String.format("Stack status changed, status is now %s and reason was: '%s' ", status, stack.getStackStatusReason()));
+		logger.info(String.format("Stack status changed, status is now %s and reason (if any) was: '%s' ", status, stack.getStackStatusReason()));
 		return status;
 	}
 

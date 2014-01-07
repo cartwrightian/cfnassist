@@ -8,6 +8,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -30,7 +31,6 @@ public class TestExecuteScriptsInOrderFromDir {
 
 	ArrayList<String> expectedList = new ArrayList<String>();
 	private AwsFacade aws;
-	//private int expectedSize;
 	
 	@Before 
 	public void beforeAllTestsRun() throws IOException {
@@ -43,14 +43,11 @@ public class TestExecuteScriptsInOrderFromDir {
 	
 	@After
 	public void afterAllTestsHaveRun() throws IOException {	
-		for(int i=expectedList.size()-1; i>=0; i--) {
-			String stackName = expectedList.get(i);
-			aws.deleteStack(stackName);
-			try {
-				aws.waitForDeleteFinished(stackName);
-			} catch (WrongNumberOfStacksException | InterruptedException e) {
-				// nothing we can do now, but do want to try and delete the other stacks
-			}
+		try {
+			aws.rollbackTemplatesInFolder(FOLDER_PATH, mainProjectAndEnv);
+		} catch (InvalidParameterException e) {
+			System.console().writer().write("Unable to properly rollback");
+			e.printStackTrace();
 		}
 		aws.resetDeltaIndex(mainProjectAndEnv);
 		Files.deleteIfExists(destFile);
@@ -58,7 +55,7 @@ public class TestExecuteScriptsInOrderFromDir {
 
 	@Test
 	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
-		ArrayList<String> stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
+		List<String> stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackNames.size());
 		
@@ -80,6 +77,13 @@ public class TestExecuteScriptsInOrderFromDir {
 		
 		expectedList.add(proj+env+"03createRoutes");
 		assertEquals(expectedList.get(2), stackNames.get(0));
+		
+		stackNames = aws.rollbackTemplatesInFolder(FOLDER_PATH, mainProjectAndEnv);
+		assertEquals(3, stackNames.size());
+		assert(stackNames.containsAll(expectedList));
+		
+		int finalIndex = aws.getDeltaIndex(mainProjectAndEnv);
+		assertEquals(0, finalIndex);
 	}
 
 	private void createExpectedNames() {

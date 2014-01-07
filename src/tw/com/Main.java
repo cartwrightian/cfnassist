@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-
-import javax.management.BadAttributeValueExpException;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -25,34 +25,36 @@ import com.amazonaws.regions.RegionUtils;
 
 public class Main {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
-	private Option project;
-	private Option env;
-	private Option file;
-	private Option dir;
-	private Option region;
-	private Options options;
+	private Option projectParam;
+	private Option envParam;
+	private Option fileParam;
+	private Option dirParam;
+	private Option regionParam;
+	private Option resetParam;
+	private Option rollBackParam;
+	private Options commandLineOptions;
 	private String[] args;
 	private String executableName;
-	private Option reset;
 
-	
 	@SuppressWarnings("static-access")
 	Main(String[] args) {
 		this.args = args;
 		executableName = "cfnassist";
-		options = new Options();
-		project = OptionBuilder.withArgName("project").hasArg().withDescription("Name of the cfnassist project").create("project");
-		options.addOption(project);
-		env = OptionBuilder.withArgName("env").hasArg().withDescription("Name of cfnassit environment").create("env");
-		options.addOption(env);
-		file = OptionBuilder.withArgName("file").hasArg().withDescription("The template file to apply").create("file");
-		options.addOption(file);
-		dir = OptionBuilder.withArgName("dir").hasArg().withDescription("The directory/folder containing delta templates to apply").create("dir");
-		options.addOption(dir);
-		region = OptionBuilder.withArgName("region").hasArg().withDescription("AWS Region name").create("region");
-		options.addOption(region);
-		reset = OptionBuilder.withArgName("reset").withDescription("Resets the Delta Tag "+AwsFacade.INDEX_TAG).create("reset");
-		options.addOption(reset);
+		commandLineOptions = new Options();
+		projectParam = OptionBuilder.withArgName("project").hasArg().withDescription("Name of the cfnassist project").create("project");
+		commandLineOptions.addOption(projectParam);
+		envParam = OptionBuilder.withArgName("env").hasArg().withDescription("Name of cfnassit environment").create("env");
+		commandLineOptions.addOption(envParam);
+		fileParam = OptionBuilder.withArgName("file").hasArg().withDescription("The template file to apply").create("file");
+		commandLineOptions.addOption(fileParam);
+		dirParam = OptionBuilder.withArgName("dir").hasArg().withDescription("The directory/folder containing delta templates to apply").create("dir");
+		commandLineOptions.addOption(dirParam);
+		regionParam = OptionBuilder.withArgName("region").hasArg().withDescription("AWS Region name").create("region");
+		commandLineOptions.addOption(regionParam);
+		resetParam = OptionBuilder.withArgName("reset").withDescription("Warning: Resets the Delta Tag "+AwsFacade.INDEX_TAG).create("reset");
+		commandLineOptions.addOption(resetParam);
+		rollBackParam = OptionBuilder.withArgName("rollback").hasArg().withDescription("Warning: Rollback all current deltas").create("rollback");
+		commandLineOptions.addOption(rollBackParam);
 	}
 	
 	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
@@ -62,31 +64,43 @@ public class Main {
 
 	private void parse() throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
 		CommandLineParser parser = new BasicParser();	
-		CommandLine cmd = parser.parse( options, args);
+		CommandLine commandLine = parser.parse(commandLineOptions, args);
 		
 		HelpFormatter formatter = new HelpFormatter();
 		
-		checkForArgument(cmd, formatter, project);	
-		checkForArgument(cmd, formatter, env);
-		checkForArgument(cmd, formatter, region);
-		checkForOneOfArgument(cmd, formatter, dir, file, reset);	
+		String project = checkForArgument(commandLine, formatter, projectParam, "Y");	
+		String env = checkForArgument(commandLine, formatter, envParam, "X");
+		String region = checkForArgument(commandLine, formatter, regionParam, "EC2_REGION");
+		List<Option> exclusives = new LinkedList<Option>();
+		exclusives.add(dirParam);
+		exclusives.add(fileParam);
+		exclusives.add(resetParam);
+		exclusives.add(rollBackParam);
+		checkForOneOfArgument(commandLine, formatter, exclusives);	
 		
-		Region awsRegion = populateRegion(cmd, formatter);
+		Region awsRegion = populateRegion(region);
 		
-		ProjectAndEnv projectAndEnv = new ProjectAndEnv(cmd.getOptionValue(project.getArgName()), cmd.getOptionValue(env.getArgName()));
+		ProjectAndEnv projectAndEnv = new ProjectAndEnv(project, env);
 		logger.info("Invoking for " + projectAndEnv);
 		logger.info("Region set to " + awsRegion);
 		
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		AwsFacade aws = new AwsFacade(credentialsProvider, awsRegion);
 		
-		if (cmd.hasOption(dir.getArgName())) {
-			invokeForDir(aws, projectAndEnv, cmd.getOptionValue(dir.getArgName()));
-		} else if (cmd.hasOption(file.getArgName())) {
-			invokeForFile(aws, projectAndEnv, cmd.getOptionValue(file.getArgName()));
-		} else if (cmd.hasOption(reset.getArgName())) {
+		if (commandLine.hasOption(dirParam.getArgName())) {
+			invokeForDir(aws, projectAndEnv, commandLine.getOptionValue(dirParam.getArgName()));
+		} else if (commandLine.hasOption(fileParam.getArgName())) {
+			invokeForFile(aws, projectAndEnv, commandLine.getOptionValue(fileParam.getArgName()));
+		} else if (commandLine.hasOption(resetParam.getArgName())) {
 			invokeReset(aws, projectAndEnv);
+		} else if (commandLine.hasOption(rollBackParam.getArgName())) {
+			invokeRollback(aws, projectAndEnv, commandLine.getOptionValue(rollBackParam.getArgName()));
 		}
+	}
+
+	private void invokeRollback(AwsFacade aws, ProjectAndEnv projectAndEnv, String folder) throws InvalidParameterException {
+		logger.info("Invoking rollback for " + projectAndEnv);
+		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
 	}
 
 	private void invokeReset(AwsFacade aws, ProjectAndEnv projectAndEnv) {
@@ -94,8 +108,7 @@ public class Main {
 		aws.resetDeltaIndex(projectAndEnv);	
 	}
 
-	private Region populateRegion(CommandLine cmd, HelpFormatter formatter) throws MissingArgumentException {
-		String regionName = cmd.getOptionValue(region.getArgName());
+	private Region populateRegion(String regionName) throws MissingArgumentException {
 		logger.info("Check for region using name "+regionName);
 		Region result = RegionUtils.getRegion(regionName);
 		if (result==null) {
@@ -120,25 +133,38 @@ public class Main {
 		}
 	}
 
-	private void checkForOneOfArgument(CommandLine cmd,
-			HelpFormatter formatter, Option opt1, Option opt2, Option opt3) throws MissingArgumentException {
-		boolean flagA = cmd.hasOption(opt1.getArgName());
-		boolean flagB = cmd.hasOption(opt2.getArgName());
-		boolean flagC = cmd.hasOption(opt3.getArgName());
-		if (!(flagA ^ flagB ^ flagC)) {
-			String msg = String.format("Please give one only of options %s, %s or %s", opt1.getArgName(), opt2.getArgName(), opt3.getArgName());
+	private void checkForOneOfArgument(CommandLine cmd, HelpFormatter formatter, List<Option> exclusives) throws MissingArgumentException {
+		int count = 0;
+		StringBuilder names = new StringBuilder();
+		for(Option option : exclusives) {
+			names.append(option.getArgName()).append(" ");
+			if (cmd.hasOption(option.getArgName())) {
+				count++;
+			}	
+		}
+
+		if (count!=1) {
+			String msg = "Please supply only one of " + names.toString();
 			logger.error(msg);	
-			formatter.printHelp( executableName, options );		
+			formatter.printHelp(executableName, commandLineOptions);
 			throw new MissingArgumentException(msg);
 		}	
 	}
 
-	private void checkForArgument(CommandLine cmd, HelpFormatter formatter,
-			Option option) throws MissingArgumentException {
-		if (!cmd.hasOption(option.getArgName())) {
-			logger.error("Missing argument " + option.getArgName());	
-			formatter.printHelp( executableName, options );		
-			throw new MissingArgumentException(option);
+	private String checkForArgument(CommandLine cmd, HelpFormatter formatter,
+			Option option, String environmentalVar) throws MissingArgumentException {
+		String argName = option.getArgName();
+		logger.debug("Checking for arg " + argName);
+		if (cmd.hasOption(argName)) {
+			return cmd.getOptionValue(argName);
 		}
+		
+		logger.info(String.format("Argument not given %s, try environmental var %s", argName, environmentalVar));
+		String fromEnv = System.getenv(environmentalVar);
+		if (fromEnv!=null) {
+			return fromEnv;
+		}
+		formatter.printHelp( executableName, commandLineOptions );		
+		throw new MissingArgumentException(option);	
 	}
 }

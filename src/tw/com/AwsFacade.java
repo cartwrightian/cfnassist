@@ -8,6 +8,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -212,7 +213,7 @@ public class AwsFacade implements AwsProvider {
 	public void deleteStack(String stackName) {
 		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
 		deleteStackRequest.setStackName(stackName);
-		
+		logger.info("Requesting deletion of stack " + stackName);
 		cfnClient.deleteStack(deleteStackRequest);	
 	}
 
@@ -273,15 +274,9 @@ public class AwsFacade implements AwsProvider {
 	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
 		ArrayList<String> createdStacks = new ArrayList<>();
-		File folder = new File(folderPath);
-		if (!folder.isDirectory()) {
-			throw new InvalidParameterException(folderPath + " is not a directory");
-		}
+		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
-		
-		FilenameFilter jsonFilter = new JsonExtensionFilter();
-		File[] files = folder.listFiles(jsonFilter);
-		Arrays.sort(files); // place in lexigraphical order
+		List<File> files = loadFiles(folder);
 		
 		logger.info("Attempt to Validate all files");
 		for(File file : files) {
@@ -308,6 +303,50 @@ public class AwsFacade implements AwsProvider {
 		logger.info("All templates successfully invoked");
 		
 		return createdStacks;
+	}
+
+	private List<File> loadFiles(File folder) {
+		FilenameFilter jsonFilter = new JsonExtensionFilter();
+		File[] files = folder.listFiles(jsonFilter);
+		Arrays.sort(files); // place in lexigraphical order
+		return Arrays.asList(files);
+	}
+
+	private File validFolder(String folderPath)
+			throws InvalidParameterException {
+		File folder = new File(folderPath);
+		if (!folder.isDirectory()) {
+			throw new InvalidParameterException(folderPath + " is not a directory");
+		}
+		return folder;
+	}
+	
+	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException {
+		List<String> stackNames = new LinkedList<String>();
+		File folder = validFolder(folderPath);
+		List<File> files = loadFiles(folder);
+		Collections.reverse(files); // delete in reverse direction
+		
+		int highestAppliedDelta = getDeltaIndex(projAndEnv);
+		logger.info("Current delta is " + highestAppliedDelta);
+		for(File file : files) {
+			int deltaIndex = extractIndexFrom(file);
+			String stackName = createStackName(file, projAndEnv);
+			if (deltaIndex>highestAppliedDelta) {
+				logger.warn(String.format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
+			} else {
+				int newDelta = deltaIndex-1;
+				logger.info(String.format("About to delete stackname %s, new delta will be %s", stackName, newDelta));
+				deleteStack(stackName);
+				logger.info("Deleted stack " + stackName);
+				stackNames.add(stackName);
+				if (newDelta>=0) {
+					logger.info("Resetting delta to " + newDelta);
+					this.setDeltaIndex(projAndEnv, newDelta);
+				}
+			}
+		}
+		return stackNames;
 	}
 
 	private int extractIndexFrom(File file) {
@@ -338,6 +377,7 @@ public class AwsFacade implements AwsProvider {
 		String tag = vpcRepository.getVpcIndexTag(projAndEnv);
 		return Integer.parseInt(tag);
 	}
+
 
 
 }
