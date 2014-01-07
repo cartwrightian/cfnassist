@@ -33,7 +33,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	private AwsFacade aws;
 	
 	@Before 
-	public void beforeAllTestsRun() throws IOException {
+	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
@@ -42,7 +42,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	}
 	
 	@After
-	public void afterAllTestsHaveRun() throws IOException {	
+	public void afterAllTestsHaveRun() throws IOException, CannotFindVpcException {	
 		try {
 			aws.rollbackTemplatesInFolder(FOLDER_PATH, mainProjectAndEnv);
 		} catch (InvalidParameterException e) {
@@ -54,7 +54,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	}
 
 	@Test
-	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
+	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException, CannotFindVpcException {
 		List<String> stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackNames.size());

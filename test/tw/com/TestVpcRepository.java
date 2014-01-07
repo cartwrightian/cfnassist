@@ -16,7 +16,6 @@ public class TestVpcRepository {
 
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
-	
 
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private VpcRepository repository;
@@ -50,7 +49,7 @@ public class TestVpcRepository {
 	}
 	
 	@Test
-	public void testCanSetAndResetIndexTagForVpc() {
+	public void testCanSetAndResetIndexTagForVpc() throws CannotFindVpcException {
 		repository.setVpcIndexTag(mainProjectAndEnv, "TESTVALUE");
 		String result = repository.getVpcIndexTag(mainProjectAndEnv);	
 		assertEquals("TESTVALUE", result);

@@ -16,7 +16,7 @@ public interface AwsProvider {
 	InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
 	String applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, 
 		InvalidParameterException, WrongNumberOfStacksException, InterruptedException;
-	ArrayList<String> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException;
+	ArrayList<String> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException;
 
 	String createStackName(File templateFile, ProjectAndEnv projAndEnv);
 	void deleteStack(String stackName);
@@ -26,7 +26,8 @@ public interface AwsProvider {
 	
 	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag) throws FileNotFoundException, IOException, InvalidParameterException;
 	
-	void resetDeltaIndex(ProjectAndEnv projAndEnv);
-	void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index);
-	int getDeltaIndex(ProjectAndEnv projAndEnv);
+	void resetDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException;
+	void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) throws CannotFindVpcException;
+	int getDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException;
+	public void initTags(ProjectAndEnv projectAndEnv, String vpcId) throws TagsAlreadyInit, CannotFindVpcException;
 }

@@ -39,10 +39,10 @@ public class EnvironmentSetupForTests {
 		return ec2Client;
 	}
 	
-	public static List<com.amazonaws.services.ec2.model.Tag> createExpectedEc2TagList() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+//	public static List<com.amazonaws.services.ec2.model.Tag> createExpectedEc2TagList() {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
 	
 
 }

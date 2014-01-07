@@ -20,7 +20,7 @@ import com.amazonaws.services.ec2.model.Vpc;
 public class VpcRepository {
 	private static final Logger logger = LoggerFactory.getLogger(VpcRepository.class);
 	private static AmazonEC2Client ec2Client;
-	private HashMap<ProjectAndEnv, String> idCache;
+	private HashMap<ProjectAndEnv, String> idCache; // used to avoid search by tag unless needed
 	
 	public VpcRepository(AWSCredentialsProvider credentialsProvider, Region region) {
 		ec2Client = new AmazonEC2Client(credentialsProvider);
@@ -87,25 +87,52 @@ public class VpcRepository {
 		return null;
 	}
 
-	public void setVpcIndexTag(ProjectAndEnv projAndEnv, String value) {
+	public void setVpcIndexTag(ProjectAndEnv projAndEnv, String value) throws CannotFindVpcException {
 		logger.info(String.format("Attempt to set %s tag to %s for%s",AwsFacade.INDEX_TAG, value, projAndEnv));
 		Vpc vpc = getCopyOfVpc(projAndEnv);
 		
-		List<Tag> tags = new LinkedList<Tag>();
-		List<String> resources = new LinkedList<String>();
+		if (vpc==null) {
+			throw new CannotFindVpcException(projAndEnv);
+		}
 		
+		List<Tag> tags = new LinkedList<Tag>();	
 		Tag newTag = new Tag(AwsFacade.INDEX_TAG, value);
 		tags.add(newTag);
+		String vpcId = vpc.getVpcId();
 		
-		resources.add(vpc.getVpcId());
+		setTags(vpcId, tags);
+	}
+
+	private void setTags(String vpcId, List<Tag> tags) {
+		List<String> resources = new LinkedList<String>();	
+		resources.add(vpcId);
 		CreateTagsRequest createTagsRequest = new CreateTagsRequest(resources , tags);
 		
 		ec2Client.createTags(createTagsRequest);
 	}
 
-	public String getVpcIndexTag(ProjectAndEnv projAndEnv) {
+	public String getVpcIndexTag(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
 		Vpc vpc = getCopyOfVpc(projAndEnv);
+		if (vpc==null) {
+			throw new CannotFindVpcException(projAndEnv);
+		}
 		return getTagByName(vpc, AwsFacade.INDEX_TAG);
 	}
 
+	public void initAllTags(String vpcId, ProjectAndEnv projectAndEnv) throws CannotFindVpcException {	
+		Vpc vpc = getVpcById(vpcId);
+		if (vpc==null) {
+			throw new CannotFindVpcException(vpcId);
+		}
+		logger.info("Initialise tags for VPC " + vpcId);
+		List<Tag> tags = new LinkedList<Tag>();	
+		Tag indexTag = new Tag(AwsFacade.INDEX_TAG, "0");
+		Tag projectTag = new Tag(AwsFacade.PROJECT_TAG, projectAndEnv.getProject());
+		Tag envTag = new Tag(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv());
+		tags.add(indexTag);
+		tags.add(projectTag);
+		tags.add(envTag);
+		
+		setTags(vpcId, tags);	
+	}
 }

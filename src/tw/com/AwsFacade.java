@@ -100,7 +100,7 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
-		Collection<Tag> tags = createTags(projAndEnv.getProject(), projAndEnv.getEnv());
+		Collection<Tag> tags = createTagsForStack(projAndEnv.getProject(), projAndEnv.getEnv());
 		createStackRequest.setTags(tags);
 		
 		logger.info("Making createStack call to AWS");
@@ -110,7 +110,7 @@ public class AwsFacade implements AwsProvider {
 		return stackName;
 	}
 
-	private Collection<Tag> createTags(String project, String env) {
+	private Collection<Tag> createTagsForStack(String project, String env) {
 		Collection<Tag> tags = new ArrayList<Tag>();
 		tags.add(createTag(PROJECT_TAG, project));
 		tags.add(createTag(ENVIRONMENT_TAG, env));
@@ -272,7 +272,7 @@ public class AwsFacade implements AwsProvider {
 
 	@Override
 	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
+			ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException {
 		ArrayList<String> createdStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
@@ -321,7 +321,7 @@ public class AwsFacade implements AwsProvider {
 		return folder;
 	}
 	
-	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException {
+	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, CannotFindVpcException {
 		List<String> stackNames = new LinkedList<String>();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -363,21 +363,28 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
-	public void resetDeltaIndex(ProjectAndEnv projAndEnv) {
+	public void resetDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, "0");
 	}
 
 	@Override
-	public void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) {
+	public void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, index.toString());
 	}
 
 	@Override
-	public int getDeltaIndex(ProjectAndEnv projAndEnv) {
+	public int getDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
 		String tag = vpcRepository.getVpcIndexTag(projAndEnv);
 		return Integer.parseInt(tag);
 	}
 
-
+	public void initTags(ProjectAndEnv projectAndEnv, String vpcId) throws TagsAlreadyInit, CannotFindVpcException {
+		Vpc result = vpcRepository.getCopyOfVpc(projectAndEnv);
+		if (result!=null) {
+			logger.error(String.format("Managed to find vpc already present with tags %s and id %s", projectAndEnv, result.getVpcId()));
+			throw new TagsAlreadyInit(vpcId);
+		}	
+		vpcRepository.initAllTags(vpcId, projectAndEnv);	
+	}
 
 }
