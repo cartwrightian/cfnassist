@@ -68,8 +68,8 @@ public class Main {
 		
 		HelpFormatter formatter = new HelpFormatter();
 		
-		String project = checkForArgument(commandLine, formatter, projectParam, "Y");	
-		String env = checkForArgument(commandLine, formatter, envParam, "X");
+		String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG);	
+		String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG);
 		String region = checkForArgument(commandLine, formatter, regionParam, "EC2_REGION");
 		List<Option> exclusives = new LinkedList<Option>();
 		exclusives.add(dirParam);
