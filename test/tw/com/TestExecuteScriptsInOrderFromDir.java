@@ -54,7 +54,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	}
 
 	@Test
-	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException, CannotFindVpcException {
+	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException, CannotFindVpcException, StackCreateFailed {
 		List<String> stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackNames.size());

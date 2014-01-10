@@ -48,7 +48,7 @@ public class TestCfnRepository {
 	}
 	
 	@Test
-	public void shouldFindResourceFromCorrectVPC() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {	
+	public void shouldFindResourceFromCorrectVPC() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {	
 		String vpcIdA = mainTestVPC.getVpcId();
 		String vpcIdB = otherVPC.getVpcId();
 		String cidrA = "10.0.10.0/24";
@@ -103,7 +103,7 @@ public class TestCfnRepository {
 
 	private String invokeSubnetCreation(String cidr, ProjectAndEnv projectAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
 		Parameter cidrParameter = new Parameter();
 		cidrParameter.setParameterKey("cidr");

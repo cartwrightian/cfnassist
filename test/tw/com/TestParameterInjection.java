@@ -30,7 +30,7 @@ public class TestParameterInjection {
 
 	
 	@BeforeClass
-	public static void beforeAllTestsRun() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+	public static void beforeAllTestsRun() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
 		vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
@@ -70,7 +70,7 @@ public class TestParameterInjection {
 	}
 	
 	@Test
-	public void autoInjectParameterTemplate() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {			
+	public void autoInjectParameterTemplate() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {			
 		String aclStackName = aws.applyTemplate(new File(ACL_FILENAME), mainProjectAndEnv);	
 		
 		String status = aws.waitForCreateFinished(aclStackName);

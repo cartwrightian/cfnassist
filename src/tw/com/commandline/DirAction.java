@@ -13,6 +13,7 @@ import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
 import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
+import tw.com.StackCreateFailed;
 import tw.com.WrongNumberOfStacksException;
 
 public class DirAction implements CommandLineAction {
@@ -36,7 +37,7 @@ public class DirAction implements CommandLineAction {
 		return option.getArgName();
 	}
 
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folderPath) throws FileNotFoundException, InvalidParameterException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException {
+	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folderPath) throws FileNotFoundException, InvalidParameterException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
 		ArrayList<String> stackNames = aws.applyTemplatesFromFolder(folderPath, projectAndEnv);
 		logger.info(String.format("Created %s stacks", stackNames.size()));
 		for(String name : stackNames) {

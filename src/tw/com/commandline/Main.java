@@ -21,6 +21,7 @@ import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
 import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
+import tw.com.StackCreateFailed;
 import tw.com.TagsAlreadyInit;
 import tw.com.WrongNumberOfStacksException;
 
@@ -69,12 +70,12 @@ public class Main {
 		commandLineOptions.addOption(initAction.getOption());
 	}
 	
-	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
+	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed {
 		Main main = new Main(args);
 		main.parse();
 	}
 
-	private void parse() throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
+	private void parse() throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed {
 		CommandLineParser parser = new BasicParser();	
 		CommandLine commandLine = parser.parse(commandLineOptions, args);
 		

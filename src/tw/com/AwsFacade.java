@@ -78,11 +78,11 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public String applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		
@@ -173,11 +173,12 @@ public class AwsFacade implements AwsProvider {
 		return projAndEnv.getProject()+projAndEnv.getEnv()+name;
 	}
 	
-	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
+	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS);
 		if (!result.equals(StackStatus.CREATE_COMPLETE.toString())) {
 			logger.error(String.format("Failed to create stack %s, status is %s", stackName, result));
 			logStackEvents(cfnRepository.getStackEvents(stackName));
+			throw new StackCreateFailed(stackName);
 		}
 		return result;
 	}
@@ -272,7 +273,7 @@ public class AwsFacade implements AwsProvider {
 
 	@Override
 	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException {
+			ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
 		ArrayList<String> createdStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);

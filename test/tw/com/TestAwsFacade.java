@@ -64,7 +64,7 @@ public class TestAwsFacade {
 	
 	@Test
 	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
-		InterruptedException, InvalidParameterException {
+		InterruptedException, InvalidParameterException, StackCreateFailed {
 		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), projectAndEnv);	
 		
 		String status = aws.waitForCreateFinished(stackName);
@@ -81,7 +81,7 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
+	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		Collection<Parameter> parameters = new HashSet<Parameter>();
 		
 		Parameter envParameter = new Parameter();
@@ -99,7 +99,7 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException {
+	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		Collection<Parameter> parameters = new HashSet<Parameter>();
 		
 		Parameter envParameter = new Parameter();

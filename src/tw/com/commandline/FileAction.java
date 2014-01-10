@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
 import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
+import tw.com.StackCreateFailed;
 import tw.com.WrongNumberOfStacksException;
 
 public class FileAction implements CommandLineAction {
@@ -34,7 +35,7 @@ public class FileAction implements CommandLineAction {
 		return option.getArgName();
 	}
 	
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		File templateFile = new File(filename);
 		String stackName = aws.applyTemplate(templateFile, projectAndEnv);
 		logger.info("Created stack name "+stackName);

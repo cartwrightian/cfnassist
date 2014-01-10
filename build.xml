@@ -39,12 +39,16 @@
 		<pathelement location="lib/commons-io-2.4/commons-io-2.4.jar"/>
 		<pathelement location="lib/commons-cli-1.2/commons-cli-1.2.jar"/>
 	</path>
+	<path id="ant_libs">
+		<pathelement location="lib/apache-ant-1.9.3/lib/ant.jar"/>
+	</path>
     <path id="cfnassist.classpath">
         <pathelement location="out"/>
         <path refid="JUnit 4.libraryclasspath"/>
         <path refid="aws_sdk_lib"/>
     	<path refid="logging_libs"/>
     	<path refid="apacheCommons"/>
+    	<path refid="ant_libs"/>
     </path>
 	
     <target name="init">
@@ -134,5 +138,23 @@
 	    	<copy file="conf/logback.xml" todir="bin/conf"/>
 	</target>
 	
+	<target name="testAnt" depends="dist">
+		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
+			<classpath>
+				<pathelement location="bin/cfnassist.jar"/>
+						<path refid="aws_sdk_lib"/>
+				    	<path refid="logging_libs"/>
+				    	<path refid="apacheCommons"/>
+			</classpath>
+		</taskdef>
+		
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<Templates target="src/cfnScripts/subnet.json"/>
+		</cfnassist>
+		
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+		    <Templates target="src/cfnScripts/orderedScripts/"/>
+		</cfnassist>
+	</target>
 	
 </project>

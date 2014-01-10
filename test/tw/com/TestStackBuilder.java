@@ -36,7 +36,7 @@ public class TestStackBuilder {
 	}
 
 	@Test
-	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException {	
+	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
 		File templateFile = new File("src/cfnScripts/subnet.json");
 		StackBuilder builder = new StackBuilder(awsProvider, mainProjectAndEnv, templateFile);
 		String stackName = builder.createStack();
@@ -46,7 +46,7 @@ public class TestStackBuilder {
 	
 	@Test
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 
-			WrongNumberOfStacksException, InterruptedException {
+			WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		File templateFile = new File("src/cfnScripts/subnetWithParam.json");
 		StackBuilder builder = new StackBuilder(awsProvider, mainProjectAndEnv, templateFile);
 		String stackName = builder.addParameter("zoneA", "eu-west-1a").createStack();
@@ -55,7 +55,7 @@ public class TestStackBuilder {
 	}
 
 	private void validateCreateAndDeleteWorks(String stackName)
-			throws WrongNumberOfStacksException, InterruptedException {
+			throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		String status = awsProvider.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		

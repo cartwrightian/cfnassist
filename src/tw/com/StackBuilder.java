@@ -30,7 +30,7 @@ public class StackBuilder  {
 		return this;	
 	}
 
-	public String createStack() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException {
+	public String createStack() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		return awsProvider.applyTemplate(templateFile, projectAndEnv, parameters);
 	}
 
