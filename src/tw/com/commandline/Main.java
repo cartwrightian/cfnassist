@@ -2,6 +2,9 @@ package tw.com.commandline;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,6 +31,7 @@ import tw.com.WrongNumberOfStacksException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 public class Main {
 	private static final String ENV_VAR_EC2_REGION = "EC2_REGION";
@@ -43,21 +47,17 @@ public class Main {
 	private Options commandLineOptions;
 	private String[] args;
 	private String executableName;
+	private Option keysValuesParam;
 
-	@SuppressWarnings("static-access")
 	Main(String[] args) {
 		this.args = args;
 		executableName = "cfnassist";
 		commandLineOptions = new Options();
-		projectParam = OptionBuilder.withArgName("project").hasArg().
-				withDescription("Name of the cfnassist project, or use env var: " + AwsFacade.PROJECT_TAG).create("project");
-		commandLineOptions.addOption(projectParam);
-		envParam = OptionBuilder.withArgName("env").hasArg().
-				withDescription("Name of cfnassit environment, or use env var: " + AwsFacade.ENVIRONMENT_TAG).create("env");
-		commandLineOptions.addOption(envParam);
-		regionParam = OptionBuilder.withArgName("region").hasArg().
-				withDescription("AWS Region name, or use env var: "+ENV_VAR_EC2_REGION).create("region");
-		commandLineOptions.addOption(regionParam);
+		createOptions();
+		createActions();
+	}
+
+	private void createActions() {
 		fileAction = new FileAction();
 		commandLineOptions.addOption(fileAction.getOption());
 		dirAction = new DirAction(); 
@@ -68,6 +68,24 @@ public class Main {
 		commandLineOptions.addOption(rollbackAction.getOption());
 		initAction = new InitAction();	
 		commandLineOptions.addOption(initAction.getOption());
+	}
+
+	@SuppressWarnings("static-access")
+	private void createOptions() {
+		projectParam = OptionBuilder.withArgName("project").hasArg().
+				withDescription("Name of the cfnassist project, or use env var: " + AwsFacade.PROJECT_TAG).create("project");
+		commandLineOptions.addOption(projectParam);
+		envParam = OptionBuilder.withArgName("env").hasArg().
+				withDescription("Name of cfnassit environment, or use env var: " + AwsFacade.ENVIRONMENT_TAG).create("env");
+		commandLineOptions.addOption(envParam);
+		regionParam = OptionBuilder.withArgName("region").hasArg().
+				withDescription("AWS Region name, or use env var: "+ENV_VAR_EC2_REGION).create("region");
+		commandLineOptions.addOption(regionParam);
+		keysValuesParam = OptionBuilder.withArgName("parameters").
+				hasArgs().withValueSeparator(';').
+				withDescription("Provide paramters for cfn scripts, format as per cfn commandline tools").
+				create("parameters");
+		commandLineOptions.addOption(keysValuesParam);
 	}
 	
 	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed {
@@ -84,6 +102,7 @@ public class Main {
 		String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG);	
 		String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG);
 		String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION);
+		Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
 		List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
 		actions.add(dirAction);
 		actions.add(fileAction);
@@ -102,8 +121,41 @@ public class Main {
 		AwsFacade aws = new AwsFacade(credentialsProvider, awsRegion);
 			
 		String argument = commandLine.getOptionValue(action.getArgName());
-		action.invoke(aws, projectAndEnv, argument);
+		action.invoke(aws, projectAndEnv, argument, cfnParams);
 		
+	}
+
+	private Collection<Parameter> checkForCfnParameters(
+			CommandLine cmd, HelpFormatter formatter,
+			Option cfnParamOptions) throws InvalidParameterException {
+		
+		LinkedList<Parameter> results = new LinkedList<Parameter>();
+		String argName = cfnParamOptions.getArgName();
+		logger.debug("Checking for arg " + argName);
+		if (!cmd.hasOption(argName)) {
+			logger.debug("Additional parameters not supplied");
+			return results;
+		}
+
+		logger.info("Process additional parameters");
+
+		List<String> valuesList = Arrays.asList(cmd.getOptionValues(argName));
+		logger.debug(String.format("Found %s arguments inside of parameter", valuesList.size()));
+		for(String keyValue : valuesList) {
+			String[] parts = keyValue.split("=");
+			if (parts.length!=2) {
+				String msg = "Unable to process parameters given, problem with " + keyValue;
+				logger.error(msg);
+				throw new InvalidParameterException(msg);
+			}
+			Parameter pair = new Parameter();
+			pair.setParameterKey(parts[0]);
+			pair.setParameterValue(parts[1]);
+			results.add(pair);
+			logger.info("Add cfn parameter " + keyValue);
+		}
+		
+		return results;
 	}
 
 	private Region populateRegion(String regionName) throws MissingArgumentException {

@@ -82,7 +82,7 @@ public class AwsFacade implements AwsProvider {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> initialParams) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		
@@ -91,7 +91,11 @@ public class AwsFacade implements AwsProvider {
 		logger.info("Stackname is " + stackName);
 		
 		String vpcId = vpcForEnv.getVpcId();
-		checkParameters(parameters);
+		
+		Collection<Parameter> parameters  = new LinkedList<Parameter>();
+		parameters.addAll(initialParams);
+		
+		checkParameters(parameters  );
 		addBuiltInParameters(projAndEnv.getEnv(), parameters, vpcId);
 		EnvironmentTag envTag = new EnvironmentTag(projAndEnv.getEnv());
 		addAutoDiscoveryParameters(envTag, file, parameters);
@@ -270,10 +274,19 @@ public class AwsFacade implements AwsProvider {
 		}
 		return description.startsWith(PARAM_PREFIX);
 	}
+	
 
 	@Override
 	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
+			ProjectAndEnv projAndEnv) throws InvalidParameterException,
+			FileNotFoundException, IOException, WrongNumberOfStacksException,
+			InterruptedException, CannotFindVpcException, StackCreateFailed {
+		return applyTemplatesFromFolder(folderPath, projAndEnv, new LinkedList<Parameter>());
+	}
+
+	@Override
+	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
+			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
 		ArrayList<String> createdStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
@@ -292,7 +305,7 @@ public class AwsFacade implements AwsProvider {
 			int deltaIndex = extractIndexFrom(file);
 			if (deltaIndex>highestAppliedDelta) {
 				logger.info(String.format("Apply template file: %s, index is %s",file.getAbsolutePath(), deltaIndex));
-				String stackName = applyTemplate(file, projAndEnv);
+				String stackName = applyTemplate(file, projAndEnv, cfnParams);
 				logger.info("Create stack " + stackName);
 				createdStacks.add(stackName); 
 				setDeltaIndex(projAndEnv, deltaIndex);
@@ -387,5 +400,8 @@ public class AwsFacade implements AwsProvider {
 		}	
 		vpcRepository.initAllTags(vpcId, projectAndEnv);	
 	}
+
+
+	
 
 }

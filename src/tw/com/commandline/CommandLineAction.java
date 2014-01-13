@@ -2,8 +2,11 @@ package tw.com.commandline;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.commons.cli.Option;
+
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
@@ -19,6 +22,6 @@ public interface CommandLineAction {
 
 	String getArgName();
 
-	void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String argument) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed;
+	void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String argument, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed;
 
 }

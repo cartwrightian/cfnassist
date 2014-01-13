@@ -3,11 +3,14 @@ package tw.com.commandline;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.InvalidParameterException;
@@ -35,9 +38,9 @@ public class FileAction implements CommandLineAction {
 		return option.getArgName();
 	}
 	
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		File templateFile = new File(filename);
-		String stackName = aws.applyTemplate(templateFile, projectAndEnv);
+		String stackName = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
 		logger.info("Created stack name "+stackName);
 	}
 

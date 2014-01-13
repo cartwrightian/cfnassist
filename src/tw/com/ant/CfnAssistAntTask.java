@@ -1,12 +1,15 @@
 package tw.com.ant;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
 
 import org.apache.tools.ant.BuildException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
@@ -44,9 +47,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		Region region = RegionUtils.getRegion(awsRegion);
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 
+		Collection<Parameter> cfnParamsTODO = new LinkedList<Parameter>();
 		AwsFacade aws = new AwsFacade(credentialsProvider , region);
 		try {
-			fileElement.execute(aws, projectAndEnv);
+			
+			fileElement.execute(aws, projectAndEnv, cfnParamsTODO);
 		} catch (IOException
 				| InvalidParameterException | WrongNumberOfStacksException
 				| InterruptedException | CannotFindVpcException | StackCreateFailed innerException) {

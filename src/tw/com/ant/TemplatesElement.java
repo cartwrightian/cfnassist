@@ -3,8 +3,11 @@ package tw.com.ant;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.tools.ant.BuildException;
+
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
@@ -27,14 +30,14 @@ public class TemplatesElement {
 		this.target = target;
 	}
 	
-	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
+	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
 		String absolutePath = target.getAbsolutePath();
 		if (target.isDirectory()) {
 			DirAction action = new DirAction();
-			action.invoke(aws, projectAndEnv, absolutePath);
+			action.invoke(aws, projectAndEnv, absolutePath,cfnParams);
 		} else if (target.isFile()) {
 			FileAction action = new FileAction();
-			action.invoke(aws, projectAndEnv, absolutePath);
+			action.invoke(aws, projectAndEnv, absolutePath,cfnParams);
 		} else {
 			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
 		}

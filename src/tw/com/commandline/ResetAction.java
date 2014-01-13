@@ -1,9 +1,13 @@
 package tw.com.commandline;
 
+import java.util.Collection;
+
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
@@ -30,7 +34,7 @@ public class ResetAction implements CommandLineAction {
 		return option.getArgName();
 	}
 	
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String unused) throws CannotFindVpcException {
+	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String unusedArg, Collection<Parameter> unusedParams) throws CannotFindVpcException {
 		logger.info("Reseting index for " + projectAndEnv);
 		aws.resetDeltaIndex(projectAndEnv);	
 	}

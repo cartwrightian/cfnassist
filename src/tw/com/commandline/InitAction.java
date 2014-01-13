@@ -2,11 +2,14 @@ package tw.com.commandline;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
@@ -38,7 +41,7 @@ public class InitAction implements CommandLineAction {
 
 	@Override
 	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv,
-			String vpcId) throws InvalidParameterException,
+			String vpcId, Collection<Parameter> unused) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, TagsAlreadyInit, CannotFindVpcException {
 		logger.info("Invoke init of tags for VPC: " + vpcId);
