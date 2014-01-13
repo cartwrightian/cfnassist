@@ -21,12 +21,11 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 public class TestExecuteScriptsInOrderFromDir {
 	
 	private static final String THIRD_FILE = "03createRoutes.json";
-	public static final String FOLDER_PATH = "src/cfnScripts/orderedScripts";
-	Path srcFile = FileSystems.getDefault().getPath(FOLDER_PATH, "holding", THIRD_FILE);
-	Path destFile = FileSystems.getDefault().getPath(FOLDER_PATH, THIRD_FILE);
+	Path srcFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.FOLDER_PATH, "holding", THIRD_FILE);
+	Path destFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.FOLDER_PATH, THIRD_FILE);
 	
-	private static String env = TestAwsFacade.ENV;
-	private static String proj = TestAwsFacade.PROJECT;
+	private static String env = EnvironmentSetupForTests.ENV;
+	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj,env);
 
 	ArrayList<String> expectedList = new ArrayList<String>();
@@ -36,7 +35,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
+		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
 		Files.deleteIfExists(destFile);
 		aws.resetDeltaIndex(mainProjectAndEnv);
 	}
@@ -44,7 +43,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	@After
 	public void afterAllTestsHaveRun() throws IOException, CannotFindVpcException {	
 		try {
-			aws.rollbackTemplatesInFolder(FOLDER_PATH, mainProjectAndEnv);
+			aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		} catch (InvalidParameterException e) {
 			System.console().writer().write("Unable to properly rollback");
 			e.printStackTrace();
@@ -55,7 +54,7 @@ public class TestExecuteScriptsInOrderFromDir {
 
 	@Test
 	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException, CannotFindVpcException, StackCreateFailed {
-		List<String> stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
+		List<String> stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackNames.size());
 		
@@ -67,18 +66,18 @@ public class TestExecuteScriptsInOrderFromDir {
 		}
 		
 		// we are up to date, should not apply the files again
-		stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
+		stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		assertEquals(0, stackNames.size());
 		
 		// copy in extra files to dir
 		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
-		stackNames = aws.applyTemplatesFromFolder(FOLDER_PATH, mainProjectAndEnv);
+		stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		assertEquals(1, stackNames.size());
 		
 		expectedList.add(proj+env+"03createRoutes");
 		assertEquals(expectedList.get(2), stackNames.get(0));
 		
-		stackNames = aws.rollbackTemplatesInFolder(FOLDER_PATH, mainProjectAndEnv);
+		stackNames = aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		assertEquals(3, stackNames.size());
 		assert(stackNames.containsAll(expectedList));
 		

@@ -10,15 +10,12 @@ import org.junit.Test;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.CreateVpcRequest;
-import com.amazonaws.services.ec2.model.CreateVpcResult;
-import com.amazonaws.services.ec2.model.DeleteVpcRequest;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestDeltaIndexTagging {
 
-	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsFacade aws;
 	private VpcRepository vpcRepos;
@@ -28,25 +25,16 @@ public class TestDeltaIndexTagging {
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
-		vpcRepos = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
+		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		vpcRepos = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		
-		createVpc();
+
+		tempVpc = EnvironmentSetupForTests.createVpc(directClient);
 	}
 	
 	@After
 	public void afterAllTestsRun() {
-		DeleteVpcRequest deleteVpcRequest = new DeleteVpcRequest();
-		deleteVpcRequest.setVpcId(tempVpc.getVpcId());
-		directClient.deleteVpc(deleteVpcRequest);
-	}
-
-	private void createVpc() {
-		CreateVpcRequest createVpcRequest = new CreateVpcRequest();
-		createVpcRequest.setCidrBlock("10.0.10.0/24");
-		CreateVpcResult result = directClient.createVpc(createVpcRequest );
-		tempVpc = result.getVpc();
+		EnvironmentSetupForTests.deleteVpc(directClient, tempVpc);
 	}
 
 	@Test
@@ -91,7 +79,7 @@ public class TestDeltaIndexTagging {
 	
 	@Test
 	public void shouldInitTagsOnNewVpc() throws TagsAlreadyInit, CannotFindVpcException {		
-		ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, "temp");
+		ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, "temp");
 		aws.initTags(altProjectAndEnv, tempVpc.getVpcId());
 		aws.setDeltaIndex(altProjectAndEnv, 42);
 		assertEquals(42, aws.getDeltaIndex(altProjectAndEnv));
@@ -99,7 +87,7 @@ public class TestDeltaIndexTagging {
 	
 	@Test
 	public void shouldThrownOnInitTagsWhenAlreadyPresent() throws TagsAlreadyInit, CannotFindVpcException {
-		ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, "anotherTemp");
+		ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, "anotherTemp");
 		aws.initTags(altProjectAndEnv, tempVpc.getVpcId());
 		try {
 			aws.initTags(altProjectAndEnv, tempVpc.getVpcId());

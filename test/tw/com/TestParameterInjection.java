@@ -24,18 +24,18 @@ public class TestParameterInjection {
 	private static AwsProvider aws;
 	private static VpcRepository vpcRepository;
 	private static String subnetStackName;
-	private static String env = TestAwsFacade.ENV;
-	private static String proj = TestAwsFacade.PROJECT;
+	private static String env = EnvironmentSetupForTests.ENV;
+	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private static ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj, env);
 
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
-		vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
+		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		vpcRepository = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
 		
-		subnetStackName = aws.applyTemplate(new File(TestAwsFacade.SUBNET_FILENAME), mainProjectAndEnv);
+		subnetStackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), mainProjectAndEnv);
 		String status = aws.waitForCreateFinished(subnetStackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 	}

@@ -2,7 +2,6 @@ package tw.com.commandline;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -49,12 +48,18 @@ public class Main {
 	private String executableName;
 	private Option keysValuesParam;
 
-	Main(String[] args) {
+	public Main(String[] args) {
 		this.args = args;
 		executableName = "cfnassist";
 		commandLineOptions = new Options();
 		createOptions();
 		createActions();
+	}
+	
+	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed {
+		Main main = new Main(args);
+		int result = main.parse();
+		System.exit(result);
 	}
 
 	private void createActions() {
@@ -87,42 +92,44 @@ public class Main {
 				create("parameters");
 		commandLineOptions.addOption(keysValuesParam);
 	}
-	
-	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed {
-		Main main = new Main(args);
-		main.parse();
-	}
 
-	private void parse() throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed {
-		CommandLineParser parser = new BasicParser();	
-		CommandLine commandLine = parser.parse(commandLineOptions, args);
+	public int parse() {
 		
-		HelpFormatter formatter = new HelpFormatter();
-		
-		String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG);	
-		String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG);
-		String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION);
-		Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
-		List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
-		actions.add(dirAction);
-		actions.add(fileAction);
-		actions.add(resetAction);
-		actions.add(rollbackAction);
-		actions.add(initAction);
-		CommandLineAction action = selectCorrectActionFromArgs(commandLine, formatter, actions);	
-		
-		Region awsRegion = populateRegion(region);
-		
-		ProjectAndEnv projectAndEnv = new ProjectAndEnv(project, env);
-		logger.info("Invoking for " + projectAndEnv);
-		logger.info("Region set to " + awsRegion);
-		
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		AwsFacade aws = new AwsFacade(credentialsProvider, awsRegion);
+		try {
+			CommandLineParser parser = new BasicParser();	
+			CommandLine commandLine = parser.parse(commandLineOptions, args);
 			
-		String argument = commandLine.getOptionValue(action.getArgName());
-		action.invoke(aws, projectAndEnv, argument, cfnParams);
-		
+			HelpFormatter formatter = new HelpFormatter();
+			
+			String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG);	
+			String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG);
+			String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION);
+			Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
+			List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
+			actions.add(dirAction);
+			actions.add(fileAction);
+			actions.add(resetAction);
+			actions.add(rollbackAction);
+			actions.add(initAction);
+			CommandLineAction action = selectCorrectActionFromArgs(commandLine, formatter, actions);	
+			
+			Region awsRegion = populateRegion(region);
+			
+			ProjectAndEnv projectAndEnv = new ProjectAndEnv(project, env);
+			logger.info("Invoking for " + projectAndEnv);
+			logger.info("Region set to " + awsRegion);
+			
+			DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+			AwsFacade aws = new AwsFacade(credentialsProvider, awsRegion);
+				
+			String argument = commandLine.getOptionValue(action.getArgName());
+			action.invoke(aws, projectAndEnv, argument, cfnParams);
+		}
+		catch (Exception exception) {
+			logger.error(exception.toString());
+			return -1;
+		}
+		return 0;
 	}
 
 	private Collection<Parameter> checkForCfnParameters(

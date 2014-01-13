@@ -29,22 +29,22 @@ public class TestCfnRepository {
 	private AwsFacade awsProvider;
 	private File templateFile;
 	private Vpc otherVPC;
-	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
-	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 
 	@Before
 	public void beforeEachTestIsRun() {		
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(TestAwsFacade.getRegion());
+		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
-		VpcRepository vpcRepository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
+		VpcRepository vpcRepository = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
 		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 
 		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
-		awsProvider = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
+		awsProvider = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
 	}
 	
 	@Test
@@ -63,7 +63,7 @@ public class TestCfnRepository {
 		awsProvider.waitForCreateFinished(stackB);
 		
 		// find the id's
-		String physicalIdA = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(TestAwsFacade.ENV), TEST_CIDR_SUBNET);
+		String physicalIdA = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(EnvironmentSetupForTests.ENV), TEST_CIDR_SUBNET);
 		String physicalIdB = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(EnvironmentSetupForTests.ALT_ENV), TEST_CIDR_SUBNET);
 		
 		// fetch the subnet id directly

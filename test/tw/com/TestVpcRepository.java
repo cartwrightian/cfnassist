@@ -14,8 +14,8 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestVpcRepository {
 
-	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, TestAwsFacade.ENV);
-	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(TestAwsFacade.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private VpcRepository repository;
@@ -23,7 +23,7 @@ public class TestVpcRepository {
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		repository = new VpcRepository(credentialsProvider, TestAwsFacade.getRegion());
+		repository = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
 	}
 	
 	@Test

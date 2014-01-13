@@ -13,34 +13,25 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 public class TestAwsFacade {
 
-	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
-	public static final String ENV = "Test";
-	public static final String PROJECT = "CfnAssist";
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsProvider aws;
-	private ProjectAndEnv projectAndEnv = new ProjectAndEnv(PROJECT, ENV);
+	private ProjectAndEnv projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider, getRegion());
-	}
-
-	public static Region getRegion() {
-		return Region.getRegion(Regions.EU_WEST_1);
+		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
 	}
 
 	@Test
 	public void testReturnCorrectParametersFromValidation() throws FileNotFoundException, IOException {
-		List<TemplateParameter> result = aws.validateTemplate(new File(SUBNET_FILENAME));
+		List<TemplateParameter> result = aws.validateTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME));
 		
 		assertEquals(4, result.size());
 		
@@ -58,14 +49,14 @@ public class TestAwsFacade {
 	
 	@Test
 	public void createStacknameFromEnvAndFile() {
-		String stackName = aws.createStackName(new File(SUBNET_FILENAME),projectAndEnv);
+		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SUBNET_FILENAME),projectAndEnv);
 		assertEquals("CfnAssistTestsubnet", stackName);
 	}
 	
 	@Test
 	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
 		InterruptedException, InvalidParameterException, StackCreateFailed {
-		String stackName = aws.applyTemplate(new File(SUBNET_FILENAME), projectAndEnv);	
+		String stackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv);	
 		
 		String status = aws.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
@@ -90,7 +81,7 @@ public class TestAwsFacade {
 		parameters.add(envParameter);
 		
 		try {
-			aws.applyTemplate(new File(SUBNET_FILENAME), projectAndEnv , parameters);	
+			aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv , parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {
@@ -108,7 +99,7 @@ public class TestAwsFacade {
 		parameters.add(envParameter);
 		
 		try {
-			aws.applyTemplate(new File(SUBNET_FILENAME), projectAndEnv, parameters);	
+			aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv, parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {

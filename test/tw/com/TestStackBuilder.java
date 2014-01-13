@@ -21,8 +21,8 @@ import com.amazonaws.services.cloudformation.model.Tag;
 
 public class TestStackBuilder {
 	private AwsProvider awsProvider;
-	private String env = TestAwsFacade.ENV;
-	private String project = TestAwsFacade.PROJECT;
+	private String env = EnvironmentSetupForTests.ENV;
+	private String project = EnvironmentSetupForTests.PROJECT;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(project, env);
 
 	private AmazonCloudFormationClient cfnClient;
@@ -30,14 +30,13 @@ public class TestStackBuilder {
 	@Before
 	public void beforeTestsRun() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		awsProvider = new AwsFacade(credentialsProvider, TestAwsFacade.getRegion());
-		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(TestAwsFacade.getRegion());
+		awsProvider = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 	}
 
 	@Test
 	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
-		File templateFile = new File("src/cfnScripts/subnet.json");
+		File templateFile = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
 		StackBuilder builder = new StackBuilder(awsProvider, mainProjectAndEnv, templateFile);
 		String stackName = builder.createStack();
 		
@@ -47,7 +46,7 @@ public class TestStackBuilder {
 	@Test
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 
 			WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
-		File templateFile = new File("src/cfnScripts/subnetWithParam.json");
+		File templateFile = new File(EnvironmentSetupForTests.SUBNET_WITH_PARAM_FILENAME);
 		StackBuilder builder = new StackBuilder(awsProvider, mainProjectAndEnv, templateFile);
 		String stackName = builder.addParameter("zoneA", "eu-west-1a").createStack();
 		
