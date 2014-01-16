@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import org.apache.tools.ant.BuildException;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
@@ -23,6 +22,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private String awsRegion;
 	private String cfnProject;
 	private String cfnEnv;
+	private Collection<Param> params;
+	
+	public CfnAssistAntTask() {
+		params = new LinkedList<Param>();
+	}
 	
 	private TemplatesElement fileElement;
 
@@ -47,15 +51,46 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		Region region = RegionUtils.getRegion(awsRegion);
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 
-		Collection<Parameter> cfnParamsTODO = new LinkedList<Parameter>();
-		AwsFacade aws = new AwsFacade(credentialsProvider , region);
-		try {
-			
-			fileElement.execute(aws, projectAndEnv, cfnParamsTODO);
+		Collection<Parameter> cfnParameters = new LinkedList<Parameter>();
+		for(Param param : params) {
+			cfnParameters.add(param.getParamter());
+		}
+		AwsFacade aws = new AwsFacade(credentialsProvider, region);
+		try {		
+			fileElement.execute(aws, projectAndEnv, cfnParameters);
 		} catch (IOException
 				| InvalidParameterException | WrongNumberOfStacksException
 				| InterruptedException | CannotFindVpcException | StackCreateFailed innerException) {
 			throw new BuildException(innerException);
+		}
+	}
+	
+	 public Param createParam() {                                 
+		 Param param = new Param();
+		 params.add(param);
+		 return param;
+	 }
+		 
+	public class Param {
+		private String name;
+		private String value;
+
+		public Param() {		
+		}
+		
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+		public void setValue(String value) {
+			this.value = value;
+		}
+		
+		public Parameter getParamter() {
+			Parameter param = new Parameter();
+			param.setParameterKey(name);
+			param.setParameterValue(value);
+			return param;
 		}
 	}
 }

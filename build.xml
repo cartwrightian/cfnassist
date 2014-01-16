@@ -138,7 +138,7 @@
 	    	<copy file="conf/logback.xml" todir="bin/conf"/>
 	</target>
 	
-	<target name="testAnt" depends="dist">
+	<target name="customTask" depends="dist">
 		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
 			<classpath>
 				<pathelement location="bin/cfnassist.jar"/>
@@ -147,14 +147,29 @@
 				    	<path refid="apacheCommons"/>
 			</classpath>
 		</taskdef>
+	</target>
+	
+	<target name="customTaskTests" depends="testSimpleTemplate,testSimpleTemplateWithParam,testSimpleDir" />
 		
+	<target name="testSimpleTemplate" depends="customTask">
 		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
 			<Templates target="src/cfnScripts/subnet.json"/>
 		</cfnassist>
+	</target>
+	
+	<target name="testSimpleTemplateWithParam" depends="customTask">
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<Templates target="src/cfnScripts/subnetWithParam.json"/>
+			<Param name="zoneA" value="eu-west-1a" />
+			<Param name="zoneB" value="eu-west-1b" />
+		</cfnassist>
+	</target>
 		
+	<target name="testSimpleDir" depends="customTask">
 		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
 		    <Templates target="src/cfnScripts/orderedScripts/"/>
-		</cfnassist>
+		</cfnassist>	
+
 	</target>
 	
 </project>

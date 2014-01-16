@@ -42,6 +42,5 @@ public class TemplatesElement {
 			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
 		}
 		
-		
 	}
 }

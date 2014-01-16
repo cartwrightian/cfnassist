@@ -142,7 +142,7 @@ public class TestCommandLine {
 		main = new Main(rollbackDeploy);
 		result = main.parse();
 		
-		//clean up
+		//clean up as needed
 		vpcRepository.initAllTags(vpc.getVpcId(), altProjectAndEnv);
 		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());

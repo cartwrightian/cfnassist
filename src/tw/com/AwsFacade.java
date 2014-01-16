@@ -95,11 +95,12 @@ public class AwsFacade implements AwsProvider {
 		Collection<Parameter> parameters  = new LinkedList<Parameter>();
 		parameters.addAll(initialParams);
 		
-		checkParameters(parameters  );
+		checkParameters(parameters);
 		addBuiltInParameters(projAndEnv.getEnv(), parameters, vpcId);
 		EnvironmentTag envTag = new EnvironmentTag(projAndEnv.getEnv());
 		addAutoDiscoveryParameters(envTag, file, parameters);
 		
+		logAllParameters(parameters);
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
@@ -112,6 +113,13 @@ public class AwsFacade implements AwsProvider {
 		waitForCreateFinished(stackName);
 		cfnRepository.updateRepositoryFor(stackName);
 		return stackName;
+	}
+
+	private void logAllParameters(Collection<Parameter> parameters) {
+		logger.info("Invoking with following parameters");
+		for(Parameter param : parameters) {
+			logger.info(String.format("Parameter key='%s' value='%s'", param.getParameterKey(), param.getParameterValue()));
+		}
 	}
 
 	private Collection<Tag> createTagsForStack(String project, String env) {
