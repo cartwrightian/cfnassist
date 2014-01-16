@@ -3,7 +3,6 @@ package tw.com;
 import static org.junit.Assert.*;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -16,28 +15,34 @@ import tw.com.commandline.Main;
 public class TestCommandLine {
 
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
+	private Vpc vpc;
+	private VpcRepository vpcRepository;
+	private ProjectAndEnv altProjectAndEnv;
+	private AmazonEC2Client directClient;
 
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		vpcRepository = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
+		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		vpc = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 	}
 	
 	@Test
-	@Ignore("Reached limit on number of vpcs")
 	public void testInvokeInitViaCommandLine() {
-		AmazonEC2Client directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		Vpc tempVpc = EnvironmentSetupForTests.createVpc(directClient);
+		
+		EnvironmentSetupForTests.clearVpcTags(directClient, vpc);
 		
 		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
+				"-env", EnvironmentSetupForTests.ALT_ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-init", tempVpc.getVpcId()
+				"-init", vpc.getVpcId()
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteVpc(directClient, tempVpc);
-		
+
 		assertEquals(0,result);
 	}
 	
@@ -119,14 +124,15 @@ public class TestCommandLine {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() {
+	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException {
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-dir", EnvironmentSetupForTests.FOLDER_PATH
 				};
 		Main main = new Main(argsDeploy);
-		assertEquals(0,main.parse());
+		int result = main.parse();
+		assertEquals(0,result);
 		
 		String[] rollbackDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -134,7 +140,17 @@ public class TestCommandLine {
 				"-rollback", EnvironmentSetupForTests.FOLDER_PATH
 				};
 		main = new Main(rollbackDeploy);
-		assertEquals(0,main.parse());
+		result = main.parse();
+		
+		//clean up
+		vpcRepository.initAllTags(vpc.getVpcId(), altProjectAndEnv);
+		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
+		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
+		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest01createSubnet");
+		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls");
+		
+		// check
+		assertEquals(0,result);
 	}
 
 }

@@ -59,7 +59,6 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
-		logger.info("Validating template and discovering parameters");
 		ValidateTemplateRequest validateTemplateRequest = new ValidateTemplateRequest();
 		validateTemplateRequest.setTemplateBody(templateBody);
 
@@ -71,6 +70,7 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	public List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException {
+		logger.info("Validating template and discovering parameters for file " + file.getAbsolutePath());
 		String contents = loadFileContents(file);
 		return validateTemplate(contents);
 	}
@@ -392,13 +392,13 @@ public class AwsFacade implements AwsProvider {
 		return Integer.parseInt(tag);
 	}
 
-	public void initTags(ProjectAndEnv projectAndEnv, String vpcId) throws TagsAlreadyInit, CannotFindVpcException {
-		Vpc result = vpcRepository.getCopyOfVpc(projectAndEnv);
+	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws TagsAlreadyInit, CannotFindVpcException {
+		Vpc result = vpcRepository.getCopyOfVpc(projectAndEnvToSet);
 		if (result!=null) {
-			logger.error(String.format("Managed to find vpc already present with tags %s and id %s", projectAndEnv, result.getVpcId()));
-			throw new TagsAlreadyInit(vpcId);
+			logger.error(String.format("Managed to find vpc already present with tags %s and id %s", projectAndEnvToSet, result.getVpcId()));
+			throw new TagsAlreadyInit(targetVpcId);
 		}	
-		vpcRepository.initAllTags(vpcId, projectAndEnv);	
+		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
 	}
 
 

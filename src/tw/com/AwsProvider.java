@@ -29,6 +29,6 @@ public interface AwsProvider {
 	void resetDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException;
 	void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) throws CannotFindVpcException;
 	int getDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException;
-	public void initTags(ProjectAndEnv projectAndEnv, String vpcId) throws TagsAlreadyInit, CannotFindVpcException;
+	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws TagsAlreadyInit, CannotFindVpcException;
 	
 }

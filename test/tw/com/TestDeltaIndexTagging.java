@@ -16,11 +16,12 @@ import com.amazonaws.services.ec2.model.Vpc;
 public class TestDeltaIndexTagging {
 
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsFacade aws;
 	private VpcRepository vpcRepos;
 	private AmazonEC2Client directClient;
-	private Vpc tempVpc;
+	private Vpc altVpc;
 
 	@Before
 	public void beforeTestsRun() {
@@ -29,14 +30,14 @@ public class TestDeltaIndexTagging {
 		vpcRepos = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 
-		tempVpc = EnvironmentSetupForTests.createVpc(directClient);
+		altVpc = vpcRepos.getCopyOfVpc(altProjectAndEnv);
+		
 	}
 	
 	@After
 	public void afterAllTestsRun() {
-		EnvironmentSetupForTests.deleteVpc(directClient, tempVpc);
 	}
-
+	
 	@Test
 	public void canSetAndResetTheDeltaIndexTagOnVpc() throws CannotFindVpcException {
 		aws.resetDeltaIndex(mainProjectAndEnv);	
@@ -78,19 +79,19 @@ public class TestDeltaIndexTagging {
 	}
 	
 	@Test
-	public void shouldInitTagsOnNewVpc() throws TagsAlreadyInit, CannotFindVpcException {		
-		ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, "temp");
-		aws.initTags(altProjectAndEnv, tempVpc.getVpcId());
+	public void shouldInitTagsOnNewVpc() throws TagsAlreadyInit, CannotFindVpcException {
+		EnvironmentSetupForTests.clearVpcTags(directClient, altVpc);
+		aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);
 		aws.setDeltaIndex(altProjectAndEnv, 42);
 		assertEquals(42, aws.getDeltaIndex(altProjectAndEnv));
 	}
 	
 	@Test
 	public void shouldThrownOnInitTagsWhenAlreadyPresent() throws TagsAlreadyInit, CannotFindVpcException {
-		ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, "anotherTemp");
-		aws.initTags(altProjectAndEnv, tempVpc.getVpcId());
+		EnvironmentSetupForTests.clearVpcTags(directClient, altVpc);
+		aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);
 		try {
-			aws.initTags(altProjectAndEnv, tempVpc.getVpcId());
+			aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);
 			fail("Should have thrown due to attempt to re-init tags");
 		}
 		catch(TagsAlreadyInit exception) {

@@ -45,7 +45,7 @@ public class InitAction implements CommandLineAction {
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, TagsAlreadyInit, CannotFindVpcException {
 		logger.info("Invoke init of tags for VPC: " + vpcId);
-		aws.initTags(projectAndEnv, vpcId);		
+		aws.initEnvAndProjectForVPC(vpcId, projectAndEnv);		
 	}
 
 }

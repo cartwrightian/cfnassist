@@ -2,6 +2,7 @@ package tw.com;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -13,6 +14,7 @@ import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateVpcRequest;
 import com.amazonaws.services.ec2.model.CreateVpcResult;
+import com.amazonaws.services.ec2.model.DeleteTagsRequest;
 import com.amazonaws.services.ec2.model.DeleteVpcRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
@@ -78,6 +80,18 @@ public class EnvironmentSetupForTests {
 		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
 		deleteStackRequest.setStackName(stackName);
 		client.deleteStack(deleteStackRequest );	
+	}
+
+	public static void clearVpcTags(AmazonEC2Client directClient, Vpc vpc) {
+		List<String> resources = new LinkedList<String>();	
+		resources.add(vpc.getVpcId());
+		DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest(resources);
+		deleteTagsRequest.setTags(vpc.getTags());
+		directClient.deleteTags(deleteTagsRequest );
+	}
+
+	public static ProjectAndEnv getAltProjectAndEnv() {
+		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	}
 
 }
