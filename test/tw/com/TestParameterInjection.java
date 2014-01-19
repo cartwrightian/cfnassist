@@ -33,7 +33,7 @@ public class TestParameterInjection {
 	public static void beforeAllTestsRun() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
-		vpcRepository = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		vpcRepository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
 		
 		subnetStackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), mainProjectAndEnv);
 		String status = aws.waitForCreateFinished(subnetStackName);

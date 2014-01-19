@@ -25,7 +25,7 @@ public class CfnRepository {
 	private AmazonCloudFormationClient cfnClient;
 	
 	private StackResources stackResources;
-	List<StackEntry> stackEntries;
+	private List<StackEntry> stackEntries;
 	
 	public CfnRepository(AmazonCloudFormationClient cfnClient) {
 		this.cfnClient = cfnClient;
@@ -33,8 +33,7 @@ public class CfnRepository {
 		stackEntries = new LinkedList<StackEntry>();
 	}
 	
-	public String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId) {
-		
+	public String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId) {	
 		logger.info(String.format("Looking for resource matching logicalID: %s for Env: %s", logicalId, envTag));
 		List<StackEntry> stacks = getStacks();
 		for(StackEntry stackEntry : stacks) {

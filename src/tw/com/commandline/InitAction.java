@@ -12,11 +12,9 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.CannotFindVpcException;
+import tw.com.CfnAssistException;
 import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
-import tw.com.TagsAlreadyInit;
-import tw.com.WrongNumberOfStacksException;
 
 public class InitAction implements CommandLineAction {
 	private static final Logger logger = LoggerFactory.getLogger(InitAction.class);
@@ -42,8 +40,7 @@ public class InitAction implements CommandLineAction {
 	@Override
 	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv,
 			String vpcId, Collection<Parameter> unused) throws InvalidParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, TagsAlreadyInit, CannotFindVpcException {
+			FileNotFoundException, IOException, InterruptedException, CfnAssistException {
 		logger.info("Invoke init of tags for VPC: " + vpcId);
 		aws.initEnvAndProjectForVPC(vpcId, projectAndEnv);		
 	}

@@ -1,7 +1,7 @@
 package tw.com;
 
 @SuppressWarnings("serial")
-public class TagsAlreadyInit extends Exception {
+public class TagsAlreadyInit extends CfnAssistException {
 	private String vpcId;
 
 	public TagsAlreadyInit(String vpcId) {

@@ -1,16 +1,25 @@
 package tw.com;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.commons.io.FileUtils;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
+import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
+import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
+import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateVpcRequest;
 import com.amazonaws.services.ec2.model.CreateVpcResult;
@@ -23,13 +32,15 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class EnvironmentSetupForTests {
-
-	public static final String ENV = "Test";
 	public static final String PROJECT = "CfnAssist";
+	public static final String ENV = "Test";
+	public static String ALT_ENV = "AdditionalTest";
+	
+	public static final String TEMPORARY_STACK = "temporaryStack";
+
 	public static final String FOLDER_PATH = "src/cfnScripts/orderedScripts";
 	public static final String SUBNET_WITH_PARAM_FILENAME = "src/cfnScripts/subnetWithParam.json";
 	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
-	public static String ALT_ENV = "AdditionalTest";
 	
 	public static List<Subnet> getSubnetFors(AmazonEC2Client ec2Client, Vpc vpc) {
 		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
@@ -69,7 +80,7 @@ public class EnvironmentSetupForTests {
 	public static Region getRegion() {
 		return Region.getRegion(Regions.EU_WEST_1);
 	}
-
+	
 	public static AmazonCloudFormationClient createCFNClient(AWSCredentialsProvider credentialsProvider) {
 		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
@@ -90,8 +101,45 @@ public class EnvironmentSetupForTests {
 		directClient.deleteTags(deleteTagsRequest );
 	}
 
+
+	public static ProjectAndEnv getMainProjectAndEnv() {
+		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);	
+	}
+	
 	public static ProjectAndEnv getAltProjectAndEnv() {
 		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+	}
+	
+	public static void deleteTemporaryStack(AmazonCloudFormationClient cfnClient) {
+		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
+		describeStacksRequest.setStackName(TEMPORARY_STACK);
+		DescribeStacksResult result = cfnClient.describeStacks();
+		if (result.getStacks().size()==0) {
+			return;
+		}
+		
+		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
+		deleteStackRequest.setStackName(TEMPORARY_STACK);
+		cfnClient.deleteStack(deleteStackRequest);
+	}
+
+	public static void createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId) throws IOException {
+		CreateStackRequest createStackRequest = new CreateStackRequest();
+		createStackRequest.setStackName(TEMPORARY_STACK);
+		File file = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
+		createStackRequest.setTemplateBody(FileUtils.readFileToString(file , Charset.defaultCharset()));
+		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		parameters.add(createParam("env", EnvironmentSetupForTests.ENV));
+		parameters.add(createParam("vpc", vpcId));
+		createStackRequest.setParameters(parameters);
+		cfnClient.createStack(createStackRequest);
+	}
+	
+	private static Parameter createParam(String key, String value) {
+		Parameter p = new Parameter();
+		p.setParameterKey(key);
+		p.setParameterValue(value);
+		return p;
 	}
 
 }

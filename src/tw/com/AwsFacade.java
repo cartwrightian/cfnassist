@@ -23,13 +23,18 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
+import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
+import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class AwsFacade implements AwsProvider {
@@ -44,14 +49,20 @@ public class AwsFacade implements AwsProvider {
 	private static final String PARAM_PREFIX = "::";
 	
 	private AmazonCloudFormationClient cfnClient;
+	
 	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
 	private CfnRepository cfnRepository;
 
+	private AmazonEC2Client ec2Client;
+
 	public AwsFacade(AWSCredentialsProvider credentialsProvider, Region region) {
 		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(region);
-		vpcRepository = new VpcRepository(credentialsProvider, region);
+		ec2Client = new AmazonEC2Client(credentialsProvider);
+		ec2Client.setRegion(region);
+		
+		vpcRepository = new VpcRepository(ec2Client);	
 		cfnRepository = new CfnRepository(cfnClient);
 		reservedParameters = new LinkedList<String>();
 		reservedParameters.add(PARAMETER_ENV);
@@ -283,7 +294,6 @@ public class AwsFacade implements AwsProvider {
 		return description.startsWith(PARAM_PREFIX);
 	}
 	
-
 	@Override
 	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv) throws InvalidParameterException,
@@ -400,7 +410,7 @@ public class AwsFacade implements AwsProvider {
 		return Integer.parseInt(tag);
 	}
 
-	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws TagsAlreadyInit, CannotFindVpcException {
+	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws CfnAssistException {
 		Vpc result = vpcRepository.getCopyOfVpc(projectAndEnvToSet);
 		if (result!=null) {
 			logger.error(String.format("Managed to find vpc already present with tags %s and id %s", projectAndEnvToSet, result.getVpcId()));
@@ -409,7 +419,36 @@ public class AwsFacade implements AwsProvider {
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
 	}
 
-
-	
+	@Override
+	public void initEnvAndProjectForStack(String stackName,
+			ProjectAndEnv projAndEnv) throws CfnAssistException {
+		DescribeStacksRequest request = new DescribeStacksRequest();
+		request.setStackName(stackName);
+		DescribeStacksResult result = cfnClient.describeStacks(request );
+		
+		List<Stack> stacks = result.getStacks();
+		if (stacks.size()!=1) {
+			throw new WrongNumberOfStacksException(1, stacks.size());
+		}
+		
+		Stack stack = stacks.get(0);
+		// TODO check tags not already set
+		
+		logger.info(String.format("Add %s to stackname '%s'", projAndEnv, stackName));
+		// tags here are different type from the tags during the stack create call
+		Collection<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
+		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(ENVIRONMENT_TAG).withValue(projAndEnv.getEnv()));
+		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(PROJECT_TAG).withValue(projAndEnv.getProject()));
+		String ids[] = { stack.getStackId() };
+		
+		CreateTagsRequest createTagsRequest= new CreateTagsRequest();
+		Collection<String> resources = Arrays.asList(ids);
+		createTagsRequest.setResources(resources);
+		createTagsRequest.setTags(tags);
+		logger.debug("Making call to createTags");
+		ec2Client.createTags(createTagsRequest);
+		
+		// TODO how to check
+	}
 
 }

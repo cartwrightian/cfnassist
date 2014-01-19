@@ -18,7 +18,7 @@ public class TestDeltaIndexTagging {
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
-	private AwsFacade aws;
+	private AwsProvider aws;
 	private VpcRepository vpcRepos;
 	private AmazonEC2Client directClient;
 	private Vpc altVpc;
@@ -27,7 +27,7 @@ public class TestDeltaIndexTagging {
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
-		vpcRepos = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		vpcRepos = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 
 		altVpc = vpcRepos.getCopyOfVpc(altProjectAndEnv);
@@ -79,7 +79,7 @@ public class TestDeltaIndexTagging {
 	}
 	
 	@Test
-	public void shouldInitTagsOnNewVpc() throws TagsAlreadyInit, CannotFindVpcException {
+	public void shouldInitTagsOnNewVpc() throws CfnAssistException, CannotFindVpcException {
 		EnvironmentSetupForTests.clearVpcTags(directClient, altVpc);
 		aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);
 		aws.setDeltaIndex(altProjectAndEnv, 42);
@@ -87,7 +87,7 @@ public class TestDeltaIndexTagging {
 	}
 	
 	@Test
-	public void shouldThrownOnInitTagsWhenAlreadyPresent() throws TagsAlreadyInit, CannotFindVpcException {
+	public void shouldThrownOnInitTagsWhenAlreadyPresent() throws CfnAssistException, CannotFindVpcException {
 		EnvironmentSetupForTests.clearVpcTags(directClient, altVpc);
 		aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);
 		try {

@@ -24,7 +24,7 @@ public class TestHaveValidTemplateFiles {
 
 	@Test
 	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException {
-		AwsFacade facade = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		AwsProvider facade = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
 		File folder = new File("src/cfnScripts");
 		
 		assertTrue(folder.exists());	
@@ -32,7 +32,7 @@ public class TestHaveValidTemplateFiles {
 	}
 
 
-	private void validateFolder(AwsFacade facade, File folder)
+	private void validateFolder(AwsProvider facade, File folder)
 			throws FileNotFoundException, IOException {
 		File[] files = folder.listFiles();
 		for(File file : files) {

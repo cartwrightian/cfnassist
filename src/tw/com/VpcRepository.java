@@ -8,8 +8,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.regions.Region;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
@@ -19,12 +17,11 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 public class VpcRepository {
 	private static final Logger logger = LoggerFactory.getLogger(VpcRepository.class);
-	private static AmazonEC2Client ec2Client;
+	private AmazonEC2Client ec2Client;
 	private HashMap<ProjectAndEnv, String> idCache; // used to avoid search by tag unless needed
 	
-	public VpcRepository(AWSCredentialsProvider credentialsProvider, Region region) {
-		ec2Client = new AmazonEC2Client(credentialsProvider);
-		ec2Client.setRegion(region);
+	public VpcRepository(AmazonEC2Client ec2Client) {
+		this.ec2Client = ec2Client;
 		idCache = new HashMap<ProjectAndEnv, String>();
 	}
 	

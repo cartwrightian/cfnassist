@@ -1,7 +1,7 @@
 package tw.com;
 
 @SuppressWarnings("serial")
-public class CannotFindVpcException extends Exception {
+public class CannotFindVpcException extends CfnAssistException {
 
 	private String id;
 

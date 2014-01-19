@@ -26,7 +26,7 @@ public class TestCfnRepository {
 	private Vpc mainTestVPC;
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AmazonEC2Client directClient;
-	private AwsFacade awsProvider;
+	private AwsProvider awsProvider;
 	private File templateFile;
 	private Vpc otherVPC;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
@@ -39,7 +39,7 @@ public class TestCfnRepository {
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
-		VpcRepository vpcRepository = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		VpcRepository vpcRepository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
 		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 

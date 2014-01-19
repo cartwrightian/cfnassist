@@ -43,6 +43,7 @@ public class Main {
 	private CommandLineAction resetAction;
 	private CommandLineAction rollbackAction;
 	private CommandLineAction initAction;
+	private CommandLineAction labelAction;
 	private Options commandLineOptions;
 	private String[] args;
 	private String executableName;
@@ -73,18 +74,23 @@ public class Main {
 		commandLineOptions.addOption(rollbackAction.getOption());
 		initAction = new InitAction();	
 		commandLineOptions.addOption(initAction.getOption());
+		labelAction = new LabelAction();
+		commandLineOptions.addOption(labelAction.getOption());
 	}
 
 	@SuppressWarnings("static-access")
 	private void createOptions() {
 		projectParam = OptionBuilder.withArgName("project").hasArg().
-				withDescription("Name of the cfnassist project, or use env var: " + AwsFacade.PROJECT_TAG).create("project");
+				withDescription("Name of the cfnassist project, or use env var: " + AwsFacade.PROJECT_TAG).
+				create("project");
 		commandLineOptions.addOption(projectParam);
 		envParam = OptionBuilder.withArgName("env").hasArg().
-				withDescription("Name of cfnassit environment, or use env var: " + AwsFacade.ENVIRONMENT_TAG).create("env");
+				withDescription("Name of cfnassit environment, or use env var: " + AwsFacade.ENVIRONMENT_TAG).
+				create("env");
 		commandLineOptions.addOption(envParam);
 		regionParam = OptionBuilder.withArgName("region").hasArg().
-				withDescription("AWS Region name, or use env var: "+ENV_VAR_EC2_REGION).create("region");
+				withDescription("AWS Region name, or use env var: "+ENV_VAR_EC2_REGION).
+				create("region");
 		commandLineOptions.addOption(regionParam);
 		keysValuesParam = OptionBuilder.withArgName("parameters").
 				hasArgs().withValueSeparator(';').

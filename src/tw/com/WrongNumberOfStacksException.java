@@ -1,7 +1,7 @@
 package tw.com;
 
 @SuppressWarnings("serial")
-public class WrongNumberOfStacksException extends Exception {
+public class WrongNumberOfStacksException extends CfnAssistException {
 
 	private int expectedNumber;
 	private int actualNumber;

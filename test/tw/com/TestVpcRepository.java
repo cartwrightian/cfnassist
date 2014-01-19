@@ -23,7 +23,7 @@ public class TestVpcRepository {
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		repository = new VpcRepository(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		repository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
 	}
 	
 	@Test

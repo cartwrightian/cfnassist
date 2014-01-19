@@ -1,7 +1,7 @@
 package tw.com;
 
 @SuppressWarnings("serial")
-public class StackCreateFailed extends Exception {
+public class StackCreateFailed extends CfnAssistException {
 
 	private String stackName;
 
