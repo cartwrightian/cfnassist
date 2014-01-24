@@ -3,6 +3,8 @@ package tw.com;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -17,7 +19,7 @@ import tw.com.commandline.Main;
 public class TestCommandLine {
 
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
-	private Vpc vpc;
+	private Vpc altEnvVPC;
 	private VpcRepository vpcRepository;
 	private ProjectAndEnv altProjectAndEnv;
 	private AmazonEC2Client directClient;
@@ -29,7 +31,11 @@ public class TestCommandLine {
 		vpcRepository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		vpc = vpcRepository.getCopyOfVpc(altProjectAndEnv);
+		altEnvVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
+		if (altEnvVPC==null) {
+			altEnvVPC=vpcRepository.getCopyOfVpc("vpc-21e5ee43");
+		}
+		
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
@@ -38,13 +44,13 @@ public class TestCommandLine {
 	@Test
 	public void testInvokeInitViaCommandLine() {
 		
-		EnvironmentSetupForTests.clearVpcTags(directClient, vpc);
+		EnvironmentSetupForTests.clearVpcTags(directClient, altEnvVPC);
 		
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ALT_ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-init", vpc.getVpcId()
+				"-init", altEnvVPC.getVpcId()
 				};
 		Main main = new Main(args);
 		int result = main.parse();
@@ -101,7 +107,7 @@ public class TestCommandLine {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFile() {
+	public void testInvokeViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -115,7 +121,7 @@ public class TestCommandLine {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() {
+	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -130,7 +136,7 @@ public class TestCommandLine {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFilePassedInParam() {
+	public void testInvokeViaCommandLineDeployWithFilePassedInParam() throws InterruptedException, TimeoutException {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -145,7 +151,7 @@ public class TestCommandLine {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException {
+	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -164,7 +170,7 @@ public class TestCommandLine {
 		result = main.parse();
 		
 		//clean up as needed
-		vpcRepository.initAllTags(vpc.getVpcId(), altProjectAndEnv);
+		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
 		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest01createSubnet");
 		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls");
@@ -176,7 +182,7 @@ public class TestCommandLine {
 	@Ignore("cant find way to label at existing stack via apis")
 	@Test
 	public void testInvokeViaCommandLineTagExistingStack() throws IOException {
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpc.getVpcId());
+		EnvironmentSetupForTests.createTemporaryStack(cfnClient, altEnvVPC.getVpcId());
 		
 		String[] argslabelStack = {
 				"-env", EnvironmentSetupForTests.ENV,

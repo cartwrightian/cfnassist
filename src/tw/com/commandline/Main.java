@@ -101,7 +101,7 @@ public class Main {
 		commandLineOptions.addOption(keysValuesParam);
 		buildNumberParam = OptionBuilder.withArgName("build").
 				hasArgs().withDescription("A Build number/id to tag the deployed stacks with, or use env var: " + AwsFacade.BUILD_TAG).
-				create();
+				create("build");
 		commandLineOptions.addOption(buildNumberParam);
 	}
 

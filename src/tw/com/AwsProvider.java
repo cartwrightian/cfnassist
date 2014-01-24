@@ -24,7 +24,7 @@ public interface AwsProvider {
 	String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
 	
-	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag) throws FileNotFoundException, IOException, InvalidParameterException;
+	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag, List<TemplateParameter> declaredParam) throws FileNotFoundException, IOException, InvalidParameterException;
 	
 	void resetDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException;
 	void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) throws CannotFindVpcException;

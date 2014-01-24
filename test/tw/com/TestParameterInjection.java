@@ -14,6 +14,7 @@ import org.junit.Test;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -50,7 +51,9 @@ public class TestParameterInjection {
 		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		
 		EnvironmentTag envTag = new EnvironmentTag(env);
-		List<Parameter> result = aws.fetchAutopopulateParametersFor(new File(ACL_FILENAME), envTag);
+		File file = new File(ACL_FILENAME);
+		List<TemplateParameter> declaredParameters = aws.validateTemplate(file);
+		List<Parameter> result = aws.fetchAutopopulateParametersFor(file, envTag, declaredParameters);
 		
 		assertEquals(1, result.size());
 		

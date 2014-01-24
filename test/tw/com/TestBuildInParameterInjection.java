@@ -65,6 +65,19 @@ public class TestBuildInParameterInjection {
 		
 		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(), createExpectedTags());
 	}
+	
+	@Test
+	public void canBuildAndDeleteSimpleStackThatDoesTakeNotBuildParam() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
+		File templateFile = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
+		// we should not try to populate any parameter NOT declared in the json, doing will cause an exception
+		String buildNumber = "456";
+		mainProjectAndEnv.addBuildNumber(buildNumber); 
+		String stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
+		
+		List<com.amazonaws.services.ec2.model.Tag> expectedEC2Tags = createExpectedTags();
+		expectedEC2Tags.add(createEc2Tag("CFN_ASSIST_BUILD", buildNumber));
+		validateCreateAndDeleteWorks(stackName, createCfnExpectedTagListWithBuild(buildNumber), expectedEC2Tags);
+	}
 
 	@Test
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 

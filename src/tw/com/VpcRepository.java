@@ -44,6 +44,10 @@ public class VpcRepository {
 		}	
 	}
 
+	public Vpc getCopyOfVpc(String vpcId) {
+		return getVpcById(vpcId);
+	}
+
 	private Vpc getVpcById(String vpcId) {
 		logger.info("Get VPC by ID " + vpcId);
 		DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
@@ -132,4 +136,5 @@ public class VpcRepository {
 		
 		setTags(vpcId, tags);	
 	}
+
 }

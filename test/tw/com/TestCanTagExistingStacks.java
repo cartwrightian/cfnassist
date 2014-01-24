@@ -2,6 +2,7 @@ package tw.com;
 
 import static org.junit.Assert.*;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -32,9 +33,9 @@ public class TestCanTagExistingStacks {
 	}
 	
 	@After
-	public void afterEachTestRuns() throws WrongNumberOfStacksException, InterruptedException {
+	public void afterEachTestRuns() throws InterruptedException, TimeoutException, WrongNumberOfStacksException {
 		EnvironmentSetupForTests.deleteStack(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
-		aws.waitForDeleteFinished(EnvironmentSetupForTests.TEMPORARY_STACK);
+		//aws.waitForDeleteFinished(EnvironmentSetupForTests.TEMPORARY_STACK);
 	}
 	
 	@Ignore("Does not seem way to lable at existing stack via the apis")

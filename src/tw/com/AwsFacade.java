@@ -96,10 +96,11 @@ public class AwsFacade implements AwsProvider {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> initialParams) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
-		
+		List<TemplateParameter> declaredParameters = validateTemplate(file);
+
 		String contents = loadFileContents(file);	
 		String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
@@ -107,12 +108,12 @@ public class AwsFacade implements AwsProvider {
 		String vpcId = vpcForEnv.getVpcId();
 		
 		Collection<Parameter> parameters  = new LinkedList<Parameter>();
-		parameters.addAll(initialParams);
+		parameters.addAll(userParameters);
 		
-		checkParameters(parameters);
-		addBuiltInParameters(projAndEnv, parameters, vpcId);
+		checkNoClashWithBuiltInParameters(parameters);
+		addBuiltInParameters(parameters, declaredParameters, projAndEnv, vpcId);
 		EnvironmentTag envTag = new EnvironmentTag(projAndEnv.getEnv());
-		addAutoDiscoveryParameters(envTag, file, parameters);
+		addAutoDiscoveryParameters(envTag, file, parameters, declaredParameters);
 		
 		logAllParameters(parameters);
 		CreateStackRequest createStackRequest = new CreateStackRequest();
@@ -154,11 +155,11 @@ public class AwsFacade implements AwsProvider {
 		return tag;
 	}
 
-	private void addBuiltInParameters(ProjectAndEnv projAndEnv, Collection<Parameter> parameters, String vpcId) {
-		addParameterTo(parameters, PARAMETER_ENV, projAndEnv.getEnv());
-		addParameterTo(parameters, PARAMETER_VPC, vpcId);
+	private void addBuiltInParameters(Collection<Parameter> parameters, List<TemplateParameter> declared, ProjectAndEnv projAndEnv, String vpcId) {
+		addParameterTo(parameters, declared, PARAMETER_ENV, projAndEnv.getEnv());
+		addParameterTo(parameters, declared, PARAMETER_VPC, vpcId);
 		if (projAndEnv.hasBuildNumber()) {
-			addParameterTo(parameters, PARAMETER_BUILD_NUMBER, projAndEnv.getBuildNumber());
+			addParameterTo(parameters, declared, PARAMETER_BUILD_NUMBER, projAndEnv.getBuildNumber());
 		}
 	}
 
@@ -173,27 +174,36 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	private void addAutoDiscoveryParameters(EnvironmentTag envTag, File file, 
-			Collection<Parameter> parameters) throws FileNotFoundException,
+			Collection<Parameter> parameters, List<TemplateParameter> declaredParameters) throws FileNotFoundException,
 			IOException, InvalidParameterException {
-		List<Parameter> autoPopulatedParametes = this.fetchAutopopulateParametersFor(file, envTag);
+		List<Parameter> autoPopulatedParametes = this.fetchAutopopulateParametersFor(file, envTag, declaredParameters);
 		for (Parameter autoPop : autoPopulatedParametes) {
 			parameters.add(autoPop);
 		}
 	}
 
-	private void addParameterTo(Collection<Parameter> parameters, String parameterName, String parameterValue) {
-		logger.info(String.format("Setting %s parameter to %s", parameterName, parameterValue));
-		Parameter parameter = new Parameter();
-		parameter.setParameterKey(parameterName);
-		parameter.setParameterValue(parameterValue);
-		parameters.add(parameter);
+	private void addParameterTo(Collection<Parameter> parameters, List<TemplateParameter> declared, String parameterName, String parameterValue) {
+		boolean isDeclared = false;
+		for(TemplateParameter declaration : declared) {
+			isDeclared = (declaration.getParameterKey().equals(parameterName));
+			if (isDeclared==true) break;
+		}
+		if (!isDeclared) {
+			logger.info(String.format("Not populating parameter %s as it is not declared in the json file", parameterName));
+		} else {
+			logger.info(String.format("Setting %s parameter to %s", parameterName, parameterValue));
+			Parameter parameter = new Parameter();
+			parameter.setParameterKey(parameterName);
+			parameter.setParameterValue(parameterValue);
+			parameters.add(parameter);
+		}
 	}
 
-	private void checkParameters(Collection<Parameter> parameters) throws InvalidParameterException {
+	private void checkNoClashWithBuiltInParameters(Collection<Parameter> parameters) throws InvalidParameterException {
 		for(Parameter param : parameters) {
 			String parameterKey = param.getParameterKey();
 			if (reservedParameters.contains(parameterKey)) {
-				logger.error("Attempt to overide autoset parameter called " + parameterKey);
+				logger.error("Attempt to overide built in and autoset parameter called " + parameterKey);
 				throw new InvalidParameterException(parameterKey);
 			}
 		}	
@@ -256,11 +266,10 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
-	public List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag) throws FileNotFoundException, IOException, InvalidParameterException {
+	public List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag, List<TemplateParameter> declaredParameters) throws FileNotFoundException, IOException, InvalidParameterException {
 		logger.info(String.format("Discover and populate parameters for %s and VPC: %s", file.getAbsolutePath(), envTag));
-		List<TemplateParameter> allParameters = validateTemplate(file);
 		List<Parameter> matches = new LinkedList<Parameter>();
-		for(TemplateParameter templateParam : allParameters) {
+		for(TemplateParameter templateParam : declaredParameters) {
 			String name = templateParam.getParameterKey();
 			if (isBuiltInParamater(name))
 			{
@@ -269,7 +278,7 @@ public class AwsFacade implements AwsProvider {
 			logger.info("Checking if parameter should be auto-populated from an existing resource, param name is " + name);
 			String description = templateParam.getDescription();
 			if (shouldPopulateFor(description)) {
-				populateParameter(envTag, matches, name, description);
+				populateParameter(envTag, matches, name, description, declaredParameters);
 			}
 		}
 		return matches;
@@ -283,7 +292,7 @@ public class AwsFacade implements AwsProvider {
 		return result;
 	}
 
-	private void populateParameter(EnvironmentTag envTag, List<Parameter> matches, String parameterName, String parameterDescription)
+	private void populateParameter(EnvironmentTag envTag, List<Parameter> matches, String parameterName, String parameterDescription, List<TemplateParameter> declaredParameters)
 			throws InvalidParameterException {
 		String logicalId = parameterDescription.substring(PARAM_PREFIX.length());
 		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
@@ -294,7 +303,7 @@ public class AwsFacade implements AwsProvider {
 			throw new InvalidParameterException(msg);
 		}
 		logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, parameterName));
-		addParameterTo(matches, parameterName, value);
+		addParameterTo(matches, declaredParameters, parameterName, value);
 	}
 
 	private boolean shouldPopulateFor(String description) {
