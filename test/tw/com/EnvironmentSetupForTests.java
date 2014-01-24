@@ -1,5 +1,7 @@
 package tw.com;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -20,6 +22,7 @@ import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateVpcRequest;
 import com.amazonaws.services.ec2.model.CreateVpcResult;
@@ -41,6 +44,8 @@ public class EnvironmentSetupForTests {
 	public static final String FOLDER_PATH = "src/cfnScripts/orderedScripts";
 	public static final String SUBNET_WITH_PARAM_FILENAME = "src/cfnScripts/subnetWithParam.json";
 	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
+	public static final String SUBNET_FILENAME_WITH_BUILD = "src/cfnScripts/subnetWithBuild.json";
+	public static final int NUMBER_AWS_TAGS = 3; // number of tags that cfn itself adds to created resources
 	
 	public static List<Subnet> getSubnetFors(AmazonEC2Client ec2Client, Vpc vpc) {
 		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
@@ -110,17 +115,18 @@ public class EnvironmentSetupForTests {
 		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	}
 	
-	public static void deleteTemporaryStack(AmazonCloudFormationClient cfnClient) {
+	public static void deleteStackIfPresent(AmazonCloudFormationClient cfnClient, String stackName) {
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(TEMPORARY_STACK);
+		describeStacksRequest.setStackName(stackName);
 		DescribeStacksResult result = cfnClient.describeStacks();
 		if (result.getStacks().size()==0) {
 			return;
 		}
 		
 		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
-		deleteStackRequest.setStackName(TEMPORARY_STACK);
+		deleteStackRequest.setStackName(stackName);
 		cfnClient.deleteStack(deleteStackRequest);
+		// TODO wait for delete to complete
 	}
 
 	public static void createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId) throws IOException {
@@ -140,6 +146,13 @@ public class EnvironmentSetupForTests {
 		p.setParameterKey(key);
 		p.setParameterValue(value);
 		return p;
+	}
+
+	public static void validatedDelete(String stackName, AwsProvider provider)
+			throws WrongNumberOfStacksException, InterruptedException {
+		provider.deleteStack(stackName);
+		String status = provider.waitForDeleteFinished(stackName);
+		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 	}
 
 }

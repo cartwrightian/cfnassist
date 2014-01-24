@@ -4,6 +4,7 @@ public class ProjectAndEnv {
 	
 	private String project;
 	private String env;
+	private String buildNumber = null;
 
 	public String getProject() {
 		return project;
@@ -53,7 +54,17 @@ public class ProjectAndEnv {
 	public String toString() {
 		return "ProjectAndEnv [project=" + project + ", env=" + env + "]";
 	}
-	
-	
 
+	public void addBuildNumber(String buildNumber) {
+		this.buildNumber  = buildNumber;		
+	}
+
+	public boolean hasBuildNumber() {
+		return (buildNumber!=null);
+	}
+
+	public String getBuildNumber() {
+		return buildNumber;
+	}
+	
 }

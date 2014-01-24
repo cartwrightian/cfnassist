@@ -13,9 +13,9 @@
 			"Default":"eu-west-1a",
 			"Description":"zoneADescription"
 		},
-		"zoneB":{
+		"build":{
 			"Type":"String",
-			"Default":"eu-west-1b"
+			"Description":"Should get populated with build"
 		}
 		
 	},
@@ -31,15 +31,21 @@
 					{
 						"Key":"Name",
 						"Value":"testSubnet"
-					},
+					}
+					,
+					{
+						"Key":"TagBuild",
+						"Value":{
+							"Ref":"build"
+						}
+					}
+					,
 					{
 						"Key":"TagEnv",
 						"Value":{
 							"Ref":"env"
 						}
-						
 					}
-					
 				],
 				"VpcId":{
 					"Ref":"vpc"

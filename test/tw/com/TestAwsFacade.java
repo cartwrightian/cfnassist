@@ -61,42 +61,34 @@ public class TestAwsFacade {
 		String status = aws.waitForCreateFinished(stackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
-		validatedDelete(stackName, aws);
+		EnvironmentSetupForTests.validatedDelete(stackName, aws);
 	}
 
-	public static void validatedDelete(String stackName, AwsProvider provider)
-			throws WrongNumberOfStacksException, InterruptedException {
-		provider.deleteStack(stackName);
-		String status = provider.waitForDeleteFinished(stackName);
-		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
-	}
-	
 	@Test
 	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
-		Collection<Parameter> parameters = new HashSet<Parameter>();
-		
-		Parameter envParameter = new Parameter();
-		envParameter.setParameterKey("env");
-		envParameter.setParameterValue("test");
-		parameters.add(envParameter);
-		
-		try {
-			aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv , parameters);	
-			fail("Should have thrown exception");
-		}
-		catch (InvalidParameterException exception) {
-			// expected
-		}
+		checkParameterCannotBePassed("env");
 	}
 	
 	@Test
 	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
-		Collection<Parameter> parameters = new HashSet<Parameter>();
+		checkParameterCannotBePassed("vpc");
+	}
+	
+	@Test
+	public void cannotAddbuildParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+		checkParameterCannotBePassed("build");
+	}
+
+	private void checkParameterCannotBePassed(String parameterName)
+			throws FileNotFoundException, IOException,
+			WrongNumberOfStacksException, InterruptedException,
+			StackCreateFailed {
+		Parameter parameter = new Parameter();
+		parameter.setParameterKey(parameterName);
+		parameter.setParameterValue("test");
 		
-		Parameter envParameter = new Parameter();
-		envParameter.setParameterKey("vpc");
-		envParameter.setParameterValue("test");
-		parameters.add(envParameter);
+		Collection<Parameter> parameters = new HashSet<Parameter>();
+		parameters.add(parameter);
 		
 		try {
 			aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv, parameters);	

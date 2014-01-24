@@ -21,6 +21,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 
 	private String awsRegion;
 	private String cfnProject;
+	private String cfnBuildNumber = null;
 	private String cfnEnv;
 	private Collection<Param> params;
 	
@@ -42,12 +43,19 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		this.cfnEnv = cfnEnv;
 	}
 	
+	public void setBuildNumber(String cfnBuildNumber) {
+		this.cfnBuildNumber  = cfnBuildNumber;
+	}
+	
 	public void addConfiguredTemplates(TemplatesElement fileElement) {
 		this.fileElement = fileElement;
 	}
 	
 	public void execute() {
 		ProjectAndEnv projectAndEnv = new ProjectAndEnv(cfnProject, cfnEnv);
+		if (cfnBuildNumber!=null) {
+			projectAndEnv.addBuildNumber(cfnBuildNumber);
+		}
 		Region region = RegionUtils.getRegion(awsRegion);
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 

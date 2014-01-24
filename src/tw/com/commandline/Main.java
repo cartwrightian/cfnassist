@@ -38,12 +38,14 @@ public class Main {
 	private Option projectParam;
 	private Option envParam;
 	private Option regionParam;
+	private Option buildNumberParam;
 	private CommandLineAction fileAction;
 	private CommandLineAction dirAction;
 	private CommandLineAction resetAction;
 	private CommandLineAction rollbackAction;
 	private CommandLineAction initAction;
 	private CommandLineAction labelAction;
+
 	private Options commandLineOptions;
 	private String[] args;
 	private String executableName;
@@ -97,6 +99,10 @@ public class Main {
 				withDescription("Provide paramters for cfn scripts, format as per cfn commandline tools").
 				create("parameters");
 		commandLineOptions.addOption(keysValuesParam);
+		buildNumberParam = OptionBuilder.withArgName("build").
+				hasArgs().withDescription("A Build number/id to tag the deployed stacks with, or use env var: " + AwsFacade.BUILD_TAG).
+				create();
+		commandLineOptions.addOption(buildNumberParam);
 	}
 
 	public int parse() {
@@ -107,9 +113,10 @@ public class Main {
 			
 			HelpFormatter formatter = new HelpFormatter();
 			
-			String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG);	
-			String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG);
-			String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION);
+			String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG, true);	
+			String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, true);
+			String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION, true);
+			String buildNumber = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
 			Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
 			List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
 			actions.add(dirAction);
@@ -122,14 +129,17 @@ public class Main {
 			Region awsRegion = populateRegion(region);
 			
 			ProjectAndEnv projectAndEnv = new ProjectAndEnv(project, env);
+			if (!buildNumber.isEmpty()) {
+				projectAndEnv.addBuildNumber(buildNumber);
+			}
 			logger.info("Invoking for " + projectAndEnv);
 			logger.info("Region set to " + awsRegion);
 			
 			DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 			AwsFacade aws = new AwsFacade(credentialsProvider, awsRegion);
 				
-			String argument = commandLine.getOptionValue(action.getArgName());
-			action.invoke(aws, projectAndEnv, argument, cfnParams);
+			String argumentForAction = commandLine.getOptionValue(action.getArgName());
+			action.invoke(aws, projectAndEnv, argumentForAction, cfnParams);
 		}
 		catch (Exception exception) {
 			logger.error(exception.toString());
@@ -205,7 +215,7 @@ public class Main {
 	}
 
 	private String checkForArgument(CommandLine cmd, HelpFormatter formatter,
-			Option option, String environmentalVar) throws MissingArgumentException {
+			Option option, String environmentalVar, boolean required) throws MissingArgumentException {
 		String argName = option.getArgName();
 		logger.debug("Checking for arg " + argName);
 		if (cmd.hasOption(argName)) {
@@ -217,7 +227,11 @@ public class Main {
 		if (fromEnv!=null) {
 			return fromEnv;
 		}
-		formatter.printHelp( executableName, commandLineOptions );		
-		throw new MissingArgumentException(option);	
+		formatter.printHelp( executableName, commandLineOptions );
+		if (required)
+		{
+			throw new MissingArgumentException(option);	
+		}
+		return "";
 	}
 }

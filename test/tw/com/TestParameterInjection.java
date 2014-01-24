@@ -42,7 +42,7 @@ public class TestParameterInjection {
 	
 	@AfterClass 
 	public static void afterAllTestsHaveRun() throws WrongNumberOfStacksException, InterruptedException {
-		TestAwsFacade.validatedDelete(subnetStackName, aws);
+		EnvironmentSetupForTests.validatedDelete(subnetStackName, aws);
 	}
 
 	@Test
@@ -76,7 +76,7 @@ public class TestParameterInjection {
 		String status = aws.waitForCreateFinished(aclStackName);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
-		TestAwsFacade.validatedDelete(aclStackName, aws);		
+		EnvironmentSetupForTests.validatedDelete(aclStackName, aws);		
 	}
 	
 

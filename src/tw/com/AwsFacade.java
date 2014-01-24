@@ -43,9 +43,11 @@ public class AwsFacade implements AwsProvider {
 	public static final String ENVIRONMENT_TAG = "CFN_ASSIST_ENV";
 	public static final String PROJECT_TAG = "CFN_ASSIST_PROJECT"; 
 	public static final String INDEX_TAG = "CFN_ASSIST_DELTA";
+	public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
 	
 	private static final String PARAMETER_ENV = "env";
 	private static final String PARAMETER_VPC = "vpc";
+	private static final String PARAMETER_BUILD_NUMBER = "build";
 	private static final String PARAM_PREFIX = "::";
 	
 	private AmazonCloudFormationClient cfnClient;
@@ -67,6 +69,7 @@ public class AwsFacade implements AwsProvider {
 		reservedParameters = new LinkedList<String>();
 		reservedParameters.add(PARAMETER_ENV);
 		reservedParameters.add(PARAMETER_VPC);
+		reservedParameters.add(PARAMETER_BUILD_NUMBER);
 	}
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
@@ -107,7 +110,7 @@ public class AwsFacade implements AwsProvider {
 		parameters.addAll(initialParams);
 		
 		checkParameters(parameters);
-		addBuiltInParameters(projAndEnv.getEnv(), parameters, vpcId);
+		addBuiltInParameters(projAndEnv, parameters, vpcId);
 		EnvironmentTag envTag = new EnvironmentTag(projAndEnv.getEnv());
 		addAutoDiscoveryParameters(envTag, file, parameters);
 		
@@ -116,7 +119,7 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
-		Collection<Tag> tags = createTagsForStack(projAndEnv.getProject(), projAndEnv.getEnv());
+		Collection<Tag> tags = createTagsForStack(projAndEnv);
 		createStackRequest.setTags(tags);
 		
 		logger.info("Making createStack call to AWS");
@@ -133,10 +136,14 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 
-	private Collection<Tag> createTagsForStack(String project, String env) {
+	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv) {
+		
 		Collection<Tag> tags = new ArrayList<Tag>();
-		tags.add(createTag(PROJECT_TAG, project));
-		tags.add(createTag(ENVIRONMENT_TAG, env));
+		tags.add(createTag(PROJECT_TAG, projectAndEnv.getProject()));
+		tags.add(createTag(ENVIRONMENT_TAG, projectAndEnv.getEnv()));
+		if (projectAndEnv.hasBuildNumber()) {
+			tags.add(createTag(BUILD_TAG, projectAndEnv.getBuildNumber()));
+		}
 		return tags;
 	}
 
@@ -147,9 +154,12 @@ public class AwsFacade implements AwsProvider {
 		return tag;
 	}
 
-	private void addBuiltInParameters(String env, Collection<Parameter> parameters, String vpcId) {
-		addParameterTo(parameters, PARAMETER_ENV, env);
+	private void addBuiltInParameters(ProjectAndEnv projAndEnv, Collection<Parameter> parameters, String vpcId) {
+		addParameterTo(parameters, PARAMETER_ENV, projAndEnv.getEnv());
 		addParameterTo(parameters, PARAMETER_VPC, vpcId);
+		if (projAndEnv.hasBuildNumber()) {
+			addParameterTo(parameters, PARAMETER_BUILD_NUMBER, projAndEnv.getBuildNumber());
+		}
 	}
 
 	private Vpc findVpcForEnv(ProjectAndEnv projAndEnv) throws InvalidParameterException {

@@ -71,8 +71,8 @@ public class TestCfnRepository {
 		DescribeSubnetsResult subnetResultsB = getSubnetDetails(physicalIdB);
 		
 		// remove the stacks before we do any validation to make sure things left in clean state
-		TestAwsFacade.validatedDelete(stackA, awsProvider);	
-		TestAwsFacade.validatedDelete(stackB, awsProvider);
+		EnvironmentSetupForTests.validatedDelete(stackA, awsProvider);	
+		EnvironmentSetupForTests.validatedDelete(stackB, awsProvider);
 		
 		// check we found the physical ids
 		assertNotNull(physicalIdA);

@@ -32,7 +32,7 @@ public class TestCommandLine {
 		vpc = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		
-		EnvironmentSetupForTests.deleteTemporaryStack(cfnClient);
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
 	}
 	
 	@Test
@@ -115,6 +115,21 @@ public class TestCommandLine {
 	}
 	
 	@Test
+	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() {
+		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-file", EnvironmentSetupForTests.SUBNET_FILENAME,
+				"-build", "001"
+				};
+		Main main = new Main(args);
+		int result = main.parse();
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet");
+		assertEquals(0,result);
+	}
+	
+	@Test
 	public void testInvokeViaCommandLineDeployWithFilePassedInParam() {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
@@ -170,7 +185,7 @@ public class TestCommandLine {
 		};
 		Main main = new Main(argslabelStack);
 		int result = main.parse();	
-		EnvironmentSetupForTests.deleteTemporaryStack(cfnClient);		
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);		
 		assertEquals(0, result);
 	}
 

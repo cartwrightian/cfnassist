@@ -21,7 +21,6 @@ public class TestHaveValidTemplateFiles {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 	}
 	
-
 	@Test
 	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException {
 		AwsProvider facade = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
@@ -30,7 +29,6 @@ public class TestHaveValidTemplateFiles {
 		assertTrue(folder.exists());	
 		validateFolder(facade, folder);
 	}
-
 
 	private void validateFolder(AwsProvider facade, File folder)
 			throws FileNotFoundException, IOException {
