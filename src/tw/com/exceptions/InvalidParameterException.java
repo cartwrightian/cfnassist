@@ -1,4 +1,4 @@
-package tw.com;
+package tw.com.exceptions;
 
 @SuppressWarnings("serial")
 public class InvalidParameterException extends Exception {

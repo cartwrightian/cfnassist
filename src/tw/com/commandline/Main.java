@@ -20,12 +20,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
-import tw.com.CannotFindVpcException;
-import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
 import tw.com.StackCreateFailed;
 import tw.com.TagsAlreadyInit;
-import tw.com.WrongNumberOfStacksException;
+import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;

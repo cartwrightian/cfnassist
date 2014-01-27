@@ -11,6 +11,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.WrongNumberOfStacksException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.StackStatus;

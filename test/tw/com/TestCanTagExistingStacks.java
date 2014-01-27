@@ -9,6 +9,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.WrongNumberOfStacksException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.model.Vpc;

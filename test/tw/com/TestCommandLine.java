@@ -15,6 +15,7 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Vpc;
 
 import tw.com.commandline.Main;
+import tw.com.exceptions.CannotFindVpcException;
 
 public class TestCommandLine {
 

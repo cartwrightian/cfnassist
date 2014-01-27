@@ -8,6 +8,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Tag;

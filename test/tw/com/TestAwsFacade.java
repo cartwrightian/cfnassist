@@ -12,6 +12,9 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.WrongNumberOfStacksException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.StackStatus;

@@ -1,5 +1,7 @@
 package tw.com;
 
+import tw.com.exceptions.CfnAssistException;
+
 @SuppressWarnings("serial")
 public class StackCreateFailed extends CfnAssistException {
 

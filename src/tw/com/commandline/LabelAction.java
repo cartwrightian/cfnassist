@@ -9,9 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
-import tw.com.CfnAssistException;
-import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.InvalidParameterException;
+
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 public class LabelAction extends SharedAction {

@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.CannotFindVpcException;
 import tw.com.ProjectAndEnv;
+import tw.com.exceptions.CannotFindVpcException;
 
 public class ResetAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(ResetAction.class);

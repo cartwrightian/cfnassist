@@ -6,6 +6,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.WrongNumberOfStacksException;
+
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 

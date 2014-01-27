@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.CfnAssistException;
-import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.InvalidParameterException;
 
 public class InitAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(InitAction.class);

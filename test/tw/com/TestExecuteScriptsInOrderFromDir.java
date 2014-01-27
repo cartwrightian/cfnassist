@@ -15,6 +15,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.WrongNumberOfStacksException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
