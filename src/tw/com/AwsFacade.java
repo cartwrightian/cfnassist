@@ -213,7 +213,11 @@ public class AwsFacade implements AwsProvider {
 		// note: aws only allows [a-zA-Z][-a-zA-Z0-9]* in stacknames
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
-		return projAndEnv.getProject()+projAndEnv.getEnv()+name;
+		if (projAndEnv.hasBuildNumber()) {
+			return projAndEnv.getProject()+projAndEnv.getBuildNumber()+projAndEnv.getEnv()+name;
+		} else {
+			return projAndEnv.getProject()+projAndEnv.getEnv()+name;
+		}
 	}
 	
 	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
@@ -439,8 +443,11 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
+	@Deprecated
 	public void initEnvAndProjectForStack(String stackName,
 			ProjectAndEnv projAndEnv) throws CfnAssistException {
+		// TODO this does not work, the EC2 part of the API does not recognize the resource ID returned by the CFN part of the API
+		// This functionality is disabled at the CLI level at the moment, and the test is set ignored
 		DescribeStacksRequest request = new DescribeStacksRequest();
 		request.setStackName(stackName);
 		DescribeStacksResult result = cfnClient.describeStacks(request );
@@ -467,7 +474,7 @@ public class AwsFacade implements AwsProvider {
 		logger.debug("Making call to createTags");
 		ec2Client.createTags(createTagsRequest);
 		
-		// TODO how to check
+		// TODO how to check status of this call?
 	}
 
 }

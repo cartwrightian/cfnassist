@@ -97,10 +97,14 @@ public class EnvironmentSetupForTests {
 		return cfnClient;
 	}
 
-	public static boolean deleteStack(AmazonCloudFormationClient client,String stackName)  {
+	public static boolean deleteStack(AmazonCloudFormationClient client,String stackName, boolean blocking)  {
 		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
 		deleteStackRequest.setStackName(stackName);
 		client.deleteStack(deleteStackRequest);	
+		if (!blocking) {
+			return true;
+		}
+		// blocking, wait for delete
 		try {
 			return waitForStackDelete(client, stackName);
 		}

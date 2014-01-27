@@ -117,7 +117,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet");
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet", true);
 		assertEquals(0,result);
 	}
 	
@@ -132,7 +132,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet");
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssist001Testsubnet", false);
 		assertEquals(0,result);
 	}
 	
@@ -160,7 +160,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnetWithParam");
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnetWithParam", true);
 		assertEquals(0,result);
 	}
 	
@@ -186,8 +186,8 @@ public class TestCommandLine {
 		//clean up as needed
 		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
-		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest01createSubnet");
-		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls");
+		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest01createSubnet",false);
+		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls",false);
 		
 		// check
 		assertEquals(0,result);

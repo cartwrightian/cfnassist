@@ -21,12 +21,13 @@ public class TestAwsFacade {
 
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsProvider aws;
-	private ProjectAndEnv projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+	private ProjectAndEnv projectAndEnv;
 	
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	}
 
 	@Test
@@ -51,6 +52,14 @@ public class TestAwsFacade {
 	public void createStacknameFromEnvAndFile() {
 		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SUBNET_FILENAME),projectAndEnv);
 		assertEquals("CfnAssistTestsubnet", stackName);
+	}
+	
+	@Test 
+	public void shouldIncludeBuildNumberWhenFormingStackname() {
+		projectAndEnv.addBuildNumber("042");
+		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SUBNET_FILENAME),projectAndEnv);
+		
+		assertEquals("CfnAssist042Testsubnet", stackName);
 	}
 	
 	@Test

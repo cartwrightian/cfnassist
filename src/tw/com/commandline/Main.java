@@ -44,7 +44,7 @@ public class Main {
 	private CommandLineAction resetAction;
 	private CommandLineAction rollbackAction;
 	private CommandLineAction initAction;
-	private CommandLineAction labelAction;
+	//private CommandLineAction labelAction;
 
 	private Options commandLineOptions;
 	private String[] args;
@@ -76,8 +76,9 @@ public class Main {
 		commandLineOptions.addOption(rollbackAction.getOption());
 		initAction = new InitAction();	
 		commandLineOptions.addOption(initAction.getOption());
-		labelAction = new LabelAction();
-		commandLineOptions.addOption(labelAction.getOption());
+		// disabled, does not appear possible via the AWS API
+		//labelAction = new LabelAction();
+		//commandLineOptions.addOption(labelAction.getOption());
 	}
 
 	@SuppressWarnings("static-access")

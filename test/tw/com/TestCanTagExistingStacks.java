@@ -34,8 +34,7 @@ public class TestCanTagExistingStacks {
 	
 	@After
 	public void afterEachTestRuns() throws InterruptedException, TimeoutException, WrongNumberOfStacksException {
-		EnvironmentSetupForTests.deleteStack(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
-		//aws.waitForDeleteFinished(EnvironmentSetupForTests.TEMPORARY_STACK);
+		EnvironmentSetupForTests.deleteStack(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK,false);
 	}
 	
 	@Ignore("Does not seem way to lable at existing stack via the apis")
