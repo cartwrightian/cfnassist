@@ -10,6 +10,7 @@ import java.util.List;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;

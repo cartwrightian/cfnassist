@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;

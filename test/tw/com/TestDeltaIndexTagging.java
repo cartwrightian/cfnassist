@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.TagsAlreadyInit;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
