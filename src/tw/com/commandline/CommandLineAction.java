@@ -23,4 +23,7 @@ public interface CommandLineAction {
 
 	void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String argument, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, CfnAssistException;
 
+	void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
+			String argumentForAction, Collection<Parameter> cfnParams) throws CommandLineException;
+
 }

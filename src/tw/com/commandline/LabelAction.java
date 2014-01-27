@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,26 +14,14 @@ import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
-public class LabelAction implements CommandLineAction {
+public class LabelAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(LabelAction.class);
 	
-	private Option option;
-
 	@SuppressWarnings("static-access")
 	public LabelAction() {
 		String description = String.format("Warning: Label an existing stack with %s and %s", AwsFacade.PROJECT_TAG, AwsFacade.ENVIRONMENT_TAG);
 		option = OptionBuilder.withArgName("labelstack").hasArg().
 				withDescription(description).create("labelstack");
-	}
-
-	@Override
-	public Option getOption() {
-		return option;
-	}
-
-	@Override
-	public String getArgName() {
-		return option.getArgName();
 	}
 
 	@Override

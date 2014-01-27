@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,25 +15,13 @@ import tw.com.CfnAssistException;
 import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
 
-public class InitAction implements CommandLineAction {
+public class InitAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(InitAction.class);
 	
-	private Option option;
-
 	@SuppressWarnings("static-access")
 	public InitAction() {
 		option = OptionBuilder.withArgName("init").hasArg().
 					withDescription("Warning: Initialise a VPC to set up tags, provide VPC Id").create("init");
-	}
-
-	@Override
-	public Option getOption() {
-		return option;
-	}
-	
-	@Override
-	public String getArgName() {
-		return option.getArgName();
 	}
 
 	@Override

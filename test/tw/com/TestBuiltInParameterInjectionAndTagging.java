@@ -24,7 +24,7 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 
-public class TestBuildInParameterInjection {
+public class TestBuiltInParameterInjectionAndTagging {
 	private AwsProvider awsProvider;
 	private String env = EnvironmentSetupForTests.ENV;
 	private String project = EnvironmentSetupForTests.PROJECT;
@@ -68,12 +68,14 @@ public class TestBuildInParameterInjection {
 	
 	@Test
 	public void canBuildAndDeleteSimpleStackThatDoesTakeNotBuildParam() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
+		// we should not try to populate any parameter NOT declared in the json, doing so will cause an exception
 		File templateFile = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
-		// we should not try to populate any parameter NOT declared in the json, doing will cause an exception
+		
 		String buildNumber = "456";
 		mainProjectAndEnv.addBuildNumber(buildNumber); 
 		String stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
+		// tagging should still work even if json does not take build parameter
 		List<com.amazonaws.services.ec2.model.Tag> expectedEC2Tags = createExpectedTags();
 		expectedEC2Tags.add(createEc2Tag("CFN_ASSIST_BUILD", buildNumber));
 		validateCreateAndDeleteWorks(stackName, createCfnExpectedTagListWithBuild(buildNumber), expectedEC2Tags);

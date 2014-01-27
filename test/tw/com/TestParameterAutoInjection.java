@@ -19,7 +19,7 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 
-public class TestParameterInjection {
+public class TestParameterAutoInjection {
 	private static final String ACL_FILENAME = "src/cfnScripts/acl.json";
 
 	private static AwsProvider aws;

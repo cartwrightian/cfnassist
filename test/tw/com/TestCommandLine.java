@@ -18,6 +18,7 @@ import tw.com.commandline.Main;
 
 public class TestCommandLine {
 
+	private static final int FAILURE_STATUS = -1;
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private Vpc altEnvVPC;
 	private VpcRepository vpcRepository;
@@ -67,7 +68,7 @@ public class TestCommandLine {
 				"-init" 
 				};
 		Main main = new Main(args);
-		assertEquals(-1,main.parse());
+		assertEquals(FAILURE_STATUS,main.parse());
 	}
 	
 	@Test
@@ -103,7 +104,7 @@ public class TestCommandLine {
 				"-parameters", "testA=123;testB"
 				};
 		Main main = new Main(args);
-		assertEquals(-1,main.parse());
+		assertEquals(FAILURE_STATUS,main.parse());
 	}
 	
 	@Test
@@ -133,6 +134,19 @@ public class TestCommandLine {
 		int result = main.parse();
 		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet");
 		assertEquals(0,result);
+	}
+	
+	@Test
+	public void shouldNotAllowBuildParameterWithDirAction() {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-dir", EnvironmentSetupForTests.FOLDER_PATH,
+				"-build", "001"
+				};
+		Main main = new Main(args);
+		int result = main.parse();
+		assertEquals(FAILURE_STATUS, result);
 	}
 	
 	@Test

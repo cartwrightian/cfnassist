@@ -139,9 +139,11 @@ public class Main {
 			AwsFacade aws = new AwsFacade(credentialsProvider, awsRegion);
 				
 			String argumentForAction = commandLine.getOptionValue(action.getArgName());
+			action.validate(aws, projectAndEnv, argumentForAction, cfnParams);
 			action.invoke(aws, projectAndEnv, argumentForAction, cfnParams);
 		}
 		catch (Exception exception) {
+			//  back to caller via exit status
 			logger.error(exception.toString());
 			return -1;
 		}
