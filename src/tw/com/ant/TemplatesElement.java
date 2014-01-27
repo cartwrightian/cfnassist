@@ -11,10 +11,13 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.CannotFindVpcException;
+import tw.com.CfnAssistException;
 import tw.com.InvalidParameterException;
 import tw.com.ProjectAndEnv;
 import tw.com.StackCreateFailed;
 import tw.com.WrongNumberOfStacksException;
+import tw.com.commandline.CommandLineAction;
+import tw.com.commandline.CommandLineException;
 import tw.com.commandline.DirAction;
 import tw.com.commandline.FileAction;
 
@@ -30,17 +33,19 @@ public class TemplatesElement {
 		this.target = target;
 	}
 	
-	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
+	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException {
 		String absolutePath = target.getAbsolutePath();
+		CommandLineAction actionToInvoke = null;
 		if (target.isDirectory()) {
-			DirAction action = new DirAction();
-			action.invoke(aws, projectAndEnv, absolutePath,cfnParams);
+			actionToInvoke = new DirAction();
 		} else if (target.isFile()) {
-			FileAction action = new FileAction();
-			action.invoke(aws, projectAndEnv, absolutePath,cfnParams);
-		} else {
-			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
-		}
+			actionToInvoke = new FileAction();
+		} 
 		
+		if (actionToInvoke==null) {
+			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
+		} 
+		actionToInvoke.validate(aws, projectAndEnv, absolutePath, cfnParams);
+		actionToInvoke.invoke(aws, projectAndEnv, absolutePath,cfnParams);		
 	}
 }

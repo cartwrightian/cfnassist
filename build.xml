@@ -157,6 +157,12 @@
 		</cfnassist>
 	</target>
 	
+	<target name="testSimpleTemplateBuildNumber" depends="customTask">
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" buildNumber="42">
+			<Templates target="src/cfnScripts/subnet.json"/>
+		</cfnassist>
+	</target>
+	
 	<target name="testSimpleTemplateWithParam" depends="customTask">
 		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
 			<Templates target="src/cfnScripts/subnetWithParam.json"/>
@@ -169,7 +175,6 @@
 		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
 		    <Templates target="src/cfnScripts/orderedScripts/"/>
 		</cfnassist>	
-
 	</target>
 	
 </project>
