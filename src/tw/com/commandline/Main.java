@@ -50,6 +50,7 @@ public class Main {
 	private String[] args;
 	private String executableName;
 	private Option keysValuesParam;
+	private Option arnParam;
 
 	public Main(String[] args) {
 		this.args = args;
@@ -104,6 +105,9 @@ public class Main {
 				hasArgs().withDescription("A Build number/id to tag the deployed stacks with, or use env var: " + AwsFacade.BUILD_TAG).
 				create("build");
 		commandLineOptions.addOption(buildNumberParam);
+		arnParam = OptionBuilder.withArgName("arn").hasArg().
+				withDescription("SNS ARN to publish updates from cloud formation").create("arn");
+		commandLineOptions.addOption(arnParam);
 	}
 
 	public int parse() {
@@ -118,6 +122,7 @@ public class Main {
 			String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, true);
 			String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION, true);
 			String buildNumber = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
+			String arn = checkForArgument(commandLine, formatter, arnParam, "", false);
 			Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
 			List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
 			actions.add(dirAction);
@@ -132,6 +137,9 @@ public class Main {
 			ProjectAndEnv projectAndEnv = new ProjectAndEnv(project, env);
 			if (!buildNumber.isEmpty()) {
 				projectAndEnv.addBuildNumber(buildNumber);
+			}
+			if (!arn.isEmpty()) {
+				projectAndEnv.addArn(arn);
 			}
 			logger.info("Invoking for " + projectAndEnv);
 			logger.info("Region set to " + awsRegion);
@@ -225,10 +233,12 @@ public class Main {
 			return cmd.getOptionValue(argName);
 		}
 		
-		logger.info(String.format("Argument not given %s, try environmental var %s", argName, environmentalVar));
-		String fromEnv = System.getenv(environmentalVar);
-		if (fromEnv!=null) {
-			return fromEnv;
+		if (!environmentalVar.isEmpty()) {
+			logger.info(String.format("Argument not given %s, try environmental var %s", argName, environmentalVar));
+			String fromEnv = System.getenv(environmentalVar);
+			if (fromEnv!=null) {
+				return fromEnv;
+			}
 		}
 		formatter.printHelp( executableName, commandLineOptions );
 		if (required)

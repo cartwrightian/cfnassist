@@ -138,6 +138,21 @@ public class TestCommandLine {
 	}
 	
 	@Test
+	public void testInvokeViaCommandLineDeployWithFileAndArnForSNS() throws InterruptedException, TimeoutException {
+		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-file", EnvironmentSetupForTests.SUBNET_FILENAME,
+				"-arn", EnvironmentSetupForTests.ARN_FOR_TESTING
+				};
+		Main main = new Main(args);
+		int result = main.parse();
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet", false);
+		assertEquals(0,result);
+	}
+	
+	@Test
 	public void shouldNotAllowBuildParameterWithDirAction() {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 

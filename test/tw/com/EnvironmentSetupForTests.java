@@ -197,4 +197,6 @@ public class EnvironmentSetupForTests {
 		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 	}
 
+	static final String ARN_FOR_TESTING = "arn:aws:sns:eu-west-1:619378453009:cfn_assist";
+
 }

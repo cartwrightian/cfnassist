@@ -127,6 +127,11 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
+		if (projAndEnv.hasSNSARNs()) {
+			Collection<String> arn = projAndEnv.getSNSARNs();
+			logger.info("Setting arn for sns events to " + arn);
+			createStackRequest.setNotificationARNs(arn);
+		}
 		Collection<Tag> tags = createTagsForStack(projAndEnv);
 		createStackRequest.setTags(tags);
 		
