@@ -16,21 +16,31 @@ import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.ec2.AmazonEC2Client;
 
 public class TestAwsFacade {
 
-	private DefaultAWSCredentialsProviderChain credentialsProvider;
+	private AWSCredentialsProvider credentialsProvider;
 	private AwsProvider aws;
 	private ProjectAndEnv projectAndEnv;
+	private MonitorStackEvents monitor;
 	
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		
+		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		VpcRepository vpcRepository = new VpcRepository(ec2Client);
+		
+		monitor = new PollingStackMonitor(cfnRepository);	
+		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	}
 
@@ -70,9 +80,6 @@ public class TestAwsFacade {
 	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
 		InterruptedException, InvalidParameterException, StackCreateFailed {
 		String stackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv);	
-		
-		String status = aws.waitForCreateFinished(stackName);
-		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
 		EnvironmentSetupForTests.validatedDelete(stackName, aws);
 	}

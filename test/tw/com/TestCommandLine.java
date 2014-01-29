@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -20,25 +21,28 @@ import tw.com.exceptions.CannotFindVpcException;
 public class TestCommandLine {
 
 	private static final int FAILURE_STATUS = -1;
-	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private Vpc altEnvVPC;
 	private VpcRepository vpcRepository;
 	private ProjectAndEnv altProjectAndEnv;
-	private AmazonEC2Client directClient;
-	private AmazonCloudFormationClient cfnClient;
+	private static AmazonEC2Client ec2Client;
+	private static AmazonCloudFormationClient cfnClient;
+	
+	@BeforeClass
+	public static void beforeAllTestsRun() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
+	}
 
 	@Before
-	public void beforeTestsRun() {
-		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		vpcRepository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
+	public void beforeEveryTestRun() {
+		vpcRepository = new VpcRepository(ec2Client);
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
-		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		
 		altEnvVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 		if (altEnvVPC==null) {
-			altEnvVPC=vpcRepository.getCopyOfVpc("vpc-21e5ee43");
+			altEnvVPC=vpcRepository.getCopyOfVpc(EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV);
 		}
-		
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
 	}
@@ -46,7 +50,7 @@ public class TestCommandLine {
 	@Test
 	public void testInvokeInitViaCommandLine() {
 		
-		EnvironmentSetupForTests.clearVpcTags(directClient, altEnvVPC);
+		EnvironmentSetupForTests.clearVpcTags(ec2Client, altEnvVPC);
 		
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ALT_ENV, 
@@ -110,7 +114,6 @@ public class TestCommandLine {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -124,7 +127,6 @@ public class TestCommandLine {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -139,7 +141,6 @@ public class TestCommandLine {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWithFileAndArnForSNS() throws InterruptedException, TimeoutException {
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -148,7 +149,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet", false);
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet", true);
 		assertEquals(0,result);
 	}
 	
@@ -167,7 +168,6 @@ public class TestCommandLine {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWithFilePassedInParam() throws InterruptedException, TimeoutException {
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 

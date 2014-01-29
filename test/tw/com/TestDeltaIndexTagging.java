@@ -13,6 +13,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.TagsAlreadyInit;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -30,12 +31,17 @@ public class TestDeltaIndexTagging {
 	@Before
 	public void beforeTestsRun() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		
 		vpcRepos = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-
-		altVpc = vpcRepos.getCopyOfVpc(altProjectAndEnv);
+		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
 		
+		aws = new AwsFacade(monitor , cfnClient, directClient, cfnRepository , vpcRepos);	
+		
+		//altVpc = vpcRepos.getCopyOfVpc(altProjectAndEnv);	
+		altVpc = EnvironmentSetupForTests.findAltVpc(vpcRepos);
 	}
 	
 	@After

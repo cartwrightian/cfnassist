@@ -5,12 +5,12 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import org.apache.tools.ant.BuildException;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.commandline.CommandLineException;
 import tw.com.exceptions.CfnAssistException;
@@ -56,13 +56,12 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 			projectAndEnv.addBuildNumber(cfnBuildNumber);
 		}
 		Region region = RegionUtils.getRegion(awsRegion);
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 
 		Collection<Parameter> cfnParameters = new LinkedList<Parameter>();
 		for(Param param : params) {
 			cfnParameters.add(param.getParamter());
 		}
-		AwsFacade aws = new AwsFacade(credentialsProvider, region);
+		AwsFacade aws = new FacadeFactory().createFacace(region);
 		try {		
 			fileElement.execute(aws, projectAndEnv, cfnParameters);
 		} catch (IOException

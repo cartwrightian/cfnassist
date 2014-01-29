@@ -17,8 +17,6 @@ import com.amazonaws.services.ec2.model.Vpc;
 public class TestVpcRepository {
 
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
-	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
-
 	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private VpcRepository repository;
 
@@ -41,7 +39,7 @@ public class TestVpcRepository {
 
 	@Test
 	public void testFindOtherVpcForTests() {
-		Vpc vpc = repository.getCopyOfVpc(altProjectAndEnv);
+		Vpc vpc = EnvironmentSetupForTests.findAltVpc(repository);
 		
 		assertNotNull(vpc);
 		List<Tag> tags = vpc.getTags();	

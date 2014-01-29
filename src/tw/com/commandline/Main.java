@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidParameterException;
@@ -27,7 +28,6 @@ import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -144,8 +144,7 @@ public class Main {
 			logger.info("Invoking for " + projectAndEnv);
 			logger.info("Region set to " + awsRegion);
 			
-			DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-			AwsFacade aws = new AwsFacade(credentialsProvider, awsRegion);
+			AwsFacade aws = createAwsFacade(awsRegion);
 				
 			String argumentForAction = commandLine.getOptionValue(action.getArgName());
 			action.validate(aws, projectAndEnv, argumentForAction, cfnParams);
@@ -157,6 +156,10 @@ public class Main {
 			return -1;
 		}
 		return 0;
+	}
+
+	private AwsFacade createAwsFacade(Region awsRegion) {
+		return new FacadeFactory().createFacace(awsRegion);
 	}
 
 	private Collection<Parameter> checkForCfnParameters(
@@ -240,9 +243,10 @@ public class Main {
 				return fromEnv;
 			}
 		}
-		formatter.printHelp( executableName, commandLineOptions );
+		
 		if (required)
 		{
+			formatter.printHelp( executableName, commandLineOptions );
 			throw new MissingArgumentException(option);	
 		}
 		return "";

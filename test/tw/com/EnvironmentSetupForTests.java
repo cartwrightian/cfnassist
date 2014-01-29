@@ -1,7 +1,5 @@
 package tw.com;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -10,12 +8,13 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -40,6 +39,15 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class EnvironmentSetupForTests {
+	private static final Logger logger = LoggerFactory.getLogger(EnvironmentSetupForTests.class);
+
+	// User/Env specific constants, these will need to change for others running these tests!
+	static final String ARN_FOR_TESTING = "arn:aws:sns:eu-west-1:619378453009:cfn_assist";
+	static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
+	
+	// TODO should we pick this up from the environment?
+	private static final Regions AWS_REGION = Regions.EU_WEST_1;
+	
 	public static final String PROJECT = "CfnAssist";
 	public static final String ENV = "Test";
 	public static String ALT_ENV = "AdditionalTest";
@@ -50,7 +58,8 @@ public class EnvironmentSetupForTests {
 	public static final String SUBNET_WITH_PARAM_FILENAME = "src/cfnScripts/subnetWithParam.json";
 	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
 	public static final String SUBNET_FILENAME_WITH_BUILD = "src/cfnScripts/subnetWithBuild.json";
-	public static final int NUMBER_AWS_TAGS = 3; // number of tags that cfn itself adds to created resources
+	
+	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources
 	private static final int DELETE_RETRY_LIMIT = 10;
 	private static final long DELETE_RETRY_INTERVAL = 3000;
 	
@@ -70,10 +79,16 @@ public class EnvironmentSetupForTests {
 		return vpcFilter;
 	}
 
-	public static AmazonEC2Client createEC2Client(DefaultAWSCredentialsProviderChain credentialsProvider) {
+	public static AmazonEC2Client createEC2Client(AWSCredentialsProvider credentialsProvider) {
 		AmazonEC2Client ec2Client = new AmazonEC2Client(credentialsProvider);
 		ec2Client.setRegion(EnvironmentSetupForTests.getRegion());
 		return ec2Client;
+	}
+		
+	public static AmazonCloudFormationClient createCFNClient(AWSCredentialsProvider credentialsProvider) {
+		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
+		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
+		return cfnClient;
 	}
 	
 	public static Vpc createVpc(AmazonEC2Client client) {
@@ -89,17 +104,17 @@ public class EnvironmentSetupForTests {
 		client.deleteVpc(deleteVpcRequest);
 	}
 
-	public static Region getRegion() {
-		return Region.getRegion(Regions.EU_WEST_1);
-	}
-	
-	public static AmazonCloudFormationClient createCFNClient(AWSCredentialsProvider credentialsProvider) {
-		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
-		return cfnClient;
+	public static Vpc findAltVpc(VpcRepository repository) {
+		return repository.getCopyOfVpc(VPC_ID_FOR_ALT_ENV);
 	}
 
+	public static Region getRegion() {
+		return Region.getRegion(AWS_REGION);
+	}
+
+
 	public static boolean deleteStack(AmazonCloudFormationClient client,String stackName, boolean blocking)  {
+		logger.debug("Request deletion of stack: " + stackName);
 		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
 		deleteStackRequest.setStackName(stackName);
 		client.deleteStack(deleteStackRequest);	
@@ -111,32 +126,40 @@ public class EnvironmentSetupForTests {
 			return waitForStackDelete(client, stackName);
 		}
 		catch(AmazonServiceException exception) {
+			logger.error(exception.toString());
 			return false;
 		} catch (InterruptedException e) {
+			logger.error(e.toString());
 			return false;
 		}
 	}
 
+	// TODO use monitor here instead?
 	private static boolean waitForStackDelete(AmazonCloudFormationClient client,
 			String stackName) throws InterruptedException  {
+		logger.debug("Waiting for deletion to complete for stack: " + stackName);
 		DescribeStackEventsRequest describeStackEventsRequest = new DescribeStackEventsRequest();
 		describeStackEventsRequest.setStackName(stackName);
 		
 		int count = 0;
 		while (count<DELETE_RETRY_LIMIT) {
+			logger.debug("Check stack events");
 			DescribeStackEventsResult result = client.describeStackEvents(describeStackEventsRequest);
 			List<StackEvent> events = result.getStackEvents();
 			for(StackEvent event : events) {
 				if (event.getResourceStatus()==StackStatus.DELETE_COMPLETE.toString()) {
+					logger.debug("Delete complete for stack: " + stackName);
 					return true;
 				}
 				if (event.getResourceStatus()==StackStatus.DELETE_FAILED.toString()) {
+					logger.error("Delete failed for stack: " + stackName);
 					return false;
 				}
 			}
 			count++;
 			Thread.sleep(DELETE_RETRY_INTERVAL);
 		}
+		logger.error("Delete timed out for stack: " + stackName);
 		return false;
 	}
 
@@ -165,10 +188,7 @@ public class EnvironmentSetupForTests {
 			return;
 		}
 		
-		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
-		deleteStackRequest.setStackName(stackName);
-		cfnClient.deleteStack(deleteStackRequest);
-		// TODO wait for delete to complete
+		deleteStack(cfnClient, stackName, true);
 	}
 
 	public static void createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId) throws IOException {
@@ -193,10 +213,8 @@ public class EnvironmentSetupForTests {
 	public static void validatedDelete(String stackName, AwsProvider provider)
 			throws WrongNumberOfStacksException, InterruptedException {
 		provider.deleteStack(stackName);
-		String status = provider.waitForDeleteFinished(stackName);
-		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
+		//String status = provider.waitForDeleteFinished(stackName);
+		//assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 	}
-
-	static final String ARN_FOR_TESTING = "arn:aws:sns:eu-west-1:619378453009:cfn_assist";
 
 }

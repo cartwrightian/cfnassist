@@ -11,6 +11,8 @@ import org.junit.Test;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.ec2.AmazonEC2Client;
 
 public class TestHaveValidTemplateFiles {
 
@@ -23,11 +25,19 @@ public class TestHaveValidTemplateFiles {
 	
 	@Test
 	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException {
-		AwsProvider facade = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		
+		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		VpcRepository vpcRepository = new VpcRepository(ec2Client);
+		
+		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);	
+		AwsFacade aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+	
 		File folder = new File("src/cfnScripts");
 		
 		assertTrue(folder.exists());	
-		validateFolder(facade, folder);
+		validateFolder(aws, folder);
 	}
 
 	private void validateFolder(AwsProvider facade, File folder)

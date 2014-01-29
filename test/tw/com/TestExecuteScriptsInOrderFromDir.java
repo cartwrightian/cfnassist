@@ -21,7 +21,9 @@ import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.ec2.AmazonEC2Client;
 
 public class TestExecuteScriptsInOrderFromDir {
 	
@@ -35,12 +37,20 @@ public class TestExecuteScriptsInOrderFromDir {
 
 	ArrayList<String> expectedList = new ArrayList<String>();
 	private AwsFacade aws;
+	private MonitorStackEvents monitor;
 	
 	@Before 
 	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		
+		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		VpcRepository vpcRepository = new VpcRepository(ec2Client);
+		
+		monitor = new PollingStackMonitor(cfnRepository);	
+		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
 		Files.deleteIfExists(destFile);
 		aws.resetDeltaIndex(mainProjectAndEnv);
 	}
@@ -66,7 +76,8 @@ public class TestExecuteScriptsInOrderFromDir {
 		for(int i=0; i<expectedList.size(); i++) {
 			String createdStackName = stackNames.get(i);
 			assertEquals(expectedList.get(i), createdStackName);
-			String status = aws.waitForCreateFinished(createdStackName);
+			// TODO should just be a call to get current status because applyTemplatesFromFolder is a blocking call
+			String status = monitor.waitForCreateFinished(createdStackName);
 			assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		}
 		

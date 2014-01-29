@@ -15,6 +15,7 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestCanTagExistingStacks {
@@ -28,12 +29,17 @@ public class TestCanTagExistingStacks {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
-		VpcRepository vpcRepository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
+		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpc.getVpcId());	
 		
-		aws = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
-		aws.waitForCreateFinished(EnvironmentSetupForTests.TEMPORARY_STACK);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
+		
+		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpc.getVpcId());	
+		monitor.waitForCreateFinished(EnvironmentSetupForTests.TEMPORARY_STACK);
+		
+		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);	
 	}
 	
 	@After

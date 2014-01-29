@@ -26,10 +26,10 @@ public interface AwsProvider {
 	ArrayList<String> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed;
 	
 	String createStackName(File templateFile, ProjectAndEnv projAndEnv);
-	void deleteStack(String stackName);
+	void deleteStack(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	
-	String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
-	String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
+	//String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
+	//String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
 	
 	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag, List<TemplateParameter> declaredParam) throws FileNotFoundException, IOException, InvalidParameterException;
 	

@@ -25,8 +25,6 @@ import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.regions.Region;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
@@ -34,8 +32,6 @@ import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackEvent;
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
@@ -62,17 +58,16 @@ public class AwsFacade implements AwsProvider {
 	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
 	private CfnRepository cfnRepository;
-
 	private AmazonEC2Client ec2Client;
+	private MonitorStackEvents monitor;
 
-	public AwsFacade(AWSCredentialsProvider credentialsProvider, Region region) {
-		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(region);
-		ec2Client = new AmazonEC2Client(credentialsProvider);
-		ec2Client.setRegion(region);
-		
-		vpcRepository = new VpcRepository(ec2Client);	
-		cfnRepository = new CfnRepository(cfnClient);
+	public AwsFacade(MonitorStackEvents monitor, AmazonCloudFormationClient cfnClient, AmazonEC2Client ec2Client, CfnRepository cfnRepository, VpcRepository vpcRepository) {
+		this.monitor = monitor;
+		this.cfnClient = cfnClient;
+		this.ec2Client = ec2Client;
+		this.cfnRepository = cfnRepository;
+		this.vpcRepository = vpcRepository;
+
 		reservedParameters = new LinkedList<String>();
 		reservedParameters.add(PARAMETER_ENV);
 		reservedParameters.add(PARAMETER_VPC);
@@ -137,7 +132,7 @@ public class AwsFacade implements AwsProvider {
 		
 		logger.info("Making createStack call to AWS");
 		cfnClient.createStack(createStackRequest);
-		waitForCreateFinished(stackName);
+		monitor.waitForCreateFinished(stackName);
 		cfnRepository.updateRepositoryFor(stackName);
 		return stackName;
 	}
@@ -149,8 +144,7 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 
-	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv) {
-		
+	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv) {	
 		Collection<Tag> tags = new ArrayList<Tag>();
 		tags.add(createTag(PROJECT_TAG, projectAndEnv.getProject()));
 		tags.add(createTag(ENVIRONMENT_TAG, projectAndEnv.getEnv()));
@@ -232,45 +226,12 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 	
-	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
-		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS);
-		if (!result.equals(StackStatus.CREATE_COMPLETE.toString())) {
-			logger.error(String.format("Failed to create stack %s, status is %s", stackName, result));
-			logStackEvents(cfnRepository.getStackEvents(stackName));
-			throw new StackCreateFailed(stackName);
-		}
-		return result;
+	public void deleteStack(String stackName) throws WrongNumberOfStacksException, InterruptedException {
+		deleteStackNonBlocking(stackName);
+		monitor.waitForDeleteFinished(stackName);
 	}
 	
-	private void logStackEvents(List<StackEvent> stackEvents) {
-		for(StackEvent event : stackEvents) {
-			logger.info(event.toString());
-		}	
-	}
-
-	public String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
-		StackStatus requiredStatus = StackStatus.DELETE_IN_PROGRESS;
-		String result = StackStatus.DELETE_FAILED.toString();
-		try {
-			result = cfnRepository.waitForStatusToChangeFrom(stackName, requiredStatus);
-		}
-		catch(com.amazonaws.AmazonServiceException awsException) {
-			String errorCode = awsException.getErrorCode();
-			if (errorCode.equals("ValidationError")) {
-				result = StackStatus.DELETE_COMPLETE.toString();
-			} else {
-				result = StackStatus.DELETE_FAILED.toString();
-			}		
-		}	
-		
-		if (!result.equals(StackStatus.DELETE_COMPLETE.toString())) {
-			logger.error("Failed to delete stack, status is " + result);
-			logStackEvents(cfnRepository.getStackEvents(stackName));
-		}
-		return result;
-	}
-	
-	public void deleteStack(String stackName) {
+	private void deleteStackNonBlocking(String stackName) {
 		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
 		deleteStackRequest.setStackName(stackName);
 		logger.info("Requesting deletion of stack " + stackName);
@@ -404,7 +365,7 @@ public class AwsFacade implements AwsProvider {
 			} else {
 				int newDelta = deltaIndex-1;
 				logger.info(String.format("About to delete stackname %s, new delta will be %s", stackName, newDelta));
-				deleteStack(stackName);
+				deleteStackNonBlocking(stackName);
 				logger.info("Deleted stack " + stackName);
 				stackNames.add(stackName);
 				if (newDelta>=0) {

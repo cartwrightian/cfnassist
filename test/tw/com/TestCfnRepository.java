@@ -48,7 +48,9 @@ public class TestCfnRepository {
 		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 
 		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
-		awsProvider = new AwsFacade(credentialsProvider, EnvironmentSetupForTests.getRegion());
+		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
+		awsProvider = new AwsFacade(monitor , cfnClient, directClient, cfnRepository, vpcRepository);
 	}
 	
 	@Test
@@ -63,8 +65,8 @@ public class TestCfnRepository {
 		//create two subnets with same logical id's but different VPCs		
 		String stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
 		String stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
-		awsProvider.waitForCreateFinished(stackA);
-		awsProvider.waitForCreateFinished(stackB);
+		//awsProvider.waitForCreateFinished(stackA);
+		//awsProvider.waitForCreateFinished(stackB);
 		
 		// find the id's
 		String physicalIdA = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(EnvironmentSetupForTests.ENV), TEST_CIDR_SUBNET);
