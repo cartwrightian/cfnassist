@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.InvalidParameterException;
@@ -26,31 +27,34 @@ import com.amazonaws.services.ec2.model.Vpc;
 public class TestCfnRepository {
 
 	private static final String TEST_CIDR_SUBNET = "testCidrSubnet";
-	private AmazonCloudFormationClient cfnClient;
+	private static AmazonCloudFormationClient cfnClient;
+	private static AmazonEC2Client directClient;
+	
 	private Vpc mainTestVPC;
-	private DefaultAWSCredentialsProviderChain credentialsProvider;
-	private AmazonEC2Client directClient;
 	private AwsProvider awsProvider;
 	private File templateFile;
 	private Vpc otherVPC;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 
-	@Before
-	public void beforeEachTestIsRun() {		
-		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
+	@BeforeClass
+	public static void beforeAllTestsOnce() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+	}
+	
+	@Before
+	public void beforeEachTestIsRun() {				
+		VpcRepository vpcRepository = new VpcRepository(directClient);
 		
-		VpcRepository vpcRepository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
-		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
-		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
-
 		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		awsProvider = new AwsFacade(monitor , cfnClient, directClient, cfnRepository, vpcRepository);
+		
+		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
+		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
 	}
 	
 	@Test

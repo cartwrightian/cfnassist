@@ -13,6 +13,7 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.CannotFindVpcException;
@@ -30,6 +31,8 @@ public class TestExecuteScriptsInOrderFromDir {
 	private static final String THIRD_FILE = "03createRoutes.json";
 	Path srcFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.FOLDER_PATH, "holding", THIRD_FILE);
 	Path destFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.FOLDER_PATH, THIRD_FILE);
+	private static AmazonCloudFormationClient cfnClient;
+	private static AmazonEC2Client ec2Client;
 	
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
@@ -39,12 +42,16 @@ public class TestExecuteScriptsInOrderFromDir {
 	private AwsFacade aws;
 	private MonitorStackEvents monitor;
 	
+	@BeforeClass
+	public static void beforeAllTestsOnce() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+	}
+	
 	@Before 
 	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);

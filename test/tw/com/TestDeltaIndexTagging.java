@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.CannotFindVpcException;
@@ -19,28 +20,29 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestDeltaIndexTagging {
+	private VpcRepository vpcRepos;
+	private static AmazonEC2Client directClient;
+	private static AmazonCloudFormationClient cfnClient;
 
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
-	private DefaultAWSCredentialsProviderChain credentialsProvider;
 	private AwsProvider aws;
-	private VpcRepository vpcRepos;
-	private AmazonEC2Client directClient;
 	private Vpc altVpc;
+	
+	@BeforeClass
+	public static void beforeAllTestsOnce() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+	}
 
 	@Before
 	public void beforeTestsRun() {
-		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		
-		vpcRepos = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
-		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
-		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
-		
+		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);	
+		vpcRepos = new VpcRepository(directClient);
 		aws = new AwsFacade(monitor , cfnClient, directClient, cfnRepository , vpcRepos);	
 		
-		//altVpc = vpcRepos.getCopyOfVpc(altProjectAndEnv);	
 		altVpc = EnvironmentSetupForTests.findAltVpc(vpcRepos);
 	}
 	
@@ -89,7 +91,7 @@ public class TestDeltaIndexTagging {
 	}
 	
 	@Test
-	public void shouldInitTagsOnNewVpc() throws CfnAssistException, CannotFindVpcException {
+	public void shouldInitTagsOnNewVpc() throws CfnAssistException, CannotFindVpcException, InterruptedException {
 		EnvironmentSetupForTests.clearVpcTags(directClient, altVpc);
 		aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);
 		aws.setDeltaIndex(altProjectAndEnv, 42);
@@ -97,8 +99,9 @@ public class TestDeltaIndexTagging {
 	}
 	
 	@Test
-	public void shouldThrownOnInitTagsWhenAlreadyPresent() throws CfnAssistException, CannotFindVpcException {
+	public void shouldThrownOnInitTagsWhenAlreadyPresent() throws CfnAssistException, CannotFindVpcException, InterruptedException {
 		EnvironmentSetupForTests.clearVpcTags(directClient, altVpc);
+		
 		aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);
 		try {
 			aws.initEnvAndProjectForVPC(altVpc.getVpcId(), altProjectAndEnv);

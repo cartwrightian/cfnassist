@@ -5,25 +5,27 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.CannotFindVpcException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestVpcRepository {
 
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
-	private DefaultAWSCredentialsProviderChain credentialsProvider;
-	private VpcRepository repository;
-
-	@Before
-	public void beforeTestsRun() {
-		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		repository = new VpcRepository(EnvironmentSetupForTests.createEC2Client(credentialsProvider));
+	private static VpcRepository repository;
+	private static AmazonEC2Client ec2Client;
+	
+	@BeforeClass
+	public static void beforeAllTestsOnce() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		repository = new VpcRepository(ec2Client);
 	}
 	
 	@Test
@@ -39,10 +41,10 @@ public class TestVpcRepository {
 
 	@Test
 	public void testFindOtherVpcForTests() {
-		Vpc vpc = EnvironmentSetupForTests.findAltVpc(repository);
+		Vpc altVpc = EnvironmentSetupForTests.findAltVpc(repository);	
+		assertNotNull(altVpc);
 		
-		assertNotNull(vpc);
-		List<Tag> tags = vpc.getTags();	
+		List<Tag> tags = altVpc.getTags();	
 
 		List<Tag> expectedTags = createExpectedEc2TagList("AdditionalTest");		
 		assertTrue(tags.containsAll(expectedTags));

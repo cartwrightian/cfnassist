@@ -34,8 +34,11 @@ import com.amazonaws.services.ec2.model.DeleteTagsRequest;
 import com.amazonaws.services.ec2.model.DeleteVpcRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
+import com.amazonaws.services.ec2.model.DescribeTagsRequest;
+import com.amazonaws.services.ec2.model.DescribeTagsResult;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class EnvironmentSetupForTests {
@@ -163,12 +166,26 @@ public class EnvironmentSetupForTests {
 		return false;
 	}
 
-	public static void clearVpcTags(AmazonEC2Client directClient, Vpc vpc) {
+	public static void clearVpcTags(AmazonEC2Client directClient, Vpc vpc) throws InterruptedException {
 		List<String> resources = new LinkedList<String>();	
 		resources.add(vpc.getVpcId());
+		List<Tag> existingTags = vpc.getTags();
+		
 		DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest(resources);
-		deleteTagsRequest.setTags(vpc.getTags());
-		directClient.deleteTags(deleteTagsRequest );
+		deleteTagsRequest.setTags(existingTags);
+		directClient.deleteTags(deleteTagsRequest);
+		
+		DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest();
+		Collection<Filter> filters = new LinkedList<Filter>();
+		filters.add(createVPCFilter(vpc));
+		describeTagsRequest.setFilters(filters);
+		boolean notDeleted = false;
+		while(notDeleted) {
+			DescribeTagsResult result = directClient.describeTags(describeTagsRequest);
+			notDeleted = (result.getTags().size()!=0);
+			Thread.sleep(DELETE_RETRY_INTERVAL);
+			logger.debug("waiting for tags to clear on vpc :" + vpc.getVpcId());
+		}
 	}
 
 

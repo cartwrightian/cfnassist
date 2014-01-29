@@ -33,13 +33,14 @@ public class TestParameterAutoInjection {
 	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private static ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj, env);
 
+	private static AmazonEC2Client ec2Client;
+	private static AmazonCloudFormationClient cfnClient;
+	
 	@BeforeClass
-	public static void beforeAllTestsRun() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public static void beforeAllTestsOnce() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, IOException, InvalidParameterException, InterruptedException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		
-		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		
+		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
@@ -47,8 +48,6 @@ public class TestParameterAutoInjection {
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository , vpcRepository);
 		
 		subnetStackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), mainProjectAndEnv);
-		//String status = aws.waitForCreateFinished(subnetStackName);
-		//assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 	}
 	
 	@AfterClass 
@@ -85,10 +84,7 @@ public class TestParameterAutoInjection {
 	@Test
 	public void autoInjectParameterTemplate() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {			
 		String aclStackName = aws.applyTemplate(new File(ACL_FILENAME), mainProjectAndEnv);	
-		
-		//String status = aws.waitForCreateFinished(aclStackName);
-		//assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
-		
+
 		EnvironmentSetupForTests.validatedDelete(aclStackName, aws);		
 	}
 	

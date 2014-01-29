@@ -10,13 +10,13 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -25,17 +25,22 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 
 public class TestAwsFacade {
 
-	private AWSCredentialsProvider credentialsProvider;
+	private static AmazonEC2Client ec2Client;
+	private static AmazonCloudFormationClient cfnClient;
+	
 	private AwsProvider aws;
 	private ProjectAndEnv projectAndEnv;
 	private MonitorStackEvents monitor;
 	
+	@BeforeClass
+	public static void beforeAllTestsOnce() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+	}
+	
 	@Before
 	public void beforeTestsRun() {
-		credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		

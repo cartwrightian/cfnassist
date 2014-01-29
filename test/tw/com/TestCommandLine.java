@@ -39,16 +39,12 @@ public class TestCommandLine {
 		vpcRepository = new VpcRepository(ec2Client);
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
 		
-		altEnvVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
-		if (altEnvVPC==null) {
-			altEnvVPC=vpcRepository.getCopyOfVpc(EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV);
-		}
-		
+		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);		
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
 	}
 	
 	@Test
-	public void testInvokeInitViaCommandLine() {
+	public void testInvokeInitViaCommandLine() throws InterruptedException {
 		
 		EnvironmentSetupForTests.clearVpcTags(ec2Client, altEnvVPC);
 		
@@ -131,11 +127,11 @@ public class TestCommandLine {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-file", EnvironmentSetupForTests.SUBNET_FILENAME,
-				"-build", "001"
+				"-build", "876"
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssist001Testsubnet", false);
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssist876Testsubnet", false);
 		assertEquals(0,result);
 	}
 	

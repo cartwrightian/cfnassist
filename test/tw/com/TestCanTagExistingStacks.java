@@ -6,6 +6,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -20,16 +21,23 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestCanTagExistingStacks {
 	
+	private static AmazonEC2Client ec2Client;
+	private static AmazonCloudFormationClient cfnClient;
+	
 	private ProjectAndEnv projectAndEnv;
-	private AmazonCloudFormationClient cfnClient;
 	private AwsProvider aws;
+	
+	@BeforeClass
+	public static void beforeAllTestsOnce() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+	}
 
 	@Before 
 	public void beforeEachTestRuns() throws IOException, WrongNumberOfStacksException, StackCreateFailed, InterruptedException {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
-		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
 		

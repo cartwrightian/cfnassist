@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.CfnAssistException;
@@ -35,17 +36,20 @@ public class TestBuiltInParameterInjectionAndTagging {
 	private String project = EnvironmentSetupForTests.PROJECT;
 	private ProjectAndEnv mainProjectAndEnv;
 
-	private AmazonCloudFormationClient cfnClient;
-	private AmazonEC2Client ec2Client;
+	private static AmazonCloudFormationClient cfnClient;
+	private static AmazonEC2Client ec2Client;
 	private Vpc vpc;
 	private PollingStackMonitor monitor;
+	
+	@BeforeClass
+	public static void beforeAllTestsOnce() {
+		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+	}
 
 	@Before
 	public void beforeTestsRun() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider); 
-		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 		monitor = new PollingStackMonitor(cfnRepository);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
