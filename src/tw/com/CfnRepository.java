@@ -134,10 +134,10 @@ public class CfnRepository {
 		}		
 	}
 
-	public void updateRepositoryFor(String stackName) {
-		logger.info("Update stack repository for stack: " + stackName);
+	public void updateRepositoryFor(StackId id) {
+		logger.info("Update stack repository for stack: " + id);
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(stackName);
+		describeStacksRequest.setStackName(id.getStackName());
 		DescribeStacksResult results = cfnClient.describeStacks(describeStacksRequest);
 
 		populateEntries(results.getStacks());

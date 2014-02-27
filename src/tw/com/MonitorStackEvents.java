@@ -5,6 +5,6 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 
 public interface MonitorStackEvents {
 
-	String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
-	String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
+	String waitForCreateFinished(StackId id) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
+	String waitForDeleteFinished(StackId id) throws WrongNumberOfStacksException, InterruptedException;
 }

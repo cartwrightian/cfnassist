@@ -75,9 +75,9 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Test
 	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
 		File templateFile = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
-		String stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
+		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
-		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(), createExpectedTags());
+		validateCreateAndDeleteWorks(stackId, createExpectedStackTags(), createExpectedTags());
 	}
 	
 	@Test
@@ -87,7 +87,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		
 		String buildNumber = "456";
 		mainProjectAndEnv.addBuildNumber(buildNumber); 
-		String stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
+		StackId stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		// tagging should still work even if json does not take build parameter
 		List<com.amazonaws.services.ec2.model.Tag> expectedEC2Tags = createExpectedTags();
@@ -102,7 +102,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		
 		Collection<Parameter> params = new LinkedList<Parameter>();
 		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
-		String stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv, params);
+		StackId stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv, params);
 				
 		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(), createExpectedTags());
 	}
@@ -112,7 +112,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		String buildNumber = "42";
 		
 		mainProjectAndEnv.addBuildNumber(buildNumber);
-		String stackName = awsProvider.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME_WITH_BUILD), mainProjectAndEnv);	
+		StackId stackName = awsProvider.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME_WITH_BUILD), mainProjectAndEnv);	
 		
 		//String status = awsProvider.waitForCreateFinished(stackName);
 		//assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
@@ -124,13 +124,13 @@ public class TestBuiltInParameterInjectionAndTagging {
 		EnvironmentSetupForTests.validatedDelete(stackName, awsProvider);
 	}
 
-	private void validateCreateAndDeleteWorks(String stackName, List<Tag> expectedStackTags, 
+	private void validateCreateAndDeleteWorks(StackId stackId, List<Tag> expectedStackTags, 
 			List<com.amazonaws.services.ec2.model.Tag> expectedEc2Tags)
 			throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
-		String status = monitor.waitForCreateFinished(stackName);
+		String status = monitor.waitForCreateFinished(stackId);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
-		List<Stack> stacks = getStack(stackName);
+		List<Stack> stacks = getStack(stackId.getStackName());
 	    
 		List<Tag> stackTags = stacks.get(0).getTags(); 
 	    assertEquals(expectedStackTags.size(), stackTags.size());
@@ -143,7 +143,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		assertEquals(expectedEc2Tags.size(), subnetTags.size()-EnvironmentSetupForTests.NUMBER_AWS_TAGS);
 		assert(subnetTags.containsAll(expectedEc2Tags));
 	    
-		awsProvider.deleteStack(stackName);
+		awsProvider.deleteStack(stackId);
 		
 		//status = monitor.waitForDeleteFinished(stackName);
 		//assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);

@@ -67,8 +67,8 @@ public class TestCfnRepository {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 	
 		//create two subnets with same logical id's but different VPCs		
-		String stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
-		String stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
+		StackId stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
+		StackId stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
 		//awsProvider.waitForCreateFinished(stackA);
 		//awsProvider.waitForCreateFinished(stackB);
 		
@@ -111,7 +111,7 @@ public class TestCfnRepository {
 		return result;
 	}
 
-	private String invokeSubnetCreation(String cidr, ProjectAndEnv projectAndEnv)
+	private StackId invokeSubnetCreation(String cidr, ProjectAndEnv projectAndEnv)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		Collection<Parameter> parameters = new LinkedList<Parameter>();

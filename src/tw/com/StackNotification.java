@@ -4,10 +4,12 @@ public class StackNotification {
 
 	private String status;
 	private String stackName;
+	private String stackId;
 
-	public StackNotification(String stackName, String status) {
+	public StackNotification(String stackName, String status, String stackId) {
 		this.status = status;
 		this.stackName = stackName;
+		this.stackId = stackId;
 	}
 
 	public String getStatus() {
@@ -16,6 +18,10 @@ public class StackNotification {
 
 	public String getStackName() {
 		return stackName;
+	}
+
+	public String getStackId() {
+		return stackId;
 	}
 
 }

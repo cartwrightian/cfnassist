@@ -44,8 +44,8 @@ public class TestCanTagExistingStacks {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpc.getVpcId(),"");	
-		monitor.waitForCreateFinished(EnvironmentSetupForTests.TEMPORARY_STACK);
+		StackId stackId = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpc.getVpcId(),"");	
+		monitor.waitForCreateFinished(stackId);
 		
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);	
 	}

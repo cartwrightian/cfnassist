@@ -28,7 +28,7 @@ public class TestParameterAutoInjection {
 
 	private static AwsProvider aws;
 	private static VpcRepository vpcRepository;
-	private static String subnetStackName;
+	private static StackId subnetStackName;
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private static ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj, env);
@@ -83,7 +83,7 @@ public class TestParameterAutoInjection {
 	
 	@Test
 	public void autoInjectParameterTemplate() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {			
-		String aclStackName = aws.applyTemplate(new File(ACL_FILENAME), mainProjectAndEnv);	
+		StackId aclStackName = aws.applyTemplate(new File(ACL_FILENAME), mainProjectAndEnv);	
 
 		EnvironmentSetupForTests.validatedDelete(aclStackName, aws);		
 	}

@@ -19,14 +19,14 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public interface AwsProvider {
 	
 	List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException;
-	String applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
-	String applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
+	StackId applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
+	StackId applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
 	
-	ArrayList<String> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed;
-	ArrayList<String> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed;
+	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed;
+	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed;
 	
 	String createStackName(File templateFile, ProjectAndEnv projAndEnv);
-	void deleteStack(String stackName) throws WrongNumberOfStacksException, InterruptedException;
+	void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException;
 	
 	//String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException;
 	//String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed;

@@ -13,6 +13,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.ProjectAndEnv;
+import tw.com.StackId;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
@@ -27,8 +28,8 @@ public class FileAction extends SharedAction {
 	
 	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		File templateFile = new File(filename);
-		String stackName = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
-		logger.info("Created stack name "+stackName);
+		StackId stackId = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
+		logger.info("Created stack name "+stackId);
 	}
 	
 

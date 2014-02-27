@@ -13,6 +13,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.ProjectAndEnv;
+import tw.com.StackId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.StackCreateFailed;
@@ -28,9 +29,9 @@ public class DirAction extends SharedAction {
 	}
 
 	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folderPath, Collection<Parameter> cfnParams) throws FileNotFoundException, InvalidParameterException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
-		ArrayList<String> stackNames = aws.applyTemplatesFromFolder(folderPath, projectAndEnv, cfnParams);
-		logger.info(String.format("Created %s stacks", stackNames.size()));
-		for(String name : stackNames) {
+		ArrayList<StackId> stackIds = aws.applyTemplatesFromFolder(folderPath, projectAndEnv, cfnParams);
+		logger.info(String.format("Created %s stacks", stackIds.size()));
+		for(StackId name : stackIds) {
 			logger.info("Created stack " +name);
 		}
 	}

@@ -20,21 +20,22 @@ public class PollingStackMonitor implements MonitorStackEvents {
 	}
 
 	@Override
-	public String waitForCreateFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {	 
+	public String waitForCreateFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {	
+		String stackName = stackId.getStackName();
 		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS);
 		if (!result.equals(StackStatus.CREATE_COMPLETE.toString())) {
-			logger.error(String.format("Failed to create stack %s, status is %s", stackName, result));
+			logger.error(String.format("Failed to create stack %s, status is %s", stackId, result));
 			logStackEvents(cfnRepository.getStackEvents(stackName));
 			throw new StackCreateFailed(stackName);
 		}
 		return result;
 	}
 	
-	public String waitForDeleteFinished(String stackName) throws WrongNumberOfStacksException, InterruptedException {
+	public String waitForDeleteFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus requiredStatus = StackStatus.DELETE_IN_PROGRESS;
 		String result = StackStatus.DELETE_FAILED.toString();
 		try {
-			result = cfnRepository.waitForStatusToChangeFrom(stackName, requiredStatus);
+			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), requiredStatus);
 		}
 		catch(com.amazonaws.AmazonServiceException awsException) {
 			String errorCode = awsException.getErrorCode();
@@ -47,7 +48,7 @@ public class PollingStackMonitor implements MonitorStackEvents {
 		
 		if (!result.equals(StackStatus.DELETE_COMPLETE.toString())) {
 			logger.error("Failed to delete stack, status is " + result);
-			logStackEvents(cfnRepository.getStackEvents(stackName));
+			logStackEvents(cfnRepository.getStackEvents(stackId.getStackName()));
 		}
 		return result;
 	}

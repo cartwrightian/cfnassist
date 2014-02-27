@@ -20,6 +20,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
+import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStackEventsRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStackEventsResult;
@@ -212,7 +213,7 @@ public class EnvironmentSetupForTests {
 		deleteStack(cfnClient, stackName, true);
 	}
 
-	public static void createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
+	public static StackId createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setStackName(TEMPORARY_STACK);
 		File file = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
@@ -227,7 +228,8 @@ public class EnvironmentSetupForTests {
 			createStackRequest.setNotificationARNs(notificationARNs);
 		}
 		createStackRequest.setParameters(parameters);
-		cfnClient.createStack(createStackRequest);
+		CreateStackResult result = cfnClient.createStack(createStackRequest);
+		return new StackId(TEMPORARY_STACK, result.getStackId());
 	}
 	
 	private static Parameter createParam(String key, String value) {
@@ -237,9 +239,9 @@ public class EnvironmentSetupForTests {
 		return p;
 	}
 
-	public static void validatedDelete(String stackName, AwsProvider provider)
+	public static void validatedDelete(StackId stackId, AwsProvider provider)
 			throws WrongNumberOfStacksException, InterruptedException {
-		provider.deleteStack(stackName);
+		provider.deleteStack(stackId);
 		//String status = provider.waitForDeleteFinished(stackName);
 		//assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 	}

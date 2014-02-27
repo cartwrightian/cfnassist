@@ -27,6 +27,7 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
+import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
@@ -92,13 +93,13 @@ public class AwsFacade implements AwsProvider {
 	}
 	
 	@Override
-	public String applyTemplate(File file, ProjectAndEnv projAndEnv)
+	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public String applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
@@ -131,10 +132,11 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setTags(tags);
 		
 		logger.info("Making createStack call to AWS");
-		cfnClient.createStack(createStackRequest);
-		monitor.waitForCreateFinished(stackName);
-		cfnRepository.updateRepositoryFor(stackName);
-		return stackName;
+		CreateStackResult result = cfnClient.createStack(createStackRequest);
+		StackId id = new StackId(stackName,result.getStackId());
+		monitor.waitForCreateFinished(id);
+		cfnRepository.updateRepositoryFor(id);
+		return id;
 	}
 
 	private void logAllParameters(Collection<Parameter> parameters) {
@@ -226,9 +228,9 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 	
-	public void deleteStack(String stackName) throws WrongNumberOfStacksException, InterruptedException {
-		deleteStackNonBlocking(stackName);
-		monitor.waitForDeleteFinished(stackName);
+	public void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException {
+		deleteStackNonBlocking(stackId.getStackName());
+		monitor.waitForDeleteFinished(stackId);
 	}
 	
 	private void deleteStackNonBlocking(String stackName) {
@@ -291,7 +293,7 @@ public class AwsFacade implements AwsProvider {
 	}
 	
 	@Override
-	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
+	public ArrayList<StackId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, CannotFindVpcException, StackCreateFailed {
@@ -299,9 +301,9 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
-	public ArrayList<String> applyTemplatesFromFolder(String folderPath,
+	public ArrayList<StackId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
-		ArrayList<String> createdStacks = new ArrayList<>();
+		ArrayList<StackId> createdStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
 		List<File> files = loadFiles(folder);
@@ -319,9 +321,9 @@ public class AwsFacade implements AwsProvider {
 			int deltaIndex = extractIndexFrom(file);
 			if (deltaIndex>highestAppliedDelta) {
 				logger.info(String.format("Apply template file: %s, index is %s",file.getAbsolutePath(), deltaIndex));
-				String stackName = applyTemplate(file, projAndEnv, cfnParams);
-				logger.info("Create stack " + stackName);
-				createdStacks.add(stackName); 
+				StackId stackId = applyTemplate(file, projAndEnv, cfnParams);
+				logger.info("Create stack " + stackId);
+				createdStacks.add(stackId); 
 				setDeltaIndex(projAndEnv, deltaIndex);
 			} else {
 				logger.info(String.format("Skipping file %s as already applied, index was %s", file.getAbsolutePath(), deltaIndex));

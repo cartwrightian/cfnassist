@@ -30,10 +30,11 @@ public class TestSnsMonitor {
 	public void testCanParseMessageNodeTestNameMatches() {
 		
 		SNSMonitor monitor = new SNSMonitor(snsClient, sqsClient);
-		StackNotification notification = monitor.parseNotificationMessage("temporaryStack", sampleText);	
+		StackNotification notification = monitor.parseNotificationMessage(sampleText);	
 		
 		assertEquals("temporaryStack", notification.getStackName());
 		assertEquals("CREATE_COMPLETE", notification.getStatus());
+		assertEquals("arn:aws:cloudformation:eu-west-1:619378453009:stack/temporaryStack/8c343e50-9eff-11e3-b6e7-506cf935a496", notification.getStackId());
 	}
 	
 }

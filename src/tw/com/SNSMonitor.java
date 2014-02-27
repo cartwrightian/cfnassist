@@ -30,12 +30,14 @@ import com.amazonaws.services.sns.model.Subscription;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
+import com.amazonaws.services.sqs.model.DeleteMessageRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -198,20 +200,20 @@ public class SNSMonitor implements MonitorStackEvents {
 	}
 
 	@Override
-	public String waitForCreateFinished(String stackName)
+	public String waitForCreateFinished(StackId stackId)
 			throws WrongNumberOfStacksException, InterruptedException,
 			StackCreateFailed {
-		return waitForStatus(stackName, StackStatus.CREATE_COMPLETE.toString());
+		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE.toString());
 	}
 	
 	@Override
-	public String waitForDeleteFinished(String stackName)
+	public String waitForDeleteFinished(StackId stackId)
 			throws WrongNumberOfStacksException, InterruptedException {
-		return waitForStatus(stackName, StackStatus.DELETE_COMPLETE.toString());
+		return waitForStatus(stackId, StackStatus.DELETE_COMPLETE.toString());
 	}
 
-	private String waitForStatus(String stackName, String requiredStatus) throws InterruptedException {
-		logger.info(String.format("Waiting for stack %s to change to status %s", stackName, requiredStatus));
+	private String waitForStatus(StackId stackId, String requiredStatus) throws InterruptedException {
+		logger.info(String.format("Waiting for stack %s to change to status %s", stackId, requiredStatus));
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL);
 		receiveMessageRequest.setWaitTimeSeconds(QUEUE_READ_TIMEOUT_SECS);
 		List<Message> msgs = new LinkedList<Message>();
@@ -222,7 +224,7 @@ public class SNSMonitor implements MonitorStackEvents {
 				ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
 				msgs = result.getMessages();
 			}
-			String status = processMessages(stackName, msgs);
+			String status = processMessages(stackId, msgs);
 			if (status.equals(requiredStatus)) {
 				return status;
 			}
@@ -232,23 +234,22 @@ public class SNSMonitor implements MonitorStackEvents {
 		throw new InterruptedException("Did not receieve stack status change within required time");
 	}
 
-	private String processMessages(String stackName, List<Message> msgs) {
+	private String processMessages(StackId stackId, List<Message> msgs) {
 		logger.info(String.format("Received %s messages",msgs.size()));
 		for(Message msg : msgs) {
 			ObjectMapper objectMapper = new ObjectMapper();
 			try {
-				String json = msg.getBody();
-				logger.debug("Body json: " + json);
+				JsonNode messageNode = extractMessageNode(msg, objectMapper);
+				deleteMessage(msg);
 				
-				JsonNode rootNode = objectMapper.readTree(json);		
-				JsonNode messageNode = rootNode.get("Message");
-				
-				StackNotification notification = parseNotificationMessage(stackName, messageNode.textValue());
-				if (notification.getStackName().equals(stackName)) {
-					logger.info(String.format("Received notification for stack %s status was %s", stackName, notification.getStatus()));
+				StackNotification notification = parseNotificationMessage(messageNode.textValue());
+				if (notification.getStackId().equals(stackId.getStackId())) {
+					logger.info(String.format("Received notification for stack %s status was %s", stackId, notification.getStatus()));
 					return notification.getStatus();
-				}
-				
+				} else {
+					logger.info(String.format("Notification did not match stackId, expected: %s was: %s", stackId.getStackId(),
+							notification.getStackId()));
+				}			
 			} catch (IOException e) {
 				logger.error("Unable to process message: " + e.getMessage());
 				logger.error("Message body was: " + msg.getBody());
@@ -257,26 +258,53 @@ public class SNSMonitor implements MonitorStackEvents {
 		return "";
 	}
 
-	
+	private JsonNode extractMessageNode(Message msg, ObjectMapper objectMapper)
+			throws IOException, JsonProcessingException {
+		String json = msg.getBody();
+		
+		logger.debug("Body json: " + json);
+		
+		JsonNode rootNode = objectMapper.readTree(json);		
+		JsonNode messageNode = rootNode.get("Message");
+		return messageNode;
+	}
+
+	private void deleteMessage(Message msg) {
+		logger.info("Deleting message " + msg.getReceiptHandle());
+		sqsClient.deleteMessage(new DeleteMessageRequest()
+	    .withQueueUrl(queueURL)
+	    .withReceiptHandle(msg.getReceiptHandle()));
+		
+	}
 
 	public String getArn() {
 		return topicSnsArn;
 	}
 
-	public StackNotification parseNotificationMessage(String stackName, String notificationMessage) {
+	public StackNotification parseNotificationMessage(String notificationMessage) {
 		String[] parts = notificationMessage.split("\n");
 		String status="";
 		String foundName="";
+		String stackId="";
 		for(int i=0; i<parts.length; i++) {
 			String[] elements = parts[i].split("=");
-			if (elements[0].equals("StackName")) {
-				foundName=elements[1].replace('\'',' ').trim();
+			String key = elements[0];
+			String containsValue = elements[1];
+			if (key.equals("StackName")) {
+				foundName=extractValue(containsValue);
 			}
-			if (elements[0].equals("ResourceStatus")) {
-				status=elements[1].replace('\'',' ').trim();
+			if (key.equals("ResourceStatus")) {
+				status=extractValue(containsValue);
+			}
+			if (key.equals("StackId")) {
+				stackId = extractValue(containsValue);
 			}
 		}
-		return new StackNotification(foundName,status);
+		return new StackNotification(foundName,status,stackId);
+	}
+
+	private String extractValue(String value) {
+		return value.replace('\'',' ').trim();
 	}
 
 }

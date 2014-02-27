@@ -54,32 +54,32 @@ public class TestStackMonitors {
 	
 	@Test
 	public void ShouldCheckStackHasBeenCreated() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException {
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,"");
-		assertEquals(CREATE_COMPLETE, pollingMonitor.waitForCreateFinished(stackName));
+		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,"");
+		assertEquals(CREATE_COMPLETE, pollingMonitor.waitForCreateFinished(id));
 	}
 	
 	@Test
 	public void ShouldCheckStackHasBeenCreatedSNS() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException, MissingArgumentException {	
 		snsMonitor.initialise();
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId, snsMonitor.getArn());
-		assertEquals(CREATE_COMPLETE, snsMonitor.waitForCreateFinished(stackName));
+		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId, snsMonitor.getArn());
+		assertEquals(CREATE_COMPLETE, snsMonitor.waitForCreateFinished(id));
 	}
 	
 	@Test 
 	public void ShouldCheckStackHasBeenDeleted() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException {
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,"");
-		pollingMonitor.waitForCreateFinished(stackName);
+		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,"");
+		pollingMonitor.waitForCreateFinished(id);
 		EnvironmentSetupForTests.deleteStack(cfnClient, stackName, false); // non-blocking
-		pollingMonitor.waitForDeleteFinished(stackName);
+		pollingMonitor.waitForDeleteFinished(id);
 	}
 	
 	@Test 
 	public void ShouldCheckStackHasBeenDeletedWithSNS() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException, MissingArgumentException {
 		snsMonitor.initialise();
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,"");
-		snsMonitor.waitForCreateFinished(stackName);
+		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,snsMonitor.getArn());
+		snsMonitor.waitForCreateFinished(id);
 		EnvironmentSetupForTests.deleteStack(cfnClient, stackName, false); // non-blocking
-		snsMonitor.waitForDeleteFinished(stackName);
+		snsMonitor.waitForDeleteFinished(id);
 	}
 
 }

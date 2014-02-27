@@ -84,9 +84,9 @@ public class TestAwsFacade {
 	@Test
 	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
 		InterruptedException, InvalidParameterException, StackCreateFailed {
-		String stackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv);	
+		StackId stackId = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv);	
 		
-		EnvironmentSetupForTests.validatedDelete(stackName, aws);
+		EnvironmentSetupForTests.validatedDelete(stackId, aws);
 	}
 
 	@Test

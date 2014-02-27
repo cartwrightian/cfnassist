@@ -76,12 +76,12 @@ public class TestExecuteScriptsInOrderFromDir {
 
 	@Test
 	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException, CannotFindVpcException, StackCreateFailed {
-		List<String> stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		List<StackId> stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackNames.size());
 		
 		for(int i=0; i<expectedList.size(); i++) {
-			String createdStackName = stackNames.get(i);
+			StackId createdStackName = stackNames.get(i);
 			assertEquals(expectedList.get(i), createdStackName);
 			// TODO should just be a call to get current status because applyTemplatesFromFolder is a blocking call
 			String status = monitor.waitForCreateFinished(createdStackName);
@@ -100,9 +100,9 @@ public class TestExecuteScriptsInOrderFromDir {
 		expectedList.add(proj+env+"03createRoutes");
 		assertEquals(expectedList.get(2), stackNames.get(0));
 		
-		stackNames = aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
-		assertEquals(3, stackNames.size());
-		assert(stackNames.containsAll(expectedList));
+		List<String> deletedStacks = aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		assertEquals(3, deletedStacks.size());
+		assert(deletedStacks.containsAll(expectedList));
 		
 		int finalIndex = aws.getDeltaIndex(mainProjectAndEnv);
 		assertEquals(0, finalIndex);
