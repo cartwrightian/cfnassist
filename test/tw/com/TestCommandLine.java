@@ -208,7 +208,7 @@ public class TestCommandLine {
 	@Ignore("cant find way to label at existing stack via apis")
 	@Test
 	public void testInvokeViaCommandLineTagExistingStack() throws IOException {
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, altEnvVPC.getVpcId());
+		EnvironmentSetupForTests.createTemporaryStack(cfnClient, altEnvVPC.getVpcId(),"");
 		
 		String[] argslabelStack = {
 				"-env", EnvironmentSetupForTests.ENV,

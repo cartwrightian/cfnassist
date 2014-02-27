@@ -15,6 +15,7 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -40,6 +41,8 @@ import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 
 public class EnvironmentSetupForTests {
 	private static final Logger logger = LoggerFactory.getLogger(EnvironmentSetupForTests.class);
@@ -198,6 +201,7 @@ public class EnvironmentSetupForTests {
 	}
 	
 	public static void deleteStackIfPresent(AmazonCloudFormationClient cfnClient, String stackName) {
+		logger.info("deleteStackIfPresent " + stackName);
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(stackName);
 		DescribeStacksResult result = cfnClient.describeStacks();
@@ -208,7 +212,7 @@ public class EnvironmentSetupForTests {
 		deleteStack(cfnClient, stackName, true);
 	}
 
-	public static void createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId) throws IOException {
+	public static void createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setStackName(TEMPORARY_STACK);
 		File file = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
@@ -216,6 +220,12 @@ public class EnvironmentSetupForTests {
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
 		parameters.add(createParam("env", EnvironmentSetupForTests.ENV));
 		parameters.add(createParam("vpc", vpcId));
+		if (!arn.isEmpty()) {
+			Collection<String> notificationARNs = new LinkedList<String>();
+			notificationARNs.add(arn);
+			logger.debug("Adding arn subscription "+ arn);
+			createStackRequest.setNotificationARNs(notificationARNs);
+		}
 		createStackRequest.setParameters(parameters);
 		cfnClient.createStack(createStackRequest);
 	}
@@ -232,6 +242,20 @@ public class EnvironmentSetupForTests {
 		provider.deleteStack(stackName);
 		//String status = provider.waitForDeleteFinished(stackName);
 		//assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
+	}
+
+	public static AmazonSNSClient createSNSClient(
+			DefaultAWSCredentialsProviderChain credentialsProvider) {
+		AmazonSNSClient amazonSNSClient = new AmazonSNSClient(credentialsProvider);
+		amazonSNSClient.setRegion(getRegion());
+		return amazonSNSClient;
+	}
+	
+	public static AmazonSQSClient createSQSClient(
+			DefaultAWSCredentialsProviderChain credentialsProvider) {
+		AmazonSQSClient sqsClient = new AmazonSQSClient(credentialsProvider);
+		sqsClient.setRegion(getRegion());
+		return sqsClient;
 	}
 
 }

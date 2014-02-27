@@ -52,7 +52,6 @@ public class PollingStackMonitor implements MonitorStackEvents {
 		return result;
 	}
 
-	
 	private void logStackEvents(List<StackEvent> stackEvents) {
 		for(StackEvent event : stackEvents) {
 			logger.info(event.toString());
