@@ -243,7 +243,7 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static void validatedDelete(StackId stackId, AwsProvider provider)
-			throws WrongNumberOfStacksException, InterruptedException {
+			throws WrongNumberOfStacksException, InterruptedException, NotReadyException {
 		provider.deleteStack(stackId);
 	}
 

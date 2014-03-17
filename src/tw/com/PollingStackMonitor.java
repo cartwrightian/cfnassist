@@ -59,4 +59,9 @@ public class PollingStackMonitor implements MonitorStackEvents {
 		}	
 	}
 
+	@Override
+	public void init() {
+		// no op for polling monitor	
+	}
+
 }

@@ -136,12 +136,12 @@ public class TestCommandLine {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFileAndArnForSNS() throws InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWithFileAndSNS() throws InterruptedException, TimeoutException {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
-				"-arn", EnvironmentSetupForTests.ARN_FOR_TESTING
+				"-sns"
 				};
 		Main main = new Main(args);
 		int result = main.parse();
@@ -178,13 +178,24 @@ public class TestCommandLine {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
-		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
+		invokeForDirAndThenRollback(projAndEnv, "");
+	}
+	
+	@Test
+	public void testInvokeViaCommandLineDeployWholeDirAndThenRollbackWithSNS() throws CannotFindVpcException, InterruptedException, TimeoutException {
+		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
+		invokeForDirAndThenRollback(projAndEnv, "-sns");
+	}
+
+	private void invokeForDirAndThenRollback(ProjectAndEnv projAndEnv,
+			String sns) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, "0");
-		
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-dir", EnvironmentSetupForTests.FOLDER_PATH
+				"-dir", EnvironmentSetupForTests.FOLDER_PATH,
+				sns
 				};
 		Main main = new Main(argsDeploy);
 		int result = main.parse();
@@ -193,7 +204,8 @@ public class TestCommandLine {
 		String[] rollbackDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-rollback", EnvironmentSetupForTests.FOLDER_PATH
+				"-rollback", EnvironmentSetupForTests.FOLDER_PATH,
+				sns
 				};
 		main = new Main(rollbackDeploy);
 		result = main.parse();
@@ -201,8 +213,8 @@ public class TestCommandLine {
 		//clean up as needed
 		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
-		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest01createSubnet",false);
-		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls",false);
+		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest01createSubnet",true);
+		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls",true);
 		
 		// check
 		assertEquals("rollback failed",0,result);

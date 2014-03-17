@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
+import tw.com.SNSMonitor;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.StackCreateFailed;
@@ -50,7 +51,7 @@ public class Main {
 	private String[] args;
 	private String executableName;
 	private Option keysValuesParam;
-	private Option arnParam;
+	private Option snsParam;
 
 	public Main(String[] args) {
 		this.args = args;
@@ -105,9 +106,11 @@ public class Main {
 				hasArgs().withDescription("A Build number/id to tag the deployed stacks with, or use env var: " + AwsFacade.BUILD_TAG).
 				create("build");
 		commandLineOptions.addOption(buildNumberParam);
-		arnParam = OptionBuilder.withArgName("arn").hasArg().
-				withDescription("SNS ARN to publish updates from cloud formation").create("arn");
-		commandLineOptions.addOption(arnParam);
+		snsParam = OptionBuilder.withArgName("sns").
+				withDescription(
+						String.format("Use SNS to publish updates from cloud formation, uses the topic %s"
+						,SNSMonitor.SNS_TOPIC_NAME)).create("sns");
+		commandLineOptions.addOption(snsParam);
 	}
 
 	public int parse() {
@@ -122,7 +125,7 @@ public class Main {
 			String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, true);
 			String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION, true);
 			String buildNumber = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
-			String arn = checkForArgument(commandLine, formatter, arnParam, "", false);
+			Boolean sns = checkForArgumentPresent(commandLine, formatter, snsParam);
 			Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
 			List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
 			actions.add(dirAction);
@@ -138,13 +141,13 @@ public class Main {
 			if (!buildNumber.isEmpty()) {
 				projectAndEnv.addBuildNumber(buildNumber);
 			}
-			if (!arn.isEmpty()) {
-				projectAndEnv.addArn(arn);
+			if (sns) {
+				projectAndEnv.setUseSNS();
 			}
 			logger.info("Invoking for " + projectAndEnv);
 			logger.info("Region set to " + awsRegion);
 			
-			AwsFacade aws = createAwsFacade(awsRegion);
+			AwsFacade aws = createAwsFacade(awsRegion, projectAndEnv.useSNS());
 				
 			String argumentForAction = commandLine.getOptionValue(action.getArgName());
 			action.validate(aws, projectAndEnv, argumentForAction, cfnParams);
@@ -159,8 +162,8 @@ public class Main {
 		return 0;
 	}
 
-	private AwsFacade createAwsFacade(Region awsRegion) {
-		return new FacadeFactory().createFacace(awsRegion);
+	private AwsFacade createAwsFacade(Region awsRegion, boolean useSNSMonitoring) throws MissingArgumentException {
+		return new FacadeFactory().createFacace(awsRegion, useSNSMonitoring);
 	}
 
 	private Collection<Parameter> checkForCfnParameters(
@@ -251,5 +254,12 @@ public class Main {
 			throw new MissingArgumentException(option);	
 		}
 		return "";
+	}
+	
+	private Boolean checkForArgumentPresent(CommandLine commandLine,
+			HelpFormatter formatter, Option option) {
+		String argName = option.getArgName();
+		logger.debug("Checking for arg " + argName);
+		return commandLine.hasOption(argName);
 	}
 }

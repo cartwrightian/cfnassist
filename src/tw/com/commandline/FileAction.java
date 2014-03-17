@@ -14,9 +14,8 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import tw.com.AwsFacade;
 import tw.com.ProjectAndEnv;
 import tw.com.StackId;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
 
 public class FileAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(FileAction.class);
@@ -26,7 +25,7 @@ public class FileAction extends SharedAction {
 		option = OptionBuilder.withArgName("file").hasArg().withDescription("The single template file to apply").create("file");
 	}
 	
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {
 		File templateFile = new File(filename);
 		StackId stackId = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
 		logger.info("Created stack name "+stackId);

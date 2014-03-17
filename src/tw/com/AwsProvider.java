@@ -19,14 +19,14 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public interface AwsProvider {
 	
 	List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException;
-	StackId applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
-	StackId applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed;
+	StackId applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException;
+	StackId applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException;
 	
 	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException;
 	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException;
 	
 	String createStackName(File templateFile, ProjectAndEnv projAndEnv);
-	void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException;
+	void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException;
 	
 	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag, List<TemplateParameter> declaredParam) throws FileNotFoundException, IOException, InvalidParameterException;
 	

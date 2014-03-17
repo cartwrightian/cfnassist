@@ -13,10 +13,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -82,32 +80,31 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void createsAndDeleteSimpleStackFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
-		InterruptedException, InvalidParameterException, StackCreateFailed {
+	public void createsAndDeleteSimpleStackFromTemplate() throws FileNotFoundException, IOException, CfnAssistException, 
+		InterruptedException, InvalidParameterException {
 		StackId stackId = aws.applyTemplate(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE), projectAndEnv);	
 		
 		EnvironmentSetupForTests.validatedDelete(stackId, aws);
 	}
 
 	@Test
-	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("env");
 	}
 	
 	@Test
-	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("vpc");
 	}
 	
 	@Test
-	public void cannotAddbuildParameter() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public void cannotAddbuildParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("build");
 	}
 
 	private void checkParameterCannotBePassed(String parameterName)
 			throws FileNotFoundException, IOException,
-			WrongNumberOfStacksException, InterruptedException,
-			StackCreateFailed {
+			CfnAssistException, InterruptedException {
 		Parameter parameter = new Parameter();
 		parameter.setParameterKey(parameterName);
 		parameter.setParameterValue("test");

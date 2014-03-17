@@ -96,11 +96,11 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
@@ -124,10 +124,13 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
-		if (projAndEnv.hasSNSARNs()) {
-			Collection<String> arn = projAndEnv.getSNSARNs();
+		if (projAndEnv.useSNS()) {
+			SNSMonitor snsMonitor = (SNSMonitor) monitor;
+			String arn = snsMonitor.getArn();
 			logger.info("Setting arn for sns events to " + arn);
-			createStackRequest.setNotificationARNs(arn);
+			Collection<String> arns = new LinkedList<String>();
+			arns.add(arn);
+			createStackRequest.setNotificationARNs(arns);
 		}
 		Collection<Tag> tags = createTagsForStack(projAndEnv);
 		createStackRequest.setTags(tags);
@@ -229,7 +232,7 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 	
-	public void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException {
+	public void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException {
 		deleteStackNonBlocking(stackId.getStackName());
 		monitor.waitForDeleteFinished(stackId);
 	}

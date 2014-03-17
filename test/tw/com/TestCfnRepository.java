@@ -11,10 +11,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -58,7 +56,7 @@ public class TestCfnRepository {
 	}
 	
 	@Test
-	public void shouldFindResourceFromCorrectVPC() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {	
+	public void shouldFindResourceFromCorrectVPC() throws FileNotFoundException, IOException, InvalidParameterException, CfnAssistException, InterruptedException {	
 		String vpcIdA = mainTestVPC.getVpcId();
 		String vpcIdB = otherVPC.getVpcId();
 		String cidrA = "10.0.10.0/24";
@@ -113,7 +111,7 @@ public class TestCfnRepository {
 
 	private StackId invokeSubnetCreation(String cidr, ProjectAndEnv projectAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+			InvalidParameterException, CfnAssistException, InterruptedException {
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
 		Parameter cidrParameter = new Parameter();
 		cidrParameter.setParameterKey("cidr");

@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
@@ -59,8 +60,8 @@ public class TestStackMonitors {
 	}
 	
 	@Test
-	public void ShouldCheckStackHasBeenCreatedSNS() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException, MissingArgumentException {	
-		snsMonitor.initialise();
+	public void ShouldCheckStackHasBeenCreatedSNS() throws CfnAssistException, InterruptedException, IOException, MissingArgumentException {	
+		snsMonitor.init();
 		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId, snsMonitor.getArn());
 		assertEquals(CREATE_COMPLETE, snsMonitor.waitForCreateFinished(id));
 	}
@@ -74,8 +75,8 @@ public class TestStackMonitors {
 	}
 	
 	@Test 
-	public void ShouldCheckStackHasBeenDeletedWithSNS() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException, MissingArgumentException {
-		snsMonitor.initialise();
+	public void ShouldCheckStackHasBeenDeletedWithSNS() throws CfnAssistException, InterruptedException, IOException, MissingArgumentException {
+		snsMonitor.init();
 		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,snsMonitor.getArn());
 		snsMonitor.waitForCreateFinished(id);
 		EnvironmentSetupForTests.deleteStack(cfnClient, stackName, false); // non-blocking

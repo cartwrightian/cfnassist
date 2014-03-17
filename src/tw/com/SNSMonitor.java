@@ -52,7 +52,7 @@ public class SNSMonitor implements MonitorStackEvents {
 	private static final int QUEUE_READ_TIMEOUT_SECS = 20; // 20 is max allowed
 	private static final String SQS_PROTO = "sqs";
 	private static final Logger logger = LoggerFactory.getLogger(SNSMonitor.class);
-	private static final String SNS_TOPIC_NAME = "CFN_ASSIST_EVENTS";
+	public static final String SNS_TOPIC_NAME = "CFN_ASSIST_EVENTS";
 	private static final String SQS_QUEUE_NAME = "CFN_ASSIST_EVENT_QUEUE";
 	private static final int LIMIT = 50;
 
@@ -61,15 +61,22 @@ public class SNSMonitor implements MonitorStackEvents {
 	private String topicSnsArn;
 	private String queueArn;
 	private String queueURL;
+	private boolean init;
 
 	public SNSMonitor(AmazonSNSClient snsClient, AmazonSQSClient sqsClient) {
 		this.snsClient = snsClient;
 		this.sqsClient = sqsClient;
 		attributeNames.add(QUEUE_ARN_KEY);
 		attributeNames.add(QUEUE_POLICY_KEY);
+		init = false;
 	}
 	
-	public void initialise() throws MissingArgumentException {
+	public void init() throws MissingArgumentException {
+		if (init) {
+			logger.warn("SNSMonitor init called again");
+			return;
+		}
+		logger.info("Init SNSMonitor");
 		topicSnsArn = getOrCreateSNSARN();
 		queueURL = getOrCreateQueue();
 		
@@ -78,6 +85,7 @@ public class SNSMonitor implements MonitorStackEvents {
 		checkOrCreateQueuePermissions(queueAttributes);
 		
 		createOrGetSQSSubscriptionToSNS();
+		init = true;
 	}
 
 	private Map<String, String> getQueueAttributes(String url) throws MissingArgumentException {
@@ -202,13 +210,15 @@ public class SNSMonitor implements MonitorStackEvents {
 	@Override
 	public String waitForCreateFinished(StackId stackId)
 			throws WrongNumberOfStacksException, InterruptedException,
-			StackCreateFailed {
+			StackCreateFailed, NotReadyException {
+		guardForInit();
 		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE.toString());
 	}
 	
 	@Override
 	public String waitForDeleteFinished(StackId stackId)
-			throws WrongNumberOfStacksException, InterruptedException {
+			throws WrongNumberOfStacksException, InterruptedException, NotReadyException {
+		guardForInit();
 		return waitForStatus(stackId, StackStatus.DELETE_COMPLETE.toString());
 	}
 
@@ -232,6 +242,13 @@ public class SNSMonitor implements MonitorStackEvents {
 			count++;
 		}
 		throw new InterruptedException("Did not receieve stack status change within required time");
+	}
+
+	private void guardForInit() throws NotReadyException {
+		if (!init) {
+			logger.error("Not initialised");
+			throw new NotReadyException("SNSMonitor not initialised");
+		}
 	}
 
 	private String processMessages(StackId stackId, List<Message> msgs) {
@@ -277,7 +294,8 @@ public class SNSMonitor implements MonitorStackEvents {
 		
 	}
 
-	public String getArn() {
+	public String getArn() throws NotReadyException {
+		guardForInit();
 		return topicSnsArn;
 	}
 

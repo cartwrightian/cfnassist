@@ -1,17 +1,14 @@
 package tw.com;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
 public class ProjectAndEnv {
 	
 	private String project;
 	private String env;
 	private String buildNumber = null;
-	private LinkedList<String> snsArns;
+	private boolean useSns;
 
 	public ProjectAndEnv(String project, String env) {
-		snsArns = new LinkedList<String>();
+		useSns = false;
 		this.project = project;
 		this.env = env;
 	}
@@ -58,7 +55,7 @@ public class ProjectAndEnv {
 	@Override
 	public String toString() {
 		return "ProjectAndEnv [project=" + project + ", env=" + env
-				+ ", buildNumber=" + buildNumber + ", snsArns=" + snsArns + "]";
+				+ ", buildNumber=" + buildNumber + ", useArn=" + useSns + "]";
 	}
 
 	public void addBuildNumber(String buildNumber) {
@@ -73,16 +70,12 @@ public class ProjectAndEnv {
 		return buildNumber;
 	}
 	
-	public boolean hasSNSARNs() {
-		return snsArns.size()>0;
+	public boolean useSNS() {
+		return useSns;
 	}
 
-	public Collection<String> getSNSARNs() {
-		return snsArns;
-	}
-
-	public void addArn(String arn) {
-		snsArns.add(arn);		
+	public void setUseSNS() {
+		useSns = true;		
 	}
 	
 }

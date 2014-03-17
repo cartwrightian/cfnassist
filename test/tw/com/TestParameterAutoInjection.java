@@ -11,10 +11,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -37,7 +35,7 @@ public class TestParameterAutoInjection {
 	private static AmazonCloudFormationClient cfnClient;
 	
 	@BeforeClass
-	public static void beforeAllTestsOnce() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, IOException, InvalidParameterException, InterruptedException {
+	public static void beforeAllTestsOnce() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
@@ -51,7 +49,7 @@ public class TestParameterAutoInjection {
 	}
 	
 	@AfterClass 
-	public static void afterAllTestsHaveRun() throws WrongNumberOfStacksException, InterruptedException {
+	public static void afterAllTestsHaveRun() throws CfnAssistException, InterruptedException {
 		EnvironmentSetupForTests.validatedDelete(subnetStackName, aws);
 	}
 

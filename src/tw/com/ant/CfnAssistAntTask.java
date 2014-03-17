@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
@@ -60,11 +61,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		Collection<Parameter> cfnParameters = new LinkedList<Parameter>();
 		for(Param param : params) {
 			cfnParameters.add(param.getParamter());
-		}
-		AwsFacade aws = new FacadeFactory().createFacace(region);
-		try {		
+		}		
+		try {
+			AwsFacade aws = new FacadeFactory().createFacace(region, projectAndEnv.useSNS());
 			fileElement.execute(aws, projectAndEnv, cfnParameters);
-		} catch (IOException
+		} catch (IOException | MissingArgumentException
 				| InvalidParameterException | InterruptedException | CfnAssistException | CommandLineException innerException) {
 			throw new BuildException(innerException);
 		}

@@ -15,9 +15,6 @@ import org.junit.Test;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
@@ -73,7 +70,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	}
 	
 	@Test
-	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
+	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {	
 		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
 		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
@@ -81,7 +78,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	}
 	
 	@Test
-	public void canBuildAndDeleteSimpleStackThatDoesTakeNotBuildParam() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
+	public void canBuildAndDeleteSimpleStackThatDoesTakeNotBuildParam() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {	
 		// we should not try to populate any parameter NOT declared in the json, doing so will cause an exception
 		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
 		
@@ -97,7 +94,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 
 	@Test
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 
-			WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+		CfnAssistException, InterruptedException {
 		File templateFile = new File(EnvironmentSetupForTests.SUBNET_WITH_PARAM_FILENAME);
 		
 		Collection<Parameter> params = new LinkedList<Parameter>();
@@ -123,7 +120,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 
 	private void validateCreateAndDeleteWorks(StackId stackId, List<Tag> expectedStackTags, 
 			List<com.amazonaws.services.ec2.model.Tag> expectedEc2Tags)
-			throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {
+			throws CfnAssistException, InterruptedException {
 		String status = monitor.waitForCreateFinished(stackId);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		

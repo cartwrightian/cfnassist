@@ -11,7 +11,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -35,7 +34,7 @@ public class TestCanTagExistingStacks {
 	}
 
 	@Before 
-	public void beforeEachTestRuns() throws IOException, WrongNumberOfStacksException, StackCreateFailed, InterruptedException {
+	public void beforeEachTestRuns() throws IOException, CfnAssistException, InterruptedException {
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 		
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
