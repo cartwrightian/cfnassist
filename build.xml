@@ -95,15 +95,12 @@
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr">
             <formatter type="xml"/>
-            <test name="tw.com.TestAwsFacade" todir="${junit.output.dir}"/>
-            <test name="tw.com.TestCfnRepository" todir="${junit.output.dir}"/>
-            <test name="tw.com.TestDeltaIndexTagging" todir="${junit.output.dir}"/>
-            <test name="tw.com.TestExecuteScriptsInOrderFromDir" todir="${junit.output.dir}"/>
-            <test name="tw.com.TestHaveValidTemplateFiles" todir="${junit.output.dir}"/>
-            <test name="tw.com.TestParameterInjection" todir="${junit.output.dir}"/>
-            <test name="tw.com.TestStackBuilder" todir="${junit.output.dir}"/>
-            <test name="tw.com.TestVpcRepository" todir="${junit.output.dir}"/>
             <classpath refid="cfnassist.classpath"/>
+			<batchtest fork="yes" todir="${junit.output.dir}">
+				<fileset dir="test">
+					<include name="**/Test*.java"/>
+				</fileset>
+			</batchtest>
         </junit>
     </target>
 

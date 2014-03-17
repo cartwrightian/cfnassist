@@ -54,20 +54,20 @@ public class TestStackMonitors {
 	
 	@Test
 	public void ShouldCheckStackHasBeenCreated() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException {
-		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,"");
+		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
 		assertEquals(CREATE_COMPLETE, pollingMonitor.waitForCreateFinished(id));
 	}
 	
 	@Test
 	public void ShouldCheckStackHasBeenCreatedSNS() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException, MissingArgumentException {	
 		snsMonitor.initialise();
-		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId, snsMonitor.getArn());
+		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId, snsMonitor.getArn());
 		assertEquals(CREATE_COMPLETE, snsMonitor.waitForCreateFinished(id));
 	}
 	
 	@Test 
 	public void ShouldCheckStackHasBeenDeleted() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException {
-		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,"");
+		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
 		pollingMonitor.waitForCreateFinished(id);
 		EnvironmentSetupForTests.deleteStack(cfnClient, stackName, false); // non-blocking
 		pollingMonitor.waitForDeleteFinished(id);
@@ -76,7 +76,7 @@ public class TestStackMonitors {
 	@Test 
 	public void ShouldCheckStackHasBeenDeletedWithSNS() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException, MissingArgumentException {
 		snsMonitor.initialise();
-		StackId id = EnvironmentSetupForTests.createTemporaryStack(cfnClient, vpcId,snsMonitor.getArn());
+		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,snsMonitor.getArn());
 		snsMonitor.waitForCreateFinished(id);
 		EnvironmentSetupForTests.deleteStack(cfnClient, stackName, false); // non-blocking
 		snsMonitor.waitForDeleteFinished(id);

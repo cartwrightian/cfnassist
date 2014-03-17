@@ -62,8 +62,11 @@ public class EnvironmentSetupForTests {
 	public static final String TEMPORARY_STACK = "temporaryStack";
 
 	public static final String FOLDER_PATH = "src/cfnScripts/orderedScripts";
+	
+	public static final String SUBNET_STACK_FILE = "src/cfnScripts/subnet.json";
+	public static final String SIMPLE_STACK_FILE = "src/cfnScripts/simpleStack.json";
+	public static final String ACL_FILENAME = "src/cfnScripts/acl.json";
 	public static final String SUBNET_WITH_PARAM_FILENAME = "src/cfnScripts/subnetWithParam.json";
-	public static final String SUBNET_FILENAME = "src/cfnScripts/subnet.json";
 	public static final String SUBNET_FILENAME_WITH_BUILD = "src/cfnScripts/subnetWithBuild.json";
 	
 	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources
@@ -213,10 +216,10 @@ public class EnvironmentSetupForTests {
 		deleteStack(cfnClient, stackName, true);
 	}
 
-	public static StackId createTemporaryStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
+	public static StackId createTemporarySimpleStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setStackName(TEMPORARY_STACK);
-		File file = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
+		File file = new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE);
 		createStackRequest.setTemplateBody(FileUtils.readFileToString(file , Charset.defaultCharset()));
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
 		parameters.add(createParam("env", EnvironmentSetupForTests.ENV));
@@ -242,8 +245,6 @@ public class EnvironmentSetupForTests {
 	public static void validatedDelete(StackId stackId, AwsProvider provider)
 			throws WrongNumberOfStacksException, InterruptedException {
 		provider.deleteStack(stackId);
-		//String status = provider.waitForDeleteFinished(stackName);
-		//assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 	}
 
 	public static AmazonSNSClient createSNSClient(

@@ -113,11 +113,11 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", EnvironmentSetupForTests.SUBNET_FILENAME,
+				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet", true);
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsimpleStack", true);
 		assertEquals(0,result);
 	}
 	
@@ -126,12 +126,12 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", EnvironmentSetupForTests.SUBNET_FILENAME,
+				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
 				"-build", "876"
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssist876Testsubnet", false);
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssist876TestsimpleStack", false);
 		assertEquals(0,result);
 	}
 	
@@ -140,12 +140,12 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", EnvironmentSetupForTests.SUBNET_FILENAME,
+				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
 				"-arn", EnvironmentSetupForTests.ARN_FOR_TESTING
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnet", true);
+		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsimpleStack", true);
 		assertEquals(0,result);
 	}
 	
@@ -178,6 +178,9 @@ public class TestCommandLine {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
+		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+		vpcRepository.setVpcIndexTag(projAndEnv, "0");
+		
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -185,7 +188,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(argsDeploy);
 		int result = main.parse();
-		assertEquals(0,result);
+		assertEquals("deploy failed",0,result);
 		
 		String[] rollbackDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -202,22 +205,22 @@ public class TestCommandLine {
 		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls",false);
 		
 		// check
-		assertEquals(0,result);
+		assertEquals("rollback failed",0,result);
 	}
 	
 	@Ignore("cant find way to label at existing stack via apis")
 	@Test
 	public void testInvokeViaCommandLineTagExistingStack() throws IOException {
-		EnvironmentSetupForTests.createTemporaryStack(cfnClient, altEnvVPC.getVpcId(),"");
+		EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, altEnvVPC.getVpcId(),"");
 		
 		String[] argslabelStack = {
 				"-env", EnvironmentSetupForTests.ENV,
 				"-project", EnvironmentSetupForTests.PROJECT,
-				"-labelstack", EnvironmentSetupForTests.TEMPORARY_STACK 
+				"-labelstack", "todoNotWorking"
 		};
 		Main main = new Main(argslabelStack);
 		int result = main.parse();	
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);		
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsimpleStack");		
 		assertEquals(0, result);
 	}
 

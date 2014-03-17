@@ -51,7 +51,7 @@ public class TestDeltaIndexTagging {
 	}
 	
 	@Test
-	public void canSetAndResetTheDeltaIndexTagOnVpc() throws CannotFindVpcException {
+	public void canSetAndResetTheDeltaIndexTagOnVpc() throws CfnAssistException {
 		aws.resetDeltaIndex(mainProjectAndEnv);	
 		aws.setDeltaIndex(mainProjectAndEnv, 42);
 		int tagValue = getValueOfTag();

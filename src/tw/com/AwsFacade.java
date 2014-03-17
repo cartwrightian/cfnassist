@@ -18,6 +18,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.exceptions.BadVPCDeltaIndexException;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -295,14 +296,14 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public ArrayList<StackId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv) throws InvalidParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CannotFindVpcException, StackCreateFailed {
+			FileNotFoundException, IOException, CfnAssistException,
+			InterruptedException {
 		return applyTemplatesFromFolder(folderPath, projAndEnv, new LinkedList<Parameter>());
 	}
 
 	@Override
 	public ArrayList<StackId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
+			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException {
 		ArrayList<StackId> createdStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
@@ -351,7 +352,7 @@ public class AwsFacade implements AwsProvider {
 		return folder;
 	}
 	
-	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, CannotFindVpcException {
+	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, CfnAssistException {
 		List<String> stackNames = new LinkedList<String>();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -403,9 +404,17 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	@Override
-	public int getDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
+	public int getDeltaIndex(ProjectAndEnv projAndEnv) throws CfnAssistException {
 		String tag = vpcRepository.getVpcIndexTag(projAndEnv);
-		return Integer.parseInt(tag);
+		int result = -1;
+		try {
+			result = Integer.parseInt(tag);
+			return result;
+		}
+		catch(NumberFormatException exception) {
+			logger.error("Could not parse the delta index: " + tag);
+			throw new BadVPCDeltaIndexException(tag);
+		}
 	}
 
 	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws CfnAssistException {

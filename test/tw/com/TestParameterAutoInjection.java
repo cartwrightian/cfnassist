@@ -24,7 +24,7 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestParameterAutoInjection {
-	private static final String ACL_FILENAME = "src/cfnScripts/acl.json";
+	
 
 	private static AwsProvider aws;
 	private static VpcRepository vpcRepository;
@@ -47,7 +47,7 @@ public class TestParameterAutoInjection {
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository , vpcRepository);
 		
-		subnetStackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), mainProjectAndEnv);
+		subnetStackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_STACK_FILE), mainProjectAndEnv);
 	}
 	
 	@AfterClass 
@@ -60,7 +60,7 @@ public class TestParameterAutoInjection {
 		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		
 		EnvironmentTag envTag = new EnvironmentTag(env);
-		File file = new File(ACL_FILENAME);
+		File file = new File(EnvironmentSetupForTests.ACL_FILENAME);
 		List<TemplateParameter> declaredParameters = aws.validateTemplate(file);
 		List<Parameter> result = aws.fetchAutopopulateParametersFor(file, envTag, declaredParameters);
 		
@@ -80,13 +80,5 @@ public class TestParameterAutoInjection {
 		
 		assertEquals(subnetPhysicalId, expectedParam.getParameterValue());
 	}
-	
-	@Test
-	public void autoInjectParameterTemplate() throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed {			
-		StackId aclStackName = aws.applyTemplate(new File(ACL_FILENAME), mainProjectAndEnv);	
-
-		EnvironmentSetupForTests.validatedDelete(aclStackName, aws);		
-	}
-	
 
 }

@@ -152,9 +152,10 @@ public class Main {
 		}
 		catch (Exception exception) {
 			//  back to caller via exit status
-			logger.error(exception.toString());
+			logger.error("CommandLine fail: ", exception);
 			return -1;
 		}
+		logger.debug("CommandLine ok");
 		return 0;
 	}
 

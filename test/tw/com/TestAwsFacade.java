@@ -51,7 +51,7 @@ public class TestAwsFacade {
 
 	@Test
 	public void testReturnCorrectParametersFromValidation() throws FileNotFoundException, IOException {
-		List<TemplateParameter> result = aws.validateTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME));
+		List<TemplateParameter> result = aws.validateTemplate(new File(EnvironmentSetupForTests.SUBNET_STACK_FILE));
 		
 		assertEquals(4, result.size());
 		
@@ -69,22 +69,22 @@ public class TestAwsFacade {
 	
 	@Test
 	public void createStacknameFromEnvAndFile() {
-		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SUBNET_FILENAME),projectAndEnv);
-		assertEquals("CfnAssistTestsubnet", stackName);
+		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE),projectAndEnv);
+		assertEquals("CfnAssistTestsimpleStack", stackName);
 	}
 	
 	@Test 
 	public void shouldIncludeBuildNumberWhenFormingStackname() {
 		projectAndEnv.addBuildNumber("042");
-		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SUBNET_FILENAME),projectAndEnv);
+		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE),projectAndEnv);
 		
-		assertEquals("CfnAssist042Testsubnet", stackName);
+		assertEquals("CfnAssist042TestsimpleStack", stackName);
 	}
 	
 	@Test
-	public void createsAndDeleteSubnetFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
+	public void createsAndDeleteSimpleStackFromTemplate() throws FileNotFoundException, IOException, WrongNumberOfStacksException, 
 		InterruptedException, InvalidParameterException, StackCreateFailed {
-		StackId stackId = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv);	
+		StackId stackId = aws.applyTemplate(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE), projectAndEnv);	
 		
 		EnvironmentSetupForTests.validatedDelete(stackId, aws);
 	}
@@ -116,7 +116,7 @@ public class TestAwsFacade {
 		parameters.add(parameter);
 		
 		try {
-			aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME), projectAndEnv, parameters);	
+			aws.applyTemplate(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE), projectAndEnv, parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {

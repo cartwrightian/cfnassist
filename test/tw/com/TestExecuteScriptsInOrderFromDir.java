@@ -17,10 +17,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.StackStatus;
@@ -63,7 +61,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	}
 	
 	@After
-	public void afterAllTestsHaveRun() throws IOException, CannotFindVpcException {	
+	public void afterAllTestsHaveRun() throws IOException, CfnAssistException {	
 		try {
 			aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		} catch (InvalidParameterException e) {
@@ -75,30 +73,30 @@ public class TestExecuteScriptsInOrderFromDir {
 	}
 
 	@Test
-	public void shouldCreateTheStacksRequiredOnly() throws WrongNumberOfStacksException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException, CannotFindVpcException, StackCreateFailed {
-		List<StackId> stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+	public void shouldCreateTheStacksRequiredOnly() throws CfnAssistException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
+		List<StackId> stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		
-		assertEquals(expectedList.size(), stackNames.size());
+		assertEquals(expectedList.size(), stackIds.size());
 		
 		for(int i=0; i<expectedList.size(); i++) {
-			StackId createdStackName = stackNames.get(i);
-			assertEquals(expectedList.get(i), createdStackName);
+			StackId stackId = stackIds.get(i);
+			assertEquals(expectedList.get(i), stackId.getStackName());
 			// TODO should just be a call to get current status because applyTemplatesFromFolder is a blocking call
-			String status = monitor.waitForCreateFinished(createdStackName);
+			String status = monitor.waitForCreateFinished(stackId);
 			assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		}
 		
 		// we are up to date, should not apply the files again
-		stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
-		assertEquals(0, stackNames.size());
+		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		assertEquals(0, stackIds.size());
 		
 		// copy in extra files to dir
 		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
-		stackNames = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
-		assertEquals(1, stackNames.size());
+		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		assertEquals(1, stackIds.size());
 		
 		expectedList.add(proj+env+"03createRoutes");
-		assertEquals(expectedList.get(2), stackNames.get(0));
+		assertEquals(expectedList.get(2), stackIds.get(0).getStackName());
 		
 		List<String> deletedStacks = aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
 		assertEquals(3, deletedStacks.size());

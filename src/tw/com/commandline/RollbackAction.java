@@ -10,7 +10,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.ProjectAndEnv;
-import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 
 public class RollbackAction extends SharedAction {
@@ -22,7 +22,7 @@ public class RollbackAction extends SharedAction {
 					withDescription("Warning: Rollback all current deltas and reset index accordingly").create("rollback");
 	}
 
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folder, Collection<Parameter> unused) throws InvalidParameterException, CannotFindVpcException {
+	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folder, Collection<Parameter> unused) throws InvalidParameterException, CfnAssistException {
 		logger.info("Invoking rollback for " + projectAndEnv);
 		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
 	}

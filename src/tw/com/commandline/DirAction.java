@@ -14,10 +14,8 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import tw.com.AwsFacade;
 import tw.com.ProjectAndEnv;
 import tw.com.StackId;
-import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
 
 public class DirAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(DirAction.class);
@@ -28,7 +26,7 @@ public class DirAction extends SharedAction {
 				withDescription("The directory/folder containing delta templates to apply").create("dir");
 	}
 
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folderPath, Collection<Parameter> cfnParams) throws FileNotFoundException, InvalidParameterException, IOException, WrongNumberOfStacksException, InterruptedException, CannotFindVpcException, StackCreateFailed {
+	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folderPath, Collection<Parameter> cfnParams) throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException {
 		ArrayList<StackId> stackIds = aws.applyTemplatesFromFolder(folderPath, projectAndEnv, cfnParams);
 		logger.info(String.format("Created %s stacks", stackIds.size()));
 		for(StackId name : stackIds) {

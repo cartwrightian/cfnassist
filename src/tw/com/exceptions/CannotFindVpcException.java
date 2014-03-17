@@ -5,21 +5,12 @@ import tw.com.ProjectAndEnv;
 @SuppressWarnings("serial")
 public class CannotFindVpcException extends CfnAssistException {
 
-	private String id;
-
 	public CannotFindVpcException(ProjectAndEnv projAndEnv) {
-		this.id = projAndEnv.toString();
+		super("CannotFindVpcException " + projAndEnv.toString());
 	}
 
 	public CannotFindVpcException(String id) {
-		this.id=id;
+		super("CannotFindVpcException " + id);
 	}
-
-	@Override
-	public String toString() {
-		return "CannotFindVpcException " + id;
-	}
-	
-	
 
 }

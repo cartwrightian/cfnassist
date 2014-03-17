@@ -1,0 +1,23 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"test template for cnfassist - does nothing much",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		}
+		
+	},
+	"Resources":{
+		"handle":{
+			"Type":"AWS::CloudFormation::WaitConditionHandle",
+			"Properties":{
+				
+			}
+			
+		}
+		
+	}
+}

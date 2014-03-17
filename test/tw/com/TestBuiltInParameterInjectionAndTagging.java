@@ -74,7 +74,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	
 	@Test
 	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
-		File templateFile = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
+		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
 		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		validateCreateAndDeleteWorks(stackId, createExpectedStackTags(), createExpectedTags());
@@ -83,7 +83,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Test
 	public void canBuildAndDeleteSimpleStackThatDoesTakeNotBuildParam() throws FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, InvalidParameterException, StackCreateFailed {	
 		// we should not try to populate any parameter NOT declared in the json, doing so will cause an exception
-		File templateFile = new File(EnvironmentSetupForTests.SUBNET_FILENAME);
+		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
 		
 		String buildNumber = "456";
 		mainProjectAndEnv.addBuildNumber(buildNumber); 
@@ -113,10 +113,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		
 		mainProjectAndEnv.addBuildNumber(buildNumber);
 		StackId stackName = awsProvider.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME_WITH_BUILD), mainProjectAndEnv);	
-		
-		//String status = awsProvider.waitForCreateFinished(stackName);
-		//assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
-			
+	
 		validateCreateAndDeleteWorks(stackName, 
 				createCfnExpectedTagListWithBuild(buildNumber), 
 				createExpectedTagsWithBuild(buildNumber));
@@ -144,9 +141,6 @@ public class TestBuiltInParameterInjectionAndTagging {
 		assert(subnetTags.containsAll(expectedEc2Tags));
 	    
 		awsProvider.deleteStack(stackId);
-		
-		//status = monitor.waitForDeleteFinished(stackName);
-		//assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 	}
 
 	private List<Stack> getStack(String stackName) {
