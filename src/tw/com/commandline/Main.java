@@ -163,7 +163,7 @@ public class Main {
 	}
 
 	private AwsFacade createAwsFacade(Region awsRegion, boolean useSNSMonitoring) throws MissingArgumentException {
-		return new FacadeFactory().createFacace(awsRegion, useSNSMonitoring);
+		return new FacadeFactory().createFacade(awsRegion, useSNSMonitoring);
 	}
 
 	private Collection<Parameter> checkForCfnParameters(

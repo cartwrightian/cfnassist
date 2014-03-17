@@ -23,9 +23,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private String cfnProject;
 	private String cfnBuildNumber = null;
 	private String cfnEnv;
+	private boolean snsMonitoring;
 	private Collection<Param> params;
 	
 	public CfnAssistAntTask() {
+		snsMonitoring = false;
 		params = new LinkedList<Param>();
 	}
 	
@@ -47,12 +49,19 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		this.cfnBuildNumber  = cfnBuildNumber;
 	}
 	
+	public void setSns(boolean useSnsMonitoring) {
+		this.snsMonitoring = useSnsMonitoring;
+	}
+	
 	public void addConfiguredTemplates(TemplatesElement fileElement) {
 		this.fileElement = fileElement;
 	}
 	
 	public void execute() {
 		ProjectAndEnv projectAndEnv = new ProjectAndEnv(cfnProject, cfnEnv);
+		if (snsMonitoring) {
+			projectAndEnv.setUseSNS();
+		}
 		if (cfnBuildNumber!=null) {
 			projectAndEnv.addBuildNumber(cfnBuildNumber);
 		}
@@ -63,7 +72,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 			cfnParameters.add(param.getParamter());
 		}		
 		try {
-			AwsFacade aws = new FacadeFactory().createFacace(region, projectAndEnv.useSNS());
+			AwsFacade aws = new FacadeFactory().createFacade(region, projectAndEnv.useSNS());
 			fileElement.execute(aws, projectAndEnv, cfnParameters);
 		} catch (IOException | MissingArgumentException
 				| InvalidParameterException | InterruptedException | CfnAssistException | CommandLineException innerException) {

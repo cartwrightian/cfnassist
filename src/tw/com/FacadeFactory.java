@@ -11,7 +11,7 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 
 public class FacadeFactory {
 
-	public AwsFacade createFacace(Region region, boolean arnMonitoring) throws MissingArgumentException {
+	public AwsFacade createFacade(Region region, boolean arnMonitoring) throws MissingArgumentException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(region);
