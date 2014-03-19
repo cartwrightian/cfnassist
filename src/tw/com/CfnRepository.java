@@ -143,7 +143,7 @@ public class CfnRepository {
 		populateEntries(results.getStacks());
 	}
 	
-	public String waitForStatusToChangeFrom(String stackName, StackStatus currentStatus) 
+	public String waitForStatusToChangeFrom(String stackName, StackStatus currentStatus, List<String> aborts) 
 			throws WrongNumberOfStacksException, InterruptedException {
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(stackName);
@@ -166,6 +166,10 @@ public class CfnRepository {
 			logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was %s", stackName, status, pause));
 			if (pause<MAX_CHECK_INTERVAL_MILLIS) {
 				pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
+			}
+			if (aborts.contains(status)) {
+				logger.error("Matched an abort status");
+				break;
 			}
 		}
 		logger.info(String.format("Stack status changed, status is now %s and reason (if any) was: '%s' ", status, stack.getStackStatusReason()));

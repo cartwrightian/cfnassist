@@ -129,13 +129,9 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
-		if (projAndEnv.useSNS()) {
+		if (monitor instanceof SNSMonitor) {
 			SNSMonitor snsMonitor = (SNSMonitor) monitor;
-			String arn = snsMonitor.getArn();
-			logger.info("Setting arn for sns events to " + arn);
-			Collection<String> arns = new LinkedList<String>();
-			arns.add(arn);
-			createStackRequest.setNotificationARNs(arns);
+			createSNSMonitoring(createStackRequest, snsMonitor);
 		}
 		Collection<Tag> tags = createTagsForStack(projAndEnv);
 		createStackRequest.setTags(tags);
@@ -147,6 +143,15 @@ public class AwsFacade implements AwsProvider {
 		monitor.waitForCreateFinished(id);
 		cfnRepository.updateRepositoryFor(id);
 		return id;
+	}
+
+	private void createSNSMonitoring(CreateStackRequest createStackRequest,
+			SNSMonitor snsMonitor) throws NotReadyException {
+		String arn = snsMonitor.getArn();
+		logger.info("Setting arn for sns events to " + arn);
+		Collection<String> arns = new LinkedList<String>();
+		arns.add(arn);
+		createStackRequest.setNotificationARNs(arns);
 	}
 
 	private void handlePossibleRollback(String stackName)
@@ -268,7 +273,7 @@ public class AwsFacade implements AwsProvider {
 	
 	public void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
 		deleteStackNonBlocking(stackId.getStackName());
-		monitor.waitForDeleteFinished(stackId);
+		//monitor.waitForDeleteFinished(stackId);
 	}
 	
 	private void deleteStackNonBlocking(String stackName) {

@@ -52,9 +52,8 @@ public class TestELBSwitchOver {
 	}
 	
 	@Test
-	@Ignore
 	public void testFindELBInVPC() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
 		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
-		fail("Todo");
+
 	}
 }

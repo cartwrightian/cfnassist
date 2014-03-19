@@ -1,6 +1,8 @@
 package tw.com;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,7 +47,7 @@ import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
-public class SNSMonitor implements MonitorStackEvents {
+public class SNSMonitor extends StackMonitor  {
 	private static final String QUEUE_ARN_KEY = "QueueArn";
 	private static final String QUEUE_POLICY_KEY = "Policy";
 	private Collection<String> attributeNames = new LinkedList<String>();
@@ -56,7 +58,7 @@ public class SNSMonitor implements MonitorStackEvents {
 	public static final String SNS_TOPIC_NAME = "CFN_ASSIST_EVENTS";
 	private static final String SQS_QUEUE_NAME = "CFN_ASSIST_EVENT_QUEUE";
 	private static final int LIMIT = 50;
-
+	
 	private AmazonSNSClient snsClient;
 	private AmazonSQSClient sqsClient;
 	private String topicSnsArn;
@@ -213,24 +215,24 @@ public class SNSMonitor implements MonitorStackEvents {
 			throws WrongNumberOfStacksException, InterruptedException,
 			StackCreateFailed, NotReadyException, WrongStackStatus {
 		guardForInit();
-		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE.toString());
+		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE.toString(), Arrays.asList(CREATE_ABORTS));
 	}
 	
 	@Override
 	public String waitForDeleteFinished(StackId stackId)
 			throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
 		guardForInit();
-		return waitForStatus(stackId, StackStatus.DELETE_COMPLETE.toString());
+		return waitForStatus(stackId, StackStatus.DELETE_COMPLETE.toString(), Arrays.asList(DELETE_ABORTS));
 	}
 	
 
 	@Override
 	public String waitForRollbackComplete(StackId id) throws NotReadyException, InterruptedException, WrongStackStatus {
 		guardForInit();
-		return waitForStatus(id, StackStatus.ROLLBACK_COMPLETE.toString());
+		return waitForStatus(id, StackStatus.ROLLBACK_COMPLETE.toString(), Arrays.asList(ROLLBACK_ABORTS));
 	}
 
-	private String waitForStatus(StackId stackId, String requiredStatus) throws InterruptedException, WrongStackStatus {
+	private String waitForStatus(StackId stackId, String requiredStatus, List<String> aborts) throws InterruptedException, WrongStackStatus {
 		logger.info(String.format("Waiting for stack %s to change to status %s", stackId, requiredStatus));
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL);
 		receiveMessageRequest.setWaitTimeSeconds(QUEUE_READ_TIMEOUT_SECS);
@@ -247,9 +249,14 @@ public class SNSMonitor implements MonitorStackEvents {
 			if (status.equals(requiredStatus)) {
 				return status;
 			}
+			if (aborts.contains(status)) {
+				logger.error(String.format("Got an failure status %s while waiting for status %s", status, requiredStatus));
+				throw new WrongStackStatus(requiredStatus, status);
+			}
 			msgs.clear();
 			count++;
 		}
+		logger.error("Timed out waiting for status to change");
 		throw new WrongStackStatus(requiredStatus, status);
 	}
 

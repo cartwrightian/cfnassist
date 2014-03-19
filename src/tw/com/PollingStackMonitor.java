@@ -1,5 +1,6 @@
 package tw.com;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -12,7 +13,7 @@ import tw.com.exceptions.WrongStackStatus;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
-public class PollingStackMonitor implements MonitorStackEvents {
+public class PollingStackMonitor extends StackMonitor {
 	private static final Logger logger = LoggerFactory.getLogger(PollingStackMonitor.class);
 	private CfnRepository cfnRepository;
 	
@@ -23,7 +24,7 @@ public class PollingStackMonitor implements MonitorStackEvents {
 	@Override
 	public String waitForCreateFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {	
 		String stackName = stackId.getStackName();
-		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS);
+		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(CREATE_ABORTS));
 		if (!result.equals(StackStatus.CREATE_COMPLETE.toString())) {
 			logger.error(String.format("Failed to create stack %s, status is %s", stackId, result));
 			logStackEvents(cfnRepository.getStackEvents(stackName));
@@ -36,7 +37,7 @@ public class PollingStackMonitor implements MonitorStackEvents {
 	public String waitForRollbackComplete(StackId id) throws NotReadyException,
 			 WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
 		String stackName = id.getStackName();
-		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.ROLLBACK_IN_PROGRESS);
+		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.ROLLBACK_IN_PROGRESS, Arrays.asList(ROLLBACK_ABORTS));
 		String complete = StackStatus.ROLLBACK_COMPLETE.toString();
 		if (!result.equals(complete)) {
 			logger.error("Expected " + complete);
@@ -49,7 +50,7 @@ public class PollingStackMonitor implements MonitorStackEvents {
 		StackStatus requiredStatus = StackStatus.DELETE_IN_PROGRESS;
 		String result = StackStatus.DELETE_FAILED.toString();
 		try {
-			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), requiredStatus);
+			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), requiredStatus, Arrays.asList(DELETE_ABORTS));
 		}
 		catch(com.amazonaws.AmazonServiceException awsException) {
 			String errorCode = awsException.getErrorCode();

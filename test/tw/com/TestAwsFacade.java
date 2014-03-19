@@ -51,6 +51,8 @@ public class TestAwsFacade {
 		monitor = new PollingStackMonitor(cfnRepository);	
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+		
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsimpleStack");
 	}
 
 	@Test
