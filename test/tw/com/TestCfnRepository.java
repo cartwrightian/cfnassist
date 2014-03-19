@@ -12,10 +12,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.StackCreateFailed;
+import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
@@ -34,12 +40,15 @@ public class TestCfnRepository {
 	private Vpc otherVPC;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
+	private CfnRepository cfnRepository;
 
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestcausesRollBack");
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnetWithCIDRParam");
 	}
 	
 	@Before
@@ -47,7 +56,7 @@ public class TestCfnRepository {
 		VpcRepository vpcRepository = new VpcRepository(directClient);
 		
 		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		cfnRepository = new CfnRepository(cfnClient);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		awsProvider = new AwsFacade(monitor , cfnClient, directClient, cfnRepository, vpcRepository);
 		
@@ -61,14 +70,10 @@ public class TestCfnRepository {
 		String vpcIdB = otherVPC.getVpcId();
 		String cidrA = "10.0.10.0/24";
 		String cidrB = "10.0.11.0/24";
-
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 	
 		//create two subnets with same logical id's but different VPCs		
 		StackId stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
 		StackId stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
-		//awsProvider.waitForCreateFinished(stackA);
-		//awsProvider.waitForCreateFinished(stackB);
 		
 		// find the id's
 		String physicalIdA = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(EnvironmentSetupForTests.ENV), TEST_CIDR_SUBNET);
@@ -98,6 +103,34 @@ public class TestCfnRepository {
 		Subnet subnetB = subnetResultsB.getSubnets().get(0);
 		assertEquals(cidrB, subnetB.getCidrBlock());
 		assertEquals(vpcIdB, subnetB.getVpcId());
+	}
+	
+	@Test
+	public void detectsRollbackStatusOfStack() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidParameterException, InterruptedException, WrongStackStatus, DuplicateStackException {
+		
+		String name = "CfnAssistTestcausesRollBack";
+		try {
+			awsProvider.applyTemplate(new File(EnvironmentSetupForTests.CAUSEROLLBACK), mainProjectAndEnv);
+		} catch (StackCreateFailed e) {
+			// expected
+		}
+		
+		String result = StackStatus.ROLLBACK_IN_PROGRESS.toString();
+		while (result.equals(StackStatus.ROLLBACK_IN_PROGRESS.toString())) {
+			result = cfnRepository.getStackStatus(name);
+			Thread.sleep(1000);
+		}
+		
+		assertEquals(StackStatus.ROLLBACK_COMPLETE.toString(), result);
+		
+		EnvironmentSetupForTests.deleteStack(cfnClient, name, true);
+	}
+	
+	@Test
+	public void emptyStatusIfNoSuchStatck() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, NotReadyException, IOException, InvalidParameterException, InterruptedException {			
+		String result = cfnRepository.getStackStatus("thisStackShouldNotExist");
+		
+		assertEquals(0, result.length());
 	}
 
 	private DescribeSubnetsResult getSubnetDetails(String physicalId) {

@@ -21,10 +21,12 @@ import org.slf4j.LoggerFactory;
 import tw.com.exceptions.BadVPCDeltaIndexException;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
@@ -34,6 +36,7 @@ import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
@@ -96,11 +99,11 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException {
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException {
+	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, StackCreateFailed, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
@@ -108,6 +111,8 @@ public class AwsFacade implements AwsProvider {
 		String contents = loadFileContents(file);	
 		String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
+		
+		handlePossibleRollback(stackName);
 		
 		String vpcId = vpcForEnv.getVpcId();
 		
@@ -136,11 +141,40 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setTags(tags);
 		
 		logger.info("Making createStack call to AWS");
+		
 		CreateStackResult result = cfnClient.createStack(createStackRequest);
 		StackId id = new StackId(stackName,result.getStackId());
 		monitor.waitForCreateFinished(id);
 		cfnRepository.updateRepositoryFor(id);
 		return id;
+	}
+
+	private void handlePossibleRollback(String stackName)
+			throws WrongNumberOfStacksException, NotReadyException,
+			WrongStackStatus, InterruptedException, DuplicateStackException {
+		String currentStatus = cfnRepository.getStackStatus(stackName);
+		if (currentStatus.length()!=0) {
+			logger.warn("Stack already exists: " + stackName);
+			StackId stackId = cfnRepository.getStackId(stackName);
+			if (isRollingBack(stackId)) {
+				logger.warn("Stack is rolled back so delete it and recreate " + stackId);
+				deleteStack(stackId);
+			} else {
+				logger.error("Stack exists and is not rolled back, cannot create another stack with name:" +stackName);
+				throw new DuplicateStackException(stackName);
+			}
+		}
+	}
+
+	private boolean isRollingBack(StackId id) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+		String currentStatus = cfnRepository.getStackStatus(id.getStackName());
+		if (currentStatus.equals(StackStatus.ROLLBACK_IN_PROGRESS)) {
+			monitor.waitForRollbackComplete(id);
+			return true;
+		} else if (currentStatus.equals(StackStatus.ROLLBACK_COMPLETE.toString())) {
+			return true;
+		}
+		return false;
 	}
 
 	private void logAllParameters(Collection<Parameter> parameters) {
@@ -232,7 +266,7 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 	
-	public void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException {
+	public void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
 		deleteStackNonBlocking(stackId.getStackName());
 		monitor.waitForDeleteFinished(stackId);
 	}

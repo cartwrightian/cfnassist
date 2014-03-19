@@ -43,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
 
 public class SNSMonitor implements MonitorStackEvents {
 	private static final String QUEUE_ARN_KEY = "QueueArn";
@@ -210,38 +211,46 @@ public class SNSMonitor implements MonitorStackEvents {
 	@Override
 	public String waitForCreateFinished(StackId stackId)
 			throws WrongNumberOfStacksException, InterruptedException,
-			StackCreateFailed, NotReadyException {
+			StackCreateFailed, NotReadyException, WrongStackStatus {
 		guardForInit();
 		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE.toString());
 	}
 	
 	@Override
 	public String waitForDeleteFinished(StackId stackId)
-			throws WrongNumberOfStacksException, InterruptedException, NotReadyException {
+			throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
 		guardForInit();
 		return waitForStatus(stackId, StackStatus.DELETE_COMPLETE.toString());
 	}
+	
 
-	private String waitForStatus(StackId stackId, String requiredStatus) throws InterruptedException {
+	@Override
+	public String waitForRollbackComplete(StackId id) throws NotReadyException, InterruptedException, WrongStackStatus {
+		guardForInit();
+		return waitForStatus(id, StackStatus.ROLLBACK_COMPLETE.toString());
+	}
+
+	private String waitForStatus(StackId stackId, String requiredStatus) throws InterruptedException, WrongStackStatus {
 		logger.info(String.format("Waiting for stack %s to change to status %s", stackId, requiredStatus));
 		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL);
 		receiveMessageRequest.setWaitTimeSeconds(QUEUE_READ_TIMEOUT_SECS);
 		List<Message> msgs = new LinkedList<Message>();
 		int count = 0;
+		String status = "";
 		while (count<LIMIT) {
 			while (msgs.size()==0) {
 				logger.info("Waiting for messages for queue " + queueURL);
 				ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
 				msgs = result.getMessages();
 			}
-			String status = processMessages(stackId, msgs);
+			status = processMessages(stackId, msgs);
 			if (status.equals(requiredStatus)) {
 				return status;
 			}
 			msgs.clear();
 			count++;
 		}
-		throw new InterruptedException("Did not receieve stack status change within required time");
+		throw new WrongStackStatus(requiredStatus, status);
 	}
 
 	private void guardForInit() throws NotReadyException {

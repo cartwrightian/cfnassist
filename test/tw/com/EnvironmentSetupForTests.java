@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -68,6 +69,8 @@ public class EnvironmentSetupForTests {
 	public static final String ACL_FILENAME = "src/cfnScripts/acl.json";
 	public static final String SUBNET_WITH_PARAM_FILENAME = "src/cfnScripts/subnetWithParam.json";
 	public static final String SUBNET_FILENAME_WITH_BUILD = "src/cfnScripts/subnetWithBuild.json";
+	public static final String ELB_FILENAME = "src/cfnScripts/elb.json";
+	public static final String CAUSEROLLBACK = "src/cfnScripts/causesRollBack.json";
 	
 	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources
 	private static final int DELETE_RETRY_LIMIT = 10;
@@ -123,7 +126,7 @@ public class EnvironmentSetupForTests {
 	}
 
 
-	public static boolean deleteStack(AmazonCloudFormationClient client,String stackName, boolean blocking)  {
+	public static boolean deleteStack(AmazonCloudFormationClient client, String stackName, boolean blocking)  {
 		logger.debug("Request deletion of stack: " + stackName);
 		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
 		deleteStackRequest.setStackName(stackName);
@@ -243,7 +246,7 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static void validatedDelete(StackId stackId, AwsProvider provider)
-			throws WrongNumberOfStacksException, InterruptedException, NotReadyException {
+			throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
 		provider.deleteStack(stackId);
 	}
 

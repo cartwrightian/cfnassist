@@ -179,4 +179,41 @@ public class CfnRepository {
 		return result.getStackEvents();
 	}
 
+	public String getStackStatus(String stackName) {
+		List<StackEntry> stacks = getStacks();
+		for(StackEntry entry : stacks) {
+			Stack stack = entry.getStack();
+			if (stack.getStackName().equals(stackName)) {
+				// get latest status
+				try {
+					return getStackCurrentStatus(stackName);
+				} catch (WrongNumberOfStacksException e) {
+					logger.warn("Mismatch on stack status",e);
+					return "";
+				}
+			}
+		}	
+		return "";
+	}
+
+	private String getStackCurrentStatus(String stackName) throws WrongNumberOfStacksException {
+		Stack stack = describeStack(stackName);
+		return stack.getStackStatus();		
+	}
+
+	public StackId getStackId(String stackName) throws WrongNumberOfStacksException {
+		Stack stack = describeStack(stackName);
+		String id = stack.getStackId();
+		return new StackId(stackName, id);
+	}
+
+	private Stack describeStack(String stackName) throws WrongNumberOfStacksException {
+		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
+		describeStacksRequest.setStackName(stackName);
+		DescribeStacksResult result = cfnClient.describeStacks(describeStacksRequest);
+		if (result.getStacks().size()!=1) {
+			throw new WrongNumberOfStacksException(1, result.getStacks().size());
+		}
+		return result.getStacks().get(0);
+	}
 }

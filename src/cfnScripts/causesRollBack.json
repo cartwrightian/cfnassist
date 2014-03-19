@@ -1,0 +1,43 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"test template for cnfassist - creates a single subnet",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		}
+		
+	},
+	"Resources":{
+		"loadBalancer":{
+			"Type":"AWS::ElasticLoadBalancing::LoadBalancer",
+			"Properties":{
+				"HealthCheck":{
+					"HealthyThreshold":"2",
+					"Interval":"15",
+					"Target":"HTTP:8080/api/status",
+					"Timeout":"5",
+					"UnhealthyThreshold":"2"
+				},
+				"Listeners":[
+					{
+						"InstancePort":"8082",
+						"LoadBalancerPort":"80",
+						"Protocol":"HTTP",
+						"PolicyNames":[
+							
+						]
+						
+					}
+					
+				]
+				
+			}
+			
+		}
+		
+	}
+	
+}

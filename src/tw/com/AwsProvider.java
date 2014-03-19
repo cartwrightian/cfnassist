@@ -9,9 +9,11 @@ import java.util.List;
 
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
@@ -19,14 +21,14 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public interface AwsProvider {
 	
 	List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException;
-	StackId applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException;
-	StackId applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException;
+	StackId applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException;
+	StackId applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException;
 	
 	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException;
 	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException;
 	
 	String createStackName(File templateFile, ProjectAndEnv projAndEnv);
-	void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException;
+	void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus;
 	
 	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag, List<TemplateParameter> declaredParam) throws FileNotFoundException, IOException, InvalidParameterException;
 	

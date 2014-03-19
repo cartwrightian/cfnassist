@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
 
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
@@ -26,7 +27,20 @@ public class PollingStackMonitor implements MonitorStackEvents {
 		if (!result.equals(StackStatus.CREATE_COMPLETE.toString())) {
 			logger.error(String.format("Failed to create stack %s, status is %s", stackId, result));
 			logStackEvents(cfnRepository.getStackEvents(stackName));
-			throw new StackCreateFailed(stackName);
+			throw new StackCreateFailed(stackId);
+		}
+		return result;
+	}
+	
+	@Override
+	public String waitForRollbackComplete(StackId id) throws NotReadyException,
+			 WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+		String stackName = id.getStackName();
+		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.ROLLBACK_IN_PROGRESS);
+		String complete = StackStatus.ROLLBACK_COMPLETE.toString();
+		if (!result.equals(complete)) {
+			logger.error("Expected " + complete);
+			throw new WrongStackStatus(complete, result);
 		}
 		return result;
 	}
@@ -63,5 +77,7 @@ public class PollingStackMonitor implements MonitorStackEvents {
 	public void init() {
 		// no op for polling monitor	
 	}
+
+
 
 }
