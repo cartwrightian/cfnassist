@@ -9,7 +9,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
@@ -51,6 +53,8 @@ public class TestCfnRepository {
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnetWithCIDRParam");
 	}
 	
+	@Rule public TestName test = new TestName();
+	
 	@Before
 	public void beforeEachTestIsRun() {				
 		VpcRepository vpcRepository = new VpcRepository(directClient);
@@ -59,6 +63,7 @@ public class TestCfnRepository {
 		cfnRepository = new CfnRepository(cfnClient);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		awsProvider = new AwsFacade(monitor , cfnClient, directClient, cfnRepository, vpcRepository);
+		awsProvider.setCommentTag(test.getMethodName());
 		
 		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
@@ -111,6 +116,7 @@ public class TestCfnRepository {
 		String name = "CfnAssistTestcausesRollBack";
 		try {
 			awsProvider.applyTemplate(new File(EnvironmentSetupForTests.CAUSEROLLBACK), mainProjectAndEnv);
+			fail("Expected exception");
 		} catch (StackCreateFailed e) {
 			// expected
 		}
@@ -118,12 +124,12 @@ public class TestCfnRepository {
 		String result = StackStatus.ROLLBACK_IN_PROGRESS.toString();
 		while (result.equals(StackStatus.ROLLBACK_IN_PROGRESS.toString())) {
 			result = cfnRepository.getStackStatus(name);
-			Thread.sleep(1000);
+			Thread.sleep(2500);
 		}
 		
-		assertEquals(StackStatus.ROLLBACK_COMPLETE.toString(), result);
-		
 		EnvironmentSetupForTests.deleteStack(cfnClient, name, true);
+		
+		assertEquals(StackStatus.ROLLBACK_COMPLETE.toString(), result);	
 	}
 	
 	@Test

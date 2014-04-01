@@ -1,7 +1,6 @@
 package tw.com;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,6 +57,7 @@ public class SNSMonitor extends StackMonitor  {
 	public static final String SNS_TOPIC_NAME = "CFN_ASSIST_EVENTS";
 	private static final String SQS_QUEUE_NAME = "CFN_ASSIST_EVENT_QUEUE";
 	private static final int LIMIT = 50;
+	private static final String STACK_RESOURCE_TYPE = "AWS::CloudFormation::Stack";
 	
 	private AmazonSNSClient snsClient;
 	private AmazonSQSClient sqsClient;
@@ -275,14 +275,11 @@ public class SNSMonitor extends StackMonitor  {
 				JsonNode messageNode = extractMessageNode(msg, objectMapper);
 				deleteMessage(msg);
 				
-				StackNotification notification = parseNotificationMessage(messageNode.textValue());
-				if (notification.getStackId().equals(stackId.getStackId())) {
-					logger.info(String.format("Received notification for stack %s status was %s", stackId, notification.getStatus()));
+				StackNotification notification = StackNotification.parseNotificationMessage(messageNode.textValue());
+				if (processMatchingStackNotif(notification, stackId)) {
 					return notification.getStatus();
-				} else {
-					logger.info(String.format("Notification did not match stackId, expected: %s was: %s", stackId.getStackId(),
-							notification.getStackId()));
-				}			
+				}
+								
 			} catch (IOException e) {
 				logger.error("Unable to process message: " + e.getMessage());
 				logger.error("Message body was: " + msg.getBody());
@@ -291,11 +288,24 @@ public class SNSMonitor extends StackMonitor  {
 		return "";
 	}
 
+	private boolean processMatchingStackNotif(StackNotification notification, StackId stackId) {
+		if (notification.getStackId().equals(stackId.getStackId())) {
+			logger.info(String.format("Received notification for %s status was %s", notification.getResourceType(), notification.getStatus()));
+			if (notification.getStatus().equals(StackStatus.CREATE_FAILED.toString())) {
+				logger.warn(String.format("Failed to create resource of type %s reason was %s",notification.getResourceType(),notification.getStatusReason()));
+			}
+			return notification.getResourceType().equals(STACK_RESOURCE_TYPE); 
+		} 
+		
+		logger.info(String.format("Notification did not match stackId, expected: %s was: %s", stackId.getStackId(), notification.getStackId()));		
+		return false;
+	}
+
 	private JsonNode extractMessageNode(Message msg, ObjectMapper objectMapper)
 			throws IOException, JsonProcessingException {
 		String json = msg.getBody();
 		
-		logger.debug("Body json: " + json);
+		//logger.debug("Body json: " + json);
 		
 		JsonNode rootNode = objectMapper.readTree(json);		
 		JsonNode messageNode = rootNode.get("Message");
@@ -315,30 +325,5 @@ public class SNSMonitor extends StackMonitor  {
 		return topicSnsArn;
 	}
 
-	public StackNotification parseNotificationMessage(String notificationMessage) {
-		String[] parts = notificationMessage.split("\n");
-		String status="";
-		String foundName="";
-		String stackId="";
-		for(int i=0; i<parts.length; i++) {
-			String[] elements = parts[i].split("=");
-			String key = elements[0];
-			String containsValue = elements[1];
-			if (key.equals("StackName")) {
-				foundName=extractValue(containsValue);
-			}
-			if (key.equals("ResourceStatus")) {
-				status=extractValue(containsValue);
-			}
-			if (key.equals("StackId")) {
-				stackId = extractValue(containsValue);
-			}
-		}
-		return new StackNotification(foundName,status,stackId);
-	}
-
-	private String extractValue(String value) {
-		return value.replace('\'',' ').trim();
-	}
 
 }

@@ -52,6 +52,7 @@ public class AwsFacade implements AwsProvider {
 	public static final String PROJECT_TAG = "CFN_ASSIST_PROJECT"; 
 	public static final String INDEX_TAG = "CFN_ASSIST_DELTA";
 	public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
+	public static final String COMMENT_TAG = "CFN_COMMENT";
 	
 	private static final String PARAMETER_ENV = "env";
 	private static final String PARAMETER_VPC = "vpc";
@@ -65,6 +66,8 @@ public class AwsFacade implements AwsProvider {
 	private CfnRepository cfnRepository;
 	private AmazonEC2Client ec2Client;
 	private MonitorStackEvents monitor;
+
+	private String commentTag="";
 
 	public AwsFacade(MonitorStackEvents monitor, AmazonCloudFormationClient cfnClient, AmazonEC2Client ec2Client, CfnRepository cfnRepository, VpcRepository vpcRepository) {
 		this.monitor = monitor;
@@ -99,11 +102,11 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException {
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus, DuplicateStackException, StackCreateFailed {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, StackCreateFailed, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException {
+	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException, StackCreateFailed {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
@@ -140,7 +143,13 @@ public class AwsFacade implements AwsProvider {
 		
 		CreateStackResult result = cfnClient.createStack(createStackRequest);
 		StackId id = new StackId(stackName,result.getStackId());
-		monitor.waitForCreateFinished(id);
+		try {
+			monitor.waitForCreateFinished(id);
+		} catch (StackCreateFailed stackFailedToCreate) {
+			logger.error("Failed to create stack",stackFailedToCreate);
+			cfnRepository.updateRepositoryFor(id);
+			throw stackFailedToCreate;
+		}
 		cfnRepository.updateRepositoryFor(id);
 		return id;
 	}
@@ -196,7 +205,17 @@ public class AwsFacade implements AwsProvider {
 		if (projectAndEnv.hasBuildNumber()) {
 			tags.add(createTag(BUILD_TAG, projectAndEnv.getBuildNumber()));
 		}
+		if (!commentTag.isEmpty()) {
+			logger.info(String.format("Adding %s: %s", COMMENT_TAG, commentTag));
+			tags.add(createTag(COMMENT_TAG, commentTag));
+		}
 		return tags;
+	}
+	
+
+	@Override
+	public void setCommentTag(String commentTag) {
+		this.commentTag = commentTag;		
 	}
 
 	private Tag createTag(String key, String value) {
@@ -502,5 +521,6 @@ public class AwsFacade implements AwsProvider {
 		
 		// TODO how to check status of this call?
 	}
+
 
 }

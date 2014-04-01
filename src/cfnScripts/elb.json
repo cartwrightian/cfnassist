@@ -1,16 +1,51 @@
 {
 	"AWSTemplateFormatVersion":"2010-09-09",
-	"Description":"test template for cnfassist - creates a single subnet",
+	"Description":"test template for cnfassist - creates an ELB",
 	"Parameters":{
 		"env":{
 			"Type":"String"
 		},
 		"vpc":{
 			"Type":"String"
+		},
+		"zoneA":{
+			"Type":"String",
+			"Default":"eu-west-1a",
+			"Description":"zoneADescription"
 		}
 		
 	},
 	"Resources":{
+		"internetGateway":{
+			"Type":"AWS::EC2::InternetGateway"
+		},
+		"AttachGateway":{
+			"Type":"AWS::EC2::VPCGatewayAttachment",
+			"Properties":{
+				"VpcId":{
+					"Ref":"vpc"
+				},
+				"InternetGatewayId":{
+					"Ref":"internetGateway"
+				}
+				
+			}
+			
+		},
+		"vpcSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"AvailabilityZone":{
+					"Ref":"zoneA"
+				},
+				"CidrBlock":"10.0.10.13/24",
+				"VpcId":{
+					"Ref":"vpc"
+				}
+				
+			}
+			
+		},
 		"loadBalancer":{
 			"Type":"AWS::ElasticLoadBalancing::LoadBalancer",
 			"Properties":{
@@ -21,6 +56,12 @@
 					"Timeout":"5",
 					"UnhealthyThreshold":"2"
 				},
+				"Subnets":[
+					{
+						"Ref":"vpcSubnet"
+					}
+					
+				],
 				"Listeners":[
 					{
 						"InstancePort":"8082",
@@ -31,13 +72,10 @@
 						]
 						
 					}
-					
 				]
-				
 			}
 			
 		}
 		
 	}
-	
 }

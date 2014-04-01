@@ -11,7 +11,9 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -44,14 +46,21 @@ public class TestBuiltInParameterInjectionAndTagging {
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
 	}
+	
+	private String testName;
+	@Rule public TestName test = new TestName();
+	
 
 	@Before
 	public void beforeTestsRun() {
+		testName = test.getMethodName();
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 		monitor = new PollingStackMonitor(cfnRepository);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		awsProvider = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+		awsProvider.setCommentTag(testName);
+
 		mainProjectAndEnv = new ProjectAndEnv(project, env);
 		vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		
@@ -64,9 +73,28 @@ public class TestBuiltInParameterInjectionAndTagging {
 	}
 
 	private void tidyStacksIfNeeded() {
+		// TODO save time by fetching stack list once
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnet");
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnetWithParam");
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnetWithBuild");
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist456Testsubnet");
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist42TestsubnetWithBuild");
+	}
+	
+	@Test
+	public void setNoteAOnStack() throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException {
+		String theComment = "hereIsAComment";
+		awsProvider.setCommentTag(theComment); // override for this test
+		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
+		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
+		
+		List<Tag> expectedStackTags = createExpectedStackTags("");
+		List<com.amazonaws.services.ec2.model.Tag> expectedEc2Tags = createExpectedEc2Tags("");
+		
+		expectedStackTags.add(createCfnTag("CFN_COMMENT", theComment));
+		expectedEc2Tags.add(createEc2Tag("CFN_COMMENT", theComment));
+		
+		validateCreateAndDeleteWorks(stackId, expectedStackTags, expectedEc2Tags);
 	}
 	
 	@Test
@@ -74,7 +102,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
 		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
-		validateCreateAndDeleteWorks(stackId, createExpectedStackTags(), createExpectedTags());
+		validateCreateAndDeleteWorks(stackId, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
 	}
 	
 	@Test
@@ -87,9 +115,9 @@ public class TestBuiltInParameterInjectionAndTagging {
 		StackId stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		// tagging should still work even if json does not take build parameter
-		List<com.amazonaws.services.ec2.model.Tag> expectedEC2Tags = createExpectedTags();
+		List<com.amazonaws.services.ec2.model.Tag> expectedEC2Tags = createExpectedEc2Tags(testName);
 		expectedEC2Tags.add(createEc2Tag("CFN_ASSIST_BUILD", buildNumber));
-		validateCreateAndDeleteWorks(stackName, createCfnExpectedTagListWithBuild(buildNumber), expectedEC2Tags);
+		validateCreateAndDeleteWorks(stackName, createCfnExpectedTagListWithBuild(buildNumber, testName), expectedEC2Tags);
 	}
 
 	@Test
@@ -101,7 +129,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
 		StackId stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv, params);
 				
-		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(), createExpectedTags());
+		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
 	}
 
 	@Test
@@ -112,8 +140,8 @@ public class TestBuiltInParameterInjectionAndTagging {
 		StackId stackName = awsProvider.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME_WITH_BUILD), mainProjectAndEnv);	
 	
 		validateCreateAndDeleteWorks(stackName, 
-				createCfnExpectedTagListWithBuild(buildNumber), 
-				createExpectedTagsWithBuild(buildNumber));
+				createCfnExpectedTagListWithBuild(buildNumber, testName), 
+				createExpectedTagsWithBuild(buildNumber, testName));
 		
 		EnvironmentSetupForTests.validatedDelete(stackName, awsProvider);
 	}
@@ -150,20 +178,26 @@ public class TestBuiltInParameterInjectionAndTagging {
 		return stacks;
 	}
 	
-	private List<Tag> createExpectedStackTags() {
+	private List<Tag> createExpectedStackTags(String comment) {
 		List<Tag> expectedTags = new LinkedList<Tag>();
 		expectedTags.add(createCfnTag("CFN_ASSIST_ENV", "Test"));
 		expectedTags.add(createCfnTag("CFN_ASSIST_PROJECT", "CfnAssist"));
+		if (!comment.isEmpty()) {
+			expectedTags.add(createCfnTag("CFN_COMMENT", comment));
+		}
 		return expectedTags;
 	}
 	
-	private List<com.amazonaws.services.ec2.model.Tag> createExpectedTags() {
+	private List<com.amazonaws.services.ec2.model.Tag> createExpectedEc2Tags(String comment) {
 		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
 		tags.add(createEc2Tag("TagEnv",mainProjectAndEnv.getEnv()));
 		tags.add(createEc2Tag("Name", "testSubnet"));
 		// stack tags appear to be inherited
 		tags.add(createEc2Tag("CFN_ASSIST_ENV", "Test"));
 		tags.add(createEc2Tag("CFN_ASSIST_PROJECT", "CfnAssist"));
+		if (!comment.isEmpty()) {
+			tags.add(createEc2Tag("CFN_COMMENT", comment));
+		}
 		return tags;
 	}
 	
@@ -172,17 +206,17 @@ public class TestBuiltInParameterInjectionAndTagging {
 		return new com.amazonaws.services.ec2.model.Tag().withKey(key).withValue(value);
 	}
 
-	private List<com.amazonaws.services.ec2.model.Tag> createExpectedTagsWithBuild(String buildId) {
-		List<com.amazonaws.services.ec2.model.Tag> expectedTags = createExpectedTags();
+	private List<com.amazonaws.services.ec2.model.Tag> createExpectedTagsWithBuild(String buildId, String comment) {
+		List<com.amazonaws.services.ec2.model.Tag> expectedTags = createExpectedEc2Tags(comment);
 		expectedTags.add(createEc2Tag("TagBuild",buildId));
 		// stack tags appear to be inherited
 		expectedTags.add(createEc2Tag("CFN_ASSIST_BUILD", buildId));
 		return expectedTags;
 	}
 
-	private List<Tag> createCfnExpectedTagListWithBuild(String value) {
-		List<Tag> tags = createExpectedStackTags();
-		tags.add(createCfnTag("CFN_ASSIST_BUILD", value));
+	private List<Tag> createCfnExpectedTagListWithBuild(String buildNumber, String comment) {
+		List<Tag> tags = createExpectedStackTags(comment);
+		tags.add(createCfnTag("CFN_ASSIST_BUILD", buildNumber));
 		return tags;
 	}
 

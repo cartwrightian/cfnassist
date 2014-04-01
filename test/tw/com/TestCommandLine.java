@@ -5,10 +5,13 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -33,6 +36,9 @@ public class TestCommandLine {
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
 	}
+	
+	@Rule public TestName test = new TestName();
+	String testName = "";
 
 	@Before
 	public void beforeEveryTestRun() {
@@ -41,6 +47,13 @@ public class TestCommandLine {
 		
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);		
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
+		testName = test.getMethodName();
+	}
+	
+	@After
+	public void afterEachTestIsRun() {
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient , "CfnAssistTest01createSubnet");
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient , "CfnAssistTest02createAcls");
 	}
 	
 	@Test
@@ -114,6 +127,7 @@ public class TestCommandLine {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
+				"-comment", testName
 				};
 		Main main = new Main(args);
 		int result = main.parse();
@@ -127,7 +141,8 @@ public class TestCommandLine {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
-				"-build", "876"
+				"-build", "876",
+				"-comment", testName
 				};
 		Main main = new Main(args);
 		int result = main.parse();
@@ -141,7 +156,8 @@ public class TestCommandLine {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
-				"-sns"
+				"-sns", 
+				"-comment", testName
 				};
 		Main main = new Main(args);
 		int result = main.parse();
@@ -168,7 +184,8 @@ public class TestCommandLine {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-file", EnvironmentSetupForTests.SUBNET_WITH_PARAM_FILENAME,
-				"-parameters", "zoneA=eu-west-1a"
+				"-parameters", "zoneA=eu-west-1a",
+				"-comment", testName
 				};
 		Main main = new Main(args);
 		int result = main.parse();
@@ -195,6 +212,7 @@ public class TestCommandLine {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-dir", EnvironmentSetupForTests.FOLDER_PATH,
+				"-comment", testName,
 				sns
 				};
 		Main main = new Main(argsDeploy);
@@ -213,8 +231,6 @@ public class TestCommandLine {
 		//clean up as needed
 		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
-		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest01createSubnet",true);
-		EnvironmentSetupForTests.deleteStack(cfnClient , "CfnAssistTest02createAcls",true);
 		
 		// check
 		assertEquals("rollback failed",0,result);

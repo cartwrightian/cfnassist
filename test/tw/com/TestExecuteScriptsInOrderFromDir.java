@@ -14,7 +14,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
@@ -47,6 +49,8 @@ public class TestExecuteScriptsInOrderFromDir {
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
 	}
 	
+	@Rule public TestName test = new TestName();
+	
 	@Before 
 	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
@@ -56,6 +60,8 @@ public class TestExecuteScriptsInOrderFromDir {
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+		aws.setCommentTag(test.getMethodName());
+		
 		Files.deleteIfExists(destFile);
 		aws.resetDeltaIndex(mainProjectAndEnv);
 	}

@@ -8,8 +8,11 @@ import java.io.IOException;
 import java.util.List;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -46,6 +49,13 @@ public class TestParameterAutoInjection {
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository , vpcRepository);
 		
 		subnetStackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_STACK_FILE), mainProjectAndEnv);
+	}
+	
+	@Rule public TestName test = new TestName();
+	
+	@Before
+	public void beforeEachTestRuns() {
+		aws.setCommentTag(test.getMethodName());
 	}
 	
 	@AfterClass 

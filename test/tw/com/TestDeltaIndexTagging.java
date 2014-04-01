@@ -7,7 +7,9 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
@@ -36,12 +38,15 @@ public class TestDeltaIndexTagging {
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
 	}
 
+	@Rule public TestName test = new TestName();
+	
 	@Before
 	public void beforeTestsRun() {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);	
 		vpcRepos = new VpcRepository(directClient);
 		aws = new AwsFacade(monitor , cfnClient, directClient, cfnRepository , vpcRepos);	
+		aws.setCommentTag(test.getMethodName());
 		
 		altVpc = EnvironmentSetupForTests.findAltVpc(vpcRepos);
 	}

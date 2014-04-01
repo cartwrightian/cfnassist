@@ -11,7 +11,9 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
@@ -23,7 +25,6 @@ import tw.com.exceptions.WrongStackStatus;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 
@@ -43,6 +44,8 @@ public class TestAwsFacade {
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
 	}
 	
+	@Rule public TestName testName = new TestName();
+	
 	@Before
 	public void beforeTestsRun() {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient);
@@ -50,6 +53,7 @@ public class TestAwsFacade {
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+		aws.setCommentTag(testName.getMethodName());
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsimpleStack");
@@ -129,6 +133,7 @@ public class TestAwsFacade {
 			// expected a create fail, and *not* a duplicate stack exception
 			id = exception.getStackId();
 		}	
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestcausesRollBack");
 
 	}
 

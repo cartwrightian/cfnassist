@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion":"2010-09-09",
-	"Description":"test template for cnfassist - creates a single subnet",
+	"Description":"test template for cnfassist - DELIBERATELY CAUSE A ROLLBACK",
 	"Parameters":{
 		"env":{
 			"Type":"String"

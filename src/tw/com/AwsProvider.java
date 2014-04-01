@@ -37,5 +37,5 @@ public interface AwsProvider {
 	int getDeltaIndex(ProjectAndEnv projAndEnv) throws CfnAssistException;
 	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws CfnAssistException;
 	public void initEnvAndProjectForStack(String stackName, ProjectAndEnv projectAndEnv) throws CfnAssistException;
-	
+	void setCommentTag(String string);
 }

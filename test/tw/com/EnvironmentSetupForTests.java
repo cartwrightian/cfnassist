@@ -43,6 +43,7 @@ import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
@@ -262,6 +263,13 @@ public class EnvironmentSetupForTests {
 		AmazonSQSClient sqsClient = new AmazonSQSClient(credentialsProvider);
 		sqsClient.setRegion(getRegion());
 		return sqsClient;
+	}
+
+	public static AmazonElasticLoadBalancingClient createELBClient(
+			DefaultAWSCredentialsProviderChain credentialsProvider) {
+		AmazonElasticLoadBalancingClient client = new AmazonElasticLoadBalancingClient(credentialsProvider);
+		client.setRegion(getRegion());
+		return client;
 	}
 
 }

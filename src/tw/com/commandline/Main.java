@@ -52,6 +52,7 @@ public class Main {
 	private String executableName;
 	private Option keysValuesParam;
 	private Option snsParam;
+	private Option commentParam;
 
 	public Main(String[] args) {
 		this.args = args;
@@ -111,6 +112,9 @@ public class Main {
 						String.format("Use SNS to publish updates from cloud formation, uses the topic %s"
 						,SNSMonitor.SNS_TOPIC_NAME)).create("sns");
 		commandLineOptions.addOption(snsParam);
+		commentParam = OptionBuilder.withArgName("comment").hasArg().
+				withDescription("Add a comment within the tag " + AwsFacade.COMMENT_TAG).create("comment");
+		commandLineOptions.addOption(commentParam);
 	}
 
 	public int parse() {
@@ -126,6 +130,7 @@ public class Main {
 			String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION, true);
 			String buildNumber = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
 			Boolean sns = checkForArgumentPresent(commandLine, formatter, snsParam);
+			String comment = checkForArgument(commandLine, formatter, commentParam, "", false);
 			Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
 			List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
 			actions.add(dirAction);
@@ -148,6 +153,9 @@ public class Main {
 			logger.info("Region set to " + awsRegion);
 			
 			AwsFacade aws = createAwsFacade(awsRegion, projectAndEnv.useSNS());
+			if (!comment.isEmpty()) {
+				aws.setCommentTag(comment);
+			}
 				
 			String argumentForAction = commandLine.getOptionValue(action.getArgName());
 			action.validate(aws, projectAndEnv, argumentForAction, cfnParams);
