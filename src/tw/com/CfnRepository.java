@@ -131,7 +131,7 @@ public class CfnRepository {
 						logger.info("Replacing entry for stack " + stackName);
 					}
 					stackEntries.add(entry);
-					logger.info(String.format("Added stack %s matched, environment is %s, status was ", 
+					logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
 							stackName, envTag, stack.getStackStatus()));	
 					foundTag = true;
 					break;
