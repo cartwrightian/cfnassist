@@ -28,7 +28,7 @@ public class TestHaveValidTemplateFiles {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);	

@@ -44,7 +44,7 @@ public class TestParameterAutoInjection {
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
 		vpcRepository = new VpcRepository(ec2Client);
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository , vpcRepository);
 		

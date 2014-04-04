@@ -71,6 +71,7 @@ public class EnvironmentSetupForTests {
 	public static final String SUBNET_WITH_PARAM_FILENAME = "src/cfnScripts/subnetWithParam.json";
 	public static final String SUBNET_FILENAME_WITH_BUILD = "src/cfnScripts/subnetWithBuild.json";
 	public static final String ELB_FILENAME = "src/cfnScripts/elb.json";
+	public static final String INSTANCE_FILENAME = "src/cfnScripts/instance.json";
 	public static final String CAUSEROLLBACK = "src/cfnScripts/causesRollBack.json";
 	
 	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources

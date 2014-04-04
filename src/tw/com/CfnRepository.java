@@ -22,65 +22,96 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 
 public class CfnRepository {
-	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
+	private static final String AWS_EC2_INSTANCE_TYPE = "AWS::EC2::Instance";
+	private static final Logger logger = LoggerFactory
+			.getLogger(CfnRepository.class);
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1000;
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 	private AmazonCloudFormationClient cfnClient;
-	
+
 	private StackResources stackResources;
 	private List<StackEntry> stackEntries;
-	
-	public CfnRepository(AmazonCloudFormationClient cfnClient) {
+	private String project;
+
+	public CfnRepository(AmazonCloudFormationClient cfnClient, String project) {
 		this.cfnClient = cfnClient;
 		stackResources = new StackResources();
 		stackEntries = new LinkedList<StackEntry>();
+		this.project = project;
 	}
 	
-	public String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId) {	
-		logger.info(String.format("Looking for resource matching logicalID: %s for Env: %s", logicalId, envTag));
-		List<StackEntry> stacks = getStacks();
-		for(StackEntry stackEntry : stacks) {
+	public List<StackEntry> stacksMatchingEnvAndBuild(EnvironmentTag envTag, String buildNumber) {
+		List<StackEntry> stacks = new LinkedList<StackEntry>();
+		List<StackEntry> candidateStacks = getStacksForProject();
+		for (StackEntry entry : candidateStacks) {
+			if (entry.getEnvTag().equals(envTag) && entry.getBuildNumber().equals(buildNumber)) {
+				stacks.add(entry);
+			}
+		}
+		return stacks;
+	}
+
+	public List<StackEntry> stacksMatchingEnv(EnvironmentTag envTag) {
+		List<StackEntry> stacks = new LinkedList<StackEntry>();
+		List<StackEntry> candidateStacks = getStacksForProject();
+		for (StackEntry entry : candidateStacks) {
+			if (entry.getEnvTag().equals(envTag)) {
+				stacks.add(entry);
+			}
+		}
+		return stacks;
+	}
+
+	public String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId) {
+		logger.info(String.format("Looking for resource matching logicalID: %s for %s",logicalId, envTag));
+		List<StackEntry> stacks = stacksMatchingEnv(envTag);
+		for (StackEntry stackEntry : stacks) {
 			String stackName = stackEntry.getStack().getStackName();
-			logger.debug(String.format("Checking stack %s for envTag %s", stackName, envTag));
-			if (stackEntry.getEnvTag().equals(envTag)) {	
-				logger.debug(String.format("Checking stack %s for logical id %s", stackName, logicalId));
-				String maybeHaveId = findPhysicalIdByLogicalId(envTag, stackName, logicalId);
-				if (maybeHaveId!=null) {
-					logger.info(String.format("Found physicalID: %s for logical ID: %s in stack %s", maybeHaveId, logicalId, stackName));
-					return maybeHaveId;
-				}
+			logger.debug(String.format("Checking stack %s for logical id %s",
+					stackName, logicalId));
+			String maybeHaveId = findPhysicalIdByLogicalId(envTag, stackName, logicalId);
+			if (maybeHaveId != null) {
+				logger.info(String.format(
+						"Found physicalID: %s for logical ID: %s in stack %s",
+						maybeHaveId, logicalId, stackName));
+				return maybeHaveId;
 			}
 		}
 		logger.warn("No match for logical ID was found");
 		return null;
 	}
-	
-	private String findPhysicalIdByLogicalId(EnvironmentTag envTag, String stackName, String logicalId) {	
-		logger.info(String.format("Check Env %s and stack %s for logical ID %s", envTag, stackName, logicalId));
+
+	private String findPhysicalIdByLogicalId(EnvironmentTag envTag, String stackName, String logicalId) {
+		logger.info(String.format(
+				"Check Env %s and stack %s for logical ID %s", envTag,
+				stackName, logicalId));
 
 		try {
 			List<StackResource> resources = getResourcesForStack(stackName);
-			logger.debug(String.format("Found %s resources for stack %s", resources.size(), stackName));
+			logger.debug(String.format("Found %s resources for stack %s",
+					resources.size(), stackName));
 			for (StackResource resource : resources) {
 				String candidateId = resource.getLogicalResourceId();
 				String physicalResourceId = resource.getPhysicalResourceId();
-				logger.debug(String.format("Checking for match against resource phyId=%s logId=%s", physicalResourceId, 
-						resource.getLogicalResourceId()));
+				logger.debug(String
+						.format("Checking for match against resource phyId=%s logId=%s",
+								physicalResourceId,
+								resource.getLogicalResourceId()));
 				if (candidateId.equals(logicalId)) {
 					return physicalResourceId;
 				}
 			}
+		} catch (AmazonServiceException exception) {
+			logger.warn("Unable to check for resources, stack name: "
+					+ stackName, exception);
 		}
-		catch(AmazonServiceException exception) {
-			logger.warn("Unable to check for resources, stack name: "+stackName, exception);
-		}	
-		
-		return null;		
-	}
-	
-	private List<StackResource> getResourcesForStack(String stackName) {		
 
-		List<StackResource> resources=null;
+		return null;
+	}
+
+	private List<StackResource> getResourcesForStack(String stackName) {
+
+		List<StackResource> resources = null;
 		if (stackResources.containsStack(stackName)) {
 			logger.info("Cache hit on stack resources for stack " + stackName);
 			resources = stackResources.getStackResources(stackName);
@@ -88,59 +119,81 @@ public class CfnRepository {
 			logger.info("Cache miss, loading resources for stack " + stackName);
 			DescribeStackResourcesRequest request = new DescribeStackResourcesRequest();
 			request.setStackName(stackName);
-			DescribeStackResourcesResult results = cfnClient.describeStackResources(request);
-			
+			DescribeStackResourcesResult results = cfnClient
+					.describeStackResources(request);
+
 			resources = results.getStackResources();
 			stackResources.addStackResources(stackName, resources);
 		}
 		return resources;
 	}
-	
-	private List<StackEntry> getStacks() {		
+
+	private List<StackEntry> getStacksForProject() {
 		// TODO handle "next token"?
-		
-		if (stackEntries.size()==0) {
+
+		if (stackEntries.size() == 0) {
 			logger.info("No cached stacks, loading all stacks");
 			DescribeStacksRequest describeStackRequest = new DescribeStacksRequest();
 			DescribeStacksResult results = cfnClient.describeStacks(describeStackRequest);
-			
+
 			List<Stack> stacks = results.getStacks();
-			populateEntries(stacks);
+			populateEntriesIfProjectMatches(stacks);
 			logger.info(String.format("Loaded %s stacks", stackEntries.size()));
 		} else {
 			logger.info("Cache hit on stacks");
 		}
 		return stackEntries;
 	}
-	
-	private void populateEntries(List<Stack> stacks) {
+
+	private void populateEntriesIfProjectMatches(List<Stack> stacks) {
 		logger.info(String.format("Populating stack entries for %s stacks",stacks.size()));
 		for(Stack stack : stacks) {
-			String stackName = stack.getStackName();
-			logger.info(String.format("Checking stack %s for tag", stackName));
+
+			logger.info(String.format("Checking stack %s for tag", stack.getStackName()));
 		
 			List<Tag> tags = stack.getTags();
-			boolean foundTag = false;
+			int count = 3;
+			String env = "";
+			String proj = "";
+			String build = "";
 			for(Tag tag : tags) {
-				if (tag.getKey().equals(AwsFacade.ENVIRONMENT_TAG))
-				{
-					EnvironmentTag envTag = new EnvironmentTag(tag.getValue());
-					StackEntry entry = new StackEntry(envTag, stack);
-					if (stackEntries.contains(entry)) {
-						stackEntries.remove(entry);
-						logger.info("Replacing entry for stack " + stackName);
-					}
-					stackEntries.add(entry);
-					logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
-							stackName, envTag, stack.getStackStatus()));	
-					foundTag = true;
-					break;
+				String key = tag.getKey();
+				String value = tag.getValue();
+				if (key.equals(AwsFacade.ENVIRONMENT_TAG)) {
+					env = value;
+					count--;
+				} else if (key.equals(AwsFacade.PROJECT_TAG)) {
+					proj = value;
+					count--;
+				} else if (key.equals(AwsFacade.BUILD_TAG)) {
+					build = value;
+					count--;
 				}
+				if (count==0) break; // small optimisation 
 			}
-			if (!foundTag) {
-				logger.warn(String.format("Could not find expected tag (%s) for stack %s", AwsFacade.ENVIRONMENT_TAG, stackName));
-			}
+			addEntryIfProjectAndEnvMatches(stack, env, proj, build);
 		}		
+	}
+
+	private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, String build) {
+		if (!proj.equals(project) || (env.isEmpty())) {
+			logger.warn(String.format("Could not match expected tag (%s) for stack %s", AwsFacade.ENVIRONMENT_TAG, stack.getStackName()));
+		}
+			
+		logger.info(String.format("Stack %s matched %s and %s", stack.getStackName(), env, proj));
+		EnvironmentTag envTag = new EnvironmentTag(env);
+		StackEntry entry = new StackEntry(envTag, stack);
+		if (!build.isEmpty()) {
+			logger.info("Saving associated build number %s", build);
+			entry.setBuildNumber(build);
+		}
+		if (stackEntries.contains(entry)) {
+			stackEntries.remove(entry);
+			logger.info("Replacing entry for stack " + stack.getStackName());
+		}
+		stackEntries.add(entry);
+		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
+				stack.getStackName(), envTag, stack.getStackStatus()));		 
 	}
 
 	public void updateRepositoryFor(StackId id) {
@@ -149,31 +202,37 @@ public class CfnRepository {
 		describeStacksRequest.setStackName(id.getStackName());
 		DescribeStacksResult results = cfnClient.describeStacks(describeStacksRequest);
 
-		populateEntries(results.getStacks());
+		populateEntriesIfProjectMatches(results.getStacks());
 	}
-	
-	public String waitForStatusToChangeFrom(String stackName, StackStatus currentStatus, List<String> aborts) 
+
+	public String waitForStatusToChangeFrom(String stackName,
+			StackStatus currentStatus, List<String> aborts)
 			throws WrongNumberOfStacksException, InterruptedException {
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(stackName);
 		long pause = STATUS_CHECK_INTERVAL_MILLIS;
-		
-		logger.info(String.format("Waiting for stack %s to change FROM status %s", stackName, currentStatus));
+
+		logger.info(String.format(
+				"Waiting for stack %s to change FROM status %s", stackName,
+				currentStatus));
 		String status = currentStatus.toString();
 		Stack stack = null;
 		while (status.equals(currentStatus.toString())) {
 			Thread.sleep(pause);
-			DescribeStacksResult result = cfnClient.describeStacks(describeStacksRequest);
+			DescribeStacksResult result = cfnClient
+					.describeStacks(describeStacksRequest);
 			List<Stack> stacks = result.getStacks();
 			int numberOfStacks = stacks.size();
-			if (numberOfStacks!=1) {
+			if (numberOfStacks != 1) {
 				logger.error("Wrong number of stacks found: " + numberOfStacks);
 				throw new WrongNumberOfStacksException(1, numberOfStacks);
 			}
 			stack = stacks.get(0);
-			status = stack.getStackStatus();	
-			logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was %s", stackName, status, pause));
-			if (pause<MAX_CHECK_INTERVAL_MILLIS) {
+			status = stack.getStackStatus();
+			logger.debug(String
+					.format("Waiting for status of stack %s, status was %s, pause was %s",
+							stackName, status, pause));
+			if (pause < MAX_CHECK_INTERVAL_MILLIS) {
 				pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
 			}
 			if (aborts.contains(status)) {
@@ -181,56 +240,95 @@ public class CfnRepository {
 				break;
 			}
 		}
-		logger.info(String.format("Stack status changed, status is now %s and reason (if any) was: '%s' ", status, stack.getStackStatusReason()));
+		logger.info(String
+				.format("Stack status changed, status is now %s and reason (if any) was: '%s' ",
+						status, stack.getStackStatusReason()));
 		return status;
 	}
 
 	public List<StackEvent> getStackEvents(String stackName) {
 		DescribeStackEventsRequest request = new DescribeStackEventsRequest();
 		request.setStackName(stackName);
-		DescribeStackEventsResult result = cfnClient.describeStackEvents(request);
+		DescribeStackEventsResult result = cfnClient
+				.describeStackEvents(request);
 		return result.getStackEvents();
 	}
 
 	public String getStackStatus(String stackName) {
 		logger.info("Getting stack status for " + stackName);
-		List<StackEntry> stacks = getStacks();
-		for(StackEntry entry : stacks) {
+		List<StackEntry> stacks = getStacksForProject();
+		for (StackEntry entry : stacks) {
 			Stack stack = entry.getStack();
 			if (stack.getStackName().equals(stackName)) {
 				// get latest status
 				try {
 					return getStackCurrentStatus(stackName);
 				} catch (WrongNumberOfStacksException e) {
-					logger.warn("Mismatch on stack status",e);
+					logger.warn("Mismatch on stack status", e);
 					return "";
 				}
 			}
-		}	
+		}
 		logger.warn("Failed to find stack status for :" + stackName);
 		return "";
 	}
 
-	private String getStackCurrentStatus(String stackName) throws WrongNumberOfStacksException {
+	private String getStackCurrentStatus(String stackName)
+			throws WrongNumberOfStacksException {
 		Stack stack = describeStack(stackName);
 		String stackStatus = stack.getStackStatus();
-		logger.info(String.format("Got status %s for stack %s", stackStatus, stackName));
-		return stackStatus;		
+		logger.info(String.format("Got status %s for stack %s", stackStatus,
+				stackName));
+		return stackStatus;
 	}
 
-	public StackId getStackId(String stackName) throws WrongNumberOfStacksException {
+	public StackId getStackId(String stackName)
+			throws WrongNumberOfStacksException {
 		Stack stack = describeStack(stackName);
 		String id = stack.getStackId();
 		return new StackId(stackName, id);
 	}
 
-	private Stack describeStack(String stackName) throws WrongNumberOfStacksException {
+	private Stack describeStack(String stackName)
+			throws WrongNumberOfStacksException {
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(stackName);
-		DescribeStacksResult result = cfnClient.describeStacks(describeStacksRequest);
-		if (result.getStacks().size()!=1) {
+		DescribeStacksResult result = cfnClient
+				.describeStacks(describeStacksRequest);
+		if (result.getStacks().size() != 1) {
 			throw new WrongNumberOfStacksException(1, result.getStacks().size());
 		}
 		return result.getStacks().get(0);
+	}
+
+	// TODO BUILD NUMBERS!
+	public List<String> getInstancesFor(ProjectAndEnv projAndEnv) {
+		logger.info("Finding instances for " + projAndEnv);
+		String buildNumber = "";
+		if (projAndEnv.hasBuildNumber()) {
+			buildNumber = projAndEnv.getBuildNumber();
+			logger.info("Matching also on build number: " + buildNumber);
+		}
+		// fetch stacks that match proj, env and build
+		List<StackEntry> stacks = stacksMatchingEnvAndBuild(projAndEnv.getEnvTag(), buildNumber);
+		List<String> instanceIds = new LinkedList<String>();
+		for (StackEntry entry : stacks) {
+			instanceIds.addAll(findInstancesForStack(entry.getStack()));
+		}
+
+		return instanceIds;
+	}
+
+	private List<String> findInstancesForStack(Stack stack) {
+		List<String> instanceIds = new LinkedList<String>();
+		List<StackResource> resources = getResourcesForStack(stack.getStackName());
+		for (StackResource resource : resources) {
+			String type = resource.getResourceType();
+			if (type.equals(AWS_EC2_INSTANCE_TYPE)) {
+				logger.info("Matched instance: "+ resource.getPhysicalResourceId());
+				instanceIds.add(resource.getPhysicalResourceId());
+			}
+		}
+		return instanceIds;
 	}
 }

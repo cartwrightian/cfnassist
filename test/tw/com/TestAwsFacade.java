@@ -48,7 +48,7 @@ public class TestAwsFacade {
 	
 	@Before
 	public void beforeTestsRun() {
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	

@@ -15,11 +15,15 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.StackCreateFailed;
+import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.sns.AmazonSNSClient;
@@ -49,12 +53,13 @@ public class TestELBSwitchOver {
 	}
 	
 	@Rule public TestName test = new TestName();
+	private CfnRepository cfnRepository;
 	
 	@Before
 	public void beforeTestsRun() throws MissingArgumentException {
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestelb");
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new SNSMonitor(snsClient, sqsClient);
@@ -66,18 +71,38 @@ public class TestELBSwitchOver {
 	}
 	
 	@After
-	public void afterEachTestRuns() {
+	public void afterEachTestRuns() {	
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist123Testinstance");
+		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist567Testinstance");
 		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestelb");
 	}
 	
 	@Test
-	public void testFindELBInVPC() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
-		ELBRepository elbRepository = new ELBRepository(elbClient);
+	public void testShouldFindELBInTheVPC() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
+		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
 		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
-	
-		Vpc vpc = vpcRepository.getCopyOfVpc(projAndEnv);
-		LoadBalancerDescription elb = elbRepository.findELBFor(vpc.getVpcId());
+		
+		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
 		
 		assertNotNull(elb);
+		assertEquals(0, elb.getInstances().size());
 	}
+	
+	@Test
+	public void shouldJustAddInstancesWithMatchingBuildNumber() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
+		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
+		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
+		
+		projAndEnv.addBuildNumber("123");
+		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnv);
+		ProjectAndEnv projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();
+		
+		projAndEnvDiffBuild.addBuildNumber("567");
+		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnvDiffBuild);
+
+		elbRepository.updateELBInstancesThatMatchBuild(projAndEnv);
+		
+		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
+		assertEquals(1, elb.getInstances().size());
+	}	
 }

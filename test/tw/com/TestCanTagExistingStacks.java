@@ -40,7 +40,7 @@ public class TestCanTagExistingStacks {
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		
 		StackId stackId = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpc.getVpcId(),"");	
@@ -59,7 +59,7 @@ public class TestCanTagExistingStacks {
 	public void shouldBeAbleToLabelExistingStack() throws IOException, CfnAssistException {
 		aws.initEnvAndProjectForStack(EnvironmentSetupForTests.TEMPORARY_STACK, projectAndEnv);
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		String createdSubnet = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(projectAndEnv.getEnv()), "testSubnet");
 		
 		assertNotNull(createdSubnet);

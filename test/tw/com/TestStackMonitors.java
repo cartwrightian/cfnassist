@@ -42,7 +42,7 @@ public class TestStackMonitors {
 
 	@Before
 	public void beforeTestsRun() {
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);	
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);	
 		pollingMonitor = new PollingStackMonitor(cfnRepository);	
 		vpcId = EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV;
 		snsMonitor = new SNSMonitor(snsClient, sqsClient);

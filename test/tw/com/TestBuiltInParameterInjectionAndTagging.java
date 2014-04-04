@@ -54,7 +54,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Before
 	public void beforeTestsRun() {
 		testName = test.getMethodName();
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		monitor = new PollingStackMonitor(cfnRepository);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		

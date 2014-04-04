@@ -4,6 +4,31 @@ import com.amazonaws.services.cloudformation.model.Stack;
 
 public class StackEntry {
 
+	private EnvironmentTag environmentTag;
+	private Stack stack;
+	private String buildNumber = "";
+
+	public StackEntry(EnvironmentTag environmentTag, Stack stack) {
+		this.environmentTag = environmentTag;
+		this.stack = stack;
+	}
+
+	public EnvironmentTag getEnvTag() {
+		return environmentTag;
+	}
+
+	public Stack getStack() {
+		return stack;
+	}
+
+	public String getBuildNumber() {
+		return buildNumber;
+	}
+	
+	public void setBuildNumber(String buildNumber) {
+		this.buildNumber = buildNumber;	
+	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -36,20 +61,5 @@ public class StackEntry {
 		return true;
 	}
 
-	private EnvironmentTag environmentTag;
-	private Stack stack;
-
-	public StackEntry(EnvironmentTag environmentTag, Stack stack) {
-		this.environmentTag = environmentTag;
-		this.stack = stack;
-	}
-
-	public EnvironmentTag getEnvTag() {
-		return environmentTag;
-	}
-
-	public Stack getStack() {
-		return stack;
-	}
 
 }

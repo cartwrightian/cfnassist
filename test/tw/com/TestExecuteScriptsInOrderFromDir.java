@@ -55,7 +55,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	

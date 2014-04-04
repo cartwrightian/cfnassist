@@ -72,7 +72,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 			cfnParameters.add(param.getParamter());
 		}		
 		try {
-			AwsFacade aws = new FacadeFactory().createFacade(region, projectAndEnv.useSNS());
+			AwsFacade aws = new FacadeFactory().createFacade(region, projectAndEnv.useSNS(), cfnProject);
 			fileElement.execute(aws, projectAndEnv, cfnParameters);
 		} catch (IOException | MissingArgumentException
 				| InvalidParameterException | InterruptedException | CfnAssistException | CommandLineException innerException) {

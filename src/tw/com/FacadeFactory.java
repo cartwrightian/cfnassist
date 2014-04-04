@@ -11,13 +11,13 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 
 public class FacadeFactory {
 
-	public AwsFacade createFacade(Region region, boolean arnMonitoring) throws MissingArgumentException {
+	public AwsFacade createFacade(Region region, boolean arnMonitoring, String project) throws MissingArgumentException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(region);
 		AmazonEC2Client ec2Client = new AmazonEC2Client(credentialsProvider);
 		ec2Client.setRegion(region);
-		CfnRepository cfnRepository = new CfnRepository(cfnClient);
+		CfnRepository cfnRepository = new CfnRepository(cfnClient, project);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		MonitorStackEvents monitor = null;
 		if (arnMonitoring) {		

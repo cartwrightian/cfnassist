@@ -522,5 +522,4 @@ public class AwsFacade implements AwsProvider {
 		// TODO how to check status of this call?
 	}
 
-
 }

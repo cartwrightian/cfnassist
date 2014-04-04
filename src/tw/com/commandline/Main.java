@@ -152,7 +152,7 @@ public class Main {
 			logger.info("Invoking for " + projectAndEnv);
 			logger.info("Region set to " + awsRegion);
 			
-			AwsFacade aws = createAwsFacade(awsRegion, projectAndEnv.useSNS());
+			AwsFacade aws = createAwsFacade(awsRegion, projectAndEnv.useSNS(), project);
 			if (!comment.isEmpty()) {
 				aws.setCommentTag(comment);
 			}
@@ -170,8 +170,8 @@ public class Main {
 		return 0;
 	}
 
-	private AwsFacade createAwsFacade(Region awsRegion, boolean useSNSMonitoring) throws MissingArgumentException {
-		return new FacadeFactory().createFacade(awsRegion, useSNSMonitoring);
+	private AwsFacade createAwsFacade(Region awsRegion, boolean useSNSMonitoring, String project) throws MissingArgumentException {
+		return new FacadeFactory().createFacade(awsRegion, useSNSMonitoring, project);
 	}
 
 	private Collection<Parameter> checkForCfnParameters(

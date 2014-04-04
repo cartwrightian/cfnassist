@@ -1,0 +1,30 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"test template for cnfassist - creates a single acl",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		},
+		"zoneA":{
+			"Type":"String",
+			"Default":"eu-west-1a",
+			"Description":"zoneADescription"
+		}, 
+		"subnet": { "Type":"String", "Description":"::vpcSubnet" }
+	},
+	"Resources":{
+		"TechLabWebServerA":{
+			"Type":"AWS::EC2::Instance",
+			"Properties":{
+				"InstanceType":"t1.micro",
+				"ImageId":"ami-f2191786",
+				"SubnetId":{
+					"Ref":"subnet"
+				}
+			}
+		}	
+	}
+}

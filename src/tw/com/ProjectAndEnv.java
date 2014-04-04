@@ -77,5 +77,9 @@ public class ProjectAndEnv {
 	public void setUseSNS() {
 		useSns = true;		
 	}
+
+	public EnvironmentTag getEnvTag() {
+		return new EnvironmentTag(env);
+	}
 	
 }

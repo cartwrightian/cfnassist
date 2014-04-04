@@ -60,7 +60,7 @@ public class TestCfnRepository {
 		VpcRepository vpcRepository = new VpcRepository(directClient);
 		
 		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
-		cfnRepository = new CfnRepository(cfnClient);
+		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		awsProvider = new AwsFacade(monitor , cfnClient, directClient, cfnRepository, vpcRepository);
 		awsProvider.setCommentTag(test.getMethodName());
