@@ -89,20 +89,48 @@ public class TestELBSwitchOver {
 	}
 	
 	@Test
-	public void shouldJustAddInstancesWithMatchingBuildNumber() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldJAddInstancesWithMatchingBuildNumber() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
 		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
 		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
 		
 		projAndEnv.addBuildNumber("123");
 		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnv);
-		ProjectAndEnv projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();
 		
+		ProjectAndEnv projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();
 		projAndEnvDiffBuild.addBuildNumber("567");
 		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnvDiffBuild);
 
-		elbRepository.updateELBInstancesThatMatchBuild(projAndEnv);
+		elbRepository.addInstancesThatMatchBuild(projAndEnv);
 		
 		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
 		assertEquals(1, elb.getInstances().size());
+	}	
+	
+	@Test
+	public void shouldAddInstancesWithMatchingBuildNumberAndRemoveNonMatching() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
+		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
+		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
+		
+		projAndEnv.addBuildNumber("123");
+		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnv);
+		
+		ProjectAndEnv projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();
+		projAndEnvDiffBuild.addBuildNumber("567");
+		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnvDiffBuild);
+
+		elbRepository.addInstancesThatMatchBuild(projAndEnvDiffBuild); // add instance from build 567 first
+		
+		// check go added
+		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
+		assertEquals(1, elb.getInstances().size());
+		
+		elbRepository.addInstancesThatMatchBuild(projAndEnv); 
+		elbRepository.removeInstancesNotMatchingBuild(projAndEnv);
+		
+		// should still be 1
+		elb = elbRepository.findELBFor(projAndEnv);
+		assertEquals(1, elb.getInstances().size());
+		
+		// TODO check instance id's
 	}	
 }

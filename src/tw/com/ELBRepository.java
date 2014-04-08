@@ -11,6 +11,8 @@ import tw.com.exceptions.MustHaveBuildNumber;
 
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerRequest;
+import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerResult;
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersRequest;
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersResult;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
@@ -59,7 +61,7 @@ public class ELBRepository {
 		return vpcID;
 	}
 
-	public void updateELBInstancesThatMatchBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
+	public void addInstancesThatMatchBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
 		if (!projAndEnv.hasBuildNumber()) {
 			throw new MustHaveBuildNumber();
 		}
@@ -81,6 +83,48 @@ public class ELBRepository {
 		
 		logger.info("Call result: " + result.toString());
 		
+	}
+
+	public void removeInstancesNotMatchingBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
+		if (!projAndEnv.hasBuildNumber()) {
+			throw new MustHaveBuildNumber();
+		}
+			
+		LoadBalancerDescription elb = findELBFor(projAndEnv);
+		logger.info("Checking if instances should be removed from ELB " + elb.getLoadBalancerName());
+		List<Instance> currentInstances = elb.getInstances();	
+		Collection<String> matchingInstances = cfnRepository.getInstancesFor(projAndEnv);
+		
+		List<Instance> toRemove = new LinkedList<Instance>();
+		for(Instance current : currentInstances) {
+			String instanceId = current.getInstanceId();
+			if (matchingInstances.contains(instanceId)) {
+				logger.info("Instance matched project/env/build, will not be removed " + instanceId);
+			} else {
+				logger.info("Instance did not match, will be removed from ELB " +instanceId);
+				toRemove.add(new Instance(instanceId));
+			}
+		}
+		if (!toRemove.isEmpty()) {
+			removeInstances(elb,toRemove);
+		} else {
+			logger.info("No instances to remove from ELB " + elb.getLoadBalancerName());
+		}
+		
+	}
+
+	private void removeInstances(LoadBalancerDescription elb,
+			List<Instance> toRemove) {
+		String loadBalancerName = elb.getLoadBalancerName();
+		logger.info("Removing instances from ELB " + loadBalancerName);
+		
+		DeregisterInstancesFromLoadBalancerRequest request= new DeregisterInstancesFromLoadBalancerRequest();
+		request.setInstances(toRemove);
+		
+		request.setLoadBalancerName(loadBalancerName);
+		DeregisterInstancesFromLoadBalancerResult result = elbClient.deregisterInstancesFromLoadBalancer(request);
+		List<Instance> remaining = result.getInstances();
+		logger.info(String.format("ELB %s now has %s instances registered", loadBalancerName, remaining.size()));
 	}
 
 }

@@ -12,8 +12,7 @@
 			"Type":"String",
 			"Default":"eu-west-1a",
 			"Description":"zoneADescription"
-		}
-		
+		}	
 	},
 	"Resources":{
 		"internetGateway":{
@@ -27,10 +26,8 @@
 				},
 				"InternetGatewayId":{
 					"Ref":"internetGateway"
-				}
-				
+				}		
 			}
-			
 		},
 		"vpcSubnet":{
 			"Type":"AWS::EC2::Subnet",
@@ -41,13 +38,12 @@
 				"CidrBlock":"10.0.10.13/24",
 				"VpcId":{
 					"Ref":"vpc"
-				}
-				
+				}			
 			}
-			
 		},
 		"loadBalancer":{
 			"Type":"AWS::ElasticLoadBalancing::LoadBalancer",
+			"DependsOn" : "AttachGateway",
 			"Properties":{
 				"HealthCheck":{
 					"HealthyThreshold":"2",
@@ -59,8 +55,7 @@
 				"Subnets":[
 					{
 						"Ref":"vpcSubnet"
-					}
-					
+					}				
 				],
 				"Listeners":[
 					{
