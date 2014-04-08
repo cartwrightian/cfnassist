@@ -5,9 +5,11 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 import org.apache.commons.cli.MissingArgumentException;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -25,6 +27,8 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerRequest;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
@@ -36,52 +40,60 @@ public class TestELBSwitchOver {
 	private static AmazonSQSClient sqsClient;
 	private static AmazonElasticLoadBalancingClient elbClient;
 	
-	private AwsProvider aws;
-	private ProjectAndEnv projAndEnv;
-	private MonitorStackEvents monitor;
-	private VpcRepository vpcRepository;
-	
-	
+	private static AwsProvider aws;
+	private static ProjectAndEnv projAndEnv;
+	private static MonitorStackEvents monitor;
+	private static VpcRepository vpcRepository;
+	private static ProjectAndEnv projAndEnvDiffBuild;
+		
 	@BeforeClass
-	public static void beforeAllTestsOnce() {
+	public static void beforeAllTestsOnce() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException, MissingArgumentException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
 		snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
 		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
 		elbClient = EnvironmentSetupForTests.createELBClient(credentialsProvider);
-	}
-	
-	@Rule public TestName test = new TestName();
-	private CfnRepository cfnRepository;
-	
-	@Before
-	public void beforeTestsRun() throws MissingArgumentException {
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestelb");
 		
+		/////
+		// ELB very slow to create and delete so do it once for all the tests
+		////
 		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new SNSMonitor(snsClient, sqsClient);
 		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
-		aws.setCommentTag(test.getMethodName());
-		
-		projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		monitor.init();
+		projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
+		
+		projAndEnv.addBuildNumber("123");
+		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnv);
+		
+		projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();
+		projAndEnvDiffBuild.addBuildNumber("567");
+		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnvDiffBuild);
+
 	}
 	
-	@After
-	public void afterEachTestRuns() {	
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist123Testinstance");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist567Testinstance");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestelb");
+	@AfterClass
+	public static void afterAllTheTestsHaveRun() {
+		DeletesStacks deleter = new DeletesStacks(cfnClient);
+		deleter.ifPresent("CfnAssist123Testinstance").ifPresent("CfnAssist567Testinstance").ifPresent("CfnAssistTestelb");
+		deleter.act();	
+	}
+	
+	@Rule public TestName test = new TestName();
+	private static CfnRepository cfnRepository;
+
+	@Before
+	public void beforeTestsRun() throws MissingArgumentException {	
+		aws.setCommentTag(test.getMethodName());	
 	}
 	
 	@Test
 	public void testShouldFindELBInTheVPC() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
-		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
-		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
-		
+		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);	
 		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
 		
 		assertNotNull(elb);
@@ -91,46 +103,45 @@ public class TestELBSwitchOver {
 	@Test
 	public void shouldJAddInstancesWithMatchingBuildNumber() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
 		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
-		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
-		
-		projAndEnv.addBuildNumber("123");
-		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnv);
-		
-		ProjectAndEnv projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();
-		projAndEnvDiffBuild.addBuildNumber("567");
-		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnvDiffBuild);
-
-		elbRepository.addInstancesThatMatchBuild(projAndEnv);
+		elbRepository.updateInstancesMatchingBuild(projAndEnv);
 		
 		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
-		assertEquals(1, elb.getInstances().size());
+		List<Instance> instances = elb.getInstances();
+		assertEquals(1, instances.size());
+		
+		deregisterInstances(elb,instances);
+	}
+
+	private void deregisterInstances(LoadBalancerDescription elb, Collection<Instance> instances) {
+		DeregisterInstancesFromLoadBalancerRequest request = new DeregisterInstancesFromLoadBalancerRequest();
+		request.withLoadBalancerName(elb.getLoadBalancerName()).withInstances(instances);
+		elbClient.deregisterInstancesFromLoadBalancer(request);
 	}	
 	
 	@Test
 	public void shouldAddInstancesWithMatchingBuildNumberAndRemoveNonMatching() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
 		ELBRepository elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
-		aws.applyTemplate(new File(EnvironmentSetupForTests.ELB_FILENAME), projAndEnv);
-		
-		projAndEnv.addBuildNumber("123");
-		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnv);
-		
-		ProjectAndEnv projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();
-		projAndEnvDiffBuild.addBuildNumber("567");
-		aws.applyTemplate(new File(EnvironmentSetupForTests.INSTANCE_FILENAME), projAndEnvDiffBuild);
+	
+		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
+		List<Instance> instances = elb.getInstances();
+		assertEquals(0, instances.size());
 
 		elbRepository.addInstancesThatMatchBuild(projAndEnvDiffBuild); // add instance from build 567 first
 		
-		// check go added
-		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
-		assertEquals(1, elb.getInstances().size());
+		// check got added
+		elb = elbRepository.findELBFor(projAndEnv);
+		instances = elb.getInstances();
+		assertEquals(1, instances.size());
 		
-		elbRepository.addInstancesThatMatchBuild(projAndEnv); 
-		elbRepository.removeInstancesNotMatchingBuild(projAndEnv);
+		List<Instance> registeredInstances = elbRepository.updateInstancesMatchingBuild(projAndEnv); // now switch to build 123
 		
 		// should still be 1
 		elb = elbRepository.findELBFor(projAndEnv);
-		assertEquals(1, elb.getInstances().size());
+		instances = elb.getInstances();
+		assertEquals(1, instances.size());
+		assertEquals(1, registeredInstances.size());
 		
-		// TODO check instance id's
+		assertEquals(instances.get(0), registeredInstances.get(0));	
+		deregisterInstances(elb, instances);
 	}	
 }

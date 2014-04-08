@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -36,6 +37,7 @@ public class TestAwsFacade {
 	private AwsProvider aws;
 	private ProjectAndEnv projectAndEnv;
 	private MonitorStackEvents monitor;
+	private DeletesStacks deletesStacks;
 	
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
@@ -56,7 +58,13 @@ public class TestAwsFacade {
 		aws.setCommentTag(testName.getMethodName());
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsimpleStack");
+		deletesStacks = new DeletesStacks(cfnClient).ifPresent("CfnAssistTestsimpleStack");
+		deletesStacks.act();
+	}
+	
+	@After 
+	public void afterEachTestRuns() {
+		deletesStacks.act();
 	}
 
 	@Test
@@ -133,7 +141,7 @@ public class TestAwsFacade {
 			// expected a create fail, and *not* a duplicate stack exception
 			id = exception.getStackId();
 		}	
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestcausesRollBack");
+		deletesStacks.ifPresent("CfnAssistTestcausesRollBack");
 
 	}
 

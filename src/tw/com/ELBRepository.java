@@ -85,7 +85,8 @@ public class ELBRepository {
 		
 	}
 
-	public void removeInstancesNotMatchingBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
+	// returns remaining instances
+	public List<Instance> removeInstancesNotMatchingBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
 		if (!projAndEnv.hasBuildNumber()) {
 			throw new MustHaveBuildNumber();
 		}
@@ -105,15 +106,15 @@ public class ELBRepository {
 				toRemove.add(new Instance(instanceId));
 			}
 		}
-		if (!toRemove.isEmpty()) {
-			removeInstances(elb,toRemove);
-		} else {
-			logger.info("No instances to remove from ELB " + elb.getLoadBalancerName());
-		}
 		
+		if (toRemove.isEmpty()) {
+			logger.info("No instances to remove from ELB " + elb.getLoadBalancerName());
+			return new LinkedList<Instance>();
+		}
+		return removeInstances(elb,toRemove);	
 	}
 
-	private void removeInstances(LoadBalancerDescription elb,
+	private List<Instance> removeInstances(LoadBalancerDescription elb,
 			List<Instance> toRemove) {
 		String loadBalancerName = elb.getLoadBalancerName();
 		logger.info("Removing instances from ELB " + loadBalancerName);
@@ -125,6 +126,12 @@ public class ELBRepository {
 		DeregisterInstancesFromLoadBalancerResult result = elbClient.deregisterInstancesFromLoadBalancer(request);
 		List<Instance> remaining = result.getInstances();
 		logger.info(String.format("ELB %s now has %s instances registered", loadBalancerName, remaining.size()));
+		return remaining;
+	}
+
+	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
+		addInstancesThatMatchBuild(projAndEnv); 
+		return removeInstancesNotMatchingBuild(projAndEnv);	
 	}
 
 }

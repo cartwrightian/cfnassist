@@ -51,7 +51,8 @@ public class TestCanTagExistingStacks {
 	
 	@After
 	public void afterEachTestRuns() throws InterruptedException, TimeoutException, WrongNumberOfStacksException {
-		EnvironmentSetupForTests.deleteStack(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK,false);
+		DeletesStacks deletesStacks = new DeletesStacks(cfnClient).ifPresentNonBlocking(EnvironmentSetupForTests.TEMPORARY_STACK);
+		deletesStacks.act();
 	}
 	
 	@Ignore("Does not seem way to lable at existing stack via the apis")

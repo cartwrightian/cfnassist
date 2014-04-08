@@ -29,6 +29,7 @@ public class TestCommandLine {
 	private ProjectAndEnv altProjectAndEnv;
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;
+	private DeletesStacks deletesStacks;
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() {
@@ -45,15 +46,18 @@ public class TestCommandLine {
 		vpcRepository = new VpcRepository(ec2Client);
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
 		
-		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);		
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, EnvironmentSetupForTests.TEMPORARY_STACK);
+		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
+		deletesStacks = new DeletesStacks(cfnClient);
+		deletesStacks.ifPresent(EnvironmentSetupForTests.TEMPORARY_STACK)
+			.ifPresent("CfnAssistTest01createSubnet")
+			.ifPresent("CfnAssistTest02createAcls");
+		deletesStacks.act();
 		testName = test.getMethodName();
 	}
 	
 	@After
 	public void afterEachTestIsRun() {
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient , "CfnAssistTest01createSubnet");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient , "CfnAssistTest02createAcls");
+		deletesStacks.act();
 	}
 	
 	@Test
@@ -131,7 +135,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsimpleStack", true);
+		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0,result);
 	}
 	
@@ -146,7 +150,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssist876TestsimpleStack", false);
+		deletesStacks.ifPresent("CfnAssist876TestsimpleStack");
 		assertEquals(0,result);
 	}
 	
@@ -161,7 +165,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsimpleStack", true);
+		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0,result);
 	}
 	
@@ -189,7 +193,7 @@ public class TestCommandLine {
 				};
 		Main main = new Main(args);
 		int result = main.parse();
-		EnvironmentSetupForTests.deleteStack(cfnClient, "CfnAssistTestsubnetWithParam", true);
+		deletesStacks.ifPresent("CfnAssistTestsubnetWithParam");
 		assertEquals(0,result);
 	}
 	
@@ -248,7 +252,7 @@ public class TestCommandLine {
 		};
 		Main main = new Main(argslabelStack);
 		int result = main.parse();	
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsimpleStack");		
+		deletesStacks.ifPresent("CfnAssistTestsimpleStack");		
 		assertEquals(0, result);
 	}
 

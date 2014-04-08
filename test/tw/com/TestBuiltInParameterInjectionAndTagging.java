@@ -39,6 +39,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	private static AmazonEC2Client ec2Client;
 	private Vpc vpc;
 	private PollingStackMonitor monitor;
+	private DeletesStacks deletesStacks;
 	
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
@@ -64,21 +65,17 @@ public class TestBuiltInParameterInjectionAndTagging {
 		mainProjectAndEnv = new ProjectAndEnv(project, env);
 		vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		
-		tidyStacksIfNeeded();
+		deletesStacks = new DeletesStacks(cfnClient);
+		deletesStacks.ifPresent("CfnAssistTestsubnet")
+		.ifPresent("CfnAssistTestsubnetWithParam")
+		.ifPresent("CfnAssistTestsubnetWithBuild")
+		.ifPresent("CfnAssist456Testsubnet")
+		.ifPresent("CfnAssist42TestsubnetWithBuild").act();
 	}
 	
 	@After
 	public void afterEachTestHasRun() {
-		tidyStacksIfNeeded();
-	}
-
-	private void tidyStacksIfNeeded() {
-		// TODO save time by fetching stack list once
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnet");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnetWithParam");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnetWithBuild");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist456Testsubnet");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssist42TestsubnetWithBuild");
+		deletesStacks.act();
 	}
 	
 	@Test

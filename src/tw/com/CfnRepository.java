@@ -266,6 +266,11 @@ public class CfnRepository {
 				} catch (WrongNumberOfStacksException e) {
 					logger.warn("Mismatch on stack status", e);
 					return "";
+				} catch (AmazonServiceException e) {
+					logger.warn(e.toString());
+					if (e.getStatusCode()==400) {
+						return ""; // stack does not exist, perhaps a delete was in progress
+					}
 				}
 			}
 		}

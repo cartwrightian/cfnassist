@@ -30,6 +30,7 @@ public class TestStackMonitors {
 	private SNSMonitor snsMonitor;
 	private static AmazonSQSClient sqsClient;
 	private static AmazonSNSClient snsClient;
+	private DeletesStacks deletesStacks;
 	
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
@@ -46,11 +47,12 @@ public class TestStackMonitors {
 		pollingMonitor = new PollingStackMonitor(cfnRepository);	
 		vpcId = EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV;
 		snsMonitor = new SNSMonitor(snsClient, sqsClient);
+		deletesStacks = new DeletesStacks(cfnClient).ifPresent(stackName);;
 	}
 	
 	@After
 	public void afterEachTestRuns() {
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, stackName);
+		deletesStacks.act();
 	}
 	
 	@Test
@@ -70,7 +72,7 @@ public class TestStackMonitors {
 	public void ShouldCheckStackHasBeenDeleted() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException {
 		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
 		pollingMonitor.waitForCreateFinished(id);
-		EnvironmentSetupForTests.deleteStack(cfnClient, stackName, false); // non-blocking
+		new DeletesStacks(cfnClient).ifPresentNonBlocking(stackName).act(); 
 		pollingMonitor.waitForDeleteFinished(id);
 	}
 	
@@ -79,7 +81,7 @@ public class TestStackMonitors {
 		snsMonitor.init();
 		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,snsMonitor.getArn());
 		snsMonitor.waitForCreateFinished(id);
-		EnvironmentSetupForTests.deleteStack(cfnClient, stackName, false); // non-blocking
+		new DeletesStacks(cfnClient).ifPresentNonBlocking(stackName).act(); 
 		snsMonitor.waitForDeleteFinished(id);
 	}
 

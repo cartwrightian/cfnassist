@@ -48,9 +48,10 @@ public class TestCfnRepository {
 	public static void beforeAllTestsOnce() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestcausesRollBack");
-		EnvironmentSetupForTests.deleteStackIfPresent(cfnClient, "CfnAssistTestsubnetWithCIDRParam");
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
+		
+		new DeletesStacks(cfnClient).ifPresent("CfnAssistTestcausesRollBack")
+			.ifPresent("CfnAssistTestsubnetWithCIDRParam").act();
 	}
 	
 	@Rule public TestName test = new TestName();
@@ -127,7 +128,7 @@ public class TestCfnRepository {
 			Thread.sleep(2500);
 		}
 		
-		EnvironmentSetupForTests.deleteStack(cfnClient, name, true);
+		new DeletesStacks(cfnClient).ifPresent(name).act();
 		
 		assertEquals(StackStatus.ROLLBACK_COMPLETE.toString(), result);	
 	}
