@@ -32,7 +32,7 @@ public class TestHaveValidTemplateFiles {
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);	
-		AwsFacade aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+		AwsFacade aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 	
 		File folder = new File("src/cfnScripts");
 		

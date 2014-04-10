@@ -46,7 +46,7 @@ public class TestCanTagExistingStacks {
 		StackId stackId = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpc.getVpcId(),"");	
 		monitor.waitForCreateFinished(stackId);
 		
-		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);	
+		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);	
 	}
 	
 	@After
@@ -58,7 +58,8 @@ public class TestCanTagExistingStacks {
 	@Ignore("Does not seem way to lable at existing stack via the apis")
 	@Test
 	public void shouldBeAbleToLabelExistingStack() throws IOException, CfnAssistException {
-		aws.initEnvAndProjectForStack(EnvironmentSetupForTests.TEMPORARY_STACK, projectAndEnv);
+		
+		//aws.initEnvAndProjectForStack(EnvironmentSetupForTests.TEMPORARY_STACK, projectAndEnv);
 		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		String createdSubnet = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(projectAndEnv.getEnv()), "testSubnet");

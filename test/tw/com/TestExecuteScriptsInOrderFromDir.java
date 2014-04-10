@@ -29,10 +29,11 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 public class TestExecuteScriptsInOrderFromDir {
 	
 	private static final String THIRD_FILE = "03createRoutes.json";
-	Path srcFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.FOLDER_PATH, "holding", THIRD_FILE);
-	Path destFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.FOLDER_PATH, THIRD_FILE);
+	Path srcFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, "holding", THIRD_FILE);
+	Path destFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, THIRD_FILE);
 	private static AmazonCloudFormationClient cfnClient;
 	private static AmazonEC2Client ec2Client;
+	private DeletesStacks deletesStacks;
 	
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
@@ -54,12 +55,16 @@ public class TestExecuteScriptsInOrderFromDir {
 	@Before 
 	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
+		deletesStacks = new DeletesStacks(cfnClient).
+				ifPresent("CfnAssistTest01createSubnet").
+				ifPresent("CfnAssistTest02createAcls");
+		deletesStacks.act();
 		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
-		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 		aws.setCommentTag(test.getMethodName());
 		
 		Files.deleteIfExists(destFile);
@@ -69,18 +74,19 @@ public class TestExecuteScriptsInOrderFromDir {
 	@After
 	public void afterAllTestsHaveRun() throws IOException, CfnAssistException {	
 		try {
-			aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+			aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		} catch (InvalidParameterException e) {
 			System.console().writer().write("Unable to properly rollback");
 			e.printStackTrace();
 		}
 		aws.resetDeltaIndex(mainProjectAndEnv);
+		deletesStacks.act();
 		Files.deleteIfExists(destFile);
 	}
 
 	@Test
 	public void shouldCreateTheStacksRequiredOnly() throws CfnAssistException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
-		List<StackId> stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		List<StackId> stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackIds.size());
 		
@@ -93,18 +99,18 @@ public class TestExecuteScriptsInOrderFromDir {
 		}
 		
 		// we are up to date, should not apply the files again
-		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		assertEquals(0, stackIds.size());
 		
 		// copy in extra files to dir
 		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
-		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		assertEquals(1, stackIds.size());
 		
 		expectedList.add(proj+env+"03createRoutes");
 		assertEquals(expectedList.get(2), stackIds.get(0).getStackName());
 		
-		List<String> deletedStacks = aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.FOLDER_PATH, mainProjectAndEnv);
+		List<String> deletedStacks = aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		assertEquals(3, deletedStacks.size());
 		assert(deletedStacks.containsAll(expectedList));
 		

@@ -42,7 +42,7 @@ public class CfnRepository {
 	
 	public List<StackEntry> stacksMatchingEnvAndBuild(EnvironmentTag envTag, String buildNumber) {
 		List<StackEntry> stacks = new LinkedList<StackEntry>();
-		List<StackEntry> candidateStacks = getStacksForProject();
+		List<StackEntry> candidateStacks = getAllStacksForProject();
 		for (StackEntry entry : candidateStacks) {
 			if (entry.getEnvTag().equals(envTag) && entry.getBuildNumber().equals(buildNumber)) {
 				stacks.add(entry);
@@ -53,7 +53,7 @@ public class CfnRepository {
 
 	public List<StackEntry> stacksMatchingEnv(EnvironmentTag envTag) {
 		List<StackEntry> stacks = new LinkedList<StackEntry>();
-		List<StackEntry> candidateStacks = getStacksForProject();
+		List<StackEntry> candidateStacks = getAllStacksForProject();
 		for (StackEntry entry : candidateStacks) {
 			if (entry.getEnvTag().equals(envTag)) {
 				stacks.add(entry);
@@ -128,7 +128,7 @@ public class CfnRepository {
 		return resources;
 	}
 
-	private List<StackEntry> getStacksForProject() {
+	private List<StackEntry> getAllStacksForProject() {
 		// TODO handle "next token"?
 
 		if (stackEntries.size() == 0) {
@@ -176,24 +176,33 @@ public class CfnRepository {
 	}
 
 	private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, String build) {
+		String stackName = stack.getStackName();
 		if (!proj.equals(project) || (env.isEmpty())) {
-			logger.warn(String.format("Could not match expected tag (%s) for stack %s", AwsFacade.ENVIRONMENT_TAG, stack.getStackName()));
+			logger.warn(String.format("Could not match expected tag (%s) for stack %s", AwsFacade.ENVIRONMENT_TAG, stackName));
 		}
 			
-		logger.info(String.format("Stack %s matched %s and %s", stack.getStackName(), env, proj));
+		logger.info(String.format("Stack %s matched %s and %s", stackName, env, proj));
 		EnvironmentTag envTag = new EnvironmentTag(env);
 		StackEntry entry = new StackEntry(envTag, stack);
 		if (!build.isEmpty()) {
-			logger.info("Saving associated build number %s", build);
+			logger.info(String.format("Saving associated build number (%s) into stack %s", build, stackName));
 			entry.setBuildNumber(build);
 		}
 		if (stackEntries.contains(entry)) {
 			stackEntries.remove(entry);
-			logger.info("Replacing entry for stack " + stack.getStackName());
+			logger.info("Replacing or Removing entry for stack " + stackName);
 		}
+		String stackStatus = stack.getStackStatus();
 		stackEntries.add(entry);
 		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
-				stack.getStackName(), envTag, stack.getStackStatus()));		 
+				stackName, envTag, stackStatus));	
+//		if (stackStatus.equals(StackStatus.CREATE_COMPLETE.toString())) {
+//			stackEntries.add(entry);
+//			logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
+//					stackName, envTag, stackStatus));	
+//		} else {
+//			logger.warn(String.format("Not adding stack %s because status was %s", stackName,stackStatus ));
+//		}			 
 	}
 
 	public void updateRepositoryFor(StackId id) {
@@ -256,7 +265,7 @@ public class CfnRepository {
 
 	public String getStackStatus(String stackName) {
 		logger.info("Getting stack status for " + stackName);
-		List<StackEntry> stacks = getStacksForProject();
+		List<StackEntry> stacks = getAllStacksForProject();
 		for (StackEntry entry : stacks) {
 			Stack stack = entry.getStack();
 			if (stack.getStackName().equals(stackName)) {
@@ -306,7 +315,6 @@ public class CfnRepository {
 		return result.getStacks().get(0);
 	}
 
-	// TODO BUILD NUMBERS!
 	public List<String> getInstancesFor(ProjectAndEnv projAndEnv) {
 		logger.info("Finding instances for " + projAndEnv);
 		String buildNumber = "";
@@ -318,7 +326,12 @@ public class CfnRepository {
 		List<StackEntry> stacks = stacksMatchingEnvAndBuild(projAndEnv.getEnvTag(), buildNumber);
 		List<String> instanceIds = new LinkedList<String>();
 		for (StackEntry entry : stacks) {
-			instanceIds.addAll(findInstancesForStack(entry.getStack()));
+			if (entry.isLive()) {
+				logger.info("Found stack :" + entry.getStackName());
+				instanceIds.addAll(findInstancesForStack(entry.getStack()));
+			} else {
+				logger.info("Not adding stack :" + entry.getStackName());
+			}
 		}
 
 		return instanceIds;

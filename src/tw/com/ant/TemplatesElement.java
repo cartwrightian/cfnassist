@@ -10,6 +10,7 @@ import org.apache.tools.ant.BuildException;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
@@ -30,7 +31,7 @@ public class TemplatesElement {
 		this.target = target;
 	}
 	
-	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException {
+	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, ELBRepository repository) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException {
 		String absolutePath = target.getAbsolutePath();
 		CommandLineAction actionToInvoke = null;
 		if (target.isDirectory()) {
@@ -43,6 +44,6 @@ public class TemplatesElement {
 			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
 		} 
 		actionToInvoke.validate(aws, projectAndEnv, absolutePath, cfnParams);
-		actionToInvoke.invoke(aws, projectAndEnv, absolutePath,cfnParams);		
+		actionToInvoke.invoke(aws, repository, projectAndEnv, absolutePath,cfnParams);		
 	}
 }

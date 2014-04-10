@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.StackId;
 import tw.com.exceptions.CfnAssistException;
@@ -25,7 +26,7 @@ public class FileAction extends SharedAction {
 		option = OptionBuilder.withArgName("file").hasArg().withDescription("The single template file to apply").create("file");
 	}
 	
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {
+	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {
 		File templateFile = new File(filename);
 		StackId stackId = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
 		logger.info("Created stack name "+stackId);

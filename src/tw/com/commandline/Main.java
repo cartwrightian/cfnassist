@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.SNSMonitor;
@@ -45,6 +46,7 @@ public class Main {
 	private CommandLineAction resetAction;
 	private CommandLineAction rollbackAction;
 	private CommandLineAction initAction;
+	private CommandLineAction elbAction;
 	//private CommandLineAction labelAction;
 
 	private Options commandLineOptions;
@@ -79,6 +81,8 @@ public class Main {
 		commandLineOptions.addOption(rollbackAction.getOption());
 		initAction = new InitAction();	
 		commandLineOptions.addOption(initAction.getOption());
+		elbAction = new ElbAction();
+		commandLineOptions.addOption(elbAction.getOption());
 		// disabled, does not appear possible via the AWS API
 		//labelAction = new LabelAction();
 		//commandLineOptions.addOption(labelAction.getOption());
@@ -138,9 +142,11 @@ public class Main {
 			actions.add(resetAction);
 			actions.add(rollbackAction);
 			actions.add(initAction);
+			actions.add(elbAction);
 			CommandLineAction action = selectCorrectActionFromArgs(commandLine, formatter, actions);	
 			
 			Region awsRegion = populateRegion(region);
+			FacadeFactory factory = new FacadeFactory(awsRegion, project);
 			
 			ProjectAndEnv projectAndEnv = new ProjectAndEnv(project, env);
 			if (!buildNumber.isEmpty()) {
@@ -152,14 +158,15 @@ public class Main {
 			logger.info("Invoking for " + projectAndEnv);
 			logger.info("Region set to " + awsRegion);
 			
-			AwsFacade aws = createAwsFacade(awsRegion, projectAndEnv.useSNS(), project);
+			AwsFacade facade = factory.createFacade(projectAndEnv.useSNS());
+			ELBRepository repository = factory.createElbRepo();
 			if (!comment.isEmpty()) {
-				aws.setCommentTag(comment);
+				facade.setCommentTag(comment);
 			}
 				
 			String argumentForAction = commandLine.getOptionValue(action.getArgName());
-			action.validate(aws, projectAndEnv, argumentForAction, cfnParams);
-			action.invoke(aws, projectAndEnv, argumentForAction, cfnParams);
+			action.validate(facade, projectAndEnv, argumentForAction, cfnParams);
+			action.invoke(facade, repository, projectAndEnv, argumentForAction, cfnParams);
 		}
 		catch (Exception exception) {
 			//  back to caller via exit status
@@ -168,10 +175,6 @@ public class Main {
 		}
 		logger.debug("CommandLine ok");
 		return 0;
-	}
-
-	private AwsFacade createAwsFacade(Region awsRegion, boolean useSNSMonitoring, String project) throws MissingArgumentException {
-		return new FacadeFactory().createFacade(awsRegion, useSNSMonitoring, project);
 	}
 
 	private Collection<Parameter> checkForCfnParameters(

@@ -59,7 +59,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		monitor = new PollingStackMonitor(cfnRepository);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
-		awsProvider = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+		awsProvider = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 		awsProvider.setCommentTag(testName);
 
 		mainProjectAndEnv = new ProjectAndEnv(project, env);
@@ -82,7 +82,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	public void setNoteAOnStack() throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException {
 		String theComment = "hereIsAComment";
 		awsProvider.setCommentTag(theComment); // override for this test
-		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
+		File templateFile = new File(FilesForTesting.SUBNET_STACK);
 		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		List<Tag> expectedStackTags = createExpectedStackTags("");
@@ -96,7 +96,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	
 	@Test
 	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {	
-		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
+		File templateFile = new File(FilesForTesting.SUBNET_STACK);
 		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		validateCreateAndDeleteWorks(stackId, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
@@ -105,7 +105,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Test
 	public void canBuildAndDeleteSimpleStackThatDoesTakeNotBuildParam() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {	
 		// we should not try to populate any parameter NOT declared in the json, doing so will cause an exception
-		File templateFile = new File(EnvironmentSetupForTests.SUBNET_STACK_FILE);
+		File templateFile = new File(FilesForTesting.SUBNET_STACK);
 		
 		String buildNumber = "456";
 		mainProjectAndEnv.addBuildNumber(buildNumber); 
@@ -120,7 +120,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Test
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 
 		CfnAssistException, InterruptedException {
-		File templateFile = new File(EnvironmentSetupForTests.SUBNET_WITH_PARAM_FILENAME);
+		File templateFile = new File(FilesForTesting.SUBNET_WITH_PARAM);
 		
 		Collection<Parameter> params = new LinkedList<Parameter>();
 		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
@@ -134,7 +134,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		String buildNumber = "42";
 		
 		mainProjectAndEnv.addBuildNumber(buildNumber);
-		StackId stackName = awsProvider.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_FILENAME_WITH_BUILD), mainProjectAndEnv);	
+		StackId stackName = awsProvider.applyTemplate(new File(FilesForTesting.SUBNET_WITH_BUILD), mainProjectAndEnv);	
 	
 		validateCreateAndDeleteWorks(stackName, 
 				createCfnExpectedTagListWithBuild(buildNumber, testName), 

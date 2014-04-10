@@ -11,6 +11,7 @@ import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.commandline.CommandLineException;
@@ -72,8 +73,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 			cfnParameters.add(param.getParamter());
 		}		
 		try {
-			AwsFacade aws = new FacadeFactory().createFacade(region, projectAndEnv.useSNS(), cfnProject);
-			fileElement.execute(aws, projectAndEnv, cfnParameters);
+			FacadeFactory factory = new FacadeFactory(region,cfnProject);
+			AwsFacade aws = factory.createFacade(projectAndEnv.useSNS());
+			ELBRepository repository = factory.createElbRepo();
+			fileElement.execute(aws, projectAndEnv, cfnParameters, repository);
 		} catch (IOException | MissingArgumentException
 				| InvalidParameterException | InterruptedException | CfnAssistException | CommandLineException innerException) {
 			throw new BuildException(innerException);

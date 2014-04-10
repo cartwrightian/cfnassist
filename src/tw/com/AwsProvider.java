@@ -21,6 +21,7 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public interface AwsProvider {
 	
 	List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException;
+	StackId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, StackCreateFailed, IOException, InvalidParameterException, InterruptedException;
 	StackId applyTemplate(File file, ProjectAndEnv projAndEnv) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException;
 	StackId applyTemplate(File file, ProjectAndEnv projAndEnv,  Collection<Parameter> parameters) throws FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException;
 	
@@ -36,6 +37,7 @@ public interface AwsProvider {
 	void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) throws CannotFindVpcException;
 	int getDeltaIndex(ProjectAndEnv projAndEnv) throws CfnAssistException;
 	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws CfnAssistException;
-	public void initEnvAndProjectForStack(String stackName, ProjectAndEnv projectAndEnv) throws CfnAssistException;
+	//public void initEnvAndProjectForStack(String stackName, ProjectAndEnv projectAndEnv) throws CfnAssistException;
 	void setCommentTag(String string);
+
 }

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.StackId;
 import tw.com.exceptions.CfnAssistException;
@@ -26,7 +27,7 @@ public class DirAction extends SharedAction {
 				withDescription("The directory/folder containing delta templates to apply").create("dir");
 	}
 
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folderPath, Collection<Parameter> cfnParams) throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException {
+	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv, String folderPath, Collection<Parameter> cfnParams) throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException {
 		ArrayList<StackId> stackIds = aws.applyTemplatesFromFolder(folderPath, projectAndEnv, cfnParams);
 		logger.info(String.format("Created %s stacks", stackIds.size()));
 		for(StackId name : stackIds) {

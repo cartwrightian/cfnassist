@@ -55,17 +55,8 @@ public class EnvironmentSetupForTests {
 	
 	public static final String TEMPORARY_STACK = "temporaryStack";
 
-	public static final String FOLDER_PATH = "src/cfnScripts/orderedScripts";
-	
-	public static final String SUBNET_STACK_FILE = "src/cfnScripts/subnet.json";
-	public static final String SIMPLE_STACK_FILE = "src/cfnScripts/simpleStack.json";
-	public static final String ACL_FILENAME = "src/cfnScripts/acl.json";
-	public static final String SUBNET_WITH_PARAM_FILENAME = "src/cfnScripts/subnetWithParam.json";
-	public static final String SUBNET_FILENAME_WITH_BUILD = "src/cfnScripts/subnetWithBuild.json";
-	public static final String ELB_FILENAME = "src/cfnScripts/elb.json";
-	public static final String INSTANCE_FILENAME = "src/cfnScripts/instance.json";
-	public static final String CAUSEROLLBACK = "src/cfnScripts/causesRollBack.json";
-	
+	public static final String ORDERED_SCRIPTS_FOLDER = "src/cfnScripts/orderedScripts";
+
 	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources
 	public static final int DELETE_RETRY_LIMIT = 20;
 	public static final long DELETE_RETRY_INTERVAL = 10000;
@@ -152,7 +143,7 @@ public class EnvironmentSetupForTests {
 	public static StackId createTemporarySimpleStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setStackName(TEMPORARY_STACK);
-		File file = new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE);
+		File file = new File(FilesForTesting.SIMPLE_STACK);
 		createStackRequest.setTemplateBody(FileUtils.readFileToString(file , Charset.defaultCharset()));
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
 		parameters.add(createParam("env", EnvironmentSetupForTests.ENV));

@@ -45,7 +45,7 @@ public class TestDeltaIndexTagging {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);	
 		vpcRepos = new VpcRepository(directClient);
-		aws = new AwsFacade(monitor , cfnClient, directClient, cfnRepository , vpcRepos);	
+		aws = new AwsFacade(monitor , cfnClient, cfnRepository, vpcRepos);	
 		aws.setCommentTag(test.getMethodName());
 		
 		altVpc = EnvironmentSetupForTests.findAltVpc(vpcRepos);

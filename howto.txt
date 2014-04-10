@@ -1,0 +1,109 @@
+
+1. Create VPCs and initialise them
+
+aws ec2 create-vpc --cidr-block 10.0.0.0/16
+
+result:
+VPC	10.0.0.0/16	dopt-5e4f5b3c	default	pending	vpc-926e8bf7
+
+Wait for this to finish, use:
+
+aws ec2 describe-vpcs
+
+result:
+
+VPCS	10.0.0.0/16	dopt-5e4f5b3c	default	False	available	vpc-926e8bf7
+
+Now use cfn_assit to init the vpc with the tags:
+
+Assumptions
+Env var CFN_ASSIST_PROJECT is set to project name, otherwise give -project <Name> on the cli as well
+Env var EC2_REGION set to aws region, other add -region <region>
+
+./bin/cfnassist.sh -env Dev -init vpc-926e8bf7
+
+Check with 
+
+aws ec2 describe-vpcs
+
+result:
+VPCS	10.0.0.0/16	dopt-5e4f5b3c	default	False	available	vpc-926e8bf7
+TAGS	CFN_ASSIST_ENV	Dev
+TAGS	CFN_ASSIST_DELTA	0
+TAGS	CFN_ASSIST_PROJECT	tramchester
+
+Repeat above steps for other envs such as UAT and Prod
+
+2. Set up your infrasture 
+This typically includes the things you don't need to change on every release. For example subnets, load balancers, NAT and internet gateways and so on. You may still want to clean out a VPC and rerun this on occasions to make sure you can fully recreat a fully working VPC from scratch. Live instances etc should probably be created during the CI build especially if you are doing blue/green deploys. More on this below.
+
+After each script succeeds the VPC CFN_ASSIST_DELTA tag is updated, this way the tool only tries to create the requierd stacks for each VPC. The tool will also take care of deleting a an existing stack if it is in the rollback complete state.
+
+./bin/cfnassist.sh -env Dev -dir ./infrastructure
+
+My infrastructure dir looks like this:
+-rw-r--r--  1 icartwri  staff  1748 13 Jan 15:30 001subnets.json
+-rw-r--r--  1 icartwri  staff   510 13 Jan 15:26 002internetGateway.json
+-rw-r--r--  1 icartwri  staff  6287 13 Jan 21:34 003webSubnetAclAndSG.json
+-rw-r--r--  1 icartwri  staff  1521 13 Jan 21:41 004dbSubnetAclAndSG.json
+-rw-r--r--  1 icartwri  staff  5672 13 Jan 21:35 005intSubnetAclAndSG.json
+-rw-r--r--  1 icartwri  staff  6572  9 Apr 15:46 006monSubnetAclAndSG.json
+-rw-r--r--  1 icartwri  staff  5818 13 Jan 15:26 007natSubnetAclAndSG.json
+-rw-r--r--  1 icartwri  staff  2842 13 Jan 21:46 008lbSubnetACLandSG.json
+-rw-r--r--  1 icartwri  staff  1406 13 Jan 21:30 009natServer.json
+-rw-r--r--  1 icartwri  staff   875 13 Jan 21:30 010elasticLoadBalancer.json
+-rw-r--r--  1 icartwri  staff  3895 13 Jan 21:31 011routing.json
+
+The tool will inject the correct physical ID for a resource based on the current VPC for you. Declare a parameter exactly as normal for cloudformation but follow the convention below and cfn assit will find the correct ID based on project and env (and hence the VPC):
+
+"Parameters" : {
+                        "env" : { "Type" : "String" },
+                        "vpc" : { "Type" : "String" },
+                        "natSubnet" : { "Type" : "String" , "Description" : "::natSubnet" }
+                },
+
+In this example ::natSubnet leads to cfn assist find the right Physical ID for that logical ID in the current VPC, it does this by scanning the stacks associated with the current VPC for that logical ID. Also note the tool automaticalls injects the correct VPC and env (i.e. dev, UAT, Prod, etc).
+
+This will apply all the cfn scripts found in the infrastructure dir in order, the cloud formation stacks created will include the project and env in their name as well as the filename. There are also tagged with the project and env (and build number if present, more on that below....)
+
+If all goes will the VPC tags get updated:
+
+TAGS	CFN_ASSIST_DELTA	11
+TAGS	CFN_ASSIST_ENV	Dev
+TAGS	CFN_ASSIST_PROJECT	tramchester
+
+You should also be able to see all the associated stacks using
+
+aws cloudformation describe-stacks
+
+2b. Rolling it all back.
+
+Use with CARE! This will rollback all delta's by deleting the stacks for a VPC in the correct order and updating the DELTA tag on the VPC as it goes! You may want to this initially while getting things bedded in initially while you still have just the one environment i.e. Dev or Test
+
+./bin/cfnassist.sh -env Dev -rollback ./infrastructure
+
+(Be careful!)
+
+2c. Mappings
+You can use cloudformation mappings in the usual way to inject environment specific parameters i.e.
+
+"Mappings" : {
+                        "environMap" : {
+                                "qa" : { "keyName" : "techLab", "NatEip" : "eipalloc-0ab76661" },
+                                "test" : { "keyName" : "techLab", "NatEip" : "TBA" },
+                                "prod" : { "keyName" : "techLab", "NatEip" : "eipalloc-1ee56375" }
+                        }
+                },
+
+The automatically populated 'env' parameter is a more portable way to do this that the VPC ID, especially if you need to recreate an environment/vpc from scratch.
+
+Use like this:
+
+"KeyName": { "Fn::FindInMap" : [ "environMap", { "Ref" : "env" }, "keyName" ]} ,
+
+3. Create instances without build numbers
+
+For some longered services/instances you can include them in your 'infrastructure' delta directory, but sometimes it is more flexible to create them seperately. For example RDS instances:
+
+./bin/cfnassist.sh -env Dev -file ./rdsInstance.json
+

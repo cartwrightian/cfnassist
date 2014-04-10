@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -22,7 +23,7 @@ public class RollbackAction extends SharedAction {
 					withDescription("Warning: Rollback all current deltas and reset index accordingly").create("rollback");
 	}
 
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String folder, Collection<Parameter> unused) throws InvalidParameterException, CfnAssistException {
+	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv, String folder, Collection<Parameter> unused) throws InvalidParameterException, CfnAssistException {
 		logger.info("Invoking rollback for " + projectAndEnv);
 		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
 	}

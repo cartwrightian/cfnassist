@@ -54,7 +54,7 @@ public class TestAwsFacade {
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
-		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 		aws.setCommentTag(testName.getMethodName());
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		
@@ -69,7 +69,7 @@ public class TestAwsFacade {
 
 	@Test
 	public void testReturnCorrectParametersFromValidation() throws FileNotFoundException, IOException {
-		List<TemplateParameter> result = aws.validateTemplate(new File(EnvironmentSetupForTests.SUBNET_STACK_FILE));
+		List<TemplateParameter> result = aws.validateTemplate(new File(FilesForTesting.SUBNET_STACK));
 		
 		assertEquals(4, result.size());
 		
@@ -87,14 +87,14 @@ public class TestAwsFacade {
 	
 	@Test
 	public void createStacknameFromEnvAndFile() {
-		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE),projectAndEnv);
+		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK),projectAndEnv);
 		assertEquals("CfnAssistTestsimpleStack", stackName);
 	}
 	
 	@Test 
 	public void shouldIncludeBuildNumberWhenFormingStackname() {
 		projectAndEnv.addBuildNumber("042");
-		String stackName = aws.createStackName(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE),projectAndEnv);
+		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK),projectAndEnv);
 		
 		assertEquals("CfnAssist042TestsimpleStack", stackName);
 	}
@@ -102,7 +102,7 @@ public class TestAwsFacade {
 	@Test
 	public void createsAndDeleteSimpleStackFromTemplate() throws FileNotFoundException, IOException, CfnAssistException, 
 		InterruptedException, InvalidParameterException {
-		StackId stackId = aws.applyTemplate(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE), projectAndEnv);	
+		StackId stackId = aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);	
 		
 		EnvironmentSetupForTests.validatedDelete(stackId, aws);
 	}
@@ -110,10 +110,10 @@ public class TestAwsFacade {
 	@Test
 	public void catchesStackAlreadyExistingAsExpected() throws FileNotFoundException, IOException, CfnAssistException, 
 		InterruptedException, InvalidParameterException {
-		StackId stackId = aws.applyTemplate(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE), projectAndEnv);	
+		StackId stackId = aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);	
 		
 		try {
-			aws.applyTemplate(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE), projectAndEnv);
+			aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);
 			fail("Should have thrown exception");
 		} 
 		catch(DuplicateStackException expected) {
@@ -128,14 +128,14 @@ public class TestAwsFacade {
 
 		StackId id = null;
 		try {
-			aws.applyTemplate(new File(EnvironmentSetupForTests.CAUSEROLLBACK), projectAndEnv);
+			aws.applyTemplate(new File(FilesForTesting.CAUSEROLLBACK), projectAndEnv);
 			fail("should have thrown");
 		} catch (StackCreateFailed exception) {
 			id = exception.getStackId();
 		}	
 		monitor.waitForRollbackComplete(id);
 		try {
-			aws.applyTemplate(new File(EnvironmentSetupForTests.CAUSEROLLBACK), projectAndEnv);
+			aws.applyTemplate(new File(FilesForTesting.CAUSEROLLBACK), projectAndEnv);
 			fail("should have thrown");
 		} catch (StackCreateFailed exception) {
 			// expected a create fail, and *not* a duplicate stack exception
@@ -171,7 +171,7 @@ public class TestAwsFacade {
 		parameters.add(parameter);
 		
 		try {
-			aws.applyTemplate(new File(EnvironmentSetupForTests.SIMPLE_STACK_FILE), projectAndEnv, parameters);	
+			aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv, parameters);	
 			fail("Should have thrown exception");
 		}
 		catch (InvalidParameterException exception) {

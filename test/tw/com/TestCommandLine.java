@@ -130,7 +130,7 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
+				"-file", FilesForTesting.SIMPLE_STACK,
 				"-comment", testName
 				};
 		Main main = new Main(args);
@@ -144,7 +144,7 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
+				"-file", FilesForTesting.SIMPLE_STACK,
 				"-build", "876",
 				"-comment", testName
 				};
@@ -155,11 +155,35 @@ public class TestCommandLine {
 	}
 	
 	@Test
+	public void testInvokeViaCommandLineDeploySwitchELBInstances() throws InterruptedException, TimeoutException {
+		String[] createIns = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-build", "876",
+				"-file", FilesForTesting.ELB_AND_INSTANCE
+				};
+		Main main = new Main(createIns);
+		main.parse();
+				
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-build", "876",
+				"-elbUpdate", "web"
+				};
+		main = new Main(args);
+		int result = main.parse();
+		
+		deletesStacks.ifPresent("CfnAssist876TestelbAndInstance");
+		assertEquals(0,result);
+	}
+	
+	@Test
 	public void testInvokeViaCommandLineDeployWithFileAndSNS() throws InterruptedException, TimeoutException {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", EnvironmentSetupForTests.SIMPLE_STACK_FILE,
+				"-file", FilesForTesting.SIMPLE_STACK,
 				"-sns", 
 				"-comment", testName
 				};
@@ -174,7 +198,7 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-dir", EnvironmentSetupForTests.FOLDER_PATH,
+				"-dir", EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER,
 				"-build", "001"
 				};
 		Main main = new Main(args);
@@ -187,7 +211,7 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", EnvironmentSetupForTests.SUBNET_WITH_PARAM_FILENAME,
+				"-file", FilesForTesting.SUBNET_WITH_PARAM,
 				"-parameters", "zoneA=eu-west-1a",
 				"-comment", testName
 				};
@@ -215,7 +239,7 @@ public class TestCommandLine {
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-dir", EnvironmentSetupForTests.FOLDER_PATH,
+				"-dir", EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER,
 				"-comment", testName,
 				sns
 				};
@@ -226,7 +250,7 @@ public class TestCommandLine {
 		String[] rollbackDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-rollback", EnvironmentSetupForTests.FOLDER_PATH,
+				"-rollback", EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER,
 				sns
 				};
 		main = new Main(rollbackDeploy);

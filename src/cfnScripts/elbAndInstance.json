@@ -1,0 +1,88 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"test template for cnfassist - creates an ELB and an Instance",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		},
+		"zoneA":{
+			"Type":"String",
+			"Default":"eu-west-1a",
+			"Description":"zoneADescription"
+		}	
+	},
+	"Resources":{
+		"internetGateway":{
+			"Type":"AWS::EC2::InternetGateway"
+		},
+		"AttachGateway":{
+			"Type":"AWS::EC2::VPCGatewayAttachment",
+			"Properties":{
+				"VpcId":{
+					"Ref":"vpc"
+				},
+				"InternetGatewayId":{
+					"Ref":"internetGateway"
+				}		
+			}
+		},
+		"vpcSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"AvailabilityZone":{
+					"Ref":"zoneA"
+				},
+				"CidrBlock":"10.0.10.13/24",
+				"VpcId":{
+					"Ref":"vpc"
+				}			
+			}
+		},
+		"loadBalancer":{
+			"Type":"AWS::ElasticLoadBalancing::LoadBalancer",
+			"DependsOn" : "AttachGateway",
+			"Properties":{
+				"HealthCheck":{
+					"HealthyThreshold":"2",
+					"Interval":"15",
+					"Target":"HTTP:8080/api/status",
+					"Timeout":"5",
+					"UnhealthyThreshold":"2"
+				},
+				"Subnets":[
+					{
+						"Ref":"vpcSubnet"
+					}				
+				],
+				"Listeners":[
+					{
+						"InstancePort":"8082",
+						"LoadBalancerPort":"80",
+						"Protocol":"HTTP",
+						"PolicyNames":[
+							
+						]
+						
+					}
+				]
+			}
+		},
+		"simpleInstance":{
+		"Type":"AWS::EC2::Instance",
+			"Properties":{
+				"InstanceType":"t1.micro",
+				"ImageId":"ami-f2191786",
+				"SubnetId":{
+					"Ref":"vpcSubnet"
+				}, 
+				"Tags": [
+                  { "Key" : "Name", "Value": "aTestInstance" },
+                  { "Key" : "CFN_ASSIST_TYPE", "Value": "web" }
+                ]
+			}
+		}
+	}
+}

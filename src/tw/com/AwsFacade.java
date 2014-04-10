@@ -32,17 +32,12 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class AwsFacade implements AwsProvider {
@@ -52,6 +47,7 @@ public class AwsFacade implements AwsProvider {
 	public static final String PROJECT_TAG = "CFN_ASSIST_PROJECT"; 
 	public static final String INDEX_TAG = "CFN_ASSIST_DELTA";
 	public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
+	public static final Object TYPE_TAG = "CFN_ASSIST_TYPE";
 	public static final String COMMENT_TAG = "CFN_COMMENT";
 	
 	private static final String PARAMETER_ENV = "env";
@@ -64,15 +60,14 @@ public class AwsFacade implements AwsProvider {
 	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
 	private CfnRepository cfnRepository;
-	private AmazonEC2Client ec2Client;
+	//private AmazonEC2Client ec2Client;
 	private MonitorStackEvents monitor;
 
 	private String commentTag="";
 
-	public AwsFacade(MonitorStackEvents monitor, AmazonCloudFormationClient cfnClient, AmazonEC2Client ec2Client, CfnRepository cfnRepository, VpcRepository vpcRepository) {
+	public AwsFacade(MonitorStackEvents monitor, AmazonCloudFormationClient cfnClient, CfnRepository cfnRepository, VpcRepository vpcRepository) {
 		this.monitor = monitor;
 		this.cfnClient = cfnClient;
-		this.ec2Client = ec2Client;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
 
@@ -97,6 +92,13 @@ public class AwsFacade implements AwsProvider {
 		logger.info("Validating template and discovering parameters for file " + file.getAbsolutePath());
 		String contents = loadFileContents(file);
 		return validateTemplate(contents);
+	}
+	
+
+	@Override
+	public StackId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, StackCreateFailed, IOException, InvalidParameterException, InterruptedException {
+		File file = new File(filename);
+		return applyTemplate(file, projAndEnv);
 	}
 	
 	@Override
@@ -487,39 +489,40 @@ public class AwsFacade implements AwsProvider {
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
 	}
 
-	@Override
-	@Deprecated
-	public void initEnvAndProjectForStack(String stackName,
-			ProjectAndEnv projAndEnv) throws CfnAssistException {
-		// TODO this does not work, the EC2 part of the API does not recognize the resource ID returned by the CFN part of the API
-		// This functionality is disabled at the CLI level at the moment, and the test is set ignored
-		DescribeStacksRequest request = new DescribeStacksRequest();
-		request.setStackName(stackName);
-		DescribeStacksResult result = cfnClient.describeStacks(request );
-		
-		List<Stack> stacks = result.getStacks();
-		if (stacks.size()!=1) {
-			throw new WrongNumberOfStacksException(1, stacks.size());
-		}
-		
-		Stack stack = stacks.get(0);
-		// TODO check tags not already set
-		
-		logger.info(String.format("Add %s to stackname '%s'", projAndEnv, stackName));
-		// tags here are different type from the tags during the stack create call
-		Collection<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
-		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(ENVIRONMENT_TAG).withValue(projAndEnv.getEnv()));
-		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(PROJECT_TAG).withValue(projAndEnv.getProject()));
-		String ids[] = { stack.getStackId() };
-		
-		CreateTagsRequest createTagsRequest= new CreateTagsRequest();
-		Collection<String> resources = Arrays.asList(ids);
-		createTagsRequest.setResources(resources);
-		createTagsRequest.setTags(tags);
-		logger.debug("Making call to createTags");
-		ec2Client.createTags(createTagsRequest);
-		
-		// TODO how to check status of this call?
-	}
+//	@Override
+//	@Deprecated
+//	public void initEnvAndProjectForStack(String stackName,
+//			ProjectAndEnv projAndEnv) throws CfnAssistException {
+//		// TODO this does not work, the EC2 part of the API does not recognize the resource ID returned by the CFN part of the API
+//		// This functionality is disabled at the CLI level at the moment, and the test is set ignored
+//		DescribeStacksRequest request = new DescribeStacksRequest();
+//		request.setStackName(stackName);
+//		DescribeStacksResult result = cfnClient.describeStacks(request );
+//		
+//		List<Stack> stacks = result.getStacks();
+//		if (stacks.size()!=1) {
+//			throw new WrongNumberOfStacksException(1, stacks.size());
+//		}
+//		
+//		Stack stack = stacks.get(0);
+//		// TODO check tags not already set
+//		
+//		logger.info(String.format("Add %s to stackname '%s'", projAndEnv, stackName));
+//		// tags here are different type from the tags during the stack create call
+//		Collection<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
+//		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(ENVIRONMENT_TAG).withValue(projAndEnv.getEnv()));
+//		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(PROJECT_TAG).withValue(projAndEnv.getProject()));
+//		String ids[] = { stack.getStackId() };
+//		
+//		CreateTagsRequest createTagsRequest= new CreateTagsRequest();
+//		Collection<String> resources = Arrays.asList(ids);
+//		createTagsRequest.setResources(resources);
+//		createTagsRequest.setTags(tags);
+//		logger.debug("Making call to createTags");
+//		ec2Client.createTags(createTagsRequest);
+//		
+//		// TODO how to check status of this call?
+//	}
+
 
 }

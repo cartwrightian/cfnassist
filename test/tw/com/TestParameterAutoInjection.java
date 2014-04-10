@@ -46,9 +46,9 @@ public class TestParameterAutoInjection {
 		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
-		aws = new AwsFacade(monitor, cfnClient, ec2Client, cfnRepository , vpcRepository);
+		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 		
-		subnetStackName = aws.applyTemplate(new File(EnvironmentSetupForTests.SUBNET_STACK_FILE), mainProjectAndEnv);
+		subnetStackName = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK), mainProjectAndEnv);
 	}
 	
 	@Rule public TestName test = new TestName();
@@ -68,7 +68,7 @@ public class TestParameterAutoInjection {
 		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		
 		EnvironmentTag envTag = new EnvironmentTag(env);
-		File file = new File(EnvironmentSetupForTests.ACL_FILENAME);
+		File file = new File(FilesForTesting.ACL);
 		List<TemplateParameter> declaredParameters = aws.validateTemplate(file);
 		List<Parameter> result = aws.fetchAutopopulateParametersFor(file, envTag, declaredParameters);
 		

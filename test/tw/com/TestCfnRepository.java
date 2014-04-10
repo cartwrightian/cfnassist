@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -38,11 +40,11 @@ public class TestCfnRepository {
 	
 	private Vpc mainTestVPC;
 	private AwsProvider awsProvider;
-	private File templateFile;
 	private Vpc otherVPC;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	private CfnRepository cfnRepository;
+	private DeletesStacks deletesStacks;
 
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
@@ -60,14 +62,20 @@ public class TestCfnRepository {
 	public void beforeEachTestIsRun() {				
 		VpcRepository vpcRepository = new VpcRepository(directClient);
 		
-		templateFile = new File("src/cfnScripts/subnetWithCIDRParam.json");
 		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
-		awsProvider = new AwsFacade(monitor , cfnClient, directClient, cfnRepository, vpcRepository);
+		awsProvider = new AwsFacade(monitor , cfnClient, cfnRepository, vpcRepository);
 		awsProvider.setCommentTag(test.getMethodName());
 		
 		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		otherVPC = vpcRepository.getCopyOfVpc(altProjectAndEnv);
+		
+		deletesStacks = new DeletesStacks(cfnClient);
+	}
+	
+	@After
+	public void afterEachTestHasRun() {
+		deletesStacks.act();
 	}
 	
 	@Test
@@ -116,7 +124,7 @@ public class TestCfnRepository {
 		
 		String name = "CfnAssistTestcausesRollBack";
 		try {
-			awsProvider.applyTemplate(new File(EnvironmentSetupForTests.CAUSEROLLBACK), mainProjectAndEnv);
+			awsProvider.applyTemplate(new File(FilesForTesting.CAUSEROLLBACK), mainProjectAndEnv);
 			fail("Expected exception");
 		} catch (StackCreateFailed e) {
 			// expected
@@ -128,7 +136,7 @@ public class TestCfnRepository {
 			Thread.sleep(2500);
 		}
 		
-		new DeletesStacks(cfnClient).ifPresent(name).act();
+		deletesStacks.ifPresent(name).act();
 		
 		assertEquals(StackStatus.ROLLBACK_COMPLETE.toString(), result);	
 	}
@@ -157,6 +165,7 @@ public class TestCfnRepository {
 		cidrParameter.setParameterKey("cidr");
 		cidrParameter.setParameterValue(cidr);
 		parameters.add(cidrParameter);
+		File templateFile = new File(FilesForTesting.SUBNET_CIDR_PARAM);
 		return awsProvider.applyTemplate(templateFile, projectAndEnv, parameters );
 	}
 

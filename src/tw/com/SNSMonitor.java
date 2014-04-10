@@ -117,19 +117,22 @@ public class SNSMonitor extends StackMonitor  {
 	private void checkOrCreateQueuePermissions(
 			Map<String, String> queueAttributes) {
 		Policy policy = extractPolicy(queueAttributes);	
-
-		for (Statement statement :  policy.getStatements()) {
-			if (allowQueuePublish(statement)) {
-				logger.info("Statement allows sending, checking for ARN condition. Statement ID is " + statement.getId());
-				for (Condition condition : statement.getConditions()) {
-					if (condition.getConditionKey().equals("aws:SourceArn") && 
-							condition.getValues().contains(topicSnsArn)) {
-							logger.info("Found a matching condition for sns arn " + topicSnsArn);
-							return;
+		
+		if (policy!=null) {
+			logger.info("Policy found for queue, check if required conditions set");
+			for (Statement statement :  policy.getStatements()) {
+				if (allowQueuePublish(statement)) {
+					logger.info("Statement allows sending, checking for ARN condition. Statement ID is " + statement.getId());
+					for (Condition condition : statement.getConditions()) {
+						if (condition.getConditionKey().equals("aws:SourceArn") && 
+								condition.getValues().contains(topicSnsArn)) {
+								logger.info("Found a matching condition for sns arn " + topicSnsArn);
+								return;
+						}
 					}
 				}
 			}
-		}	
+		}
 		logger.info("Policy allowing SNS to publish to queue not found");
 		setQueuePolicy();
 	}
@@ -149,6 +152,10 @@ public class SNSMonitor extends StackMonitor  {
 
 	private Policy extractPolicy(Map<String, String> queueAttributes) {
 		String policyJson = queueAttributes.get(QUEUE_POLICY_KEY);
+		if (policyJson==null) {
+			return null;
+		}
+		
 		logger.debug("Current queue policy: " + policyJson);
 		Policy policy = Policy.fromJson(policyJson);
 		return policy;

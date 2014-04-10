@@ -1,6 +1,7 @@
 package tw.com;
 
 import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackStatus;
 
 public class StackEntry {
 
@@ -59,6 +60,14 @@ public class StackEntry {
 		} else if (!stack.equals(other.stack))
 			return false;
 		return true;
+	}
+
+	public boolean isLive() {
+		return stack.getStackStatus().equals(StackStatus.CREATE_COMPLETE.toString());
+	}
+
+	public String getStackName() {
+		return stack.getStackName();
 	}
 
 

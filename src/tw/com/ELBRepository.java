@@ -7,8 +7,14 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.MustHaveBuildNumber;
 
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesResult;
+import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerRequest;
@@ -23,13 +29,15 @@ import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLo
 public class ELBRepository {
 	private static final Logger logger = LoggerFactory.getLogger(ELBRepository.class);
 	AmazonElasticLoadBalancingClient elbClient;
+	AmazonEC2Client ec2Client;
 	VpcRepository vpcRepository;
 	CfnRepository cfnRepository;
 	
-	public ELBRepository(AmazonElasticLoadBalancingClient elbClient, VpcRepository vpcRepository, CfnRepository cfnRepository) {
+	public ELBRepository(AmazonElasticLoadBalancingClient elbClient, AmazonEC2Client ec2Client, VpcRepository vpcRepository, CfnRepository cfnRepository) {
 		this.elbClient = elbClient;
 		this.vpcRepository = vpcRepository;
 		this.cfnRepository = cfnRepository;
+		this.ec2Client = ec2Client;
 	}
 
 	public LoadBalancerDescription findELBFor(ProjectAndEnv projAndEnv) {
@@ -61,46 +69,55 @@ public class ELBRepository {
 		return vpcID;
 	}
 
-	public void addInstancesThatMatchBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
+	private List<Instance> addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String type) throws MustHaveBuildNumber, WrongNumberOfInstancesException {
 		if (!projAndEnv.hasBuildNumber()) {
 			throw new MustHaveBuildNumber();
 		}
-		LoadBalancerDescription elb = findELBFor(projAndEnv);
-		
+		LoadBalancerDescription elb = findELBFor(projAndEnv);	
+		List<Instance> instances = getMatchingInstances(projAndEnv, type);
+		if (instances.size()==0) {
+			logger.warn(String.format("No instances matched %s and type %s", projAndEnv, type));
+		} else {	
+			String lbName = elb.getLoadBalancerName();
+			logger.info(String.format("Regsister matching %s instances with the LB %s ",instances.size(),lbName));
+			RegisterInstancesWithLoadBalancerRequest regInstances = new RegisterInstancesWithLoadBalancerRequest();
+			regInstances.setInstances(instances);
+			regInstances.setLoadBalancerName(lbName);
+			RegisterInstancesWithLoadBalancerResult result = elbClient.registerInstancesWithLoadBalancer(regInstances);
+			
+			logger.info("ELB Add instance call result: " + result.toString());
+		}
+		return instances;
+	}
+
+	private List<Instance> getMatchingInstances(ProjectAndEnv projAndEnv,
+			String type) throws WrongNumberOfInstancesException {
 		Collection<String> instancesIds = cfnRepository.getInstancesFor(projAndEnv);
 	
 		List<Instance> instances = new LinkedList<Instance>();
 		for (String id : instancesIds) {
-			instances.add(new Instance(id));
+			if (instanceHasCorrectType(type, id)) {
+				logger.info(String.format("Adding instance %s as it matched %s %s",id, AwsFacade.TYPE_TAG, type));
+				instances.add(new Instance(id));
+			} else {
+				logger.info(String.format("Not adding instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, type));
+			}	
 		}
-		
-		String lbName = elb.getLoadBalancerName();
-		logger.info("Regsister matching instances with the LB " + lbName);
-		RegisterInstancesWithLoadBalancerRequest regInstances = new RegisterInstancesWithLoadBalancerRequest();
-		regInstances.setInstances(instances);
-		regInstances.setLoadBalancerName(lbName);
-		RegisterInstancesWithLoadBalancerResult result = elbClient.registerInstancesWithLoadBalancer(regInstances);
-		
-		logger.info("Call result: " + result.toString());
-		
+		logger.info(String.format("Found %s instances matching %s and type: %s", instances.size(), projAndEnv, type));
+		return instances;
 	}
 
 	// returns remaining instances
-	public List<Instance> removeInstancesNotMatchingBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
-		if (!projAndEnv.hasBuildNumber()) {
-			throw new MustHaveBuildNumber();
-		}
-			
+	private List<Instance> removeInstancesNotMatching(ProjectAndEnv projAndEnv, List<Instance> matchingInstances) throws MustHaveBuildNumber {	
 		LoadBalancerDescription elb = findELBFor(projAndEnv);
 		logger.info("Checking if instances should be removed from ELB " + elb.getLoadBalancerName());
 		List<Instance> currentInstances = elb.getInstances();	
-		Collection<String> matchingInstances = cfnRepository.getInstancesFor(projAndEnv);
-		
+				
 		List<Instance> toRemove = new LinkedList<Instance>();
 		for(Instance current : currentInstances) {
 			String instanceId = current.getInstanceId();
-			if (matchingInstances.contains(instanceId)) {
-				logger.info("Instance matched project/env/build, will not be removed " + instanceId);
+			if (matchingInstances.contains(current)) {
+				logger.info("Instance matched project/env/build/type, will not be removed " + instanceId);
 			} else {
 				logger.info("Instance did not match, will be removed from ELB " +instanceId);
 				toRemove.add(new Instance(instanceId));
@@ -128,10 +145,37 @@ public class ELBRepository {
 		logger.info(String.format("ELB %s now has %s instances registered", loadBalancerName, remaining.size()));
 		return remaining;
 	}
+	
+	private boolean instanceHasCorrectType(String type, String id) throws WrongNumberOfInstancesException {
+		List<Tag> tags = getTagsForInstance(id);
+		for(Tag tag : tags) {
+			if (tag.getKey().equals(AwsFacade.TYPE_TAG)) {
+				return tag.getValue().equals(type);
+			}
+		}
+		return false;
+	}
 
-	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv) throws MustHaveBuildNumber {
-		addInstancesThatMatchBuild(projAndEnv); 
-		return removeInstancesNotMatchingBuild(projAndEnv);	
+	private List<Tag> getTagsForInstance(String id)
+			throws WrongNumberOfInstancesException {
+		DescribeInstancesRequest request = new DescribeInstancesRequest().withInstanceIds(id);
+		DescribeInstancesResult result = ec2Client.describeInstances(request);
+		List<Reservation> res = result.getReservations();
+		if (res.size()!=1) {
+			throw new WrongNumberOfInstancesException(id, res.size());
+		}
+		List<com.amazonaws.services.ec2.model.Instance> ins = res.get(0).getInstances();
+		if (ins.size()!=1) {
+			throw new WrongNumberOfInstancesException(id, ins.size());
+		}
+		com.amazonaws.services.ec2.model.Instance instance = ins.get(0);
+		List<Tag> tags = instance.getTags();
+		return tags;
+	}
+
+	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String type) throws MustHaveBuildNumber, WrongNumberOfInstancesException {
+		List<Instance> matchinginstances = addInstancesThatMatchBuildAndType(projAndEnv, type); 
+		return removeInstancesNotMatching(projAndEnv, matchinginstances);	
 	}
 
 }

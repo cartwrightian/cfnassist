@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 
@@ -21,7 +22,7 @@ public class ResetAction extends SharedAction {
 				withDescription("Warning: Resets the Delta Tag "+AwsFacade.INDEX_TAG+ " to zero").create("reset");
 	}
 	
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv, String unusedArg, Collection<Parameter> unusedParams) throws CannotFindVpcException {
+	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv, String unusedArg, Collection<Parameter> unusedParams) throws CannotFindVpcException {
 		logger.info("Reseting index for " + projectAndEnv);
 		aws.resetDeltaIndex(projectAndEnv);	
 	}

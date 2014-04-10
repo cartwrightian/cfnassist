@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
+import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -25,7 +26,7 @@ public class InitAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(AwsFacade aws, ProjectAndEnv projectAndEnv,
+	public void invoke(AwsFacade aws, ELBRepository repository,  ProjectAndEnv projectAndEnv,
 			String vpcId, Collection<Parameter> unused) throws InvalidParameterException,
 			FileNotFoundException, IOException, InterruptedException, CfnAssistException {
 		logger.info("Invoke init of tags for VPC: " + vpcId);

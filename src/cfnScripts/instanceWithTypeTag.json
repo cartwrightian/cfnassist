@@ -23,9 +23,10 @@
 				"ImageId":"ami-f2191786",
 				"SubnetId":{
 					"Ref":"subnet"
-				}, 
+				},
 				"Tags": [
-                  { "Key" : "Name", "Value": "testInstance" }
+                  { "Key" : "Name", "Value": "anotherTestInstance" },
+                  { "Key" : "CFN_ASSIST_TYPE", "Value": "web" }
                 ]
 			}
 		}	
