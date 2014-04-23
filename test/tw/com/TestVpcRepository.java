@@ -56,10 +56,10 @@ public class TestVpcRepository {
 		String result = repository.getVpcIndexTag(mainProjectAndEnv);	
 		assertEquals("TESTVALUE", result);
 		
-		repository.setVpcIndexTag(mainProjectAndEnv, "ANOTHERVALUE");
+		repository.setVpcIndexTag(mainProjectAndEnv, "0");
 		result = repository.getVpcIndexTag(mainProjectAndEnv);	
-		assertEquals("ANOTHERVALUE", result);
-		
+		assertEquals("0", result);
+
 	}
 	
 	private List<Tag> createExpectedEc2TagList(String env) {

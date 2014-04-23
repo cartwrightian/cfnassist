@@ -140,7 +140,8 @@ public class TestBuiltInParameterInjectionAndTagging {
 				createCfnExpectedTagListWithBuild(buildNumber, testName), 
 				createExpectedTagsWithBuild(buildNumber, testName));
 		
-		EnvironmentSetupForTests.validatedDelete(stackName, awsProvider);
+		deletesStacks.ifPresent(stackName);
+		//EnvironmentSetupForTests.validatedDelete(stackName, awsProvider);
 	}
 
 	private void validateCreateAndDeleteWorks(StackId stackId, List<Tag> expectedStackTags, 
@@ -162,7 +163,8 @@ public class TestBuiltInParameterInjectionAndTagging {
 		assertEquals(expectedEc2Tags.size(), subnetTags.size()-EnvironmentSetupForTests.NUMBER_AWS_TAGS);
 		assert(subnetTags.containsAll(expectedEc2Tags));
 	    
-		awsProvider.deleteStack(stackId);
+		deletesStacks.ifPresent(stackId);
+		//awsProvider.deleteStack(stackId);
 	}
 
 	private List<Stack> getStack(String stackName) {

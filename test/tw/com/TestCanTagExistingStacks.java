@@ -24,7 +24,7 @@ public class TestCanTagExistingStacks {
 	private static AmazonCloudFormationClient cfnClient;
 	
 	private ProjectAndEnv projectAndEnv;
-	private AwsProvider aws;
+	//private AwsProvider aws;
 	
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
@@ -46,7 +46,7 @@ public class TestCanTagExistingStacks {
 		StackId stackId = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpc.getVpcId(),"");	
 		monitor.waitForCreateFinished(stackId);
 		
-		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);	
+		//aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);	
 	}
 	
 	@After

@@ -60,7 +60,7 @@ public class TestParameterAutoInjection {
 	
 	@AfterClass 
 	public static void afterAllTestsHaveRun() throws CfnAssistException, InterruptedException {
-		EnvironmentSetupForTests.validatedDelete(subnetStackName, aws);
+		new DeletesStacks(cfnClient).ifPresent(subnetStackName).act();
 	}
 
 	@Test

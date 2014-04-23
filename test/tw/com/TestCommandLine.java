@@ -50,7 +50,8 @@ public class TestCommandLine {
 		deletesStacks = new DeletesStacks(cfnClient);
 		deletesStacks.ifPresent(EnvironmentSetupForTests.TEMPORARY_STACK)
 			.ifPresent("CfnAssistTest01createSubnet")
-			.ifPresent("CfnAssistTest02createAcls");
+			.ifPresent("CfnAssistTest02createAcls")
+			.ifPresent("CfnAssistTestsimpleStack");
 		deletesStacks.act();
 		testName = test.getMethodName();
 	}
@@ -140,6 +141,31 @@ public class TestCommandLine {
 	}
 	
 	@Test
+	public void testDeleteViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
+		String[] createArgs = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-file", FilesForTesting.SIMPLE_STACK,
+				"-comment", testName
+				};
+		Main main = new Main(createArgs);
+		int createResult = main.parse();
+		assertEquals(0,createResult);
+		
+		String[] deleteArgs = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-delete", FilesForTesting.SIMPLE_STACK,
+				"-comment", testName
+				};
+		main = new Main(deleteArgs);
+		int deleteResult = main.parse();
+		assertEquals(0,deleteResult);
+		
+		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
+	}
+	
+	@Test
 	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -160,7 +186,8 @@ public class TestCommandLine {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-build", "876",
-				"-file", FilesForTesting.ELB_AND_INSTANCE
+				"-file", FilesForTesting.ELB_AND_INSTANCE,
+				"-comment", testName
 				};
 		Main main = new Main(createIns);
 		main.parse();

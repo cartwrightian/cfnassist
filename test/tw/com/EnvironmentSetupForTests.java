@@ -11,9 +11,6 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.exceptions.WrongStackStatus;
-
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
@@ -164,11 +161,6 @@ public class EnvironmentSetupForTests {
 		p.setParameterKey(key);
 		p.setParameterValue(value);
 		return p;
-	}
-
-	public static void validatedDelete(StackId stackId, AwsProvider provider)
-			throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
-		provider.deleteStack(stackId);
 	}
 
 	public static AmazonSNSClient createSNSClient(

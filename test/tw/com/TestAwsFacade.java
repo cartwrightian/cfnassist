@@ -25,6 +25,7 @@ import tw.com.exceptions.WrongStackStatus;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -91,20 +92,49 @@ public class TestAwsFacade {
 		assertEquals("CfnAssistTestsimpleStack", stackName);
 	}
 	
+	@Test
+	public void createsSimpleStackFromTemplate() throws FileNotFoundException, IOException, CfnAssistException, 
+		InterruptedException, InvalidParameterException {
+		aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);	
+	}
+	
+	@Test
+	public void deleteSimpleStack() throws FileNotFoundException, IOException, CfnAssistException, 
+		InterruptedException, InvalidParameterException {
+		
+		DescribeStacksResult before = cfnClient.describeStacks();
+		File templateFile = new File(FilesForTesting.SIMPLE_STACK);
+		aws.applyTemplate(templateFile, projectAndEnv);	
+		
+		aws.deleteStackFrom(templateFile, projectAndEnv);
+		DescribeStacksResult after = cfnClient.describeStacks();
+		
+		assertEquals(before.getStacks().size(), after.getStacks().size());
+	}
+	
+	@Test
+	public void deleteSimpleStackWithBuildNumber() throws FileNotFoundException, IOException, CfnAssistException, 
+		InterruptedException, InvalidParameterException {
+		
+		DescribeStacksResult before = cfnClient.describeStacks();
+		File templateFile = new File(FilesForTesting.SIMPLE_STACK);
+		projectAndEnv.addBuildNumber("987");
+		aws.applyTemplate(templateFile, projectAndEnv);	
+		
+		aws.deleteStackFrom(templateFile, projectAndEnv);
+		DescribeStacksResult after = cfnClient.describeStacks();
+		
+		deletesStacks.ifPresent("CfnAssist987TestsimpleStack");
+		assertEquals(before.getStacks().size(), after.getStacks().size());
+	}
+	
 	@Test 
 	public void shouldIncludeBuildNumberWhenFormingStackname() {
 		projectAndEnv.addBuildNumber("042");
 		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK),projectAndEnv);
 		
-		assertEquals("CfnAssist042TestsimpleStack", stackName);
-	}
-	
-	@Test
-	public void createsAndDeleteSimpleStackFromTemplate() throws FileNotFoundException, IOException, CfnAssistException, 
-		InterruptedException, InvalidParameterException {
-		StackId stackId = aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);	
-		
-		EnvironmentSetupForTests.validatedDelete(stackId, aws);
+		deletesStacks.ifPresent("CfnAssist042TestsimpleStack");
+		assertEquals("CfnAssist042TestsimpleStack", stackName);	
 	}
 	
 	@Test
@@ -120,7 +150,7 @@ public class TestAwsFacade {
 			// expected
 		}
 		
-		EnvironmentSetupForTests.validatedDelete(stackId, aws);
+		deletesStacks.ifPresent(stackId);
 	}
 	
 	@Test
@@ -142,7 +172,6 @@ public class TestAwsFacade {
 			id = exception.getStackId();
 		}	
 		deletesStacks.ifPresent("CfnAssistTestcausesRollBack");
-
 	}
 
 	@Test

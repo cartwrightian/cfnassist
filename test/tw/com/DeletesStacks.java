@@ -29,6 +29,10 @@ public class DeletesStacks {
 		return this;
 	}
 	
+	public DeletesStacks ifPresent(StackId stackId) {
+		return ifPresent(stackId.getStackName());	
+	}
+	
 	public DeletesStacks ifPresentNonBlocking(String stackName) {
 		deleteIfPresentNonBlocking.add(stackName);
 		return this;
@@ -114,5 +118,6 @@ public class DeletesStacks {
 		}
 		return false;
 	}
+
 
 }

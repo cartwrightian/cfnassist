@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project basedir="." default="build" name="cfnassist">
     <property environment="env"/>
-    <property name="ECLIPSE_HOME" value="../../../../../Applications/eclipse"/>
+	<property name="output" value="build"/>
     <property name="junit.output.dir" value="junit"/>
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.7"/>
     <property name="source" value="1.7"/>
     <property name="aws_sdk_loc" value="lib/aws-java-sdk-1.6.1" />
-    <path id="JUnit 4.libraryclasspath">
+	<!-- todo use the versions in lib -->
+	<property name="ECLIPSE_HOME" value="../../../../../Applications/eclipse"/>
+    <path id="JUnit 4.libraryclasspath">   	
         <pathelement location="${ECLIPSE_HOME}/plugins/org.junit_4.10.0.v4_10_0_v20120426-0900/junit.jar"/>
         <pathelement location="${ECLIPSE_HOME}/plugins/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
     </path>
@@ -43,7 +45,7 @@
 		<pathelement location="lib/apache-ant-1.9.3/lib/ant.jar"/>
 	</path>
     <path id="cfnassist.classpath">
-        <pathelement location="out"/>
+        <pathelement location="${output}"/>
         <path refid="JUnit 4.libraryclasspath"/>
         <path refid="aws_sdk_lib"/>
     	<path refid="logging_libs"/>
@@ -52,14 +54,14 @@
     </path>
 	
     <target name="init">
-        <mkdir dir="out"/>
-        <copy includeemptydirs="false" todir="out">
+        <mkdir dir="${output}"/>
+        <copy includeemptydirs="false" todir="${output}">
             <fileset dir="src">
                 <exclude name="**/*.launch"/>
                 <exclude name="**/*.java"/>
             </fileset>
         </copy>
-        <copy includeemptydirs="false" todir="out">
+        <copy includeemptydirs="false" todir="${output}">
             <fileset dir="test">
                 <exclude name="**/*.launch"/>
                 <exclude name="**/*.java"/>
@@ -68,13 +70,13 @@
     </target>
 	
     <target name="clean">
-        <delete dir="out"/>
+        <delete dir="${output}"/>
     	<delete dir="bin"/>
     </target>
 	
     <target depends="init" name="build">
         <echo message="${ant.project.name}: ${ant.file}"/>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="out" includeantruntime="false" source="${source}" target="${target}">
+        <javac debug="true" debuglevel="${debuglevel}" destdir="${output}" includeantruntime="false" source="${source}" target="${target}">
             <src path="src"/>
             <src path="test"/>
             <classpath refid="cfnassist.classpath"/>
@@ -120,7 +122,7 @@
 	        <copy file="src/cfnassist.sh" todir="bin"/>
 			<chmod file="bin/cfnassist.sh" perm="700"/>
 			<jar destfile="bin/cfnassist.jar">
-			    <fileset dir="out"/>
+			    <fileset dir="${output}"/>
 			    <manifest>
 			      <attribute name="Main-Class" value="tw.com.Main"/>
 			    </manifest>
@@ -133,51 +135,6 @@
 	            </path>
 	        </copy>
 	    	<copy file="conf/logback.xml" todir="bin/conf"/>
-	</target>
-	
-	<target name="customTask" depends="dist">
-		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
-			<classpath>
-				<pathelement location="bin/cfnassist.jar"/>
-						<path refid="aws_sdk_lib"/>
-				    	<path refid="logging_libs"/>
-				    	<path refid="apacheCommons"/>
-			</classpath>
-		</taskdef>
-	</target>
-	
-	<target name="customTaskTests" depends="testSimpleTemplate,testSimpleTemplateWithParam,testSimpleDir,testSimpleSNS" />
-		
-	<target name="testSimpleTemplate" depends="customTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
-			<Templates target="src/cfnScripts/subnet.json"/>
-		</cfnassist>
-	</target>
-	
-	<target name="testSimpleSNS" depends="customTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true">
-				<Templates target="src/cfnScripts/simpleStack.json"/>
-			</cfnassist>
-	</target>
-	
-	<target name="testSimpleTemplateBuildNumber" depends="customTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" buildNumber="42">
-			<Templates target="src/cfnScripts/subnet.json"/>
-		</cfnassist>
-	</target>
-	
-	<target name="testSimpleTemplateWithParam" depends="customTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
-			<Templates target="src/cfnScripts/subnetWithParam.json"/>
-			<Param name="zoneA" value="eu-west-1a" />
-			<Param name="zoneB" value="eu-west-1b" />
-		</cfnassist>
-	</target>
-		
-	<target name="testSimpleDir" depends="customTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
-		    <Templates target="src/cfnScripts/orderedScripts/"/>
-		</cfnassist>	
 	</target>
 	
 </project>
