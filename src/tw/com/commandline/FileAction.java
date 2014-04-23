@@ -32,7 +32,6 @@ public class FileAction extends SharedAction {
 		logger.info("Created stack name "+stackId);
 	}
 	
-
 	@Override
 	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
 			String argumentForAction, Collection<Parameter> cfnParams) {

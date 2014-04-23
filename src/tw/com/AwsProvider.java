@@ -28,16 +28,16 @@ public interface AwsProvider {
 	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException;
 	ArrayList<StackId> applyTemplatesFromFolder(String folderPath, ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException;
 	
+	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv);
+
 	String createStackName(File templateFile, ProjectAndEnv projAndEnv);
-	void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus;
-	
+		
 	List<Parameter> fetchAutopopulateParametersFor(File file, EnvironmentTag envTag, List<TemplateParameter> declaredParam) throws FileNotFoundException, IOException, InvalidParameterException;
 	
 	void resetDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException;
 	void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) throws CannotFindVpcException;
 	int getDeltaIndex(ProjectAndEnv projAndEnv) throws CfnAssistException;
 	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws CfnAssistException;
-	//public void initEnvAndProjectForStack(String stackName, ProjectAndEnv projectAndEnv) throws CfnAssistException;
 	void setCommentTag(String string);
 
 }

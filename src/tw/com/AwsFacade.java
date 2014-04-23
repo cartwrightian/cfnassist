@@ -60,7 +60,6 @@ public class AwsFacade implements AwsProvider {
 	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
 	private CfnRepository cfnRepository;
-	//private AmazonEC2Client ec2Client;
 	private MonitorStackEvents monitor;
 
 	private String commentTag="";
@@ -174,7 +173,8 @@ public class AwsFacade implements AwsProvider {
 			StackId stackId = cfnRepository.getStackId(stackName);
 			if (isRollingBack(stackId)) {
 				logger.warn("Stack is rolled back so delete it and recreate " + stackId);
-				deleteStack(stackId);
+				deleteStackNonBlocking(stackId.getStackName());
+				//deleteStack(stackId);
 			} else {
 				logger.error("Stack exists and is not rolled back, cannot create another stack with name:" +stackName);
 				throw new DuplicateStackException(stackName);
@@ -292,9 +292,30 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 	
-	public void deleteStack(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
-		deleteStackNonBlocking(stackId.getStackName());
-		//monitor.waitForDeleteFinished(stackId);
+	
+	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv) {
+		String stackName = createStackName(templateFile, projectAndEnv);
+		StackId stackId;
+		try {
+			stackId = cfnRepository.getStackId(stackName);
+		} catch (WrongNumberOfStacksException e) {
+			logger.warn("Unable to find stack " + stackName);
+			return;
+		}
+		
+		
+		logger.info("Found ID for stack: " + stackId);
+		deleteStackNonBlocking(stackName);
+		
+		try {
+			monitor.waitForDeleteFinished(stackId);
+		} catch (WrongNumberOfStacksException | NotReadyException
+				| WrongStackStatus | InterruptedException e) {
+			logger.error("Unable to delete stack " + stackName);
+			logger.error(e.getMessage());
+			logger.error(e.getStackTrace().toString());
+		}
+		
 	}
 	
 	private void deleteStackNonBlocking(String stackName) {

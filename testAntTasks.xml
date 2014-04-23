@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="test" name="cfnassist">
+    <property name="aws_sdk_loc" value="lib/aws-java-sdk-1.6.1" />
+    <path id="aws_sdk_lib">
+        <pathelement location="${aws_sdk_loc}/lib/aws-java-sdk-1.6.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjrt.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjweaver.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/commons-codec-1.3/commons-codec-1.3.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/commons-logging-1.1.1/commons-logging-1.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/freemarker-2.3.18/freemarker-2.3.18.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/httpcomponents-client-4.2.3/httpclient-4.2.3.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/httpcomponents-client-4.2.3/httpcore-4.2.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/jackson-annotations-2.1/jackson-annotations-2.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/jackson-core-2.1/jackson-core-2.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/jackson-databind-2.1/jackson-databind-2.1.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/java-mail-1.4.3/mail-1.4.3.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-beans-3.0.7.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-context-3.0.7.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-core-3.0.7.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/stax-api-1.0.1/stax-api-1.0.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/stax-ri-1.2.0/stax-1.2.0.jar"/>
+    </path>
+	<path id="logging_libs">
+		<pathelement location="lib/slf4j-api-1.7.5.jar"/>
+		<pathelement location="lib/logback-core-1.0.10.jar"/>
+		<pathelement location="lib/logback-classic-1.0.10.jar"/>
+	</path>
+	<path id="apacheCommons">
+		<pathelement location="lib/commons-io-2.4/commons-io-2.4.jar"/>
+		<pathelement location="lib/commons-cli-1.2/commons-cli-1.2.jar"/>
+	</path>
+	<path id="ant_libs">
+		<pathelement location="lib/apache-ant-1.9.3/lib/ant.jar"/>
+	</path>
+    <path id="cfnassist.classpath">
+        <pathelement location="out"/>
+        <path refid="JUnit 4.libraryclasspath"/>
+        <path refid="aws_sdk_lib"/>
+    	<path refid="logging_libs"/>
+    	<path refid="apacheCommons"/>
+    	<path refid="ant_libs"/>
+    </path>
+	
+	<target name="cfnTask" >
+		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
+			<classpath>
+				<pathelement location="bin/cfnassist.jar"/>
+						<path refid="aws_sdk_lib"/>
+				    	<path refid="logging_libs"/>
+				    	<path refid="apacheCommons"/>
+			</classpath>
+		</taskdef>
+	</target>
+	
+	<target name="test" depends="testSimpleTemplateAndDelete,testSimpleTemplateBuildNumber,testSimpleTemplateWithParam,testSimpleDir,testSimpleSNS" />
+		
+	<target name="testSimpleTemplateAndDelete" depends="cfnTask">
+		<sequential>
+			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+				<Templates target="src/cfnScripts/subnet.json"/>
+				<Delete target="src/cfnScripts/subnet.json"/>
+			</cfnassist>
+		</sequential>
+	</target>
+	
+	<target name="testSimpleSNS" depends="cfnTask">
+			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true">
+				<Templates target="src/cfnScripts/simpleStack.json"/>
+				<Delete target="src/cfnScripts/simpleStack.json"/>
+			</cfnassist>
+	</target>
+	
+	<target name="testSimpleTemplateBuildNumber" depends="cfnTask">
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" buildNumber="42">
+			<Templates target="src/cfnScripts/subnet.json"/>
+			<Delete target="src/cfnScripts/subnet.json"/>
+		</cfnassist>
+	</target>
+	
+	<target name="testSimpleTemplateWithParam" depends="cfnTask">
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<Templates target="src/cfnScripts/subnetWithParam.json"/>
+			<Param name="zoneA" value="eu-west-1a" />
+			<Param name="zoneB" value="eu-west-1b" />
+			<Delete target="src/cfnScripts/subnetWithParam.json"/>
+		</cfnassist>
+	</target>
+		
+	<target name="testSimpleDir" depends="cfnTask">
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+		    <Templates target="src/cfnScripts/orderedScripts/"/>
+			<Rollback target="src/cfnScripts/orderedScripts/"/>
+		</cfnassist>	
+	</target>
+	
+</project>

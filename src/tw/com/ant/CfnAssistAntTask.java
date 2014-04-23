@@ -3,6 +3,7 @@ package tw.com.ant;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
@@ -27,13 +28,14 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private boolean snsMonitoring;
 	private Collection<Param> params;
 	
+	private List<ActionElement> actionElements;
+	
 	public CfnAssistAntTask() {
 		snsMonitoring = false;
 		params = new LinkedList<Param>();
+		actionElements = new LinkedList<ActionElement>();
 	}
 	
-	private TemplatesElement fileElement;
-
 	public void setRegion(String awsRegion) {
 		this.awsRegion = awsRegion;
 	}
@@ -54,8 +56,19 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		this.snsMonitoring = useSnsMonitoring;
 	}
 	
+	// addConfigured is looked for by ant, Templates is the name of the nested element
 	public void addConfiguredTemplates(TemplatesElement fileElement) {
-		this.fileElement = fileElement;
+		actionElements.add(fileElement);
+	}
+	
+	// addConfigured is looked for by ant, Delete is the name of the nested element
+	public void addConfiguredDelete(DeleteElement deleteElement) {
+		actionElements.add(deleteElement);
+	}
+	
+	// addConfigured is looked for by ant
+	public void addConfiguredRollback(RollbackElement rollbackElement) {
+		actionElements.add(rollbackElement);
 	}
 	
 	public void execute() {
@@ -76,7 +89,9 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 			FacadeFactory factory = new FacadeFactory(region,cfnProject);
 			AwsFacade aws = factory.createFacade(projectAndEnv.useSNS());
 			ELBRepository repository = factory.createElbRepo();
-			fileElement.execute(aws, projectAndEnv, cfnParameters, repository);
+			for(ActionElement element : actionElements) {
+				element.execute(aws, projectAndEnv, cfnParameters, repository);
+			}
 		} catch (IOException | MissingArgumentException
 				| InvalidParameterException | InterruptedException | CfnAssistException | CommandLineException innerException) {
 			throw new BuildException(innerException);

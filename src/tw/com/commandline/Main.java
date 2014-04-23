@@ -47,6 +47,7 @@ public class Main {
 	private CommandLineAction rollbackAction;
 	private CommandLineAction initAction;
 	private CommandLineAction elbAction;
+	private CommandLineAction deleteAction;
 	//private CommandLineAction labelAction;
 
 	private Options commandLineOptions;
@@ -83,6 +84,8 @@ public class Main {
 		commandLineOptions.addOption(initAction.getOption());
 		elbAction = new ElbAction();
 		commandLineOptions.addOption(elbAction.getOption());
+		deleteAction = new DeleteAction();
+		commandLineOptions.addOption(deleteAction.getOption());
 		// disabled, does not appear possible via the AWS API
 		//labelAction = new LabelAction();
 		//commandLineOptions.addOption(labelAction.getOption());
@@ -143,6 +146,7 @@ public class Main {
 			actions.add(rollbackAction);
 			actions.add(initAction);
 			actions.add(elbAction);
+			actions.add(deleteAction);
 			CommandLineAction action = selectCorrectActionFromArgs(commandLine, formatter, actions);	
 			
 			Region awsRegion = populateRegion(region);
