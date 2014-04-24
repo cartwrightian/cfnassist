@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion": "2010-09-09",
-	"Description" : "test template for cnfassist - creates a single subnet",
+	"Description" : "test template for cnfassist - creates a single subnet with the CIDR passed in as a parameter",
 	"Parameters" : {
     	"env" : { "Type" : "String" },
     	"vpc" : { "Type" : "String" },

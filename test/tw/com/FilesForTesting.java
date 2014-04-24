@@ -3,7 +3,8 @@ package tw.com;
 public class FilesForTesting {	
 	private static String DIR = "src/cfnScripts/";
 	
-	public static final String SUBNET_STACK = "subnet.json";
+	public static final String SUBNET_STACK = DIR + "subnet.json";
+	public static final String SUBNET_STACK_DELTA = DIR + "subnet.delta.json";
 	public static final String SIMPLE_STACK = DIR + "simpleStack.json";
 	public static final String ACL = DIR + "acl.json";
 	public static final String SUBNET_CIDR_PARAM = DIR + "subnetWithCIDRParam.json";
@@ -19,5 +20,4 @@ public class FilesForTesting {
 	public static final String ORDERED_SCRIPTS_WITH_DELTAS_FOLDER = DIR + "orderedScriptsWithDelta/";
 	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_DELTAS_FOLDER + "02createSubnet.delta.json";
 
-	
 }

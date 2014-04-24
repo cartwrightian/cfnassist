@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion":"2010-09-09",
-	"Description":"test template for cnfassist - creates a single subnet, ZoneA required as a parameter",
+	"Description":"UPDATE template for cnfassist - updates a single subnet to a new CIDR",
 	"Parameters":{
 		"env":{
 			"Type":"String"
@@ -10,13 +10,18 @@
 		},
 		"zoneA":{
 			"Type":"String",
+			"Default":"eu-west-1a",
 			"Description":"zoneADescription"
 		},
 		"zoneB":{
 			"Type":"String",
 			"Default":"eu-west-1b"
-		}
-		
+		},
+		"stackname":{
+			"Type":"String",
+			"Description":"The name of the stack we want to update, cfnassist uses this to find the stack",
+			"Default":"subnet"
+		}		
 	},
 	"Resources":{
 		"testSubnet":{
@@ -25,11 +30,11 @@
 				"AvailabilityZone":{
 					"Ref":"zoneA"
 				},
-				"CidrBlock":"10.0.10.0/24",
+				"CidrBlock":"10.0.99.0/24",
 				"Tags":[
 					{
 						"Key":"Name",
-						"Value":"webSubnetZoneA"
+						"Value":"testSubnet"
 					},
 					{
 						"Key":"TagEnv",
@@ -38,6 +43,7 @@
 						}
 						
 					}
+					
 				],
 				"VpcId":{
 					"Ref":"vpc"

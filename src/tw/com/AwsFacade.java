@@ -32,6 +32,7 @@ import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
@@ -140,6 +141,19 @@ public class AwsFacade implements AwsProvider {
 		String vpcId = vpcForEnv.getVpcId();
 		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId );
 		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
+		
+		if (monitor instanceof SNSMonitor) {
+			logger.debug("SNS monitoring enabled, check if stack has a notification ARN set");
+			Stack target = cfnRepository.getStack(stackName);
+			List<String> notificationARNs = target.getNotificationARNs();
+			if (notificationARNs.size()<=0) {
+				logger.error("Stack does not have notification ARN set, progress cannot be monitored via SNS");
+				throw new InvalidParameterException("Cannot use SNS, original stack was not created with a notification ARN");
+			}
+			for(String arn : notificationARNs) {
+				logger.info("Notification ARNs set on stack " + arn);
+			}
+		}
 		
 		logger.info("Will attempt to update stack: " + stackName);
 		UpdateStackRequest updateStackRequest = new UpdateStackRequest();	

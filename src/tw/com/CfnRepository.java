@@ -195,14 +195,7 @@ public class CfnRepository {
 		String stackStatus = stack.getStackStatus();
 		stackEntries.add(entry);
 		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
-				stackName, envTag, stackStatus));	
-//		if (stackStatus.equals(StackStatus.CREATE_COMPLETE.toString())) {
-//			stackEntries.add(entry);
-//			logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
-//					stackName, envTag, stackStatus));	
-//		} else {
-//			logger.warn(String.format("Not adding stack %s because status was %s", stackName,stackStatus ));
-//		}			 
+				stackName, envTag, stackStatus));			 
 	}
 
 	public void updateRepositoryFor(StackId id) {
@@ -349,4 +342,14 @@ public class CfnRepository {
 		}
 		return instanceIds;
 	}
+
+	public Stack getStack(String stackName) throws WrongNumberOfStacksException {
+		for(StackEntry entry : stackEntries) {
+			if (entry.getStackName().equals(stackName)) {
+				return entry.getStack();
+			}
+		}
+		return describeStack(stackName);
+	}
+
 }

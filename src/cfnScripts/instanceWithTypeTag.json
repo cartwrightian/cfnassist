@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion":"2010-09-09",
-	"Description":"test template for cnfassist - creates a simple instance",
+	"Description":"test template for cnfassist - creates a simple instance with a CFN_ASSIST_TYPE tag set",
 	"Parameters":{
 		"env":{
 			"Type":"String"
