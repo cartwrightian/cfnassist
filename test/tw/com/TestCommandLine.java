@@ -225,7 +225,7 @@ public class TestCommandLine {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-dir", EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER,
+				"-dir", FilesForTesting.ORDERED_SCRIPTS_FOLDER,
 				"-build", "001"
 				};
 		Main main = new Main(args);
@@ -251,22 +251,35 @@ public class TestCommandLine {
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
-		invokeForDirAndThenRollback(projAndEnv, "");
+		invokeForDirAndThenRollback(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
 	}
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirAndThenRollbackWithSNS() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
-		invokeForDirAndThenRollback(projAndEnv, "-sns");
+		invokeForDirAndThenRollback(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
+	}
+	
+	@Test
+	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
+		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
+		invokeForDirAndThenRollback(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER);
+	}
+	
+	@Test
+	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollbackWithSNS() throws CannotFindVpcException, InterruptedException, TimeoutException {
+		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
+		invokeForDirAndThenRollback(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER);
 	}
 
 	private void invokeForDirAndThenRollback(ProjectAndEnv projAndEnv,
-			String sns) throws CannotFindVpcException {
+			String sns, String orderedScriptsFolder) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, "0");
+		
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-dir", EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER,
+				"-dir", orderedScriptsFolder,
 				"-comment", testName,
 				sns
 				};
@@ -277,7 +290,7 @@ public class TestCommandLine {
 		String[] rollbackDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-rollback", EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER,
+				"-rollback", orderedScriptsFolder,
 				sns
 				};
 		main = new Main(rollbackDeploy);

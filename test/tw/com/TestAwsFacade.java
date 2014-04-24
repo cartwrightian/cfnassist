@@ -19,8 +19,6 @@ import org.junit.rules.TestName;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -88,8 +86,14 @@ public class TestAwsFacade {
 	
 	@Test
 	public void createStacknameFromEnvAndFile() {
-		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK),projectAndEnv);
+		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);
 		assertEquals("CfnAssistTestsimpleStack", stackName);
+	}
+	
+	@Test
+	public void createStacknameFromEnvAndFileWithDelta() {
+		String stackName = aws.createStackName(new File(FilesForTesting.STACK_UPDATE), projectAndEnv);
+		assertEquals("CfnAssistTest02createSubnet", stackName);
 	}
 	
 	@Test
@@ -154,20 +158,20 @@ public class TestAwsFacade {
 	}
 	
 	@Test
-	public void handlesRollBackCompleteStatusAutomatically() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidParameterException, InterruptedException, WrongStackStatus, DuplicateStackException {
+	public void handlesRollBackCompleteStatusAutomatically() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException {
 
 		StackId id = null;
 		try {
 			aws.applyTemplate(new File(FilesForTesting.CAUSEROLLBACK), projectAndEnv);
 			fail("should have thrown");
-		} catch (StackCreateFailed exception) {
+		} catch (WrongStackStatus exception) {
 			id = exception.getStackId();
 		}	
 		monitor.waitForRollbackComplete(id);
 		try {
 			aws.applyTemplate(new File(FilesForTesting.CAUSEROLLBACK), projectAndEnv);
 			fail("should have thrown");
-		} catch (StackCreateFailed exception) {
+		} catch (WrongStackStatus exception) {
 			// expected a create fail, and *not* a duplicate stack exception
 			id = exception.getStackId();
 		}	

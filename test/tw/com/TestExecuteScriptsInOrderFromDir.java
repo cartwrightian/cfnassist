@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -25,33 +26,41 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 
 public class TestExecuteScriptsInOrderFromDir {
 	
 	private static final String THIRD_FILE = "03createRoutes.json";
-	Path srcFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, "holding", THIRD_FILE);
-	Path destFile = FileSystems.getDefault().getPath(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, THIRD_FILE);
+	private Path thirdFile;
+	
 	private static AmazonCloudFormationClient cfnClient;
 	private static AmazonEC2Client ec2Client;
+	private static AmazonSNSClient snsClient;
+	private static AmazonSQSClient sqsClient;
 	private DeletesStacks deletesStacks;
+	private CfnRepository cfnRepository;
+	private VpcRepository vpcRepository;
 	
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj,env);
 
 	ArrayList<String> expectedList = new ArrayList<String>();
-	private AwsFacade aws;
-	private MonitorStackEvents monitor;
 	
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
+		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
+		snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
+		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
 	}
 	
 	@Rule public TestName test = new TestName();
-	
+
 	@Before 
 	public void beforeAllTestsRun() throws IOException, CannotFindVpcException {
 		createExpectedNames();	
@@ -60,33 +69,31 @@ public class TestExecuteScriptsInOrderFromDir {
 				ifPresent("CfnAssistTest02createAcls");
 		deletesStacks.act();
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
-		VpcRepository vpcRepository = new VpcRepository(ec2Client);
+		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		vpcRepository = new VpcRepository(ec2Client);
 		
-		monitor = new PollingStackMonitor(cfnRepository);	
-		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+	}
+
+	private AwsFacade createFacade(CfnRepository cfnRepository,
+			VpcRepository vpcRepository, MonitorStackEvents monitor) throws CannotFindVpcException {
+		AwsFacade aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 		aws.setCommentTag(test.getMethodName());
-		
-		Files.deleteIfExists(destFile);
 		aws.resetDeltaIndex(mainProjectAndEnv);
+		return aws;
 	}
 	
 	@After
 	public void afterAllTestsHaveRun() throws IOException, CfnAssistException {	
-		try {
-			aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
-		} catch (InvalidParameterException e) {
-			System.console().writer().write("Unable to properly rollback");
-			e.printStackTrace();
-		}
-		aws.resetDeltaIndex(mainProjectAndEnv);
+
 		deletesStacks.act();
-		Files.deleteIfExists(destFile);
 	}
 
 	@Test
 	public void shouldCreateTheStacksRequiredOnly() throws CfnAssistException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
-		List<StackId> stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
+		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);
+		AwsFacade aws = createFacade(cfnRepository, vpcRepository, monitor);
+		
+		List<StackId> stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackIds.size());
 		
@@ -99,28 +106,78 @@ public class TestExecuteScriptsInOrderFromDir {
 		}
 		
 		// we are up to date, should not apply the files again
-		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
+		stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		assertEquals(0, stackIds.size());
 		
-		// copy in extra files to dir
-		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
-		stackIds = aws.applyTemplatesFromFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
+		// copy in one extra files to dir
+		thirdFile = copyInFile(THIRD_FILE);
+		
+		stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		assertEquals(1, stackIds.size());
 		
-		expectedList.add(proj+env+"03createRoutes");
+		expectedList.add(formName("03createRoutes"));
 		assertEquals(expectedList.get(2), stackIds.get(0).getStackName());
 		
-		List<String> deletedStacks = aws.rollbackTemplatesInFolder(EnvironmentSetupForTests.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
+		// tidy up the stacks
+		List<String> deletedStacks = aws.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		assertEquals(3, deletedStacks.size());
 		assert(deletedStacks.containsAll(expectedList));
 		
 		int finalIndex = aws.getDeltaIndex(mainProjectAndEnv);
 		assertEquals(0, finalIndex);
+		
+		Files.deleteIfExists(thirdFile);
+	}
+	
+	@Test
+	public void shouldApplyDeltasAsStackUpdatesPollingMonitor() throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException {
+		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);
+		AwsFacade aws = createFacade(cfnRepository, vpcRepository, monitor);
+		
+		applyDeltasAsStackUpdates(aws);
+	}
+	
+	@Test
+	public void shouldApplyDeltasAsStackUpdatesSNSMonitor() throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
+		SNSMonitor monitor = new SNSMonitor(snsClient, sqsClient);
+		monitor.init();
+		AwsFacade aws = createFacade(cfnRepository, vpcRepository, monitor);
+		
+		applyDeltasAsStackUpdates(aws);
+	}
+
+	private void applyDeltasAsStackUpdates(AwsFacade aws)
+			throws InvalidParameterException, FileNotFoundException,
+			IOException, CfnAssistException, InterruptedException {
+		List<StackId> stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER, mainProjectAndEnv);
+		assertEquals(2, stackIds.size());
+		
+		// a delta updates an exitsing stack, so the stack id should be the same
+		assertEquals(stackIds.get(0), stackIds.get(1));
+		
+		VpcRepository vpcRepository = new VpcRepository(ec2Client);
+		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
+		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
+		assertEquals(1, subnets.size());
+		assertEquals("10.0.99.0/24", subnets.get(0).getCidrBlock()); // check CIDR from the delta script not the orginal one
+	}
+	
+	private Path copyInFile(String filename) throws IOException {
+		Path srcFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "holding", filename);
+		Path destFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, filename);
+		Files.deleteIfExists(destFile);
+
+		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
+		return destFile;
+	}
+
+	private String formName(String part) {
+		return proj+env+part;
 	}
 
 	private void createExpectedNames() {
-		expectedList.add(proj+env+"01createSubnet");
-		expectedList.add(proj+env+"02createAcls");
+		expectedList.add(formName("01createSubnet"));
+		expectedList.add(formName("02createAcls"));
 	}
 
 }

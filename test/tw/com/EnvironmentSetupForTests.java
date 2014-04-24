@@ -52,8 +52,6 @@ public class EnvironmentSetupForTests {
 	
 	public static final String TEMPORARY_STACK = "temporaryStack";
 
-	public static final String ORDERED_SCRIPTS_FOLDER = "src/cfnScripts/orderedScripts";
-
 	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources
 	public static final int DELETE_RETRY_LIMIT = 20;
 	public static final long DELETE_RETRY_INTERVAL = 10000;

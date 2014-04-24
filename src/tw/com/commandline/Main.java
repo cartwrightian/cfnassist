@@ -26,7 +26,6 @@ import tw.com.ProjectAndEnv;
 import tw.com.SNSMonitor;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
@@ -65,7 +64,7 @@ public class Main {
 		createActions();
 	}
 	
-	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException, StackCreateFailed {
+	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
 		Main main = new Main(args);
 		int result = main.parse();
 		System.exit(result);

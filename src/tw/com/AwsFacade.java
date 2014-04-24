@@ -23,7 +23,6 @@ import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
@@ -36,11 +35,15 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
+import com.amazonaws.services.cloudformation.model.UpdateStackResult;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class AwsFacade implements AwsProvider {
+	private static final String DELTA_EXTENSTION = ".delta";
+
 	private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
 	
 	public static final String ENVIRONMENT_TAG = "CFN_ASSIST_ENV";
@@ -54,6 +57,8 @@ public class AwsFacade implements AwsProvider {
 	private static final String PARAMETER_VPC = "vpc";
 	private static final String PARAMETER_BUILD_NUMBER = "build";
 	private static final String PARAM_PREFIX = "::";
+
+	private static final String PARAMETER_STACKNAME = "stackname";
 	
 	private AmazonCloudFormationClient cfnClient;
 	
@@ -95,7 +100,7 @@ public class AwsFacade implements AwsProvider {
 	
 
 	@Override
-	public StackId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, StackCreateFailed, IOException, InvalidParameterException, InterruptedException {
+	public StackId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
 		File file = new File(filename);
 		return applyTemplate(file, projAndEnv);
 	}
@@ -103,16 +108,82 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus, DuplicateStackException, StackCreateFailed {
+			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus, DuplicateStackException {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException, StackCreateFailed {
+	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
 
-		String contents = loadFileContents(file);	
+		String contents = loadFileContents(file);
+		
+		if (isDelta(file)) {
+			return updateStack(file, projAndEnv, userParameters, vpcForEnv,
+					declaredParameters, contents);
+		} else {
+			return createStack(file, projAndEnv, userParameters, vpcForEnv,
+					declaredParameters, contents);
+		}	
+	}
+
+	private boolean isDelta(File file) {
+		return (file.getName().contains(DELTA_EXTENSTION));
+	}
+
+	private StackId updateStack(File file, ProjectAndEnv projAndEnv,
+			Collection<Parameter> userParameters, Vpc vpcForEnv,
+			List<TemplateParameter> declaredParameters, String contents) throws FileNotFoundException, InvalidParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus {
+		logger.info("Request to update a stack, filename is " + file.getAbsolutePath());
+		
+		String vpcId = vpcForEnv.getVpcId();
+		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId );
+		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
+		
+		logger.info("Will attempt to update stack: " + stackName);
+		UpdateStackRequest updateStackRequest = new UpdateStackRequest();	
+		updateStackRequest.setParameters(parameters);
+		updateStackRequest.setStackName(stackName);
+		updateStackRequest.setTemplateBody(contents);
+		UpdateStackResult result = cfnClient.updateStack(updateStackRequest);
+
+		StackId id = new StackId(stackName,result.getStackId());
+		try {
+			monitor.waitForUpdateFinished(id);
+		} catch (WrongStackStatus stackFailedToCreate) {
+			logger.error("Failed to create stack",stackFailedToCreate);
+			cfnRepository.updateRepositoryFor(id);
+			throw stackFailedToCreate;
+		}
+		cfnRepository.updateRepositoryFor(id);
+		return id;
+			
+	}
+
+	private String findStackToUpdate(List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws InvalidParameterException {
+		for(TemplateParameter param : declaredParameters) {
+			if (param.getParameterKey().equals(PARAMETER_STACKNAME)) {
+				String defaultValue = param.getDefaultValue();
+				if ((defaultValue!=null) && (!defaultValue.isEmpty())) {
+					return createName(projAndEnv, defaultValue);
+				} else {
+					logger.error(String.format("Found parameter %s but no default given",PARAMETER_STACKNAME));
+					throw new InvalidParameterException(PARAMETER_STACKNAME); 
+				}
+			}
+		}
+		logger.error(String.format("Unable to find parameter %s which is required to peform a stack update", PARAMETER_STACKNAME));
+		throw new InvalidParameterException(PARAMETER_STACKNAME);
+	}
+
+	
+	private StackId createStack(File file, ProjectAndEnv projAndEnv,
+			Collection<Parameter> userParameters, Vpc vpcForEnv,
+			List<TemplateParameter> declaredParameters, String contents)
+			throws WrongNumberOfStacksException, NotReadyException,
+			WrongStackStatus, InterruptedException, DuplicateStackException,
+			InvalidParameterException, FileNotFoundException, IOException {
 		String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
 		
@@ -120,15 +191,8 @@ public class AwsFacade implements AwsProvider {
 		
 		String vpcId = vpcForEnv.getVpcId();
 		
-		Collection<Parameter> parameters  = new LinkedList<Parameter>();
-		parameters.addAll(userParameters);
+		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId);
 		
-		checkNoClashWithBuiltInParameters(parameters);
-		addBuiltInParameters(parameters, declaredParameters, projAndEnv, vpcId);
-		EnvironmentTag envTag = new EnvironmentTag(projAndEnv.getEnv());
-		addAutoDiscoveryParameters(envTag, file, parameters, declaredParameters);
-		
-		logAllParameters(parameters);
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
@@ -146,13 +210,30 @@ public class AwsFacade implements AwsProvider {
 		StackId id = new StackId(stackName,result.getStackId());
 		try {
 			monitor.waitForCreateFinished(id);
-		} catch (StackCreateFailed stackFailedToCreate) {
+		} catch (WrongStackStatus stackFailedToCreate) {
 			logger.error("Failed to create stack",stackFailedToCreate);
 			cfnRepository.updateRepositoryFor(id);
 			throw stackFailedToCreate;
 		}
 		cfnRepository.updateRepositoryFor(id);
 		return id;
+	}
+
+	private Collection<Parameter> createRequiredParameters(File file,
+			ProjectAndEnv projAndEnv, Collection<Parameter> userParameters,
+			List<TemplateParameter> declaredParameters, String vpcId)
+			throws InvalidParameterException, FileNotFoundException,
+			IOException {
+		Collection<Parameter> parameters  = new LinkedList<Parameter>();
+		parameters.addAll(userParameters);
+		
+		checkNoClashWithBuiltInParameters(parameters);
+		addBuiltInParameters(parameters, declaredParameters, projAndEnv, vpcId);
+		EnvironmentTag envTag = new EnvironmentTag(projAndEnv.getEnv());
+		addAutoDiscoveryParameters(envTag, file, parameters, declaredParameters);
+		
+		logAllParameters(parameters);
+		return parameters;
 	}
 
 	private void createSNSMonitoring(CreateStackRequest createStackRequest,
@@ -285,13 +366,22 @@ public class AwsFacade implements AwsProvider {
 		// note: aws only allows [a-zA-Z][-a-zA-Z0-9]* in stacknames
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
+		if (name.endsWith(DELTA_EXTENSTION)) {
+			logger.debug("Detected delta filename, remove additional extension");
+			name = FilenameUtils.removeExtension(name);
+		}
+		return createName(projAndEnv, name);
+	}
+
+	private String createName(ProjectAndEnv projAndEnv, String name) {
+		String project = projAndEnv.getProject();
+		String env = projAndEnv.getEnv();
 		if (projAndEnv.hasBuildNumber()) {
-			return projAndEnv.getProject()+projAndEnv.getBuildNumber()+projAndEnv.getEnv()+name;
+			return project+projAndEnv.getBuildNumber()+env+name;
 		} else {
-			return projAndEnv.getProject()+projAndEnv.getEnv()+name;
+			return project+env+name;
 		}
 	}
-	
 	
 	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv) {
 		String stackName = createStackName(templateFile, projectAndEnv);
@@ -302,8 +392,7 @@ public class AwsFacade implements AwsProvider {
 			logger.warn("Unable to find stack " + stackName);
 			return;
 		}
-		
-		
+				
 		logger.info("Found ID for stack: " + stackId);
 		deleteStackNonBlocking(stackName);
 		
@@ -388,7 +477,7 @@ public class AwsFacade implements AwsProvider {
 	@Override
 	public ArrayList<StackId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException {
-		ArrayList<StackId> createdStacks = new ArrayList<>();
+		ArrayList<StackId> updatedStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
 		List<File> files = loadFiles(folder);
@@ -407,8 +496,8 @@ public class AwsFacade implements AwsProvider {
 			if (deltaIndex>highestAppliedDelta) {
 				logger.info(String.format("Apply template file: %s, index is %s",file.getAbsolutePath(), deltaIndex));
 				StackId stackId = applyTemplate(file, projAndEnv, cfnParams);
-				logger.info("Create stack " + stackId);
-				createdStacks.add(stackId); 
+				logger.info("Create/Updated stack " + stackId);
+				updatedStacks.add(stackId); 
 				setDeltaIndex(projAndEnv, deltaIndex);
 			} else {
 				logger.info(String.format("Skipping file %s as already applied, index was %s", file.getAbsolutePath(), deltaIndex));
@@ -417,7 +506,7 @@ public class AwsFacade implements AwsProvider {
 		
 		logger.info("All templates successfully invoked");
 		
-		return createdStacks;
+		return updatedStacks;
 	}
 
 	private List<File> loadFiles(File folder) {

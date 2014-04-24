@@ -42,7 +42,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
@@ -220,7 +219,7 @@ public class SNSMonitor extends StackMonitor  {
 	@Override
 	public String waitForCreateFinished(StackId stackId)
 			throws WrongNumberOfStacksException, InterruptedException,
-			StackCreateFailed, NotReadyException, WrongStackStatus {
+			NotReadyException, WrongStackStatus {
 		guardForInit();
 		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE.toString(), Arrays.asList(CREATE_ABORTS));
 	}
@@ -232,7 +231,13 @@ public class SNSMonitor extends StackMonitor  {
 		return waitForStatus(stackId, StackStatus.DELETE_COMPLETE.toString(), Arrays.asList(DELETE_ABORTS));
 	}
 	
-
+	@Override
+	public String waitForUpdateFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException,
+			WrongStackStatus, NotReadyException {
+		guardForInit();
+		return waitForStatus(stackId, StackStatus.UPDATE_COMPLETE.toString(), Arrays.asList(UPDATE_ABORTS));
+	}
+	
 	@Override
 	public String waitForRollbackComplete(StackId id) throws NotReadyException, InterruptedException, WrongStackStatus {
 		guardForInit();
@@ -258,13 +263,13 @@ public class SNSMonitor extends StackMonitor  {
 			}
 			if (aborts.contains(status)) {
 				logger.error(String.format("Got an failure status %s while waiting for status %s", status, requiredStatus));
-				throw new WrongStackStatus(requiredStatus, status);
+				throw new WrongStackStatus(stackId, requiredStatus, status);
 			}
 			msgs.clear();
 			count++;
 		}
 		logger.error("Timed out waiting for status to change");
-		throw new WrongStackStatus(requiredStatus, status);
+		throw new WrongStackStatus(stackId, requiredStatus, status);
 	}
 
 	private void guardForInit() throws NotReadyException {
@@ -331,6 +336,5 @@ public class SNSMonitor extends StackMonitor  {
 		guardForInit();
 		return topicSnsArn;
 	}
-
 
 }

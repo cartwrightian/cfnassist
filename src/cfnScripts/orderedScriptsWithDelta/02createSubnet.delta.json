@@ -1,0 +1,47 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"02 - updates the CIDR block for the web subnet",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		},
+		"zoneA":{
+			"Type":"String",
+			"Default":"eu-west-1a",
+			"Description":"zoneADescription"
+		},
+		"zoneB":{
+			"Type":"String",
+			"Default":"eu-west-1b"
+		},
+		"stackname":{ 
+			"Type": "String",
+			"Default":"01createSubnet",
+			"Description":"The name of the stack to apply this update to"
+		}
+		
+	},
+	"Resources":{
+		"webSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"AvailabilityZone":{
+					"Ref":"zoneA"
+				},
+				"CidrBlock":"10.0.99.0/24",
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":"webSubnet"
+					}
+				],
+				"VpcId":{
+					"Ref":"vpc"
+				}	
+			}
+		}
+	}
+}

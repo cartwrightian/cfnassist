@@ -11,7 +11,6 @@ import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -29,7 +28,7 @@ public class ElbAction extends SharedAction {
 			String type, Collection<Parameter> cfnParams)
 			throws InvalidParameterException, FileNotFoundException,
 			IOException, WrongNumberOfStacksException, InterruptedException,
-			StackCreateFailed, CfnAssistException {
+			CfnAssistException {
 		
 		repository.updateInstancesMatchingBuild(projectAndEnv, type);
 	}

@@ -14,7 +14,6 @@ import tw.com.ELBRepository;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -32,7 +31,7 @@ public class DeleteAction extends SharedAction {
 	@Override
 	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, StackCreateFailed, CfnAssistException {
+			InterruptedException, CfnAssistException {
 		logger.info(String.format("Attempting to delete corresponding to %s and %s", filename, projectAndEnv));
 		File templateFile = new File(filename);
 		aws.deleteStackFrom(templateFile, projectAndEnv);	

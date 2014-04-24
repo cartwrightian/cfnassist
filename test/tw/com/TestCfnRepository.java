@@ -16,9 +16,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
@@ -119,13 +117,13 @@ public class TestCfnRepository {
 	}
 	
 	@Test
-	public void detectsRollbackStatusOfStack() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidParameterException, InterruptedException, WrongStackStatus, DuplicateStackException {
+	public void detectsRollbackStatusOfStack() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException {
 		
 		String name = "CfnAssistTestcausesRollBack";
 		try {
 			awsProvider.applyTemplate(new File(FilesForTesting.CAUSEROLLBACK), mainProjectAndEnv);
 			fail("Expected exception");
-		} catch (StackCreateFailed e) {
+		} catch (WrongStackStatus e) {
 			// expected
 		}
 		
@@ -141,7 +139,7 @@ public class TestCfnRepository {
 	}
 	
 	@Test
-	public void emptyStatusIfNoSuchStatck() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, NotReadyException, IOException, InvalidParameterException, InterruptedException {			
+	public void emptyStatusIfNoSuchStatck() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidParameterException, InterruptedException {			
 		String result = cfnRepository.getStackStatus("thisStackShouldNotExist");
 		
 		assertEquals(0, result.length());

@@ -11,9 +11,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.StackCreateFailed;
-import tw.com.exceptions.WrongNumberOfStacksException;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.StackStatus;
@@ -56,7 +53,7 @@ public class TestStackMonitors {
 	}
 	
 	@Test
-	public void ShouldCheckStackHasBeenCreated() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException {
+	public void ShouldCheckStackHasBeenCreated() throws CfnAssistException, InterruptedException, IOException {
 		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
 		assertEquals(CREATE_COMPLETE, pollingMonitor.waitForCreateFinished(id));
 	}
@@ -69,7 +66,7 @@ public class TestStackMonitors {
 	}
 	
 	@Test 
-	public void ShouldCheckStackHasBeenDeleted() throws WrongNumberOfStacksException, StackCreateFailed, InterruptedException, IOException {
+	public void ShouldCheckStackHasBeenDeleted() throws CfnAssistException, InterruptedException, IOException {
 		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
 		pollingMonitor.waitForCreateFinished(id);
 		new DeletesStacks(cfnClient).ifPresentNonBlocking(stackName).act(); 

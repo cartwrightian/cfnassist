@@ -6,7 +6,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
@@ -22,13 +21,14 @@ public class PollingStackMonitor extends StackMonitor {
 	}
 
 	@Override
-	public String waitForCreateFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, StackCreateFailed {	
+	public String waitForCreateFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, WrongStackStatus {	
 		String stackName = stackId.getStackName();
 		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(CREATE_ABORTS));
-		if (!result.equals(StackStatus.CREATE_COMPLETE.toString())) {
+		String expected = StackStatus.CREATE_COMPLETE.toString();
+		if (!result.equals(expected)) {
 			logger.error(String.format("Failed to create stack %s, status is %s", stackId, result));
 			logStackEvents(cfnRepository.getStackEvents(stackName));
-			throw new StackCreateFailed(stackId);
+			throw new WrongStackStatus(stackId, expected,result);
 		}
 		return result;
 	}
@@ -41,7 +41,7 @@ public class PollingStackMonitor extends StackMonitor {
 		String complete = StackStatus.ROLLBACK_COMPLETE.toString();
 		if (!result.equals(complete)) {
 			logger.error("Expected " + complete);
-			throw new WrongStackStatus(complete, result);
+			throw new WrongStackStatus(id, complete, result);
 		}
 		return result;
 	}
@@ -77,6 +77,22 @@ public class PollingStackMonitor extends StackMonitor {
 	@Override
 	public void init() {
 		// no op for polling monitor	
+	}
+
+	@Override
+	public String waitForUpdateFinished(StackId id) throws WrongNumberOfStacksException, InterruptedException, WrongStackStatus {
+		String stackName = id.getStackName();
+		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.UPDATE_IN_PROGRESS, Arrays.asList(UPDATE_ABORTS));
+		if (result.equals(StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS.toString())) {
+			logger.info("Update now in cleanup status");
+			result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS, Arrays.asList(UPDATE_ABORTS));
+		}
+		String complete = StackStatus.UPDATE_COMPLETE.toString();
+		if (!result.equals(complete)) {
+			logger.error("Expected " + complete);
+			throw new WrongStackStatus(id, complete, result);
+		}
+		return result;
 	}
 
 

@@ -18,7 +18,6 @@ import org.junit.rules.TestName;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.StackCreateFailed;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
@@ -49,7 +48,7 @@ public class TestELBSwitchOver {
 	private static DeletesStacks deleter;
 		
 	@BeforeClass
-	public static void beforeAllTestsOnce() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException, MissingArgumentException {
+	public static void beforeAllTestsOnce() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException, MissingArgumentException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
@@ -99,7 +98,7 @@ public class TestELBSwitchOver {
 	}
 	
 	@Test
-	public void testShouldFindELBInTheVPC() throws FileNotFoundException, WrongNumberOfStacksException, StackCreateFailed, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
+	public void testShouldFindELBInTheVPC() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
 		ELBRepository elbRepository = new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);	
 		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
 		
