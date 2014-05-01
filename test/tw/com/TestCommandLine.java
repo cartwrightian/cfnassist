@@ -141,6 +141,33 @@ public class TestCommandLine {
 	}
 	
 	@Test
+	public void testDeleteViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
+		String[] createArgs = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-file", FilesForTesting.SIMPLE_STACK,
+				"-build", "0915",
+				"-comment", testName
+				};
+		Main main = new Main(createArgs);
+		int createResult = main.parse();
+		assertEquals(0,createResult);
+		
+		String[] deleteArgs = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-delete", FilesForTesting.SIMPLE_STACK,
+				"-build", "0915",
+				"-comment", testName
+				};
+		main = new Main(deleteArgs);
+		int deleteResult = main.parse();
+		assertEquals(0,deleteResult);
+		
+		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
+	}
+	
+	@Test
 	public void testDeleteViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
 		String[] createArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 

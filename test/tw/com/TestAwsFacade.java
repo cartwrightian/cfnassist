@@ -126,19 +126,23 @@ public class TestAwsFacade {
 		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
 		
 		StackId before = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK), projectAndEnv);
-		List<Subnet> beforeSubnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
+		List<Subnet> beforeSubnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);	
+		String beforeID = cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "testSubnet");
 		
 		StackId after = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK_DELTA), projectAndEnv);
 		List<Subnet> afterSubnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
-		
+		String afterID = cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "testSubnet");
+
 		deletesStacks.ifPresent(before);
 		
 		assertEquals(before.getStackId(), after.getStackId()); // an update, so stack ID is the same
 		
 		assertEquals(1, beforeSubnets.size());
 		assertEquals("10.0.10.0/24", beforeSubnets.get(0).getCidrBlock());
-		assertEquals(1, afterSubnets.size()); // should have updated an existing subnet
+		assertEquals(1, afterSubnets.size()); // should have updated an existing subnet, so same number of subnets
 		assertEquals("10.0.99.0/24", afterSubnets.get(0).getCidrBlock());
+		
+		assertFalse(beforeID.equals(afterID)); // changing the CIDR means cloud formation recreates the subnet, meaning the physical ID changes
 	}
 	
 	@Test

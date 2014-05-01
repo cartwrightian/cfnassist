@@ -22,9 +22,9 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 
 public class CfnRepository {
+	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
+
 	private static final String AWS_EC2_INSTANCE_TYPE = "AWS::EC2::Instance";
-	private static final Logger logger = LoggerFactory
-			.getLogger(CfnRepository.class);
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1000;
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 	private AmazonCloudFormationClient cfnClient;
@@ -66,14 +66,12 @@ public class CfnRepository {
 		logger.info(String.format("Looking for resource matching logicalID: %s for %s",logicalId, envTag));
 		List<StackEntry> stacks = stacksMatchingEnv(envTag);
 		for (StackEntry stackEntry : stacks) {
-			String stackName = stackEntry.getStack().getStackName();
-			logger.debug(String.format("Checking stack %s for logical id %s",
-					stackName, logicalId));
+			String stackName = stackEntry.getStackName();
+			logger.debug(String.format("Checking stack %s for logical id %s", stackName, logicalId));
 			String maybeHaveId = findPhysicalIdByLogicalId(envTag, stackName, logicalId);
 			if (maybeHaveId != null) {
 				logger.info(String.format(
-						"Found physicalID: %s for logical ID: %s in stack %s",
-						maybeHaveId, logicalId, stackName));
+						"Found physicalID: %s for logical ID: %s in stack %s", maybeHaveId, logicalId, stackName));
 				return maybeHaveId;
 			}
 		}
@@ -194,8 +192,8 @@ public class CfnRepository {
 		}
 		String stackStatus = stack.getStackStatus();
 		stackEntries.add(entry);
-		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", 
-				stackName, envTag, stackStatus));			 
+		stackResources.removeResources(stackName);
+		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));			 
 	}
 
 	public void updateRepositoryFor(StackId id) {
