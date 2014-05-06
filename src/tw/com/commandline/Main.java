@@ -40,54 +40,28 @@ public class Main {
 	private Option envParam;
 	private Option regionParam;
 	private Option buildNumberParam;
-	private CommandLineAction fileAction;
-	private CommandLineAction dirAction;
-	private CommandLineAction resetAction;
-	private CommandLineAction rollbackAction;
-	private CommandLineAction initAction;
-	private CommandLineAction elbAction;
-	private CommandLineAction deleteAction;
-	//private CommandLineAction labelAction;
-
+	
 	private Options commandLineOptions;
 	private String[] args;
 	private String executableName;
 	private Option keysValuesParam;
 	private Option snsParam;
 	private Option commentParam;
+	private Actions commandActions;
 
 	public Main(String[] args) {
 		this.args = args;
 		executableName = "cfnassist";
 		commandLineOptions = new Options();
 		createOptions();
-		createActions();
+		commandActions = new Actions();
+		commandActions.addActionsTo(commandLineOptions);
 	}
 	
 	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
 		Main main = new Main(args);
 		int result = main.parse();
 		System.exit(result);
-	}
-
-	private void createActions() {
-		fileAction = new FileAction();
-		commandLineOptions.addOption(fileAction.getOption());
-		dirAction = new DirAction(); 
-		commandLineOptions.addOption(dirAction.getOption());
-		resetAction = new ResetAction();		
-		commandLineOptions.addOption(resetAction.getOption());
-		rollbackAction = new RollbackAction();		
-		commandLineOptions.addOption(rollbackAction.getOption());
-		initAction = new InitAction();	
-		commandLineOptions.addOption(initAction.getOption());
-		elbAction = new ElbAction();
-		commandLineOptions.addOption(elbAction.getOption());
-		deleteAction = new DeleteAction();
-		commandLineOptions.addOption(deleteAction.getOption());
-		// disabled, does not appear possible via the AWS API
-		//labelAction = new LabelAction();
-		//commandLineOptions.addOption(labelAction.getOption());
 	}
 
 	@SuppressWarnings("static-access")
@@ -131,22 +105,15 @@ public class Main {
 			
 			HelpFormatter formatter = new HelpFormatter();
 			
-			String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG, true);	
-			String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, true);
+			String project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG, false);	
+			String env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, false);
 			String region = checkForArgument(commandLine, formatter, regionParam, ENV_VAR_EC2_REGION, true);
 			String buildNumber = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
 			Boolean sns = checkForArgumentPresent(commandLine, formatter, snsParam);
 			String comment = checkForArgument(commandLine, formatter, commentParam, "", false);
 			Collection<Parameter> cfnParams = checkForCfnParameters(commandLine, formatter, keysValuesParam);
-			List<CommandLineAction> actions = new LinkedList<CommandLineAction>();
-			actions.add(dirAction);
-			actions.add(fileAction);
-			actions.add(resetAction);
-			actions.add(rollbackAction);
-			actions.add(initAction);
-			actions.add(elbAction);
-			actions.add(deleteAction);
-			CommandLineAction action = selectCorrectActionFromArgs(commandLine, formatter, actions);	
+
+			CommandLineAction action = commandActions.selectCorrectActionFromArgs(commandLine, formatter, executableName, commandLineOptions );	
 			
 			Region awsRegion = populateRegion(region);
 			FacadeFactory factory = new FacadeFactory(awsRegion, project);
@@ -224,40 +191,21 @@ public class Main {
 		return result;
 	}
 
-	private CommandLineAction selectCorrectActionFromArgs(CommandLine cmd, HelpFormatter formatter, 
-			List<CommandLineAction> actions) throws MissingArgumentException {
-		int count = 0;
-		CommandLineAction matchingAction = null;
-		StringBuilder names = new StringBuilder();
-		for(CommandLineAction action : actions) {
-			names.append(action.getArgName()).append(" ");
-			if (cmd.hasOption(action.getArgName())) {
-				matchingAction = action;
-				count++;
-			}	
-		}
-
-		if (count!=1) {
-			String msg = "Please supply only one of " + names.toString();
-			logger.error(msg);	
-			formatter.printHelp(executableName, commandLineOptions);
-			throw new MissingArgumentException(msg);
-		}		
-		return matchingAction;		
-	}
-
 	private String checkForArgument(CommandLine cmd, HelpFormatter formatter,
 			Option option, String environmentalVar, boolean required) throws MissingArgumentException {
 		String argName = option.getArgName();
 		logger.debug("Checking for arg " + argName);
 		if (cmd.hasOption(argName)) {
-			return cmd.getOptionValue(argName);
+			String optionValue = cmd.getOptionValue(argName);
+			logger.info("Got value " + optionValue);
+			return optionValue;
 		}
 		
 		if (!environmentalVar.isEmpty()) {
 			logger.info(String.format("Argument not given %s, try environmental var %s", argName, environmentalVar));
 			String fromEnv = System.getenv(environmentalVar);
 			if (fromEnv!=null) {
+				logger.info("Got value " + fromEnv);
 				return fromEnv;
 			}
 		}

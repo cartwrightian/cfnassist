@@ -8,10 +8,12 @@ public class StackEntry {
 	private EnvironmentTag environmentTag;
 	private Stack stack;
 	private String buildNumber = "";
+	private String project;
 
-	public StackEntry(EnvironmentTag environmentTag, Stack stack) {
+	public StackEntry(String project, EnvironmentTag environmentTag, Stack stack) {
 		this.environmentTag = environmentTag;
 		this.stack = stack;
+		this.project = project;
 	}
 
 	public EnvironmentTag getEnvTag() {
@@ -68,6 +70,10 @@ public class StackEntry {
 
 	public String getStackName() {
 		return stack.getStackName();
+	}
+
+	public String getProject() {
+		return project;
 	}
 
 

@@ -11,15 +11,12 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStackEventsRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStackEventsResult;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesResult;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.Tag;
 
 public class CfnRepository {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
@@ -29,21 +26,16 @@ public class CfnRepository {
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 	private AmazonCloudFormationClient cfnClient;
 
-	private StackResources stackResources;
-	private List<StackEntry> stackEntries;
-	private String project;
-
+	private StackCache stackCache;
 	public CfnRepository(AmazonCloudFormationClient cfnClient, String project) {
 		this.cfnClient = cfnClient;
-		stackResources = new StackResources();
-		stackEntries = new LinkedList<StackEntry>();
-		this.project = project;
+		stackCache = new StackCache(cfnClient, project);
 	}
 	
 	public List<StackEntry> stacksMatchingEnvAndBuild(EnvironmentTag envTag, String buildNumber) {
 		List<StackEntry> stacks = new LinkedList<StackEntry>();
-		List<StackEntry> candidateStacks = getAllStacksForProject();
-		for (StackEntry entry : candidateStacks) {
+		
+		for (StackEntry entry : stackCache.getEntries()) {
 			if (entry.getEnvTag().equals(envTag) && entry.getBuildNumber().equals(buildNumber)) {
 				stacks.add(entry);
 			}
@@ -53,8 +45,7 @@ public class CfnRepository {
 
 	public List<StackEntry> stacksMatchingEnv(EnvironmentTag envTag) {
 		List<StackEntry> stacks = new LinkedList<StackEntry>();
-		List<StackEntry> candidateStacks = getAllStacksForProject();
-		for (StackEntry entry : candidateStacks) {
+		for (StackEntry entry : stackCache.getEntries()) {
 			if (entry.getEnvTag().equals(envTag)) {
 				stacks.add(entry);
 			}
@@ -85,7 +76,7 @@ public class CfnRepository {
 				stackName, logicalId));
 
 		try {
-			List<StackResource> resources = getResourcesForStack(stackName);
+			List<StackResource> resources = stackCache.getResourcesForStack(stackName);
 			logger.debug(String.format("Found %s resources for stack %s",
 					resources.size(), stackName));
 			for (StackResource resource : resources) {
@@ -105,104 +96,6 @@ public class CfnRepository {
 		}
 
 		return null;
-	}
-
-	private List<StackResource> getResourcesForStack(String stackName) {
-
-		List<StackResource> resources = null;
-		if (stackResources.containsStack(stackName)) {
-			logger.info("Cache hit on stack resources for stack " + stackName);
-			resources = stackResources.getStackResources(stackName);
-		} else {
-			logger.info("Cache miss, loading resources for stack " + stackName);
-			DescribeStackResourcesRequest request = new DescribeStackResourcesRequest();
-			request.setStackName(stackName);
-			DescribeStackResourcesResult results = cfnClient
-					.describeStackResources(request);
-
-			resources = results.getStackResources();
-			stackResources.addStackResources(stackName, resources);
-		}
-		return resources;
-	}
-
-	private List<StackEntry> getAllStacksForProject() {
-		// TODO handle "next token"?
-
-		if (stackEntries.size() == 0) {
-			logger.info("No cached stacks, loading all stacks");
-			DescribeStacksRequest describeStackRequest = new DescribeStacksRequest();
-			DescribeStacksResult results = cfnClient.describeStacks(describeStackRequest);
-
-			List<Stack> stacks = results.getStacks();
-			populateEntriesIfProjectMatches(stacks);
-			logger.info(String.format("Loaded %s stacks", stackEntries.size()));
-		} else {
-			logger.info("Cache hit on stacks");
-		}
-		return stackEntries;
-	}
-
-	private void populateEntriesIfProjectMatches(List<Stack> stacks) {
-		logger.info(String.format("Populating stack entries for %s stacks",stacks.size()));
-		for(Stack stack : stacks) {
-
-			logger.info(String.format("Checking stack %s for tag", stack.getStackName()));
-		
-			List<Tag> tags = stack.getTags();
-			int count = 3;
-			String env = "";
-			String proj = "";
-			String build = "";
-			for(Tag tag : tags) {
-				String key = tag.getKey();
-				String value = tag.getValue();
-				if (key.equals(AwsFacade.ENVIRONMENT_TAG)) {
-					env = value;
-					count--;
-				} else if (key.equals(AwsFacade.PROJECT_TAG)) {
-					proj = value;
-					count--;
-				} else if (key.equals(AwsFacade.BUILD_TAG)) {
-					build = value;
-					count--;
-				}
-				if (count==0) break; // small optimisation 
-			}
-			addEntryIfProjectAndEnvMatches(stack, env, proj, build);
-		}		
-	}
-
-	private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, String build) {
-		String stackName = stack.getStackName();
-		if (!proj.equals(project) || (env.isEmpty())) {
-			logger.warn(String.format("Could not match expected tag (%s) for stack %s", AwsFacade.ENVIRONMENT_TAG, stackName));
-		}
-			
-		logger.info(String.format("Stack %s matched %s and %s", stackName, env, proj));
-		EnvironmentTag envTag = new EnvironmentTag(env);
-		StackEntry entry = new StackEntry(envTag, stack);
-		if (!build.isEmpty()) {
-			logger.info(String.format("Saving associated build number (%s) into stack %s", build, stackName));
-			entry.setBuildNumber(build);
-		}
-		if (stackEntries.contains(entry)) {
-			stackEntries.remove(entry);
-			logger.info("Replacing or Removing entry for stack " + stackName);
-		}
-		String stackStatus = stack.getStackStatus();
-		stackEntries.add(entry);
-		stackResources.removeResources(stackName);
-		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));			 
-	}
-
-	public void updateRepositoryFor(StackId id) {
-		logger.info("Update stack repository for stack: " + id);
-		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(id.getStackName());
-		DescribeStacksResult results = cfnClient.describeStacks(describeStacksRequest);
-
-		populateEntriesIfProjectMatches(results.getStacks());
 	}
 
 	public String waitForStatusToChangeFrom(String stackName,
@@ -256,8 +149,7 @@ public class CfnRepository {
 
 	public String getStackStatus(String stackName) {
 		logger.info("Getting stack status for " + stackName);
-		List<StackEntry> stacks = getAllStacksForProject();
-		for (StackEntry entry : stacks) {
+		for (StackEntry entry : stackCache.getEntries()) {
 			Stack stack = entry.getStack();
 			if (stack.getStackName().equals(stackName)) {
 				// get latest status
@@ -330,7 +222,7 @@ public class CfnRepository {
 
 	private List<String> findInstancesForStack(Stack stack) {
 		List<String> instanceIds = new LinkedList<String>();
-		List<StackResource> resources = getResourcesForStack(stack.getStackName());
+		List<StackResource> resources = stackCache.getResourcesForStack(stack.getStackName());
 		for (StackResource resource : resources) {
 			String type = resource.getResourceType();
 			if (type.equals(AWS_EC2_INSTANCE_TYPE)) {
@@ -342,12 +234,31 @@ public class CfnRepository {
 	}
 
 	public Stack getStack(String stackName) throws WrongNumberOfStacksException {
-		for(StackEntry entry : stackEntries) {
+		for(StackEntry entry : stackCache.getEntries()) {
 			if (entry.getStackName().equals(stackName)) {
 				return entry.getStack();
 			}
 		}
 		return describeStack(stackName);
 	}
+	
+	public List<StackEntry> getStacks() {
+		return stackCache.getEntries();
+	}
+
+	public List<StackEntry> getStacks(EnvironmentTag envTag) {
+		List<StackEntry> results = new LinkedList<StackEntry>();
+		for(StackEntry entry : stackCache.getEntries()) {
+			if (entry.getEnvTag().equals(envTag)) {
+				results.add(entry);
+			}
+		}
+		return results;	
+	}
+
+	public void updateRepositoryFor(StackId id) {
+		stackCache.updateRepositoryFor(id);		
+	}
+
 
 }

@@ -238,6 +238,19 @@ public class TestAwsFacade {
 		}	
 		deletesStacks.ifPresent("CfnAssistTestcausesRollBack");
 	}
+	
+	@Test
+	public void canListOutCfnAssistStacks() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException {
+		aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);
+		
+		List<StackEntry> results = aws.listStacks(projectAndEnv);
+		
+		assertEquals(1, results.size());
+		StackEntry stackEntry = results.get(0);
+		assertEquals("CfnAssistTestsimpleStack", stackEntry.getStackName());
+		assertEquals("Test", stackEntry.getEnvTag().getEnv());
+		assertEquals("CfnAssist", stackEntry.getProject());
+	}
 
 	@Test
 	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {

@@ -37,4 +37,12 @@ public class LabelAction extends SharedAction {
 		//aws.initEnvAndProjectForStack(stackname, projectAndEnv);
 	}
 
+	@Override
+	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
+			String argumentForAction, Collection<Parameter> cfnParams)
+			throws CommandLineException {
+		guardForProjectAndEnv(projectAndEnv);	
+		guardForNoBuildNumber(projectAndEnv);		
+	}
+
 }

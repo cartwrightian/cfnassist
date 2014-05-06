@@ -2,7 +2,9 @@ package tw.com;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.After;
@@ -17,7 +19,6 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Vpc;
-
 import tw.com.commandline.Main;
 import tw.com.exceptions.CannotFindVpcException;
 
@@ -138,6 +139,43 @@ public class TestCommandLine {
 		int result = main.parse();
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0,result);
+	}
+	
+	@Test
+	public void testListStacks() throws InterruptedException, TimeoutException {
+        PrintStream origStream = System.out;
+
+		String[] create = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-file", FilesForTesting.SIMPLE_STACK,
+				"-comment", testName
+				};
+		Main main = new Main(create);
+		int status = main.parse();
+		
+		String[] list = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-ls"
+				};
+		
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		PrintStream output = new PrintStream(stream);
+		System.setOut(output);
+		
+		main = new Main(list);
+		status = main.parse();
+		
+		String result = stream.toString();
+		String lines[] = result.split("\\r?\\n");
+
+		assertEquals(2, lines.length);
+		assertEquals("CfnAssistTestsimpleStack\tCfnAssist\tTest", lines[1]);
+
+		System.setOut(origStream);
+		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
+		assertEquals(0, status);
 	}
 	
 	@Test

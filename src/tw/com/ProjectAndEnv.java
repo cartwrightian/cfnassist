@@ -9,6 +9,7 @@ public class ProjectAndEnv {
 
 	public ProjectAndEnv(String project, String env) {
 		useSns = false;
+		// TODO guard clause on project and env being empty??
 		this.project = project;
 		this.env = env;
 	}
@@ -80,6 +81,14 @@ public class ProjectAndEnv {
 
 	public EnvironmentTag getEnvTag() {
 		return new EnvironmentTag(env);
+	}
+
+	public boolean hasProject() {
+		return project!=null && !project.isEmpty();
+	}
+
+	public boolean hasEnv() {
+		return !env.isEmpty();
 	}
 	
 }

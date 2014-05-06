@@ -612,6 +612,15 @@ public class AwsFacade implements AwsProvider {
 		}	
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
 	}
+	
+
+	@Override
+	public List<StackEntry> listStacks(ProjectAndEnv projectAndEnv) {
+		if (projectAndEnv.hasEnv()) {
+			return cfnRepository.getStacks(projectAndEnv.getEnvTag());
+		}
+		return cfnRepository.getStacks();
+	}
 
 //	@Override
 //	@Deprecated

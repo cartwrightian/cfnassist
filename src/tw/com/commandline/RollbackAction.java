@@ -28,4 +28,12 @@ public class RollbackAction extends SharedAction {
 		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
 	}
 
+	@Override
+	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
+			String argumentForAction, Collection<Parameter> cfnParams)
+			throws CommandLineException {
+		guardForProjectAndEnv(projectAndEnv);
+		guardForNoBuildNumber(projectAndEnv);	
+	}
+
 }

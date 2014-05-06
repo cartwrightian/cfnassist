@@ -27,4 +27,12 @@ public class ResetAction extends SharedAction {
 		aws.resetDeltaIndex(projectAndEnv);	
 	}
 
+	@Override
+	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
+			String argumentForAction, Collection<Parameter> cfnParams)
+			throws CommandLineException {
+		guardForProjectAndEnv(projectAndEnv);
+		guardForNoBuildNumber(projectAndEnv);	
+	}
+
 }

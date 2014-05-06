@@ -36,6 +36,7 @@ public class ElbAction extends SharedAction {
 	@Override
 	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
 			String argumentForAction, Collection<Parameter> cfnParams) throws CommandLineException {
+		guardForProjectAndEnv(projectAndEnv);
 		if (!projectAndEnv.hasBuildNumber()) {
 			throw new CommandLineException("You must provide the build parameter");
 		}

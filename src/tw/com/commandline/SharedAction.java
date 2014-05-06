@@ -1,13 +1,8 @@
 package tw.com.commandline;
 
-import java.util.Collection;
-
 import org.apache.commons.cli.Option;
 
-import tw.com.AwsFacade;
 import tw.com.ProjectAndEnv;
-
-import com.amazonaws.services.cloudformation.model.Parameter;
 
 public abstract class SharedAction implements CommandLineAction {
 
@@ -22,13 +17,32 @@ public abstract class SharedAction implements CommandLineAction {
 	public String getArgName() {
 		return option.getArgName();
 	}
-	
-	@Override
-	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
-			String argumentForAction, Collection<Parameter> cfnParams) throws CommandLineException {
-		if (projectAndEnv.hasBuildNumber()) {
-			throw new CommandLineException("Build number parameter is not valid with action: " + getArgName());
+
+	protected void guardForProjectAndEnv(ProjectAndEnv projectAndEnv)
+			throws CommandLineException {
+				guardForProject(projectAndEnv);
+				guardForEnv(projectAndEnv);
+			}
+
+	private void guardForEnv(ProjectAndEnv projectAndEnv)
+			throws CommandLineException {
+		if (!projectAndEnv.hasEnv()) {
+			throw new CommandLineException("Must provide env");
 		}
 	}
 
+	protected void guardForProject(ProjectAndEnv projectAndEnv)
+			throws CommandLineException {
+		if (!projectAndEnv.hasProject()) {
+			throw new CommandLineException("Must provide project");
+		}
+	}
+
+	protected void guardForNoBuildNumber(ProjectAndEnv projectAndEnv)
+			throws CommandLineException {
+				if (projectAndEnv.hasBuildNumber()) {
+					throw new CommandLineException("Build number parameter is not valid with action: " + getArgName());
+				}
+			}
+	
 }

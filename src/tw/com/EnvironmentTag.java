@@ -38,4 +38,8 @@ public class EnvironmentTag {
 		this.env = env;
 	}
 
+	public String getEnv() {
+		return env;
+	}
+
 }

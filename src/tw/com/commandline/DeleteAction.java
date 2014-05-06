@@ -39,8 +39,8 @@ public class DeleteAction extends SharedAction {
 	
 	@Override
 	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
-			String argumentForAction, Collection<Parameter> cfnParams) {
-		// all parameters are valid with this action
+			String argumentForAction, Collection<Parameter> cfnParams) throws CommandLineException {
+		guardForProjectAndEnv(projectAndEnv);
 	}
 
 }
