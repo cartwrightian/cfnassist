@@ -40,7 +40,8 @@
     	<path refid="apacheCommons"/>
     	<path refid="ant_libs"/>
     </path>
-	
+
+	<!-- set up the custom task, your classpath may vary -->	
 	<target name="cfnTask" >
 		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
 			<classpath>
@@ -51,9 +52,11 @@
 			</classpath>
 		</taskdef>
 	</target>
-	
+
+	<!-- used for testing -->	
 	<target name="test" depends="testSimpleTemplateAndDelete,testSimpleTemplateBuildNumber,testSimpleTemplateWithParam,testSimpleDir,testSimpleSNS" />
-		
+	
+	<!-- creates a cfn a cfn stack based on subnet.json, then deletes it again -->	
 	<target name="testSimpleTemplateAndDelete" depends="cfnTask">
 		<sequential>
 			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
@@ -63,6 +66,8 @@
 		</sequential>
 	</target>
 	
+	<!-- creates a cfn a cfn stack based on subnet.json, then deletes it again -->	
+	<!-- uses SNS to monitoring the stack creation and deletion -->
 	<target name="testSimpleSNS" depends="cfnTask">
 			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true">
 				<Templates target="src/cfnScripts/simpleStack.json"/>
@@ -70,6 +75,7 @@
 			</cfnassist>
 	</target>
 	
+	<!-- creates a cfn a cfn stack based on subnet.json, then deletes it again. Includes a build number. -->	
 	<target name="testSimpleTemplateBuildNumber" depends="cfnTask">
 		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" buildNumber="42">
 			<Templates target="src/cfnScripts/subnet.json"/>
@@ -77,6 +83,7 @@
 		</cfnassist>
 	</target>
 	
+	<!-- creates a cfn a cfn stack based on subnetWithParam.json, then deletes it again. Passes parameters through to the script. -->	
 	<target name="testSimpleTemplateWithParam" depends="cfnTask">
 		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
 			<Templates target="src/cfnScripts/subnetWithParam.json"/>
@@ -85,12 +92,15 @@
 			<Delete target="src/cfnScripts/subnetWithParam.json"/>
 		</cfnassist>
 	</target>
-		
+	
+	<!-- applies all the scripts in the orderedScripts directory as appropriate, then it rolls then all back again -->	
 	<target name="testSimpleDir" depends="cfnTask">
 		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
 		    <Templates target="src/cfnScripts/orderedScripts/"/>
 			<Rollback target="src/cfnScripts/orderedScripts/"/>
 		</cfnassist>	
 	</target>
+
+	<!-- TODO Add test/example ELB switchover -->
 	
 </project>

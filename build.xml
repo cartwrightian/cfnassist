@@ -70,7 +70,7 @@
 	
     <target name="clean">
         <delete dir="${output}"/>
-    	<delete dir="bin"/>
+    	<delete dir="dist"/>
     </target>
 	
     <target depends="init" name="build">
@@ -115,30 +115,34 @@
     </target>
 	
 	<target name="dist" depends="build">
-	        <mkdir dir="bin"/>
-	        <mkdir dir="bin/lib"/>
-	    	<mkdir dir="bin/conf"/>
-	        <copy file="src/cfnassist.sh" todir="bin"/>
-			<chmod file="bin/cfnassist.sh" perm="700"/>
-			<jar destfile="bin/cfnassist.jar">
+	        <mkdir dir="dist"/>
+	        <mkdir dir="dist/bin"/>
+	        <mkdir dir="dist/bin/lib"/>
+	    	<mkdir dir="dist/bin/conf"/>
+	        <copy file="src/cfnassist.sh" todir="dist/bin"/>
+			<chmod file="dist/bin/cfnassist.sh" perm="700"/>
+			<!-- TODO single jar file with all libs -->
+			<jar destfile="dist/bin/cfnassist.jar">
 			    <fileset dir="${output}"/>
 			    <manifest>
 			      <attribute name="Main-Class" value="tw.com.Main"/>
 			    </manifest>
 			</jar>
-	        <copy flatten="true" todir="bin/lib">
+	        <copy flatten="true" todir="dist/bin/lib">
 	            <path>
 					<path refid="aws_sdk_lib"/>
 		        	<path refid="logging_libs"/>
 	            	<path refid="apacheCommons"/>
 	            </path>
 	        </copy>
-			<copy flatten="false" todir="bin/licenses">
+			<copy flatten="false" todir="dist/licenses">
 				<fileset dir="${basedir}" casesensitive="yes">
 				  <include name="**/*LICENSE.txt"/>
 				</fileset>
 			</copy>
-	    	<copy file="conf/logback.xml" todir="bin/conf"/>
+	    	<copy file="conf/logback.xml" todir="dist/bin/conf"/>
+	    	<copy file="testAntTasks.xml" tofile="dist/exampleAntTasks.xml"/>
+	    	<copy file="README.md" todir="dist"/>
 	</target>
 	
 </project>

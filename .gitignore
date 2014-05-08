@@ -3,7 +3,12 @@
 # Package Files #
 *.war
 *.ear
+*.swp
+*.log
+junit
 
 .DS_Store
-/bin
-/bin
+/dist
+/out
+/build
+
