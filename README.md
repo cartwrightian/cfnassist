@@ -3,6 +3,10 @@ cfnassit
 
 cfnassit to a tool help with [cloud formation](http://aws.amazon.com/cloudformation/) deployments into [AWS](http://aws.amazon.com/) VPCs
 
+Build Status
+------------
+[![Build Status](https://snap-ci.com/cartwrightian/cfnassist/branch/master/build_image)](https://snap-ci.com/cartwrightian/cfnassist/branch/master)
+
 Key Features
 ------------
 * Works with the existing syntax of cloud formation json, it just uses some simple conventions for parameters
@@ -31,8 +35,7 @@ Notes
 
 Documentation TODOs
 -------------------
-* Document the ls command
-* Document the use of the SNS monitoring option
+* Mention rate limits and the caching approach?
 * Add links to the various *example json files in the test/cfnScripts folder*
 
 CLI HowTo
@@ -204,7 +207,15 @@ This is probably the more normal way to create instances, for example if you are
 This will create a stack, with it and the instances tagged additionally with **CFN_ASSIST_BUILD_NUMBER**, 
 the stack name will also include the build number.
 
-7.Pass parameters into the cloud formation scripts
+7.List out the stacks
+---------------------
+*Work in progress: display format, not having to give the project, plus list out managed VPCs*
+
+You can list out the stacks cfnassit is managing for a particular project/env using
+
+`cfnassist.sh -env Dev -ls` 
+
+8.Pass parameters into the cloud formation scripts
 --------------------------------------------------
 
 You can declare the parameters exactly as you would for cloud formation. You can then pass values into them using the `parameters` argument.
@@ -213,7 +224,7 @@ You can declare the parameters exactly as you would for cloud formation. You can
 
 *Note: You'll need to escape the ; character as appropriate for your shell/cli*
 
-8.Switch over ELB instances using Build Number
+9.Switch over ELB instances using Build Number
 ----------------------------------------------
 
 This lets you switch over the instances an ELB is pointing at based on *build number* and a special tag **CFN_ASSIST_TYPE**. 
@@ -234,7 +245,7 @@ It then finds the ELB for the VPC for the project and environment, addes the ins
 
 *Restriction: The tool currently only supports one ELB per VPC*
 
-9.Reset the delta tag on a VPC
+10.Reset the delta tag on a VPC
 ------------------------------
 
 **Use with CARE!** 
@@ -244,3 +255,24 @@ This will reset the delta index tag on the corresponding VPC back to 0.
 `cfnassist.sh -env Dev -reset`
 
 *If you have cloud formation stacks associated with the VPC you will not be able to manage them using cfnassit if you do this.*
+
+11.Using SNS instead of polling for stack monitoring
+----------------------------------------------------
+By default cfnassist uses polling to check the status of stacks being created/updated/deleted. 
+Cloud formation has the ability to publish SNS notifications as the status of a stack changes, 
+and cfn assit can use these instead of polling to track status.
+
+This avoids using polling meaning less network traffic and less chance of hitting 'rate limits' on the API
+
+If you specify `-sns` on the commandline then cfnassit will 
+
+1. Create a SNS topic using the name *CFN_ASSIST_EVENTS* (if it does not exist already)
+2. Create a SQS queue using the name *CFN_ASSIST_EVENT_QUEUE* (again, only if required)
+3. Create a policy meaning that SNS can publish the notifications to the queue. (and again, only if requied)
+4. Finally it will subscribe the Queue to the SNS notifications.
+
+
+
+
+
+
