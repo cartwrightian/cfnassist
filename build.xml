@@ -53,7 +53,7 @@
     	<path refid="ant_libs"/>
     </path>
 	
-    <target name="init">
+    <target name="init" depends="clean">
         <mkdir dir="${output}"/>
         <copy includeemptydirs="false" todir="${output}">
             <fileset dir="src">
@@ -115,7 +115,7 @@
         </junitreport>
     </target>
 	
-	<target name="dist" depends="clean,init,build">
+	<target name="dist" depends="build">
 	        <mkdir dir="bin"/>
 	        <mkdir dir="bin/lib"/>
 	    	<mkdir dir="bin/conf"/>
