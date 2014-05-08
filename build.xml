@@ -133,6 +133,11 @@
 	            	<path refid="apacheCommons"/>
 	            </path>
 	        </copy>
+			<copy flatten="false" todir="bin/licenses">
+				<fileset dir="${basedir}" casesensitive="yes">
+				  <include name="**/*LICENSE.txt"/>
+				</fileset>
+			</copy>
 	    	<copy file="conf/logback.xml" todir="bin/conf"/>
 	</target>
 	
