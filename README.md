@@ -18,7 +18,7 @@ Key Features
 
 Usage
 -----
-The tool provides a command line interface and ant tasks. Example of the CLI use below, see `exampleAntTasks.xml` for ant task usage. 
+The tool provides a command line interface and ant tasks. Examples of the CLI use below, see `exampleAntTasks.xml` for ant task usage. 
 
 Warning
 -------
@@ -41,8 +41,8 @@ Documentation TODOs
 CLI HowTo
 ---------
 
-Example command lines assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set, `cfn\_assist.sh` on the PATH
-and **EC2\_REGION** environmental variable is set to the appropriate AWS region.
+The example CLIs below assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set to your project, that `cfn\_assist.sh` 
+is on the PATH and the **EC2\_REGION** environmental variable is set to the appropriate AWS region.
 
 1.Create a VPC and initialise with a Project and Environment
 -------------------------------------------------------------
@@ -123,7 +123,7 @@ In this example **::natSubnet** triggers to cfn assist find the right Physical I
 it does this by scanning the stacks associated with the current VPC for that logical ID. 
 Also note the tool automatically injects the correct VPC and env (i.e. dev, UAT, Prod, etc).
 
-This will apply all the cfn scripts found in the infrastructure dir in order, the cloud formation stacks created will include the project and env in their name as well as the filename. There are also tagged with the project and env (and build number if present, more on that below....)
+So the example above will apply all the cfn scripts found in the infrastructure dir in order, the cloud formation stacks created will include the project and env in their name as well as the filename. There are also tagged with the project and env (and build number if present, more on that below....)
 
 *Results*
 
@@ -151,7 +151,7 @@ being *recreated*.
 **Use with CARE!** 
 
 This will rollback all delta's by deleting the stacks for a VPC in the correct order and updating the DELTA tag on the VPC as it goes! 
-You may want to this while getting things bedded in initially while you still have just the one environment i.e. Dev or Test
+You may want to do this while getting things bedded in initially or when you want to check you can fully recreate an environment.
 
 `cfnassist.sh -env Dev -rollback ./infrastructure`
 
@@ -204,7 +204,7 @@ This is probably the more normal way to create instances, for example if you are
 
 `cfnassist.sh -env Dev -file ./rdsInstance.json -build 876`
 
-This will create a stack, with it and the instances tagged additionally with **CFN_ASSIST_BUILD_NUMBER**, 
+This will create a stack, with the stack and the instances tagged additionally with **CFN_ASSIST_BUILD_NUMBER**, 
 the stack name will also include the build number.
 
 7.List out the stacks
@@ -229,7 +229,7 @@ You can declare the parameters exactly as you would for cloud formation. You can
 
 This lets you switch over the instances an ELB is pointing at based on *build number* and a special tag **CFN_ASSIST_TYPE**. 
 
-You need to set this *type tag* on the instances yourself, for example includint the following in your instance definition:
+You need to set this *type tag* on the instances yourself, for example including the following in your instance definition:
 
 >"Tags": [  
 >                  { "Key" : "Name", "Value": "aTestInstance" },  
@@ -240,8 +240,10 @@ Now you can switch over the ELB using
 
 `cfnassist.sh -env Dev -build 876 -elbUpdate web`
 
-This will finds instances created in cloud formation stacks *and* that have the appropriate **CFN_ASSIST_TYPE** tag. 
-It then finds the ELB for the VPC for the project and environment, addes the instances to the ELB and *removes* any instances not making the build.
+This will find all the instances created in cloud formation stacks for the project/env *and* that have the 
+appropriate **CFN_ASSIST_TYPE** tag. 
+It then finds the ELB for the VPC for the project and environment, addes the instances to the ELB and *removes* any instances not 
+matching the build number.
 
 *Restriction: The tool currently only supports one ELB per VPC*
 
@@ -271,7 +273,8 @@ If you specify `-sns` on the commandline then cfnassit will
 3. Create a policy meaning that SNS can publish the notifications to the queue. (and again, only if requied)
 4. Finally it will subscribe the Queue to the SNS notifications.
 
-
+If you try to update/delete a stack using the SNS option when the stack was not originally created with the flag set this will fail. 
+As the cloud formation API now allows a stack to have the sns topic updated this restriction should soon be removed.
 
 
 
