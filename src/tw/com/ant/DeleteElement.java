@@ -38,7 +38,7 @@ private File target;
 		
 		CommandLineAction actionToInvoke = new DeleteAction();
 
-		actionToInvoke.validate(aws, projectAndEnv, absolutePath, cfnParams);
+		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams);
 		actionToInvoke.invoke(aws, repository, projectAndEnv, absolutePath, cfnParams);		
 	}
 

@@ -47,7 +47,6 @@ public class Actions {
 		return matchingAction;		
 	}
 
-
 	private void createActions() {
 		actions.add(new FileAction());
 		actions.add(new DirAction());

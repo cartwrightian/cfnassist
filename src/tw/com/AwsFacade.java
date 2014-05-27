@@ -86,8 +86,7 @@ public class AwsFacade implements AwsProvider {
 		ValidateTemplateRequest validateTemplateRequest = new ValidateTemplateRequest();
 		validateTemplateRequest.setTemplateBody(templateBody);
 
-		ValidateTemplateResult result = cfnClient
-				.validateTemplate(validateTemplateRequest);
+		ValidateTemplateResult result = cfnClient.validateTemplate(validateTemplateRequest);
 		List<TemplateParameter> parameters = result.getParameters();
 		logger.info(String.format("Found %s parameters", parameters.size()));
 		return parameters;

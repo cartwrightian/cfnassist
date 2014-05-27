@@ -1,0 +1,28 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"create the S3 bucket used as part of the integration tests, BucketName must be unique globally",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		}
+		
+	},
+	"Resources":{
+		"S3TestBucket": { "Type" : "AWS::S3::Bucket",
+			   "Properties" : {
+			      "AccessControl" : "Private",
+			      "BucketName" : "cfnassists3testbucket"
+			   }
+		}     
+	},
+	"Outputs": {
+		   "S3BucketSecureURL" : {
+	      "Value" : { "Fn::Join" : [ "", [ "https://", { "Fn::GetAtt" : [ "S3TestBucket", "DomainName" ] } ] ] },
+	      "Description" : "Name of S3 bucket to hold website content"
+	   }
+   }
+	
+}

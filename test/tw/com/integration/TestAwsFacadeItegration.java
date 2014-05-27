@@ -1,12 +1,14 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.cli.MissingArgumentException;
@@ -17,6 +19,19 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.AwsFacade;
+import tw.com.AwsProvider;
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.FilesForTesting;
+import tw.com.MonitorStackEvents;
+import tw.com.NotReadyException;
+import tw.com.PollingStackMonitor;
+import tw.com.ProjectAndEnv;
+import tw.com.SNSMonitor;
+import tw.com.StackEntry;
+import tw.com.StackId;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
@@ -25,15 +40,13 @@ import tw.com.exceptions.WrongStackStatus;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
-public class TestAwsFacade {
+public class TestAwsFacadeItegration {
 
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;
@@ -45,7 +58,6 @@ public class TestAwsFacade {
 	private MonitorStackEvents monitor;
 	private VpcRepository vpcRepository;
 	private CfnRepository cfnRepository;
-
 
 	private DeletesStacks deletesStacks;
 	
@@ -59,7 +71,6 @@ public class TestAwsFacade {
 	}
 	
 	@Rule public TestName testName = new TestName();
-
 	
 	@Before
 	public void beforeTestsRun() {
@@ -78,36 +89,6 @@ public class TestAwsFacade {
 	@After 
 	public void afterEachTestRuns() {
 		deletesStacks.act();
-	}
-
-	@Test
-	public void testReturnCorrectParametersFromValidation() throws FileNotFoundException, IOException {
-		List<TemplateParameter> result = aws.validateTemplate(new File(FilesForTesting.SUBNET_STACK));
-		
-		assertEquals(4, result.size());
-		
-		int i = 0;
-		for(i=0; i<4; i++) {
-			TemplateParameter parameter = result.get(i);
-			if (parameter.getParameterKey().equals("zoneA")) break;		
-		}
-		TemplateParameter zoneAParameter = result.get(i);
-		
-		assertEquals("zoneA", zoneAParameter.getParameterKey());
-		assertEquals("eu-west-1a", zoneAParameter.getDefaultValue());
-		assertEquals("zoneADescription", zoneAParameter.getDescription());
-	}
-	
-	@Test
-	public void createStacknameFromEnvAndFile() {
-		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);
-		assertEquals("CfnAssistTestsimpleStack", stackName);
-	}
-	
-	@Test
-	public void createStacknameFromEnvAndFileWithDelta() {
-		String stackName = aws.createStackName(new File(FilesForTesting.STACK_UPDATE), projectAndEnv);
-		assertEquals("CfnAssistTest02createSubnet", stackName);
 	}
 	
 	@Test
@@ -193,15 +174,6 @@ public class TestAwsFacade {
 		assertEquals(before.getStacks().size(), after.getStacks().size());
 	}
 	
-	@Test 
-	public void shouldIncludeBuildNumberWhenFormingStackname() {
-		projectAndEnv.addBuildNumber("042");
-		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK),projectAndEnv);
-		
-		deletesStacks.ifPresent("CfnAssist042TestsimpleStack");
-		assertEquals("CfnAssist042TestsimpleStack", stackName);	
-	}
-	
 	@Test
 	public void catchesStackAlreadyExistingAsExpected() throws FileNotFoundException, IOException, CfnAssistException, 
 		InterruptedException, InvalidParameterException {
@@ -241,49 +213,24 @@ public class TestAwsFacade {
 	
 	@Test
 	public void canListOutCfnAssistStacks() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException {
-		aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);
+		StackId id = aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);
 		
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
+
+		boolean seenEntry = false;
+		for(StackEntry result : results) {
+			if (result.getStack().getStackId().equals(id.getStackId())) {
+				assertEquals("CfnAssistTestsimpleStack", result.getStackName());
+				assertEquals("Test", result.getEnvTag().getEnv());
+				assertEquals("CfnAssist", result.getProject());
+				seenEntry = true;
+				break;
+			}
+		}
+		assertTrue(seenEntry);
 		
-		assertEquals(1, results.size());
-		StackEntry stackEntry = results.get(0);
-		assertEquals("CfnAssistTestsimpleStack", stackEntry.getStackName());
-		assertEquals("Test", stackEntry.getEnvTag().getEnv());
-		assertEquals("CfnAssist", stackEntry.getProject());
 	}
 
-	@Test
-	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
-		checkParameterCannotBePassed("env");
-	}
 	
-	@Test
-	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
-		checkParameterCannotBePassed("vpc");
-	}
-	
-	@Test
-	public void cannotAddbuildParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
-		checkParameterCannotBePassed("build");
-	}
-
-	private void checkParameterCannotBePassed(String parameterName)
-			throws FileNotFoundException, IOException,
-			CfnAssistException, InterruptedException {
-		Parameter parameter = new Parameter();
-		parameter.setParameterKey(parameterName);
-		parameter.setParameterValue("test");
-		
-		Collection<Parameter> parameters = new HashSet<Parameter>();
-		parameters.add(parameter);
-		
-		try {
-			aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv, parameters);	
-			fail("Should have thrown exception");
-		}
-		catch (InvalidParameterException exception) {
-			// expected
-		}
-	}
 	
 }

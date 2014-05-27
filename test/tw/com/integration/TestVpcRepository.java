@@ -1,6 +1,8 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +10,9 @@ import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tw.com.EnvironmentSetupForTests;
+import tw.com.ProjectAndEnv;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CannotFindVpcException;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;

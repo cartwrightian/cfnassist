@@ -1,12 +1,16 @@
-package tw.com;
+package tw.com.acceptance;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -15,16 +19,23 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.EnvironmentSetupForTests;
+import tw.com.FilesForTesting;
+import tw.com.ProjectAndEnv;
+import tw.com.VpcRepository;
+import tw.com.commandline.Main;
+import tw.com.exceptions.CannotFindVpcException;
+import tw.com.integration.DeletesStacks;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
-import tw.com.commandline.Main;
-import tw.com.exceptions.CannotFindVpcException;
 
-public class TestCommandLine {
+public class TestCommandLineAcceptance {
 
-	private static final int FAILURE_STATUS = -1;
 	private Vpc altEnvVPC;
 	private VpcRepository vpcRepository;
 	private ProjectAndEnv altProjectAndEnv;
@@ -41,11 +52,13 @@ public class TestCommandLine {
 	
 	@Rule public TestName test = new TestName();
 	String testName = "";
+	private ProjectAndEnv projectAndEnv;
 
 	@Before
 	public void beforeEveryTestRun() {
 		vpcRepository = new VpcRepository(ec2Client);
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
+		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 		
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
 		deletesStacks = new DeletesStacks(cfnClient);
@@ -77,18 +90,6 @@ public class TestCommandLine {
 		int result = main.parse();
 
 		assertEquals(0,result);
-	}
-	
-	@Test
-	public void testInvokeInitViaCommandLineMissingValue() {
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-init" 
-				};
-		Main main = new Main(args);
-		assertEquals(FAILURE_STATUS,main.parse());
 	}
 	
 	@Test
@@ -124,7 +125,7 @@ public class TestCommandLine {
 				"-parameters", "testA=123;testB"
 				};
 		Main main = new Main(args);
-		assertEquals(FAILURE_STATUS,main.parse());
+		assertEquals(EnvironmentSetupForTests.FAILURE_STATUS,main.parse());
 	}
 	
 	@Test
@@ -170,8 +171,12 @@ public class TestCommandLine {
 		String result = stream.toString();
 		String lines[] = result.split("\\r?\\n");
 
-		assertEquals(2, lines.length);
-		assertEquals("CfnAssistTestsimpleStack\tCfnAssist\tTest", lines[1]);
+		boolean found=false;
+		for(String line : lines) {
+			found = line.equals("CfnAssistTestsimpleStack\tCfnAssist\tTest");
+			if (found) break;
+		}
+		assert(found);
 
 		System.setOut(origStream);
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
@@ -286,19 +291,6 @@ public class TestCommandLine {
 	}
 	
 	@Test
-	public void shouldNotAllowBuildParameterWithDirAction() {
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-dir", FilesForTesting.ORDERED_SCRIPTS_FOLDER,
-				"-build", "001"
-				};
-		Main main = new Main(args);
-		int result = main.parse();
-		assertEquals(FAILURE_STATUS, result);
-	}
-	
-	@Test
 	public void testInvokeViaCommandLineDeployWithFilePassedInParam() throws InterruptedException, TimeoutException {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -367,6 +359,39 @@ public class TestCommandLine {
 		
 		// check
 		assertEquals("rollback failed",0,result);
+	}
+	
+	@Test
+	@Ignore("Work in progress - no wired in yet")
+	public void testUploadArtifactsToS3AndAutopopulateAsParameters() {		
+		String fileA = FilenameUtils.getName(FilesForTesting.ACL);
+		String fileB = FilenameUtils.getName(FilesForTesting.SUBNET_STACK);
+		
+		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String[] argsDeploy = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-file", FilesForTesting.SUBNET_WITH_PARAM,
+				"-uploads", uploads,
+				"-build", "9987",
+				"-sns"
+				};
+				
+		Main main = new Main(argsDeploy);
+		int result = main.parse();
+		deletesStacks.ifPresent("CfnAssistTestsubnetWithS3Param");
+		
+		assertEquals("deploy failed",0,result);
+		
+		Vpc vpcId = vpcRepository.getCopyOfVpc(projectAndEnv);
+		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpcId);
+		assertEquals(1, subnets.size());
+		List<Tag> tags = subnets.get(0).getTags();
+
+		Collection<Tag> expectedTags = new LinkedList<Tag>();
+		expectedTags.add(new Tag().withKey("urlA").withValue(EnvironmentSetupForTests.S3_PREFIX+"/9987/"+fileA));
+		expectedTags.add(new Tag().withKey("urlB").withValue(EnvironmentSetupForTests.S3_PREFIX+"/9987/"+fileB));
+		assert(tags.containsAll(expectedTags));			
 	}
 	
 	@Ignore("cant find way to label at existing stack via apis")

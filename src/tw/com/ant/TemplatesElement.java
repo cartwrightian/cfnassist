@@ -47,7 +47,7 @@ public class TemplatesElement implements ActionElement {
 		if (actionToInvoke==null) {
 			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
 		} 
-		actionToInvoke.validate(aws, projectAndEnv, absolutePath, cfnParams);
+		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams);
 		actionToInvoke.invoke(aws, repository, projectAndEnv, absolutePath,cfnParams);		
 	}
 }

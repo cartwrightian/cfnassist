@@ -1,6 +1,8 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,6 +17,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.AwsFacade;
+import tw.com.AwsProvider;
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.EnvironmentTag;
+import tw.com.FilesForTesting;
+import tw.com.MonitorStackEvents;
+import tw.com.NotReadyException;
+import tw.com.PollingStackMonitor;
+import tw.com.ProjectAndEnv;
+import tw.com.StackId;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.WrongNumberOfStacksException;
@@ -35,13 +49,14 @@ public class TestCfnRepository {
 	private static final String TEST_CIDR_SUBNET = "testCidrSubnet";
 	private static AmazonCloudFormationClient cfnClient;
 	private static AmazonEC2Client directClient;
+	private static VpcRepository vpcRepository;
 	
 	private Vpc mainTestVPC;
 	private AwsProvider awsProvider;
 	private Vpc otherVPC;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
-	private CfnRepository cfnRepository;
+	private static CfnRepository cfnRepository;
 	private DeletesStacks deletesStacks;
 
 	@BeforeClass
@@ -49,6 +64,8 @@ public class TestCfnRepository {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		directClient = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
+		vpcRepository = new VpcRepository(directClient);
+		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		
 		new DeletesStacks(cfnClient).ifPresent("CfnAssistTestcausesRollBack")
 			.ifPresent("CfnAssistTestsubnetWithCIDRParam").act();
@@ -57,10 +74,7 @@ public class TestCfnRepository {
 	@Rule public TestName test = new TestName();
 	
 	@Before
-	public void beforeEachTestIsRun() {				
-		VpcRepository vpcRepository = new VpcRepository(directClient);
-		
-		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+	public void beforeEachTestIsRun() {						
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		awsProvider = new AwsFacade(monitor , cfnClient, cfnRepository, vpcRepository);
 		awsProvider.setCommentTag(test.getMethodName());

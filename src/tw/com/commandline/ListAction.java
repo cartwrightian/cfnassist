@@ -35,8 +35,8 @@ public class ListAction extends SharedAction {
 	}
 	
 	@Override
-	public void validate(AwsFacade aws, ProjectAndEnv projectAndEnv,
-			String argumentForAction, Collection<Parameter> cfnParams) throws CommandLineException {
+	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
+			Collection<Parameter> cfnParams) throws CommandLineException {
 		guardForProject(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);
 	}

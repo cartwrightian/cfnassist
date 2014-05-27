@@ -1,10 +1,13 @@
-package tw.com;
+package tw.com.integration;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import tw.com.EnvironmentSetupForTests;
+import tw.com.StackId;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
@@ -50,10 +53,10 @@ public class DeletesStacks {
 			}
 		}
 		try {
-			if (deletionList.isEmpty() && deleteIfPresentNonBlocking.isEmpty()) {
+			if (deletionList.isEmpty() && deletionListNonBlocking.isEmpty()) {
 				logger.info("No stacks need deleting");
 			} else {
-				requestDeletion(deleteIfPresentNonBlocking);
+				requestDeletion(deletionListNonBlocking);
 				deleteStacks(deletionList);
 			}
 		} catch (InterruptedException e) {

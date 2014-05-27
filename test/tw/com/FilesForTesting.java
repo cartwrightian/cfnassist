@@ -9,6 +9,7 @@ public class FilesForTesting {
 	public static final String ACL = DIR + "acl.json";
 	public static final String SUBNET_CIDR_PARAM = DIR + "subnetWithCIDRParam.json";
 	public static final String SUBNET_WITH_PARAM = DIR + "subnetWithParam.json";
+	public static final String SUBNET_WITH_S3_PARAM = DIR + "subnetWithS3Param.json";
 	public static final String SUBNET_WITH_BUILD = DIR + "subnetWithBuild.json";
 	public static final String ELB = DIR + "elb.json";
 	public static final String INSTANCE = DIR + "instance.json";

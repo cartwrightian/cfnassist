@@ -1,6 +1,8 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -10,6 +12,14 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.EnvironmentTag;
+import tw.com.MonitorStackEvents;
+import tw.com.PollingStackMonitor;
+import tw.com.ProjectAndEnv;
+import tw.com.StackId;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 

@@ -1,0 +1,55 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"test template for cnfassist - creates a single subnet, urlA and urlB required as a parameters",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		},
+		"zoneA":{
+			"Type":"String",
+			"Description":"zoneADescription"
+		},
+		"urlA":{
+			"Type":"String"
+		},
+		"urlB":{
+			"Type":"String"
+		}
+		
+	},
+	"Resources":{
+		"testSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"AvailabilityZone":{
+					"Ref":"zoneA"
+				},
+				"CidrBlock":"10.0.10.0/24",
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":"webSubnetZoneA"
+					}, 
+					{
+						"Key":"TagEnv", "Value":{ "Ref":"env"}
+					},
+					{
+						"Key":"urlATag", "Value":{ "Ref":"urlA"}
+					},
+					{
+						"Key":"urlBTag", "Value":{ "Ref":"urlB"}
+					}
+				],
+				"VpcId":{
+					"Ref":"vpc"
+				}
+				
+			}
+			
+		}
+		
+	}
+}

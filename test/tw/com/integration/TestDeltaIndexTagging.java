@@ -1,6 +1,7 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -11,6 +12,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.AwsFacade;
+import tw.com.AwsProvider;
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.MonitorStackEvents;
+import tw.com.PollingStackMonitor;
+import tw.com.ProjectAndEnv;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.TagsAlreadyInit;

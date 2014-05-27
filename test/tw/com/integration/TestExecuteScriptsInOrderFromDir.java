@@ -1,6 +1,6 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,9 +19,20 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.AwsFacade;
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.FilesForTesting;
+import tw.com.MonitorStackEvents;
+import tw.com.PollingStackMonitor;
+import tw.com.ProjectAndEnv;
+import tw.com.SNSMonitor;
+import tw.com.StackId;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.StackStatus;

@@ -1,6 +1,7 @@
-package tw.com;
+package tw.com.integration;
 
 import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -15,8 +16,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.AwsFacade;
+import tw.com.AwsProvider;
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.FilesForTesting;
+import tw.com.PollingStackMonitor;
+import tw.com.ProjectAndEnv;
+import tw.com.StackId;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
@@ -141,7 +152,6 @@ public class TestBuiltInParameterInjectionAndTagging {
 				createExpectedTagsWithBuild(buildNumber, testName));
 		
 		deletesStacks.ifPresent(stackName);
-		//EnvironmentSetupForTests.validatedDelete(stackName, awsProvider);
 	}
 
 	private void validateCreateAndDeleteWorks(StackId stackId, List<Tag> expectedStackTags, 
@@ -164,7 +174,6 @@ public class TestBuiltInParameterInjectionAndTagging {
 		assert(subnetTags.containsAll(expectedEc2Tags));
 	    
 		deletesStacks.ifPresent(stackId);
-		//awsProvider.deleteStack(stackId);
 	}
 
 	private List<Stack> getStack(String stackName) {

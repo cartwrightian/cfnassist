@@ -1,4 +1,4 @@
-package tw.com;
+package tw.com.unit;
 
 import static org.junit.Assert.*;
 
@@ -8,6 +8,13 @@ import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import tw.com.AwsFacade;
+import tw.com.AwsProvider;
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.PollingStackMonitor;
+import tw.com.VpcRepository;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -24,7 +31,7 @@ public class TestHaveValidTemplateFiles {
 	}
 	
 	@Test
-	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException {
+	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException, InterruptedException {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
@@ -41,14 +48,15 @@ public class TestHaveValidTemplateFiles {
 	}
 
 	private void validateFolder(AwsProvider facade, File folder)
-			throws FileNotFoundException, IOException {
+			throws FileNotFoundException, IOException, InterruptedException {
 		File[] files = folder.listFiles();
 		for(File file : files) {
 			if (file.isDirectory()) {
-				validateFolder(facade, file);
-			} else
+				validateFolder(facade, file);		
+			} else 
 			{
 				facade.validateTemplate(file);
+				Thread.sleep(200); // to avoid rate limit errors on AWS api
 			}
 		}
 	}

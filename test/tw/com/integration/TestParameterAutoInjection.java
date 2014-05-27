@@ -1,6 +1,6 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,8 +14,20 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.AwsFacade;
+import tw.com.AwsProvider;
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.EnvironmentTag;
+import tw.com.FilesForTesting;
+import tw.com.MonitorStackEvents;
+import tw.com.PollingStackMonitor;
+import tw.com.ProjectAndEnv;
+import tw.com.StackId;
+import tw.com.VpcRepository;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -26,7 +38,6 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestParameterAutoInjection {
 	
-
 	private static AwsProvider aws;
 	private static VpcRepository vpcRepository;
 	private static StackId subnetStackName;

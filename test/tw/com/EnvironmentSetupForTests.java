@@ -33,6 +33,7 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
@@ -41,7 +42,9 @@ public class EnvironmentSetupForTests {
 
 	// User/Env specific constants, these will need to change for others running these tests!
 	static final String ARN_FOR_TESTING = "arn:aws:sns:eu-west-1:619378453009:cfn_assist";
-	static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
+	public static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
+	public static final String BUCKET_NAME="cfnassists3testbucket";
+	public static final String S3_PREFIX = "https://"+BUCKET_NAME+".s3-eu-west-1.amazonaws.com";
 	
 	// TODO should we pick this up from the environment?
 	private static final Regions AWS_REGION = Regions.EU_WEST_1;
@@ -181,5 +184,13 @@ public class EnvironmentSetupForTests {
 		client.setRegion(getRegion());
 		return client;
 	}
+
+	public static AmazonS3Client createS3Client(DefaultAWSCredentialsProviderChain credentialsProvider) {
+		AmazonS3Client client = new AmazonS3Client(credentialsProvider);
+		client.setRegion(getRegion());
+		return client;
+	}
+
+	public static final int FAILURE_STATUS = -1;
 
 }

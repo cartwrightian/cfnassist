@@ -40,9 +40,9 @@ public abstract class SharedAction implements CommandLineAction {
 
 	protected void guardForNoBuildNumber(ProjectAndEnv projectAndEnv)
 			throws CommandLineException {
-				if (projectAndEnv.hasBuildNumber()) {
-					throw new CommandLineException("Build number parameter is not valid with action: " + getArgName());
-				}
-			}
+		if (projectAndEnv.hasBuildNumber()) {
+			throw new CommandLineException("Build number parameter is not valid with action: " + getArgName());
+		}
+	}
 	
 }

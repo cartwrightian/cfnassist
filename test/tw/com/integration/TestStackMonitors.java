@@ -1,6 +1,6 @@
-package tw.com;
+package tw.com.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
@@ -10,7 +10,13 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import tw.com.CfnRepository;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.PollingStackMonitor;
+import tw.com.SNSMonitor;
+import tw.com.StackId;
 import tw.com.exceptions.CfnAssistException;
+
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.StackStatus;

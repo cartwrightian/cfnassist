@@ -1,8 +1,10 @@
-package tw.com;
+package tw.com.unit;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
+
+import tw.com.StackNotification;
 
 public class TestSNSMessageParsing {
 

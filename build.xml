@@ -92,14 +92,42 @@
         </junit>
     </target>
 	
-    <target name="test">
+    <target name="test" depends="unit,integration,acceptance" />
+        
+	<target name="unit" depends="build">
         <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
+        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true">
             <formatter type="xml"/>
             <classpath refid="cfnassist.classpath"/>
 			<batchtest fork="yes" todir="${junit.output.dir}">
 				<fileset dir="test">
-					<include name="**/Test*.java"/>
+					<include name="**/unit/Test*.java"/>
+				</fileset>
+			</batchtest>
+        </junit>
+    </target>
+	
+	<target name="integration" depends="build">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true">
+            <formatter type="xml"/>
+            <classpath refid="cfnassist.classpath"/>
+			<batchtest fork="yes" todir="${junit.output.dir}">
+				<fileset dir="test">
+					<include name="**/integration/Test*.java"/>
+				</fileset>
+			</batchtest>
+        </junit>
+    </target>
+	
+	<target name="acceptance" depends="build">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true">
+            <formatter type="xml"/>
+            <classpath refid="cfnassist.classpath"/>
+			<batchtest fork="yes" todir="${junit.output.dir}">
+				<fileset dir="test">
+					<include name="**/acceptance/Test*.java"/>
 				</fileset>
 			</batchtest>
         </junit>
