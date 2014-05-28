@@ -109,6 +109,7 @@ public class TestCommandLineAcceptance {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-reset",
 				"-parameters", "testA=123;testB=123"
 				};
@@ -121,6 +122,7 @@ public class TestCommandLineAcceptance {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-reset",
 				"-parameters", "testA=123;testB"
 				};
@@ -133,6 +135,7 @@ public class TestCommandLineAcceptance {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SIMPLE_STACK,
 				"-comment", testName
 				};
@@ -149,6 +152,7 @@ public class TestCommandLineAcceptance {
 		String[] create = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SIMPLE_STACK,
 				"-comment", testName
 				};
@@ -158,6 +162,7 @@ public class TestCommandLineAcceptance {
 		String[] list = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-ls"
 				};
 		
@@ -188,6 +193,7 @@ public class TestCommandLineAcceptance {
 		String[] createArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SIMPLE_STACK,
 				"-build", "0915",
 				"-comment", testName
@@ -199,6 +205,7 @@ public class TestCommandLineAcceptance {
 		String[] deleteArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-delete", FilesForTesting.SIMPLE_STACK,
 				"-build", "0915",
 				"-comment", testName
@@ -215,6 +222,7 @@ public class TestCommandLineAcceptance {
 		String[] createArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SIMPLE_STACK,
 				"-comment", testName
 				};
@@ -225,6 +233,7 @@ public class TestCommandLineAcceptance {
 		String[] deleteArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-delete", FilesForTesting.SIMPLE_STACK,
 				"-comment", testName
 				};
@@ -240,6 +249,7 @@ public class TestCommandLineAcceptance {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SIMPLE_STACK,
 				"-build", "876",
 				"-comment", testName
@@ -255,6 +265,7 @@ public class TestCommandLineAcceptance {
 		String[] createIns = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-build", "876",
 				"-file", FilesForTesting.ELB_AND_INSTANCE,
 				"-comment", testName
@@ -265,6 +276,7 @@ public class TestCommandLineAcceptance {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-build", "876",
 				"-elbUpdate", "web"
 				};
@@ -280,6 +292,7 @@ public class TestCommandLineAcceptance {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SIMPLE_STACK,
 				"-sns", 
 				"-comment", testName
@@ -295,6 +308,7 @@ public class TestCommandLineAcceptance {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SUBNET_WITH_PARAM,
 				"-parameters", "zoneA=eu-west-1a",
 				"-comment", testName
@@ -336,6 +350,7 @@ public class TestCommandLineAcceptance {
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-dir", orderedScriptsFolder,
 				"-comment", testName,
 				sns
@@ -347,6 +362,7 @@ public class TestCommandLineAcceptance {
 		String[] rollbackDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-rollback", orderedScriptsFolder,
 				sns
 				};
@@ -370,7 +386,8 @@ public class TestCommandLineAcceptance {
 		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SUBNET_WITH_PARAM,
 				"-uploads", uploads,
 				"-build", "9987",
@@ -402,6 +419,7 @@ public class TestCommandLineAcceptance {
 		String[] argslabelStack = {
 				"-env", EnvironmentSetupForTests.ENV,
 				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-labelstack", "todoNotWorking"
 		};
 		Main main = new Main(argslabelStack);
