@@ -15,6 +15,9 @@ import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Stack;
 
 public class DeletesStacks {
+	private static final int TIMEOUT_INCREMENT_MS = 500;
+	private static final int INITIAL_TIMEOUT_MS = 1000;
+
 	private static final Logger logger = LoggerFactory.getLogger(DeletesStacks.class);
 
 	private AmazonCloudFormationClient cfnClient;
@@ -42,7 +45,7 @@ public class DeletesStacks {
 	}
 
 	public void act() {
-		List<String> currentStacks = currentStacks();
+		List<String> currentStacks = fetchCurrentStacks();
 		List<String> deletionList = new LinkedList<String>();
 		List<String> deletionListNonBlocking = new LinkedList<String>();
 		for(String stackName : currentStacks) {
@@ -65,8 +68,9 @@ public class DeletesStacks {
 		}
 	}
 
-	private List<String> currentStacks() {
+	private List<String> fetchCurrentStacks() {
 		List<String> current = new LinkedList<String>();
+
 		DescribeStacksResult result = cfnClient.describeStacks();
 		for(Stack stack : result.getStacks()) {
 			current.add(stack.getStackName());
@@ -81,20 +85,24 @@ public class DeletesStacks {
 		
 		requestDeletion(deletionList);
 		
-		List<String> present = currentStacks();
+		List<String> present = fetchCurrentStacks();
 		int count = EnvironmentSetupForTests.DELETE_RETRY_LIMIT;
-		long timeout = 1000;
+		long timeout = INITIAL_TIMEOUT_MS;
 		while (containsAnyOf(present,deletionList) && (count>0)) {
-			logger.info("Waiting for stack deletion, currently present: " + present.size());
+			logger.info(String.format("Waiting for stack deletion (check %s/%s). Present: %s Deleting: %s", 
+					(EnvironmentSetupForTests.DELETE_RETRY_LIMIT-count), EnvironmentSetupForTests.DELETE_RETRY_LIMIT, 
+					present.size(), deletionList.size()));
 			Thread.sleep(timeout);
 			count--;
-			if (timeout<EnvironmentSetupForTests.DELETE_RETRY_INTERVAL) {
-				timeout = timeout + 500;
+			if (timeout<EnvironmentSetupForTests.DELETE_RETRY_MAX_TIMEOUT_MS) {
+				timeout = timeout + TIMEOUT_INCREMENT_MS;
 			}
-			present = currentStacks();
+			present = fetchCurrentStacks();
 		}
 		if (count==0) {
 			logger.warn("Timed out waiting for deletions");
+		} else {
+			logger.info("Deleted stacks");
 		}
 		for(String unwanted : deletionList) {
 			if (present.contains(unwanted)) {

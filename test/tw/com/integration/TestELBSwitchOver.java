@@ -88,7 +88,7 @@ public class TestELBSwitchOver {
 		aws.applyTemplate(FilesForTesting.ELB, projAndEnv);
 		
 		projAndEnv.addBuildNumber("123");
-		aws.applyTemplate(FilesForTesting.INSTANCE, projAndEnv); // should get ignored, no type tag
+		aws.applyTemplate(FilesForTesting.INSTANCE, projAndEnv); // should get ignored in switch over, no type tag
 		aws.applyTemplate(FilesForTesting.INSTANCE_WITH_TYPE, projAndEnv);
 		
 		projAndEnvDiffBuild = EnvironmentSetupForTests.getMainProjectAndEnv();

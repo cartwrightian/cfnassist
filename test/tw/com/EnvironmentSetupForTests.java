@@ -56,8 +56,9 @@ public class EnvironmentSetupForTests {
 	public static final String TEMPORARY_STACK = "temporaryStack";
 
 	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources
-	public static final int DELETE_RETRY_LIMIT = 20;
-	public static final long DELETE_RETRY_INTERVAL = 10000;
+
+	public static final long DELETE_RETRY_MAX_TIMEOUT_MS = 5000; 
+	public static final int DELETE_RETRY_LIMIT = (5*60000) / 5000; // Try for 5 minutes
 	
 	public static List<Subnet> getSubnetFors(AmazonEC2Client ec2Client, Vpc vpc) {
 		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
@@ -125,7 +126,7 @@ public class EnvironmentSetupForTests {
 		while(notDeleted) {
 			DescribeTagsResult result = directClient.describeTags(describeTagsRequest);
 			notDeleted = (result.getTags().size()!=0);
-			Thread.sleep(DELETE_RETRY_INTERVAL);
+			Thread.sleep(DELETE_RETRY_MAX_TIMEOUT_MS);
 			logger.debug("waiting for tags to clear on vpc :" + vpc.getVpcId());
 		}
 	}
