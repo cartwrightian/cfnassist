@@ -292,5 +292,4 @@ parameters `urlA` and `urlB` with the corresponding S3 urls and pass these into 
 
 You can use the environmental variable *CFN_ASSIST_BUCKET* to specify the S3 bucket to use.
 
-TODO: add ant task support for S3 upload
 
