@@ -2,6 +2,8 @@ package tw.com.commandline;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
+
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -12,6 +14,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.ArtifactUploader;
 import tw.com.AwsFacade;
 import tw.com.ELBRepository;
 import tw.com.FacadeFactory;
@@ -23,6 +26,7 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
+import com.amazonaws.services.cloudformation.model.Parameter;
 
 public class Main {
 	public static final String ENV_VAR_EC2_REGION = "EC2_REGION";
@@ -51,10 +55,14 @@ public class Main {
 	}
 
 	public int parse() {
+		return parse(true);
+	}
+
+	public int parse(boolean act) {
 		
 		try {
-			CommandLineParser parser = new BasicParser();	
-			CommandLine commandLine = parser.parse(commandLineOptions, args);		
+			CommandLineParser parser = new BasicParser();
+			CommandLine commandLine = parser.parse(commandLineOptions, args);
 			HelpFormatter formatter = new HelpFormatter();
 		
 			flags.populateFlags(commandLine, formatter);
@@ -73,7 +81,7 @@ public class Main {
 			logger.info("Invoking for " + projectAndEnv);
 			
 			String argumentForAction = commandLine.getOptionValue(action.getArgName());
-			action.validate(projectAndEnv, argumentForAction, flags.getCfnParams());
+			action.validate(projectAndEnv, argumentForAction, flags.getAdditionalParameters());
 			
 			FacadeFactory factory = new FacadeFactory(awsRegion, flags.getProject());
 			AwsFacade facade = factory.createFacade(flags.getSns());
@@ -81,9 +89,21 @@ public class Main {
 			if (flags.haveComment()) {
 				facade.setCommentTag(flags.getComment());
 			}
-				
 			
-			action.invoke(facade, repository, projectAndEnv, argumentForAction, flags.getCfnParams());
+			Collection<Parameter> additionalParams = flags.getAdditionalParameters();
+			
+			if (act) {	
+				Collection<Parameter> uploadParams = flags.getUploadParams();
+				
+				if (!uploadParams.isEmpty()) {
+					ArtifactUploader artifactUploader = new ArtifactUploader(factory.getS3Client(), 
+							flags.getBucketName(), flags.getBuildNumber());
+					additionalParams.addAll(artifactUploader.uploadArtifacts(uploadParams));
+				}
+				action.invoke(facade, repository, projectAndEnv, argumentForAction, additionalParams);
+			} else {
+				logger.info("Not invoking");
+			}
 		}
 		catch (Exception exception) {
 			//  back to caller via exit status

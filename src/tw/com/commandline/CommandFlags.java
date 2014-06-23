@@ -30,6 +30,8 @@ public class CommandFlags {
 	private Option keysValuesParam;
 	private Option snsParam;
 	private Option commentParam;
+	private Option uploadParam;
+	private Option bucketParam;
 
 	private String executableName;
 	private Options commandLineOptions;
@@ -40,7 +42,9 @@ public class CommandFlags {
 	private String buildNumber;
 	private Boolean sns;
 	private String comment;
+	private String bucket;
 	private Collection<Parameter> cfnParams;
+	private Collection<Parameter> uploads;
 
 	public CommandFlags(String executableName, Options commandLineOptions) {
 		this.executableName = executableName;
@@ -57,6 +61,8 @@ public class CommandFlags {
 		commandLineOptions.addOption(buildNumberParam);
 		commandLineOptions.addOption(snsParam);
 		commandLineOptions.addOption(commentParam);
+		commandLineOptions.addOption(uploadParam);
+		commandLineOptions.addOption(bucketParam);
 	}
 	
 	public void populateFlags(CommandLine commandLine, HelpFormatter formatter) throws MissingArgumentException, InvalidParameterException {
@@ -67,6 +73,9 @@ public class CommandFlags {
 		sns = checkForArgumentPresent(commandLine, formatter, snsParam);
 		comment = checkForArgument(commandLine, formatter, commentParam, "", false);
 		cfnParams = checkForKeyValueParameters(commandLine, formatter, keysValuesParam);
+		uploads = checkForKeyValueParameters(commandLine, formatter, uploadParam);
+		boolean bucketRequired = (!uploads.isEmpty());
+		bucket = checkForArgument(commandLine, formatter, bucketParam, AwsFacade.ENV_S3_BUCKET, bucketRequired);
 	}
 	
 	@SuppressWarnings("static-access")
@@ -99,6 +108,15 @@ public class CommandFlags {
 		
 		commentParam = OptionBuilder.withArgName("comment").hasArg().
 				withDescription("Add a comment within the tag " + AwsFacade.COMMENT_TAG).create("comment");
+		
+		uploadParam = OptionBuilder.withArgName("uploads").
+				hasArgs().withValueSeparator(';').
+				withDescription("Provide files to be uploaded to S3 bucket, param values will be replaced with the S3 URLs and passed into the template file").
+				create("uploads");
+		
+		bucketParam = OptionBuilder.withArgName("bucket").
+				hasArgs().withDescription("Bucket name to use for S3 uploads").
+				create("bucket");
 		
 	}
 	
@@ -192,15 +210,23 @@ public class CommandFlags {
 		return comment;
 	}
 
-	public Collection<Parameter> getCfnParams() {
+	public Collection<Parameter> getAdditionalParameters() {
 		return cfnParams;
 	}
-
+	
 	public boolean haveBuildNumber() {
 		return !buildNumber.isEmpty();
 	}
 
 	public boolean haveComment() {
 		return !comment.isEmpty();
+	}
+
+	public Collection<Parameter> getUploadParams() {
+		return uploads;
+	}
+
+	public String getBucketName() {
+		return bucket;
 	}
 }

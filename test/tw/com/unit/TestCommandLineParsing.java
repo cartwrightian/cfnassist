@@ -1,6 +1,6 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
@@ -41,6 +41,53 @@ public class TestCommandLineParsing {
 				"-file", FilesForTesting.SUBNET_WITH_PARAM,
 				"-uploads", uploads,
 				"-sns"
+				};
+		expectCommandLineFailureStatus(args);
+	}
+	
+	@Test
+	public void testUploadArgumentParsing() {
+		
+		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
+				"-uploads", uploads,
+				"-build", "9987",
+				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
+				"-sns"
+				};
+		Main main = new Main(args);
+		int result = main.parse(false);
+		assertEquals(0, result);
+	}
+	
+	@Test
+	public void testUploadArgumentParsingFailsWithoutBucket() {
+		
+		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
+				"-uploads", uploads,
+				"-build", "9987",
+				"-sns"
+				};
+		expectCommandLineFailureStatus(args);
+	}
+		
+	@Test
+	public void testCommandLineWithExtraIncorrectParams() {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-reset",
+				"-parameters", "testA=123;testB"
 				};
 		expectCommandLineFailureStatus(args);
 	}

@@ -1,4 +1,4 @@
-package tw.com.integration;
+package tw.com;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -6,7 +6,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.EnvironmentSetupForTests;
 import tw.com.StackId;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;

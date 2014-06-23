@@ -8,6 +8,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
@@ -21,6 +22,7 @@ public class FacadeFactory {
 	private CfnRepository cfnRepository;
 	private VpcRepository vpcRepository;
 	private AmazonElasticLoadBalancingClient elbClient;
+	private AmazonS3Client s3Client;
 
 	public FacadeFactory(Region region, String project) {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
@@ -34,6 +36,8 @@ public class FacadeFactory {
 		sqsClient.setRegion(region);
 		elbClient = new AmazonElasticLoadBalancingClient(credentialsProvider);
 		elbClient.setRegion(region);
+		s3Client = new AmazonS3Client(credentialsProvider);
+		s3Client.setRegion(region);
 		
 		cfnRepository = new CfnRepository(cfnClient, project);
 		vpcRepository = new VpcRepository(ec2Client);
@@ -54,6 +58,10 @@ public class FacadeFactory {
 
 	public ELBRepository createElbRepo() {
 		return new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);
+	}
+
+	public AmazonS3Client getS3Client() {
+		return s3Client;
 	}
 
 }

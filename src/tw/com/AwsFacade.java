@@ -51,8 +51,9 @@ public class AwsFacade implements AwsProvider {
 	public static final String PROJECT_TAG = "CFN_ASSIST_PROJECT"; 
 	public static final String INDEX_TAG = "CFN_ASSIST_DELTA";
 	public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
-	public static final Object TYPE_TAG = "CFN_ASSIST_TYPE";
+	public static final String TYPE_TAG = "CFN_ASSIST_TYPE";
 	public static final String COMMENT_TAG = "CFN_COMMENT";
+	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
 	
 	private static final String PARAMETER_ENV = "env";
 	private static final String PARAMETER_VPC = "vpc";
@@ -60,6 +61,8 @@ public class AwsFacade implements AwsProvider {
 	private static final String PARAM_PREFIX = "::";
 
 	private static final String PARAMETER_STACKNAME = "stackname";
+
+	
 	
 	private AmazonCloudFormationClient cfnClient;
 	

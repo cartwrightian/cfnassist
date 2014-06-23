@@ -96,7 +96,7 @@
         
 	<target name="unit" depends="build">
         <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true">
+        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
             <formatter type="xml"/>
             <classpath refid="cfnassist.classpath"/>
 			<batchtest fork="yes" todir="${junit.output.dir}">
@@ -109,7 +109,7 @@
 	
 	<target name="integration" depends="build">
         <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true">
+        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
             <formatter type="xml"/>
             <classpath refid="cfnassist.classpath"/>
 			<batchtest fork="yes" todir="${junit.output.dir}">
@@ -122,7 +122,7 @@
 	
 	<target name="acceptance" depends="build">
         <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true">
+        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
             <formatter type="xml"/>
             <classpath refid="cfnassist.classpath"/>
 			<batchtest fork="yes" todir="${junit.output.dir}">

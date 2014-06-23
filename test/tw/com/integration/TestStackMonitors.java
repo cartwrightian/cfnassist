@@ -11,6 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.CfnRepository;
+import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.PollingStackMonitor;
 import tw.com.SNSMonitor;

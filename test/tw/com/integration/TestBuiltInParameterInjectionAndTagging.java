@@ -19,6 +19,7 @@ import org.junit.rules.TestName;
 import tw.com.AwsFacade;
 import tw.com.AwsProvider;
 import tw.com.CfnRepository;
+import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.PollingStackMonitor;
@@ -78,10 +79,10 @@ public class TestBuiltInParameterInjectionAndTagging {
 		
 		deletesStacks = new DeletesStacks(cfnClient);
 		deletesStacks.ifPresent("CfnAssistTestsubnet")
-		.ifPresent("CfnAssistTestsubnetWithParam")
-		.ifPresent("CfnAssistTestsubnetWithBuild")
-		.ifPresent("CfnAssist456Testsubnet")
-		.ifPresent("CfnAssist42TestsubnetWithBuild").act();
+			.ifPresent("CfnAssistTestsubnetWithParam")
+			.ifPresent("CfnAssistTestsubnetWithBuild")
+			.ifPresent("CfnAssist456Testsubnet")
+			.ifPresent("CfnAssist42TestsubnetWithBuild").act();
 	}
 	
 	@After
@@ -131,11 +132,10 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Test
 	public void canPassInSimpleParameter() throws FileNotFoundException, IOException, InvalidParameterException, 
 		CfnAssistException, InterruptedException {
-		File templateFile = new File(FilesForTesting.SUBNET_WITH_PARAM);
 		
 		Collection<Parameter> params = new LinkedList<Parameter>();
 		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
-		StackId stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv, params);
+		StackId stackName = awsProvider.applyTemplate(new File(FilesForTesting.SUBNET_WITH_PARAM), mainProjectAndEnv, params);
 				
 		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
 	}

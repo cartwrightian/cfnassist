@@ -13,6 +13,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import tw.com.CfnRepository;
+import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.EnvironmentTag;
 import tw.com.MonitorStackEvents;

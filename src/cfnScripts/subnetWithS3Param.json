@@ -10,6 +10,7 @@
 		},
 		"zoneA":{
 			"Type":"String",
+			"Default":"eu-west-1a",
 			"Description":"zoneADescription"
 		},
 		"urlA":{

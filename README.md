@@ -273,9 +273,24 @@ If you specify `-sns` on the commandline then cfnassit will
 3. Create a policy meaning that SNS can publish the notifications to the queue. (and again, only if requied)
 4. Finally it will subscribe the Queue to the SNS notifications.
 
-If you try to update/delete a stack using the SNS option when the stack was not originally created with the flag set this will fail. 
-As the cloud formation API now allows a stack to have the sns topic updated this restriction should soon be removed.
+If you try to update/delete a stack using the SNS option when the stack was not originally created with the 
+flag set this will fail. 
+As the cloud formation API now allows a stack to have the sns topic updated this restriction should soon be 
+removed.
 
+12.Upload files to S3 and inject corresponding URLs into templates
+------------------------------------------------------------------
+You can use cfnassist to upload files into S3 and then pass in the S3 url's of those files into templates
+automatically. 
 
+The path to the file will be replaced with the URL, for example
 
+`cfnassist.sh -env Dev -file templateFile.json -uploads "urlA=release.txt;urlB=deployable.tgz -bucket bucketName MyBucket -build 1123`
+
+This will upload the files `release.txt` and `deployable.tgz` to S3 bucket MyBucket and then populate the 
+parameters `urlA` and `urlB` with the corresponding S3 urls and pass these into `templateFile.json`.
+
+You can use the environmental variable *CFN_ASSIST_BUCKET* to specify the S3 bucket to use.
+
+TODO: add ant task support for S3 upload
 
