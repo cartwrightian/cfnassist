@@ -117,7 +117,6 @@ public class TestCommandLineS3Operations {
 		expectedTags.add(new Tag().withKey("urlATag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A));
 		expectedTags.add(new Tag().withKey("urlBTag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B));
 		assertTrue(tags.containsAll(expectedTags));
-
 	}
 	
 }

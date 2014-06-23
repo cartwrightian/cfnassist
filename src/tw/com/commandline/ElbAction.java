@@ -25,12 +25,12 @@ public class ElbAction extends SharedAction {
 	
 	@Override
 	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv,
-			String type, Collection<Parameter> cfnParams)
+			String typeTag, Collection<Parameter> cfnParams)
 			throws InvalidParameterException, FileNotFoundException,
 			IOException, WrongNumberOfStacksException, InterruptedException,
 			CfnAssistException {
 		
-		repository.updateInstancesMatchingBuild(projectAndEnv, type);
+		repository.updateInstancesMatchingBuild(projectAndEnv, typeTag);
 	}
 
 	@Override

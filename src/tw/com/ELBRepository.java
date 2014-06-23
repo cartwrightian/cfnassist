@@ -69,14 +69,14 @@ public class ELBRepository {
 		return vpcID;
 	}
 
-	private List<Instance> addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String type) throws MustHaveBuildNumber, WrongNumberOfInstancesException {
+	private List<Instance> addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String typeTag) throws MustHaveBuildNumber, WrongNumberOfInstancesException {
 		if (!projAndEnv.hasBuildNumber()) {
 			throw new MustHaveBuildNumber();
 		}
 		LoadBalancerDescription elb = findELBFor(projAndEnv);	
-		List<Instance> instances = getMatchingInstances(projAndEnv, type);
+		List<Instance> instances = getMatchingInstances(projAndEnv, typeTag);
 		if (instances.size()==0) {
-			logger.warn(String.format("No instances matched %s and type %s", projAndEnv, type));
+			logger.warn(String.format("No instances matched %s and type tag %s (%s)", projAndEnv, typeTag, AwsFacade.TYPE_TAG));
 		} else {	
 			String lbName = elb.getLoadBalancerName();
 			logger.info(String.format("Regsister matching %s instances with the LB %s ",instances.size(),lbName));

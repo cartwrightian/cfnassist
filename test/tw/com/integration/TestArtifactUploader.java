@@ -24,8 +24,8 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 public class TestArtifactUploader {
 	
 	private static final String BUILD_NUMBER = "6574";
-	private static final String KEY_B = BUILD_NUMBER+"/simpleStack.json";
 	private static final String KEY_A = BUILD_NUMBER+"/instance.json";
+	private static final String KEY_B = BUILD_NUMBER+"/simpleStack.json";
 	
 	private static AmazonS3Client s3Client;
 

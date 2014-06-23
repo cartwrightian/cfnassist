@@ -11,6 +11,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
+import tw.com.ArtifactUploader;
 import tw.com.AwsFacade;
 import tw.com.ELBRepository;
 import tw.com.FacadeFactory;
@@ -25,14 +26,17 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private String cfnProject;
 	private String cfnBuildNumber = null;
 	private String cfnEnv;
+	private String bucketName;
 	private boolean snsMonitoring;
 	private Collection<Param> params;
+	private Collection<Param> uploads;
 	
 	private List<ActionElement> actionElements;
 	
 	public CfnAssistAntTask() {
 		snsMonitoring = false;
 		params = new LinkedList<Param>();
+		uploads = new LinkedList<Param>();
 		actionElements = new LinkedList<ActionElement>();
 	}
 	
@@ -52,6 +56,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		this.cfnBuildNumber  = cfnBuildNumber;
 	}
 	
+	public void setBucketName(String bucketName) {
+		this.bucketName  = bucketName;
+	}
+	
 	public void setSns(boolean useSnsMonitoring) {
 		this.snsMonitoring = useSnsMonitoring;
 	}
@@ -66,9 +74,14 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		actionElements.add(deleteElement);
 	}
 	
-	// addConfigured is looked for by ant
+	// addConfigured is looked for by ant, Rollback is name of element
 	public void addConfiguredRollback(RollbackElement rollbackElement) {
 		actionElements.add(rollbackElement);
+	}
+	
+	// addConfigured is looked for by ant, ELBUpdate is name of the element
+	public void addConfiguredELBUpdate(ELBUpdateElement elbUpdateElement) {
+		actionElements.add(elbUpdateElement);
 	}
 	
 	public void execute() {
@@ -84,9 +97,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		Collection<Parameter> cfnParameters = new LinkedList<Parameter>();
 		for(Param param : params) {
 			cfnParameters.add(param.getParamter());
-		}		
+		}
+		
+		FacadeFactory factory = new FacadeFactory(region,cfnProject);
+		handleUploads(cfnParameters, factory);
 		try {
-			FacadeFactory factory = new FacadeFactory(region,cfnProject);
 			AwsFacade aws = factory.createFacade(projectAndEnv.useSNS());
 			ELBRepository repository = factory.createElbRepo();
 			for(ActionElement element : actionElements) {
@@ -97,10 +112,30 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 			throw new BuildException(innerException);
 		}
 	}
+
+	private void handleUploads(Collection<Parameter> cfnParameters, FacadeFactory factory) {
+		if (!uploads.isEmpty()) {
+			if (bucketName==null) {
+				throw new BuildException("You must provide bucketName when invoking upload");
+			}
+			ArtifactUploader artifactUploader = new ArtifactUploader(factory.getS3Client(), bucketName, cfnBuildNumber);
+			Collection<Parameter> uploadParams = new LinkedList<Parameter>();
+			for(Param upload : uploads) {
+				uploadParams.add(upload.getParamter());
+			}
+			cfnParameters.addAll(artifactUploader.uploadArtifacts(uploadParams));
+		}
+	}
 	
 	 public Param createParam() {                                 
 		 Param param = new Param();
 		 params.add(param);
+		 return param;
+	 }
+	 
+	 public Param createUpload() {                                 
+		 Param param = new Param();
+		 uploads.add(param);
 		 return param;
 	 }
 		 
