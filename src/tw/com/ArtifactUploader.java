@@ -49,4 +49,10 @@ public class ArtifactUploader {
 		return new Parameter().withParameterKey(artifact.getParameterKey()).withParameterValue(url);
 	}
 
+	public void delete(String filename) {
+		String key = String.format("%s/%s",buildNumber,filename);
+		logger.info(String.format("Delete from bucket '%s' key '%s'", bucketName, key));
+		s3Client.deleteObject(bucketName,key);
+	}
+
 }

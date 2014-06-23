@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -27,8 +27,8 @@ public class LabelAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv,
-			String stackname, Collection<Parameter> cfnParams)
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String stackname,
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws InvalidParameterException, FileNotFoundException,
 			IOException, InterruptedException, CfnAssistException {
 		logger.info("Invoke label of existing stack: " + stackname);
@@ -39,10 +39,11 @@ public class LabelAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams)
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);	
-		guardForNoBuildNumber(projectAndEnv);		
+		guardForNoBuildNumber(projectAndEnv);	
+		guardForNoArtifacts(artifacts);
 	}
 
 }

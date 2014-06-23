@@ -34,6 +34,8 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
@@ -191,7 +193,23 @@ public class EnvironmentSetupForTests {
 		client.setRegion(getRegion());
 		return client;
 	}
+	
+	public static Boolean isContainedIn(List<S3ObjectSummary> objectSummaries,
+			String key) {
+		for(S3ObjectSummary summary : objectSummaries) {
+			if (summary.getBucketName().equals(EnvironmentSetupForTests.BUCKET_NAME) &&
+					summary.getKey().equals(key)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public static final int FAILURE_STATUS = -1;
+
+	public static List<S3ObjectSummary> getBucketObjects(AmazonS3Client s3Client) {
+		ObjectListing requestResult = s3Client.listObjects(EnvironmentSetupForTests.BUCKET_NAME);
+		return requestResult.getObjectSummaries();
+	}
 
 }

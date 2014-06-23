@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 
 import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.StackEntry;
 import tw.com.exceptions.CfnAssistException;
@@ -25,20 +26,21 @@ public class ListAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(AwsFacade aws, ELBRepository repository,
-			ProjectAndEnv projectAndEnv, String argument,
-			Collection<Parameter> cfnParams) throws InvalidParameterException,
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
+			String argument, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException {
+			InterruptedException, CfnAssistException, MissingArgumentException {
+		AwsFacade aws = factory.createFacade();
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
 		render(results);
 	}
 	
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams) throws CommandLineException {
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws CommandLineException {
 		guardForProject(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);
+		guardForNoArtifacts(artifacts);
 	}
 	
 	private void render(List<StackEntry> results) {

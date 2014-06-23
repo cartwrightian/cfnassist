@@ -102,13 +102,14 @@
 		</cfnassist>	
 	</target>
 
-	<!-- TODO Add S3 upload example -->
-	<target name="testSimpleTemplateWithS3Uploads" depends="cfnTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" bucketName="cfnassists3testbucket">
+	<!-- Upload two files to S3 bucket cfnassists3testbucket prefixed with the build number, invoke subnetWithS3Param.json with the URLs -->
+	<!-- of the now uploaed files automatically populated in parameters urlA and urlB -->
+	<target name="testSimpleTemplateWithS3Uploads" depends="cfnTask" >
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" bucketName="cfnassists3testbucket" buildNumber="742">
 			<Templates target="src/cfnScripts/subnetWithS3Param.json"/>
 			<!-- just use these files to test upload -->
-			<Upload name="urlA" value="src/cfnScripts/acl.json" />
-			<Upload name="urlB" value="src/cfnScripts/subnet.json" />
+			<Artifact name="urlA" value="src/cfnScripts/acl.json" />
+			<Artifact name="urlB" value="src/cfnScripts/subnet.json" />
 			<Delete target="src/cfnScripts/subnetWithS3Param.json"/>
 		</cfnassist>
 	</target>

@@ -2,6 +2,7 @@ package tw.com.commandline;
 
 import java.util.Collection;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -23,17 +24,19 @@ public class RollbackAction extends SharedAction {
 					withDescription("Warning: Rollback all current deltas and reset index accordingly").create("rollback");
 	}
 
-	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv, String folder, Collection<Parameter> unused) throws InvalidParameterException, CfnAssistException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String folder, Collection<Parameter> unused, Collection<Parameter> artifacts) throws InvalidParameterException, CfnAssistException, MissingArgumentException {
 		logger.info("Invoking rollback for " + projectAndEnv);
+		AwsFacade aws = factory.createFacade();
 		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
 	}
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams)
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);	
+		guardForNoArtifacts(artifacts);
 	}
 
 }

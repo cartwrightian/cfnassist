@@ -30,7 +30,7 @@ public class CommandFlags {
 	private Option keysValuesParam;
 	private Option snsParam;
 	private Option commentParam;
-	private Option uploadParam;
+	private Option artifactParam;
 	private Option bucketParam;
 
 	private String executableName;
@@ -42,9 +42,9 @@ public class CommandFlags {
 	private String buildNumber;
 	private Boolean sns;
 	private String comment;
-	private String bucket;
+	private String s3bucket;
 	private Collection<Parameter> cfnParams;
-	private Collection<Parameter> uploads;
+	private Collection<Parameter> artifacts;
 
 	public CommandFlags(String executableName, Options commandLineOptions) {
 		this.executableName = executableName;
@@ -61,7 +61,7 @@ public class CommandFlags {
 		commandLineOptions.addOption(buildNumberParam);
 		commandLineOptions.addOption(snsParam);
 		commandLineOptions.addOption(commentParam);
-		commandLineOptions.addOption(uploadParam);
+		commandLineOptions.addOption(artifactParam);
 		commandLineOptions.addOption(bucketParam);
 	}
 	
@@ -73,9 +73,9 @@ public class CommandFlags {
 		sns = checkForArgumentPresent(commandLine, formatter, snsParam);
 		comment = checkForArgument(commandLine, formatter, commentParam, "", false);
 		cfnParams = checkForKeyValueParameters(commandLine, formatter, keysValuesParam);
-		uploads = checkForKeyValueParameters(commandLine, formatter, uploadParam);
-		boolean bucketRequired = (!uploads.isEmpty());
-		bucket = checkForArgument(commandLine, formatter, bucketParam, AwsFacade.ENV_S3_BUCKET, bucketRequired);
+		artifacts = checkForKeyValueParameters(commandLine, formatter, artifactParam);
+		boolean bucketRequired = (!artifacts.isEmpty());
+		s3bucket = checkForArgument(commandLine, formatter, bucketParam, AwsFacade.ENV_S3_BUCKET, bucketRequired);
 	}
 	
 	@SuppressWarnings("static-access")
@@ -109,13 +109,13 @@ public class CommandFlags {
 		commentParam = OptionBuilder.withArgName("comment").hasArg().
 				withDescription("Add a comment within the tag " + AwsFacade.COMMENT_TAG).create("comment");
 		
-		uploadParam = OptionBuilder.withArgName("uploads").
+		artifactParam = OptionBuilder.withArgName("artifacts").
 				hasArgs().withValueSeparator(';').
 				withDescription("Provide files to be uploaded to S3 bucket, param values will be replaced with the S3 URLs and passed into the template file").
-				create("uploads");
+				create("artifacts");
 		
 		bucketParam = OptionBuilder.withArgName("bucket").
-				hasArgs().withDescription("Bucket name to use for S3 uploads").
+				hasArgs().withDescription("Bucket name to use for S3 artifacts").
 				create("bucket");
 		
 	}
@@ -223,10 +223,14 @@ public class CommandFlags {
 	}
 
 	public Collection<Parameter> getUploadParams() {
-		return uploads;
+		return artifacts;
 	}
 
-	public String getBucketName() {
-		return bucket;
+	public String getS3Bucket() {
+		return s3bucket;
+	}
+
+	public boolean haveS3Bucket() {
+		return !s3bucket.isEmpty();
 	}
 }

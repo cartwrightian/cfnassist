@@ -6,6 +6,7 @@ public class ProjectAndEnv {
 	private String env;
 	private String buildNumber = null;
 	private boolean useSns;
+	private String s3Bucket;
 
 	public ProjectAndEnv(String project, String env) {
 		useSns = false;
@@ -32,9 +33,7 @@ public class ProjectAndEnv {
 		this.buildNumber  = buildNumber;		
 	}
 
-	public boolean hasBuildNumber() {
-		return (buildNumber!=null);
-	}
+	
 
 	public String getBuildNumber() {
 		return buildNumber;
@@ -54,6 +53,14 @@ public class ProjectAndEnv {
 
 	public boolean hasProject() {
 		return project!=null && !project.isEmpty();
+	}
+
+	public boolean hasBucketName() {
+		return s3Bucket!=null && !s3Bucket.isEmpty();
+	}
+	
+	public boolean hasBuildNumber() {
+		return buildNumber!=null && !buildNumber.isEmpty();
 	}
 
 	public boolean hasEnv() {
@@ -90,5 +97,14 @@ public class ProjectAndEnv {
 			return false;
 		return true;
 	}
+
+	public void setS3Bucket(String s3Bucket) {
+		this.s3Bucket = s3Bucket;
+	}
+
+	public String getS3Bucket() {
+		return s3Bucket;
+	}
+
 	
 }

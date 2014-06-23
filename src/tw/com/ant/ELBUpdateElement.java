@@ -4,8 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
-import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.commandline.CommandLineException;
 import tw.com.commandline.ElbAction;
@@ -26,15 +25,15 @@ public class ELBUpdateElement implements ActionElement {
 	}
 
 	@Override
-	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, ELBRepository repository)
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
+			Collection<Parameter> cfnParams,Collection<Parameter> artifacts)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, InterruptedException,
 			CfnAssistException, CommandLineException {
 		ElbAction actionToInvoke = new ElbAction(); 
 		
-		actionToInvoke.validate(projectAndEnv, typeTag, cfnParams);
-		actionToInvoke.invoke(aws, repository, projectAndEnv, typeTag, cfnParams);
+		actionToInvoke.validate(projectAndEnv, typeTag, cfnParams, artifacts);
+		actionToInvoke.invoke(factory, projectAndEnv, typeTag, cfnParams, artifacts);
 
 	}
 

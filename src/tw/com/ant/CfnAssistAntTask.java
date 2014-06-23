@@ -11,9 +11,6 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
-import tw.com.ArtifactUploader;
-import tw.com.AwsFacade;
-import tw.com.ELBRepository;
 import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.commandline.CommandLineException;
@@ -29,14 +26,14 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private String bucketName;
 	private boolean snsMonitoring;
 	private Collection<Param> params;
-	private Collection<Param> uploads;
+	private Collection<Param> artifactParams;
 	
 	private List<ActionElement> actionElements;
 	
 	public CfnAssistAntTask() {
 		snsMonitoring = false;
 		params = new LinkedList<Param>();
-		uploads = new LinkedList<Param>();
+		artifactParams = new LinkedList<Param>();
 		actionElements = new LinkedList<ActionElement>();
 	}
 	
@@ -92,20 +89,17 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		if (cfnBuildNumber!=null) {
 			projectAndEnv.addBuildNumber(cfnBuildNumber);
 		}
+		if (bucketName!=null) {
+			projectAndEnv.setS3Bucket(bucketName);
+		}
 		Region region = RegionUtils.getRegion(awsRegion);
 
-		Collection<Parameter> cfnParameters = new LinkedList<Parameter>();
-		for(Param param : params) {
-			cfnParameters.add(param.getParamter());
-		}
-		
-		FacadeFactory factory = new FacadeFactory(region,cfnProject);
-		handleUploads(cfnParameters, factory);
+		Collection<Parameter> cfnParameters = createParameterList();
+		Collection<Parameter> artifacts = createArtifactList();	
+		FacadeFactory factory = new FacadeFactory(region,cfnProject,projectAndEnv.useSNS());
 		try {
-			AwsFacade aws = factory.createFacade(projectAndEnv.useSNS());
-			ELBRepository repository = factory.createElbRepo();
 			for(ActionElement element : actionElements) {
-				element.execute(aws, projectAndEnv, cfnParameters, repository);
+				element.execute(factory, projectAndEnv, cfnParameters, artifacts);
 			}
 		} catch (IOException | MissingArgumentException
 				| InvalidParameterException | InterruptedException | CfnAssistException | CommandLineException innerException) {
@@ -113,18 +107,20 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		}
 	}
 
-	private void handleUploads(Collection<Parameter> cfnParameters, FacadeFactory factory) {
-		if (!uploads.isEmpty()) {
-			if (bucketName==null) {
-				throw new BuildException("You must provide bucketName when invoking upload");
-			}
-			ArtifactUploader artifactUploader = new ArtifactUploader(factory.getS3Client(), bucketName, cfnBuildNumber);
-			Collection<Parameter> uploadParams = new LinkedList<Parameter>();
-			for(Param upload : uploads) {
-				uploadParams.add(upload.getParamter());
-			}
-			cfnParameters.addAll(artifactUploader.uploadArtifacts(uploadParams));
+	private Collection<Parameter> createParameterList() {
+		Collection<Parameter> cfnParameters = new LinkedList<Parameter>();
+		for(Param param : params) {
+			cfnParameters.add(param.getParamter());
 		}
+		return cfnParameters;
+	}
+
+	private Collection<Parameter> createArtifactList() {
+		Collection<Parameter> uploadParams = new LinkedList<Parameter>();
+		for(Param upload : artifactParams) {
+			uploadParams.add(upload.getParamter());
+		}
+		return uploadParams;
 	}
 	
 	 public Param createParam() {                                 
@@ -133,9 +129,9 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		 return param;
 	 }
 	 
-	 public Param createUpload() {                                 
+	 public Param createArtifact() {                                 
 		 Param param = new Param();
-		 uploads.add(param);
+		 artifactParams.add(param);
 		 return param;
 	 }
 		 

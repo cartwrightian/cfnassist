@@ -5,12 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
-import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
@@ -31,11 +31,9 @@ public class TemplatesElement implements ActionElement {
 		this.target = target;
 	}
 	
-	/* (non-Javadoc)
-	 * @see tw.com.ant.ActionElement#execute(tw.com.AwsFacade, tw.com.ProjectAndEnv, java.util.Collection, tw.com.ELBRepository)
-	 */
+
 	@Override
-	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, ELBRepository repository) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException {
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
 		String absolutePath = target.getAbsolutePath();
 		CommandLineAction actionToInvoke = null;
 		if (target.isDirectory()) {
@@ -47,7 +45,7 @@ public class TemplatesElement implements ActionElement {
 		if (actionToInvoke==null) {
 			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
 		} 
-		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams);
-		actionToInvoke.invoke(aws, repository, projectAndEnv, absolutePath,cfnParams);		
+		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams, artifacts);
+		actionToInvoke.invoke(factory, projectAndEnv, absolutePath, cfnParams, artifacts);		
 	}
 }

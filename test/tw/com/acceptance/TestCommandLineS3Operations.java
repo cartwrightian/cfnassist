@@ -1,8 +1,6 @@
 package tw.com.acceptance;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.Assert.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,6 +27,7 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class TestCommandLineS3Operations {
 	private static final String BUILD_NUMBER = "9987";
@@ -47,10 +46,10 @@ public class TestCommandLineS3Operations {
 	private VpcRepository vpcRepository;
 	private DeletesStacks deletesStacks;
 	private ProjectAndEnv projectAndEnv;
-	private static String fileA = FilenameUtils.getName(FilesForTesting.ACL);
-	private static String fileB = FilenameUtils.getName(FilesForTesting.SUBNET_STACK);
-	private static final String KEY_A = BUILD_NUMBER+"/"+fileA;
-	private static final String KEY_B = BUILD_NUMBER+"/"+fileB;	
+	private static String filenameA = FilenameUtils.getName(FilesForTesting.ACL);
+	private static String filenameB = FilenameUtils.getName(FilesForTesting.SUBNET_STACK);
+	private static final String KEY_A = BUILD_NUMBER+"/"+filenameA;
+	private static final String KEY_B = BUILD_NUMBER+"/"+filenameB;	
 	
 	@Before
 	public void beforeEveryTestRun() {
@@ -90,13 +89,13 @@ public class TestCommandLineS3Operations {
 	
 	@Test
 	public void testUploadArtifactsToS3AndAutopopulateAsParameters() {		
-		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String artifacts = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		String[] argsDeploy = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
-				"-uploads", uploads,
+				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
 				"-build", BUILD_NUMBER,
 				"-sns"
@@ -117,6 +116,49 @@ public class TestCommandLineS3Operations {
 		expectedTags.add(new Tag().withKey("urlATag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A));
 		expectedTags.add(new Tag().withKey("urlBTag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B));
 		assertTrue(tags.containsAll(expectedTags));
+	}
+	
+	@Test
+	public void testUploadAndDeleteArtifacts() {		
+		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String[] argsS3create = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-s3create",
+				"-artifacts", artifacts,
+				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
+				"-build", BUILD_NUMBER,
+				"-sns"
+				};
+				
+		Main main = new Main(argsS3create);
+		int result = main.parse();
+		assertEquals("create failed", 0, result);
+		
+		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
+		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
+		
+		artifacts = String.format("art1=%s;art2=%s", filenameA, filenameB);
+		String[] argsS3Delete = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-s3delete",
+				"-artifacts", artifacts,
+				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
+				"-build", BUILD_NUMBER,
+				"-sns"
+				};
+		
+		main = new Main(argsS3Delete);
+		result = main.parse();
+		assertEquals("delete failed", 0, result);
+	
+		objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
+		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
 	}
 	
 }

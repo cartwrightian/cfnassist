@@ -5,12 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -29,18 +30,20 @@ public class DeleteAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(AwsFacade aws, ELBRepository repository, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams) throws InvalidParameterException,
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException {
+			InterruptedException, CfnAssistException, MissingArgumentException {
 		logger.info(String.format("Attempting to delete corresponding to %s and %s", filename, projectAndEnv));
 		File templateFile = new File(filename);
+		AwsFacade aws = factory.createFacade();
 		aws.deleteStackFrom(templateFile, projectAndEnv);	
 	}
 	
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams) throws CommandLineException {
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
+		guardForNoArtifacts(artifacts);
 	}
 
 }

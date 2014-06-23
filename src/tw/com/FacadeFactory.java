@@ -23,8 +23,14 @@ public class FacadeFactory {
 	private VpcRepository vpcRepository;
 	private AmazonElasticLoadBalancingClient elbClient;
 	private AmazonS3Client s3Client;
+	private boolean arnMonitoring;
+	private AwsFacade awsFacade;
+	private ELBRepository elbRepository;
+	private String comment;
+	private ArtifactUploader artifactUploader;
 
-	public FacadeFactory(Region region, String project) {
+	public FacadeFactory(Region region, String project,boolean arnMonitoring) {
+		this.arnMonitoring = arnMonitoring;
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(region);
@@ -43,25 +49,47 @@ public class FacadeFactory {
 		vpcRepository = new VpcRepository(ec2Client);
 	}
 
-	public AwsFacade createFacade(boolean arnMonitoring) throws MissingArgumentException {	
-		
-		MonitorStackEvents monitor = null;
-		if (arnMonitoring) {					
-			monitor = new SNSMonitor(snsClient, sqsClient);
-		} else {
-			monitor = new PollingStackMonitor(cfnRepository);
+	public AwsFacade createFacade() throws MissingArgumentException {		
+		if (awsFacade==null) {
+			MonitorStackEvents monitor = null;
+			if (arnMonitoring) {					
+				monitor = new SNSMonitor(snsClient, sqsClient);
+			} else {
+				monitor = new PollingStackMonitor(cfnRepository);
+			}
+			
+			monitor.init();
+			awsFacade = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+			if (comment!=null) {
+				awsFacade.setCommentTag(comment);
+			}
 		}
 		
-		monitor.init();
-		return new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);	
+		return awsFacade;	
 	}
 
 	public ELBRepository createElbRepo() {
-		return new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);
+		if (elbRepository==null) {
+			elbRepository = new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);
+		}
+		
+		return elbRepository;
 	}
 
 	public AmazonS3Client getS3Client() {
 		return s3Client;
+	}
+
+	public void setCommentTag(String comment) {
+		this.comment = comment;	
+	}
+
+	public ArtifactUploader createArtifactUploader(ProjectAndEnv projectAndEnv) {
+		if (artifactUploader==null) {
+			artifactUploader = new ArtifactUploader(s3Client, projectAndEnv.getS3Bucket(),
+					projectAndEnv.getBuildNumber());
+		}
+		return artifactUploader;
 	}
 
 }

@@ -56,6 +56,8 @@ public class Actions {
 		actions.add(new ElbAction());
 		actions.add(new DeleteAction());
 		actions.add(new ListAction());
+		actions.add(new S3CreateAction());
+		actions.add(new S3DeleteAction());
 	}
 
 }

@@ -5,10 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
 
-import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
@@ -29,7 +29,7 @@ public class RollbackElement implements ActionElement {
 		this.target = target;
 	}
 	
-	public void execute(AwsFacade aws, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, ELBRepository repository) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException {
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
 		String absolutePath = target.getAbsolutePath();
 		
 		if (!target.isDirectory()) {
@@ -38,8 +38,8 @@ public class RollbackElement implements ActionElement {
 		
 		CommandLineAction actionToInvoke = new RollbackAction();
 
-		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams);
-		actionToInvoke.invoke(aws, repository, projectAndEnv, absolutePath, cfnParams);		
+		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams, artifacts);
+		actionToInvoke.invoke(factory, projectAndEnv, absolutePath, cfnParams, artifacts);		
 	}
 
 }

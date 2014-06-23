@@ -1,7 +1,6 @@
 package tw.com.integration;
 
-import static org.junit.Assert.assertEquals;
-
+import static org.junit.Assert.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -18,7 +17,6 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class TestArtifactUploader {
@@ -55,8 +53,7 @@ public class TestArtifactUploader {
 	}
 
 	@Test
-	public void expectUploadAndURLsReturnedBack() {
-			
+	public void expectUploadAndURLsReturnedBack() {		
 		List<Parameter> arts = new LinkedList<Parameter>();
 		
 		// any files would do here
@@ -79,12 +76,31 @@ public class TestArtifactUploader {
 		assertEquals(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B, results.get(1).getParameterValue());
 		
 		// check upload actually happened	
-		ObjectListing requestResult = s3Client.listObjects(EnvironmentSetupForTests.BUCKET_NAME);
-		List<S3ObjectSummary> objectSummaries = requestResult.getObjectSummaries();
-		// this summary is in lexigraphical order
-		assertEquals(2, objectSummaries.size());
-		assertEquals(KEY_A, objectSummaries.get(0).getKey());
-		assertEquals(KEY_B, objectSummaries.get(1).getKey());
+		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		
+		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
+		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
 	}
+	
+	@Test
+	public void canDeleteArtifactsFromS3() {
+		List<Parameter> arts = new LinkedList<Parameter>();
+		
+		// any files would do here
+		Parameter artA = new Parameter().withParameterKey("urlA").withParameterValue(FilesForTesting.INSTANCE); 
+		arts.add(artA);	
+		ArtifactUploader uploader = new ArtifactUploader(s3Client, EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER);
+		uploader.uploadArtifacts(arts);	
+		
+		// check upload actually happened	
+		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
+		
+		uploader.delete("instance.json");
+		objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
+	}
+
+	
 
 }

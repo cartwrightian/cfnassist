@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.ELBRepository;
+import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
@@ -26,19 +27,21 @@ public class InitAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(AwsFacade aws, ELBRepository repository,  ProjectAndEnv projectAndEnv,
-			String vpcId, Collection<Parameter> unused) throws InvalidParameterException,
-			FileNotFoundException, IOException, InterruptedException, CfnAssistException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,  String vpcId,
+			Collection<Parameter> unused, Collection<Parameter> artifacts) throws InvalidParameterException,
+			FileNotFoundException, IOException, InterruptedException, CfnAssistException, MissingArgumentException {
 		logger.info("Invoke init of tags for VPC: " + vpcId);
+		AwsFacade aws = factory.createFacade();
 		aws.initEnvAndProjectForVPC(vpcId, projectAndEnv);		
 	}
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams)
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);	
 		guardForNoBuildNumber(projectAndEnv);	
+		guardForNoArtifacts(artifacts);
 	}
 
 }

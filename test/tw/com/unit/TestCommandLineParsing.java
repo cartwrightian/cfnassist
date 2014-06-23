@@ -39,7 +39,22 @@ public class TestCommandLineParsing {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-file", FilesForTesting.SUBNET_WITH_PARAM,
-				"-uploads", uploads,
+				"-artifacts", uploads,
+				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
+				"-sns"
+				};
+		expectCommandLineFailureStatus(args);
+	}
+	
+	@Test
+	public void testMustGiveTheBucketWhenUploadingArtifacts() {
+		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-file", FilesForTesting.SUBNET_WITH_PARAM,
+				"-artifacts", uploads,
+				"-build", "9987",
 				"-sns"
 				};
 		expectCommandLineFailureStatus(args);
@@ -54,7 +69,7 @@ public class TestCommandLineParsing {
 				"-project", EnvironmentSetupForTests.PROJECT,
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
-				"-uploads", uploads,
+				"-artifacts", uploads,
 				"-build", "9987",
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
 				"-sns"
@@ -73,7 +88,7 @@ public class TestCommandLineParsing {
 				"-project", EnvironmentSetupForTests.PROJECT,
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
-				"-uploads", uploads,
+				"-artifacts", uploads,
 				"-build", "9987",
 				"-sns"
 				};

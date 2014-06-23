@@ -14,9 +14,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.ArtifactUploader;
-import tw.com.AwsFacade;
-import tw.com.ELBRepository;
 import tw.com.FacadeFactory;
 import tw.com.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
@@ -78,29 +75,22 @@ public class Main {
 			if (flags.getSns()) {
 				projectAndEnv.setUseSNS();
 			}
+			if (flags.haveS3Bucket()) {
+				projectAndEnv.setS3Bucket(flags.getS3Bucket());
+			}
 			logger.info("Invoking for " + projectAndEnv);
 			
 			String argumentForAction = commandLine.getOptionValue(action.getArgName());
-			action.validate(projectAndEnv, argumentForAction, flags.getAdditionalParameters());
+			Collection<Parameter> artifacts = flags.getUploadParams();
+			action.validate(projectAndEnv, argumentForAction, flags.getAdditionalParameters(), artifacts);
 			
-			FacadeFactory factory = new FacadeFactory(awsRegion, flags.getProject());
-			AwsFacade facade = factory.createFacade(flags.getSns());
-			ELBRepository repository = factory.createElbRepo();
-			if (flags.haveComment()) {
-				facade.setCommentTag(flags.getComment());
-			}
-			
+			FacadeFactory factory = new FacadeFactory(awsRegion, flags.getProject(),flags.getSns());
+			factory.setCommentTag(flags.getComment());	
 			Collection<Parameter> additionalParams = flags.getAdditionalParameters();
 			
 			if (act) {	
-				Collection<Parameter> uploadParams = flags.getUploadParams();
 				
-				if (!uploadParams.isEmpty()) {
-					ArtifactUploader artifactUploader = new ArtifactUploader(factory.getS3Client(), 
-							flags.getBucketName(), flags.getBuildNumber());
-					additionalParams.addAll(artifactUploader.uploadArtifacts(uploadParams));
-				}
-				action.invoke(facade, repository, projectAndEnv, argumentForAction, additionalParams);
+				action.invoke(factory, projectAndEnv, argumentForAction, additionalParams, artifacts);
 			} else {
 				logger.info("Not invoking");
 			}
