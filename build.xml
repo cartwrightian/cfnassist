@@ -7,7 +7,11 @@
     <property name="target" value="1.7"/>
     <property name="source" value="1.7"/>
     <property name="aws_sdk_loc" value="lib/aws-java-sdk-1.6.1" />
-	<!-- todo use the versions in lib -->
+	<property name="environment" value="env"/>
+	<condition property="buildNum" value="${env.SNAP_PIPELINE_COUNTER}" else="DEV">
+        <isset property="env.SNAP_PIPELINE_COUNTER"/>
+    </condition>
+	<property name="release" value="cfnassit-1.0.${buildNum}" />
     <path id="JUnit 4.libraryclasspath">   	
         <pathelement location="lib/junit4.11/junit-4.11.jar"/>
         <pathelement location="lib/junit4.11/hamcrest-core-1.3.jar"/>
@@ -84,47 +88,38 @@
     <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
     
     <target name="test" depends="build,unit,integration,acceptance" />
-        
+     
+	<macrodef name="runtests">
+		<attribute name="classes"/>
+		<sequential>
+			<mkdir dir="${junit.output.dir}"/>
+	        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
+	            <formatter type="xml"/>
+	            <classpath refid="cfnassist.classpath"/>
+				<batchtest fork="yes" todir="${junit.output.dir}">
+					<fileset dir="test">
+						<include name="@{classes}"/>
+					</fileset>
+				</batchtest>
+	        </junit>
+		</sequential>
+	</macrodef>
+	
 	<target name="unit">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
-            <formatter type="xml"/>
-            <classpath refid="cfnassist.classpath"/>
-			<batchtest fork="yes" todir="${junit.output.dir}">
-				<fileset dir="test">
-					<include name="**/unit/Test*.java"/>
-				</fileset>
-			</batchtest>
-        </junit>
+        <runtests classes="**/unit/Test*.java"/>
     </target>
 	
 	<target name="integration">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
-            <formatter type="xml"/>
-            <classpath refid="cfnassist.classpath"/>
-			<batchtest fork="yes" todir="${junit.output.dir}">
-				<fileset dir="test">
-					<include name="**/integration/Test*.java"/>
-				</fileset>
-			</batchtest>
-        </junit>
+        <runtests classes="**/integration/Test*.java"/>
     </target>
 	
 	<target name="acceptance">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
-            <formatter type="xml"/>
-            <classpath refid="cfnassist.classpath"/>
-			<batchtest fork="yes" todir="${junit.output.dir}">
-				<fileset dir="test">
-					<include name="**/acceptance/Test*.java"/>
-				</fileset>
-			</batchtest>
-        </junit>
+        <runtests classes="**/acceptance/Test*.java"/>
     </target>
 	
-	<target name="dist" depends="build">
+	<target name="localdist" depends="build,dist"/>
+	
+	<target name="dist">
 	        <mkdir dir="dist"/>
 	        <mkdir dir="dist/bin"/>
 	        <mkdir dir="dist/bin/lib"/>
@@ -155,8 +150,27 @@
 	    	<copy file="README.md" todir="dist"/>
 	</target>
 	
-	<target name="release" depends="dist">
-		
+	<target name="cfnTask" >
+		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
+			<classpath>
+				<pathelement location="dist/bin/cfnassist.jar"/>
+						<path refid="aws_sdk_lib"/>
+				    	<path refid="logging_libs"/>
+				    	<path refid="apacheCommons"/>
+			</classpath>
+		</taskdef>
+	</target>
+	
+	<target name="release" depends="dist,cfnTask">
+		<copy todir="${release}">
+			<fileset dir="dist"/>
+	    </copy>
+		<zip destfile="${release}.zip" basedir="${release}"/>
+		<delete dir="${release}"/>
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" bucketName="cfnassist-release" buildNumber="${buildNum}">
+			<S3Create/>
+			<Artifact name="fileA" value="${release}.zip" />
+		</cfnassist>
 	</target>
 	
 </project>

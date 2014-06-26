@@ -61,24 +61,31 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		this.snsMonitoring = useSnsMonitoring;
 	}
 	
-	// addConfigured is looked for by ant, Templates is the name of the nested element
+	// NOTE
+	// addConfigured is looked for by ant, the rest if the name of the Element
+	
 	public void addConfiguredTemplates(TemplatesElement fileElement) {
 		actionElements.add(fileElement);
 	}
 	
-	// addConfigured is looked for by ant, Delete is the name of the nested element
 	public void addConfiguredDelete(DeleteElement deleteElement) {
 		actionElements.add(deleteElement);
 	}
 	
-	// addConfigured is looked for by ant, Rollback is name of element
 	public void addConfiguredRollback(RollbackElement rollbackElement) {
 		actionElements.add(rollbackElement);
 	}
 	
-	// addConfigured is looked for by ant, ELBUpdate is name of the element
 	public void addConfiguredELBUpdate(ELBUpdateElement elbUpdateElement) {
 		actionElements.add(elbUpdateElement);
+	}
+	
+	public void addConfiguredS3Create(S3Create s3create) {
+		actionElements.add(s3create);
+	}
+	
+	public void addConfiguredS3Delete(S3Delete s3delete) {
+		actionElements.add(s3delete);
 	}
 	
 	public void execute() {
