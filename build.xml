@@ -73,7 +73,7 @@
     	<delete dir="dist"/>
     </target>
 	
-    <target depends="init" name="build">
+    <target name="build" depends="init">
         <echo message="${ant.project.name}: ${ant.file}"/>
         <javac debug="true" debuglevel="${debuglevel}" destdir="${output}" includeantruntime="false" source="${source}" target="${target}">
             <src path="src"/>
@@ -83,18 +83,9 @@
     </target>
     <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
     
-    <target name="EnvironmentSetupForTests">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="tw.com.EnvironmentSetupForTests" todir="${junit.output.dir}"/>
-            <classpath refid="cfnassist.classpath"/>
-        </junit>
-    </target>
-	
-    <target name="test" depends="unit,integration,acceptance" />
+    <target name="test" depends="build,unit,integration,acceptance" />
         
-	<target name="unit" depends="build">
+	<target name="unit">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
             <formatter type="xml"/>
@@ -107,7 +98,7 @@
         </junit>
     </target>
 	
-	<target name="integration" depends="build">
+	<target name="integration">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
             <formatter type="xml"/>
@@ -120,7 +111,7 @@
         </junit>
     </target>
 	
-	<target name="acceptance" depends="build">
+	<target name="acceptance">
         <mkdir dir="${junit.output.dir}"/>
         <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
             <formatter type="xml"/>
@@ -131,15 +122,6 @@
 				</fileset>
 			</batchtest>
         </junit>
-    </target>
-
-    <target name="junitreport">
-        <junitreport todir="${junit.output.dir}">
-            <fileset dir="${junit.output.dir}">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="frames" todir="${junit.output.dir}"/>
-        </junitreport>
     </target>
 	
 	<target name="dist" depends="build">
@@ -171,6 +153,10 @@
 	    	<copy file="conf/logback.xml" todir="dist/bin/conf"/>
 	    	<copy file="testAntTasks.xml" tofile="dist/exampleAntTasks.xml"/>
 	    	<copy file="README.md" todir="dist"/>
+	</target>
+	
+	<target name="release" depends="dist">
+		
 	</target>
 	
 </project>
