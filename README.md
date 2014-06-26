@@ -1,7 +1,9 @@
 cfnassit
 ========
 
-cfnassit to a tool help with [cloud formation](http://aws.amazon.com/cloudformation/) deployments into [AWS](http://aws.amazon.com/) VPCs
+cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudformation/) deployments into [AWS](http://aws.amazon.com/) VPCs
+
+[Download Initial Release version 1.0.29](https://s3-eu-west-1.amazonaws.com/cfnassist-release/29/cfnassit-1.0.29.zip)
 
 Build Status
 ------------
@@ -15,6 +17,7 @@ Key Features
 * Tracks which scripts need to be applied to projects and environments using a simple delta tracking mechanism borrowed from [dbdeploy](http://dbdeploy.com/)
 * Autopopulates physical id's based on logical identifiers plus the project & environment, this means you can break large scripts apart and think about project/env/logical ids instead of VPC id/physical id
 * Assists with the [Phoenix Server](http://martinfowler.com/bliki/PhoenixServer.html) pattern by automating the switch over of instances for an ELB based on build numbers
+* Allows upload to S3; along with the option of passing S3 urls of new aritifacts directly into cloudformation templates
 
 Usage
 -----
