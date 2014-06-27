@@ -93,7 +93,7 @@ For example subnets, load balancers, NAT and internet gateways and so on.
 You may still want to clean out a VPC and rerun this on occasions to make sure you can fully recreate a fully working VPC from scratch. 
 Live instances etc should probably be created during the CI build especially if you are doing blue/green deploys. More on this below.
 
-After each script succeeds the VPC **CFN\_ASSIST\_DELTA** tag is updated, this way the tool only tries to create the required stacks for each VPC. The tool will also take care of deleting a an existing stack if it is in the rollback complete state.
+After each script succeeds the VPC **CFN\_ASSIST\_DELTA** tag is updated, this way the tool only tries to create the required stacks for each VPC. The tool will also take care of deleting an existing stack if it is in the rollback complete state.
 
 `cfnassist.sh -env Dev -dir ./infrastructure`
 
@@ -248,6 +248,9 @@ appropriate **CFN_ASSIST_TYPE** tag.
 It then finds the ELB for the VPC for the project and environment, addes the instances to the ELB and *removes* any instances not 
 matching the build number.
 
+You can 'rollback' the ELB to point at the previous instances by giving their build number, so you may not want to immediately delete 
+previous instances until sure all is ok with the new ones.
+
 *Restriction: The tool currently only supports one ELB per VPC*
 
 10.Reset the delta tag on a VPC
@@ -304,7 +307,7 @@ Sometimes you want to create or delete things in S3 independently of deploying t
 
 `cfnassist.sh -env Dev -s3create -artifacts "xzy=dist/release.txt;abc=dist/deployable.tgz -bucket bucketName MyBucket -build 1123`
 
-The files will be uploaded as per 12 about.
+The files will be uploaded as per 12 above.
 
 To delete files you need to need to pass in the name of the files themselves.
 
@@ -312,3 +315,12 @@ To delete files you need to need to pass in the name of the files themselves.
 
 **NOTE** 
 The current file path is not used, so the file dist/release.txt will end up in the bucket MyBucket with the key `1123/release.txt`
+
+14.Delete a stack
+-----------------
+You can delete a stack created with cfnassit using the following command:
+
+`cfnassist.sh -env Dev -build 1223 -delete ./templateFile.json`
+
+This will delete the stack that was created from the templateFile.json file with the build number 1223.
+
