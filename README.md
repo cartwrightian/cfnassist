@@ -284,20 +284,23 @@ flag set this will fail.
 As the cloud formation API now allows a stack to have the sns topic updated this restriction should soon be 
 removed.
 
-12.Upload files to S3 and inject corresponding URLs into templates
-------------------------------------------------------------------
-You can use cfnassist to upload files into S3 and then pass in the S3 url's of those files into templates
+12.Upload files or folders to S3 and inject corresponding URLs into templates
+-----------------------------------------------------------------------------
+You can use cfnassist to upload files or folders into S3 and then pass in the S3 url's of those files into templates
 automatically. The files will be prefixed with the build number i.e. /BUILDNUMBER/filename
 
 The path to the file will be replaced with the URL, for example
 
-`cfnassist.sh -env Dev -file templateFile.json -artifacts "urlA=dist/release.txt;urlB=dist/deployable.tgz -bucket bucketName MyBucket -build 1123`
+`cfnassist.sh -env Dev -file templateFile.json -artifacts "urlA=dist/release.txt;urlB=dist/deployable.tgz" -bucket bucketName MyBucket -build 1123`
 
 This will upload the files `release.txt` and `deployable.tgz` to S3 bucket MyBucket and then populate the 
 parameters `urlA` and `urlB` with the corresponding S3 urls and pass these into `templateFile.json`. 
 
+You can also upload the contents of a folder, in this case the path to the folder will be replaced with the URL of the bucket and key.
+
 **NOTE** 
-The current file path is not used, so the file dist/release.txt will end up in the bucket MyBucket with the key 1123/release.txt
+The current file path is not used, so the file dist/release.txt will end up in the bucket MyBucket with the key 1123/release.txt, 
+this applies to the individual files within a folder also.
 
 You can use the environmental variable *CFN_ASSIST_BUCKET* to specify the S3 bucket to use.
 
@@ -305,7 +308,11 @@ You can use the environmental variable *CFN_ASSIST_BUCKET* to specify the S3 buc
 ----------------------------------
 Sometimes you want to create or delete things in S3 independently of deploying templates.
 
-`cfnassist.sh -env Dev -s3create -artifacts "xzy=dist/release.txt;abc=dist/deployable.tgz -bucket bucketName MyBucket -build 1123`
+`cfnassist.sh -env Dev -s3create -artifacts "xzy=dist/release.txt;abc=dist/deployable.tgz" -bucket bucketName MyBucket -build 1123`
+
+Or
+
+`cfnassist.sh -env Dev -s3create -artifacts "folder=dist/subFolder" -bucket bucketName MyBucket -build 1123`
 
 The files will be uploaded as per 12 above.
 

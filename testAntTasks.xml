@@ -114,9 +114,9 @@
 		</cfnassist>
 	</target>
 	
-	<target name="testS3" depends="testSimpleS3Create,testSimpleS3Delete" />
+	<target name="testS3" depends="testSimpleS3CreateFiles,testSimpleS3DeleteFiles,testSimpleS3CreateDir,testSimpleS3DeleteDirFiles" />
 	
-	<target name="testSimpleS3Create" depends="cfnTask" >
+	<target name="testSimpleS3CreateFiles" depends="cfnTask" >
 		<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
 			<S3Create/>
 			<Artifact name="fileA" value="src/cfnScripts/acl.json" />
@@ -124,12 +124,28 @@
 		</cfnassist>
 	</target>
 	
-	<target name="testSimpleS3Delete" depends="cfnTask" >
+	<target name="testSimpleS3DeleteFiles" depends="cfnTask" >
 			<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
 				<S3Delete/>
 				<Artifact name="fileA" value="acl.json" />
 				<Artifact name="fileB" value="subnet.json" />
 			</cfnassist>
 		</target>
+	
+	<target name="testSimpleS3CreateDir" depends="cfnTask" >
+		<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
+			<S3Create/>
+			<Artifact name="folderA" value="src/cfnScripts/orderedScripts" />
+		</cfnassist>
+	</target>
+	
+	<target name="testSimpleS3DeleteDirFiles" depends="cfnTask" >
+			<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
+				<S3Delete/>
+				<Artifact name="fileA" value="01createSubnet.json" />
+				<Artifact name="fileB" value="02createAcls.json" />
+			</cfnassist>
+	</target>
+		
 	
 </project>
