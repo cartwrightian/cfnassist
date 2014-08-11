@@ -119,7 +119,7 @@ public class TestCommandLineS3Operations {
 	}
 	
 	@Test
-	public void testUploadAndDeleteArtifacts() {		
+	public void testUploadAndDeleteFileArtifacts() {		
 		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		String[] argsS3create = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -159,6 +159,51 @@ public class TestCommandLineS3Operations {
 		objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
 		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
+	}
+	
+	@Test
+	public void testUploadAndDeleteFolderArtifact() {		
+		String artifacts = String.format("folder=%s", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
+		String[] argsS3create = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-s3create",
+				"-artifacts", artifacts,
+				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
+				"-build", BUILD_NUMBER,
+				"-sns"
+				};
+				
+		Main main = new Main(argsS3create);
+		int result = main.parse();
+		assertEquals("create failed", 0, result);
+		
+		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		String key1 = BUILD_NUMBER+"/01createSubnet.json";
+		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, key1));
+		String key2 = BUILD_NUMBER+"/02createAcls.json";
+		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, key2));
+		
+		artifacts = String.format("art1=%s;art2=%s", "01createSubnet.json", "02createAcls.json");
+		String[] argsS3Delete = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-s3delete",
+				"-artifacts", artifacts,
+				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
+				"-build", BUILD_NUMBER,
+				"-sns"
+				};
+		
+		main = new Main(argsS3Delete);
+		result = main.parse();
+		assertEquals("delete failed", 0, result);
+	
+		objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, key1));
+		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, key2));
 	}
 	
 }
