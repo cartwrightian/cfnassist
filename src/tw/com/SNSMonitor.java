@@ -265,8 +265,11 @@ public class SNSMonitor extends StackMonitor  {
 				logger.error(String.format("Got an failure status %s while waiting for status %s", status, requiredStatus));
 				throw new WrongStackStatus(stackId, requiredStatus, status);
 			}
-			msgs.clear();
-			count++;
+			if (msgs.size()==0) {
+				logger.info("No messages received within timeout, increment try counter");
+				count++;
+			}
+			msgs.clear();	
 		}
 		logger.error("Timed out waiting for status to change");
 		throw new WrongStackStatus(stackId, requiredStatus, status);
