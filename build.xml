@@ -33,6 +33,7 @@
         <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-beans-3.0.7.jar"/>
         <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-context-3.0.7.jar"/>
         <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-core-3.0.7.jar"/>
+        <pathelement location="${aws_sdk_loc}/third-party/joda-time-2.2/joda-time-2.2.jar" />
     </path>
 	<path id="logging_libs">
 		<pathelement location="lib/slf4j-api-1.7.5.jar"/>
