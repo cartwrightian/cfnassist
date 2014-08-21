@@ -1,9 +1,6 @@
 package tw.com.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,6 +62,25 @@ public class TestVpcRepository {
 		result = repository.getVpcIndexTag(mainProjectAndEnv);	
 		assertEquals("0", result);
 
+	}
+	
+	@Test
+	public void testCanSetAndDeleteTagOnVPC() {
+			
+		repository.setVpcTag(mainProjectAndEnv, "TestKey", "TestValue");
+		
+		List<Tag> expectedTags = new ArrayList<Tag>();
+		expectedTags.add(new Tag("TestKey", "TestValue"));
+		
+		Vpc vpc = repository.getCopyOfVpc(mainProjectAndEnv);
+		List<Tag> result = vpc.getTags();
+		assertTrue(result.containsAll(expectedTags));
+		
+		repository.deleteVpcTag(mainProjectAndEnv, "TestKey");
+		vpc = repository.getCopyOfVpc(mainProjectAndEnv);
+		result = vpc.getTags();
+		assertFalse(result.containsAll(expectedTags));
+		
 	}
 	
 	private List<Tag> createExpectedEc2TagList(String env) {

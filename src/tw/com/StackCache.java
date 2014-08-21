@@ -6,6 +6,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.exceptions.WrongNumberOfStacksException;
+
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStackResourcesRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStackResourcesResult;
@@ -106,13 +108,20 @@ public class StackCache {
 		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));			 
 	}
 	
-	public void updateRepositoryFor(StackId id) {
+	public Stack updateRepositoryFor(StackId id) throws WrongNumberOfStacksException {
 		logger.info("Update stack repository for stack: " + id);
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(id.getStackName());
 		DescribeStacksResult results = cfnClient.describeStacks(describeStacksRequest);
+		
+		if (results.getStacks().size()!=1) {
+			logger.error("Expected only one stack in the results");
+			throw new WrongNumberOfStacksException(1, results.getStacks().size());
+		}
 
 		populateEntriesIfProjectMatches(results.getStacks());
+		
+		return results.getStacks().get(0);
 	}
 	
 	public List<StackResource> getResourcesForStack(String stackName) {

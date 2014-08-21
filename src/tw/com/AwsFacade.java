@@ -31,6 +31,7 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
+import com.amazonaws.services.cloudformation.model.Output;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
@@ -43,6 +44,7 @@ import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class AwsFacade implements AwsProvider {
+
 	private static final String DELTA_EXTENSTION = ".delta";
 
 	private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
@@ -59,7 +61,8 @@ public class AwsFacade implements AwsProvider {
 	private static final String PARAMETER_VPC = "vpc";
 	private static final String PARAMETER_BUILD_NUMBER = "build";
 	private static final String PARAM_PREFIX = "::";
-
+	private static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
+	
 	private static final String PARAMETER_STACKNAME = "stackname";
 
 	
@@ -172,7 +175,8 @@ public class AwsFacade implements AwsProvider {
 			cfnRepository.updateRepositoryFor(id);
 			throw stackFailedToCreate;
 		}
-		cfnRepository.updateRepositoryFor(id);
+		Stack createdStack = cfnRepository.updateRepositoryFor(id);
+		createOutputTags(createdStack, projAndEnv);
 		return id;
 			
 	}
@@ -231,8 +235,23 @@ public class AwsFacade implements AwsProvider {
 			cfnRepository.updateRepositoryFor(id);
 			throw stackFailedToCreate;
 		}
-		cfnRepository.updateRepositoryFor(id);
+		Stack createdStack = cfnRepository.updateRepositoryFor(id);
+		createOutputTags(createdStack, projAndEnv);
 		return id;
+	}
+
+	private void createOutputTags(Stack createdStack, ProjectAndEnv projAndEnv) {
+		List<Output> outputs = createdStack.getOutputs();
+		for(Output output  : outputs) {
+			if (shouldCreateTag(output.getDescription())) {
+				logger.info("Should create output tag for " + output.toString());
+				vpcRepository.setVpcTag(projAndEnv, output.getOutputKey(), output.getOutputValue());
+			}
+		}
+	}
+
+	private boolean shouldCreateTag(String description) {
+		return description.equals(CFN_TAG_ON_OUTPUT);
 	}
 
 	private Collection<Parameter> createRequiredParameters(File file,

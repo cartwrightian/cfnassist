@@ -12,6 +12,7 @@ import tw.com.exceptions.CannotFindVpcException;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
+import com.amazonaws.services.ec2.model.DeleteTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcsResult;
 import com.amazonaws.services.ec2.model.Tag;
@@ -98,20 +99,48 @@ public class VpcRepository {
 			throw new CannotFindVpcException(projAndEnv);
 		}
 		
+		String key = AwsFacade.INDEX_TAG;
+		
+		setTag(vpc, key, value);
+	}
+
+	private void setTag(Vpc vpc, String key, String value) {
 		List<Tag> tags = new LinkedList<Tag>();	
-		Tag newTag = new Tag(AwsFacade.INDEX_TAG, value);
+		Tag newTag = new Tag(key, value);
 		tags.add(newTag);
 		String vpcId = vpc.getVpcId();
 		
+		logger.info(String.format("Set Tag Key:'%s' Value:'%s' on VPC %s", key, value, vpcId));
 		setTags(vpcId, tags);
+	}
+	
+	public void setVpcTag(ProjectAndEnv projAndEnv, String key,
+			String value) {
+		Vpc vpc = getCopyOfVpc(projAndEnv);
+		setTag(vpc, key, value);	
 	}
 
 	private void setTags(String vpcId, List<Tag> tags) {
-		List<String> resources = new LinkedList<String>();	
-		resources.add(vpcId);
+		List<String> resources = createResources(vpcId);
 		CreateTagsRequest createTagsRequest = new CreateTagsRequest(resources , tags);
 		
 		ec2Client.createTags(createTagsRequest);
+	}
+
+	private List<String> createResources(String vpcId) {
+		List<String> resources = new LinkedList<String>();	
+		resources.add(vpcId);
+		return resources;
+	}
+	
+	public void deleteVpcTag(ProjectAndEnv projectAndEnv, String key) {
+		Vpc vpc = getCopyOfVpc(projectAndEnv);
+		List<String> resources = createResources(vpc.getVpcId());
+		
+		Tag tag = new Tag().withKey(key);
+		DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest().withResources(resources).withTags(tag);
+		logger.info(String.format("Delete Tag Key'%s' on VPC:%s", key, vpc.getVpcId()));
+		ec2Client.deleteTags(deleteTagsRequest);	
 	}
 
 	public String getVpcIndexTag(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
@@ -138,5 +167,7 @@ public class VpcRepository {
 		
 		setTags(vpcId, tags);	
 	}
+
+
 
 }

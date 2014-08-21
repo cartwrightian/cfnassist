@@ -19,6 +19,7 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
@@ -44,6 +45,7 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
 public class TestSimpleStackOperations {
+	private static final String TAG_NAME = "SUBNET";
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;
 	
@@ -56,6 +58,7 @@ public class TestSimpleStackOperations {
 	private static DeletesStacks deletesStacks;
 	private static StackId theStack;
 	private static DefaultAWSCredentialsProviderChain credentialsProvider;
+	private static Vpc vpc;
 	
 	@BeforeClass
 	public static void beforeAllTestsOnce() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
@@ -73,19 +76,27 @@ public class TestSimpleStackOperations {
 		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		
+		vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
+		
+		deleteTag(projectAndEnv);
 		theStack = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK), projectAndEnv);	
 	}
 	
 	@AfterClass
 	public static void afterAllTestsHaveRun() {
 		deletesStacks.act();
+		deleteTag(projectAndEnv);
 	}
 	
 	@Rule public TestName testName = new TestName();
 	
 	@Before
-	public void beforeTestsRun() {
+	public void beforeTestsRun() {		
 		aws.setCommentTag(testName.getMethodName());	
+	}
+	
+	private static void deleteTag(ProjectAndEnv projAndEnv) {
+		vpcRepository.deleteVpcTag(projAndEnv, TAG_NAME);
 	}
 
 	@Test
@@ -132,10 +143,12 @@ public class TestSimpleStackOperations {
 	@Test
 	public void createsAndThenUpdateSimpleStack() throws FileNotFoundException, IOException, CfnAssistException, 
 		InterruptedException, InvalidParameterException {
-		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
 		
 		List<Subnet> beforeSubnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);	
 		String beforeID = cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "testSubnet");
+		
+		// check TAG set by outputs matchs the created VPC TAG
+		assertTrue(checkForVPCTag(TAG_NAME, beforeID));
 		
 		StackId after = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK_DELTA), projectAndEnv);
 		List<Subnet> afterSubnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
@@ -149,6 +162,10 @@ public class TestSimpleStackOperations {
 		assertEquals("10.0.99.0/24", afterSubnets.get(0).getCidrBlock());
 		
 		assertFalse(beforeID.equals(afterID)); // changing the CIDR means cloud formation recreates the subnet, meaning the physical ID changes
+		
+		// check the VPC tag was updated as well
+		assertTrue(checkForVPCTag(TAG_NAME, afterID));
+		
 	}
 	
 	@Test
@@ -167,5 +184,33 @@ public class TestSimpleStackOperations {
 		}
 		assertTrue(seenEntry);	
 	}
+	
+//	@Test
+//	public void createdSimpleStackAndTagVPCWithOutput() throws FileNotFoundException, IOException, CfnAssistException, 
+//		InterruptedException, InvalidParameterException {
+//			
+//		assertNotNull(theStack.getStackId());
+//		assertTrue(theStack.getStackId().length()>0);
+//		assertEquals("CfnAssistTestsubnet", theStack.getStackName());
+//		
+//		String subnetId = cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "testSubnet");
+//		
+//		boolean foundTag = checkForVPCTag(TAG_NAME, subnetId);
+//		assertTrue(foundTag);
+//	}
+	
+	private boolean checkForVPCTag(String tagName, String expectedId) {
+		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
+		List<Tag> tags = vpc.getTags();
+		boolean foundTag = false;
+		for(Tag tag : tags) {		
+			if (tag.getKey().equals(tagName)) {
+				foundTag = expectedId.equals(tag.getValue());
+				break;
+			}
+		}
+		return foundTag;
+	}
+	
 
 }

@@ -256,8 +256,8 @@ public class CfnRepository {
 		return results;	
 	}
 
-	public void updateRepositoryFor(StackId id) {
-		stackCache.updateRepositoryFor(id);		
+	public Stack updateRepositoryFor(StackId id) throws WrongNumberOfStacksException {
+		return stackCache.updateRepositoryFor(id);		
 	}
 
 

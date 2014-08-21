@@ -48,5 +48,10 @@
 			
 		}
 		
+	},
+	"Outputs" : {
+	    "SUBNET" : {
+	        "Value" : { "Ref":"testSubnet" }, "Description":"::CFN_TAG"
+	    }
 	}
 }

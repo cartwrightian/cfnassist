@@ -3,7 +3,13 @@ cfnassit
 
 cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudformation/) deployments into [AWS](http://aws.amazon.com/) VPCs
 
-[Download Initial Release version 1.0.29](https://s3-eu-west-1.amazonaws.com/cfnassist-release/29/cfnassit-1.0.29.zip)
+Current Release
+---------------
+[Download Currnet Release version 1.0.33](https://cfnassist-release.s3-eu-west-1.amazonaws.com/33/cfnassit-1.0.33.zip)
+
+Old Releases
+------------
+[Version 1.0.29](https://s3-eu-west-1.amazonaws.com/cfnassist-release/29/cfnassit-1.0.29.zip)
 
 Build Status
 ------------
