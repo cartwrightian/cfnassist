@@ -6,7 +6,7 @@
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.7"/>
     <property name="source" value="1.7"/>
-    <property name="aws_sdk_loc" value="lib/aws-java-sdk-1.6.1" />
+    <property name="aws_sdk_loc" value="lib/aws-java-sdk-1.8.9.1" />
 	<property name="environment" value="env"/>
 	<condition property="buildNum" value="${env.SNAP_PIPELINE_COUNTER}" else="DEV">
         <isset property="env.SNAP_PIPELINE_COUNTER"/>
@@ -18,7 +18,7 @@
         <pathelement location="lib/junit4.11/hamcrest-core-1.3.jar"/>
     </path>
     <path id="aws_sdk_lib">
-        <pathelement location="${aws_sdk_loc}/lib/aws-java-sdk-1.6.1.jar"/>
+        <pathelement location="${aws_sdk_loc}/lib/aws-java-sdk-1.8.9.1.jar"/>
         <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjrt.jar"/>
         <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjweaver.jar"/>
         <pathelement location="${aws_sdk_loc}/third-party/commons-codec-1.3/commons-codec-1.3.jar"/>
@@ -33,8 +33,6 @@
         <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-beans-3.0.7.jar"/>
         <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-context-3.0.7.jar"/>
         <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-core-3.0.7.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/stax-api-1.0.1/stax-api-1.0.1.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/stax-ri-1.2.0/stax-1.2.0.jar"/>
     </path>
 	<path id="logging_libs">
 		<pathelement location="lib/slf4j-api-1.7.5.jar"/>
