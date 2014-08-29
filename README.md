@@ -5,10 +5,11 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 
 Current Release
 ---------------
-[Download Currnet Release version 1.0.33](https://cfnassist-release.s3-eu-west-1.amazonaws.com/33/cfnassit-1.0.33.zip)
+[Download Currnet Release version 1.0.36](https://cfnassist-release.s3-eu-west-1.amazonaws.com/36/cfnassit-1.0.36.zip)
 
 Old Releases
 ------------
+[Version 1.0.33](https://cfnassist-release.s3-eu-west-1.amazonaws.com/33/cfnassit-1.0.33.zip)
 [Version 1.0.29](https://s3-eu-west-1.amazonaws.com/cfnassist-release/29/cfnassit-1.0.29.zip)
 
 Build Status
@@ -336,4 +337,15 @@ You can delete a stack created with cfnassit using the following command:
 `cfnassist.sh -env Dev -build 1223 -delete ./templateFile.json`
 
 This will delete the stack that was created from the templateFile.json file with the build number 1223.
+
+15.Auto-populate a VPC Tag
+--------------------------
+cfnassist will automatically populate a Tag on the VPC based on a simple convention for the Output section of a cloudformation script.
+For example having the following in your output section will cause a new tag called SUBNET to be created on the correct VPC for the current project/env combination. In this case the tag will contian the ID of a created subnet.
+
+>"Outputs" : {
+>	    "SUBNET" : {
+>	        "Value" : { "Ref":"testSubnet" }, "Description":"::CFN_TAG"
+>	    }
+
 

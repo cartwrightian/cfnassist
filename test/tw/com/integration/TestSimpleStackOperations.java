@@ -164,8 +164,7 @@ public class TestSimpleStackOperations {
 		assertFalse(beforeID.equals(afterID)); // changing the CIDR means cloud formation recreates the subnet, meaning the physical ID changes
 		
 		// check the VPC tag was updated as well
-		assertTrue(checkForVPCTag(TAG_NAME, afterID));
-		
+		assertTrue(checkForVPCTag(TAG_NAME, afterID));	
 	}
 	
 	@Test
@@ -185,20 +184,6 @@ public class TestSimpleStackOperations {
 		assertTrue(seenEntry);	
 	}
 	
-//	@Test
-//	public void createdSimpleStackAndTagVPCWithOutput() throws FileNotFoundException, IOException, CfnAssistException, 
-//		InterruptedException, InvalidParameterException {
-//			
-//		assertNotNull(theStack.getStackId());
-//		assertTrue(theStack.getStackId().length()>0);
-//		assertEquals("CfnAssistTestsubnet", theStack.getStackName());
-//		
-//		String subnetId = cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "testSubnet");
-//		
-//		boolean foundTag = checkForVPCTag(TAG_NAME, subnetId);
-//		assertTrue(foundTag);
-//	}
-	
 	private boolean checkForVPCTag(String tagName, String expectedId) {
 		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
 		List<Tag> tags = vpc.getTags();
@@ -212,5 +197,4 @@ public class TestSimpleStackOperations {
 		return foundTag;
 	}
 	
-
 }

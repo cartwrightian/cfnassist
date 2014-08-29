@@ -56,6 +56,9 @@
 	"Outputs" : {
 	    "SUBNET" : {
 	        "Value" : { "Ref":"testSubnet" }, "Description":"::CFN_TAG"
+	    },
+	    "notused" : {
+	        "Value" : { "Ref":"testSubnet" }, "Description":"should not get picked up by cfn assist"
 	    }
 	}
 }
