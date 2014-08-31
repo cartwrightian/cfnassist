@@ -25,6 +25,7 @@ Key Features
 * Autopopulates physical id's based on logical identifiers plus the project & environment, this means you can break large scripts apart and think about project/env/logical ids instead of VPC id/physical id
 * Assists with the [Phoenix Server](http://martinfowler.com/bliki/PhoenixServer.html) pattern by automating the switch over of instances for an ELB based on build numbers
 * Allows upload to S3; along with the option of passing S3 urls of new aritifacts directly into cloudformation templates
+* Use VPC Tags as input or output to templates using a simple convention in the parameter description
 
 Usage
 -----
@@ -338,8 +339,8 @@ You can delete a stack created with cfnassit using the following command:
 
 This will delete the stack that was created from the templateFile.json file with the build number 1223.
 
-15.Auto-populate a VPC Tag
---------------------------
+15.Using VPC Tags
+-----------------
 cfnassist will automatically populate a Tag on the VPC based on a simple convention for the Output section of a cloudformation script.
 For example having the following in your output section will cause a new tag called SUBNET to be created on the correct VPC for the current project/env combination. In this case the tag will contian the ID of a created subnet.
 
@@ -348,4 +349,12 @@ For example having the following in your output section will cause a new tag cal
 >	        "Value" : { "Ref":"testSubnet" }, "Description":"::CFN_TAG"
 >	    }
 
+You can also use a VPC Tag value as in input parameter, just use the same convention for the input parameter as above.
+
+>	"testVPCTAG":{
+>			"Type":"String",
+>			"Description":"::CFN_TAG"
+>		}	
+
+This example will try and find a TAG called testVPCTAG on the current VPC and inject it's value into the template.
 

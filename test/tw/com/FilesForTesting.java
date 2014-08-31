@@ -10,6 +10,7 @@ public class FilesForTesting {
 	public static final String SUBNET_CIDR_PARAM = DIR + "subnetWithCIDRParam.json";
 	public static final String SUBNET_WITH_PARAM = DIR + "subnetWithParam.json";
 	public static final String SUBNET_WITH_S3_PARAM = DIR + "subnetWithS3Param.json";
+	public static final String SUBNET_STACK_WITH_VPCTAG_PARAM = DIR + "subnetWithVPCTagParam.json";
 	public static final String SUBNET_WITH_BUILD = DIR + "subnetWithBuild.json";
 	public static final String ELB = DIR + "elb.json";
 	public static final String INSTANCE = DIR + "instance.json";
@@ -20,5 +21,7 @@ public class FilesForTesting {
 	public static final String ORDERED_SCRIPTS_FOLDER = DIR + "orderedScripts";
 	public static final String ORDERED_SCRIPTS_WITH_DELTAS_FOLDER = DIR + "orderedScriptsWithDelta/";
 	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_DELTAS_FOLDER + "02createSubnet.delta.json";
+
+	
 
 }

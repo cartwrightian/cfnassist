@@ -38,6 +38,7 @@ import tw.com.SNSMonitor;
 import tw.com.StackEntry;
 import tw.com.StackId;
 import tw.com.VpcRepository;
+import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
@@ -61,7 +62,7 @@ public class TestSimpleStackOperations {
 	private static Vpc vpc;
 	
 	@BeforeClass
-	public static void beforeAllTestsOnce() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
+	public static void beforeAllTestsOnce() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException, CannotFindVpcException {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	

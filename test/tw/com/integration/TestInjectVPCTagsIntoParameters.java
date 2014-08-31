@@ -5,50 +5,48 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
 import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
+import tw.com.NotReadyException;
 import tw.com.PollingStackMonitor;
 import tw.com.ProjectAndEnv;
-import tw.com.StackId;
 import tw.com.VpcRepository;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.exceptions.WrongStackStatus;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
-public class TestParameterAutoInjection {
-	
-	private static AwsProvider aws;
+public class TestInjectVPCTagsIntoParameters {
+	private static AmazonEC2Client ec2Client;
+	private static AmazonCloudFormationClient cfnClient;
 	private static VpcRepository vpcRepository;
-	private static StackId subnetStackName;
+	private static AwsFacade aws;
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private static ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj, env);
 
-	private static AmazonEC2Client ec2Client;
-	private static AmazonCloudFormationClient cfnClient;
-	
 	@BeforeClass
 	public static void beforeAllTestsOnce() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
@@ -59,45 +57,39 @@ public class TestParameterAutoInjection {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
 		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
-		
-		subnetStackName = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK), mainProjectAndEnv);
 	}
-	
-	@Rule public TestName test = new TestName();
+
+	private DeletesStacks deletesStacks;
 	
 	@Before
 	public void beforeEachTestRuns() {
-		aws.setCommentTag(test.getMethodName());
+		deletesStacks = new DeletesStacks(cfnClient);
+		deletesStacks.ifPresent("CfnAssistTestsubnetWithVPCTagParam");
+		deletesStacks.act();
 	}
 	
-	@AfterClass 
-	public static void afterAllTestsHaveRun() throws CfnAssistException, InterruptedException {
-		new DeletesStacks(cfnClient).ifPresent(subnetStackName).act();
+	@After
+	public void afterEachTestRuns() {
+		deletesStacks.act();
 	}
-
+	
 	@Test
-	public void shouldBeAbleToFetchValuesForParameters() throws FileNotFoundException, IOException, InvalidParameterException, CannotFindVpcException {
-		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
+	public void testValueFromVPCTagAutopopulatedIntoTemplate() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException, CannotFindVpcException {
+		vpcRepository.setVpcTag(mainProjectAndEnv, "testVPCTAG", "originalTagValue");
+		aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK_WITH_VPCTAG_PARAM), mainProjectAndEnv);
+		vpcRepository.deleteVpcTag(mainProjectAndEnv, "testVPCTAG");
 		
-		File file = new File(FilesForTesting.ACL);
-		List<TemplateParameter> declaredParameters = aws.validateTemplate(file);
-		List<Parameter> result = aws.fetchAutopopulateParametersFor(file, mainProjectAndEnv, declaredParameters);
-		
-		assertEquals(1, result.size());
-		
-		Parameter expectedParam = result.get(0);
-		assertEquals("subnet", expectedParam.getParameterKey());
-		
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider); 
-		
+		// fetch created subnet and check the VPC tag got propogated through
+		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);	
 		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
 		
 		assertEquals(1,subnets.size());
 		Subnet testSubnet = subnets.get(0);
-		String subnetPhysicalId = testSubnet.getSubnetId();
-		
-		assertEquals(subnetPhysicalId, expectedParam.getParameterValue());
+		List<Tag> tags = testSubnet.getTags();
+		Collection<Tag> expectedTags = new LinkedList<Tag>();
+		expectedTags.add(new Tag().withKey("expectedTAG").withValue("originalTagValue"));
+		assert(tags.containsAll(expectedTags));	
 	}
-
+	
+	
 }

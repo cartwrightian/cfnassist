@@ -168,6 +168,14 @@ public class VpcRepository {
 		setTags(vpcId, tags);	
 	}
 
+	public String getVpcTag(String tagName, ProjectAndEnv projAndEnv) throws CannotFindVpcException {
+		Vpc vpc = getCopyOfVpc(projAndEnv);
+		if (vpc==null) {
+			throw new CannotFindVpcException(projAndEnv);
+		}
+		return getTagByName(vpc, tagName);
+	}
+
 
 
 }

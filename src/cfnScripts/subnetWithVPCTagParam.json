@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion":"2010-09-09",
-	"Description":"test template for cnfassist - creates a single subnet",
+	"Description":"test template for cnfassist - creates a single subnet, ZoneA required as a parameter",
 	"Parameters":{
 		"env":{
 			"Type":"String"
@@ -13,9 +13,9 @@
 			"Default":"eu-west-1a",
 			"Description":"zoneADescription"
 		},
-		"zoneB":{
+		"testVPCTAG":{
 			"Type":"String",
-			"Default":"eu-west-1b"
+			"Description":"::CFN_TAG"
 		}	
 	},
 	"Resources":{
@@ -28,14 +28,7 @@
 				"CidrBlock":"10.0.10.0/24",
 				"Tags":[
 					{
-						"Key":"Name",
-						"Value":"testSubnet"
-					},
-					{
-						"Key":"TagEnv",
-						"Value":{
-							"Ref":"env"
-						}			
+						"Key":"expectedTAG", "Value":{ "Ref":"testVPCTAG"}
 					}
 				],
 				"VpcId":{
@@ -46,13 +39,5 @@
 			
 		}
 		
-	},
-	"Outputs" : {
-	    "SUBNET" : {
-	        "Value" : { "Ref":"testSubnet" }, "Description":"::CFN_TAG"
-	    },
-	    "notused" : {
-	        "Value" : { "Ref":"testSubnet" }, "Description":"should not get picked up by cfn assist"
-	    }
 	}
 }
