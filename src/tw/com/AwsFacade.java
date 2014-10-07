@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -585,7 +584,7 @@ public class AwsFacade implements AwsProvider {
 	}
 	
 	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, CfnAssistException {
-		List<String> stackNames = new LinkedList<String>();
+		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
 		Collections.reverse(files); // delete in reverse direction
@@ -597,19 +596,43 @@ public class AwsFacade implements AwsProvider {
 			String stackName = createStackName(file, projAndEnv);
 			if (deltaIndex>highestAppliedDelta) {
 				logger.warn(String.format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
-			} else {
-				int newDelta = deltaIndex-1;
-				logger.info(String.format("About to delete stackname %s, new delta will be %s", stackName, newDelta));
+			} else {			
+				logger.info(String.format("About to request deletion of stackname %s", stackName));
+				StackId id = cfnRepository.getStackId(stackName); // important to get id's before deletion request, may throw otherwise
 				deleteStackNonBlocking(stackName);
-				logger.info("Deleted stack " + stackName);
-				stackNames.add(stackName);
+				pending.add(deltaIndex,id);
+			}
+			
+		}	
+		return monitorDeletions(pending, projAndEnv);
+	}
+
+	private List<String> monitorDeletions(DeletionsPending pending, ProjectAndEnv projAndEnv) {
+		List<String> deletedOk = new LinkedList<String>();
+		try {
+			for(DeletionPending delta : pending) {
+				StackId id = delta.getStackId();
+				logger.info("Now waiting for deletion of " + id);
+				monitor.waitForDeleteFinished(id );
+				deletedOk.add(id.getStackName());
+				int newDelta = delta.getDelta()-1;
 				if (newDelta>=0) {
 					logger.info("Resetting delta to " + newDelta);
 					this.setDeltaIndex(projAndEnv, newDelta);
 				}
 			}
 		}
-		return stackNames;
+		catch(CfnAssistException exception) {
+			reportDeletionIssue(exception);
+		} catch (InterruptedException exception) {
+			reportDeletionIssue(exception);
+		}
+		return deletedOk;
+	}
+
+	private void reportDeletionIssue(Exception exception) {
+		logger.error("Unable to wait for stack deletion ",exception);
+		logger.error("Please manually check stack deletion and delta index values");
 	}
 
 	private int extractIndexFrom(File file) {
@@ -658,7 +681,6 @@ public class AwsFacade implements AwsProvider {
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
 	}
 	
-
 	@Override
 	public List<StackEntry> listStacks(ProjectAndEnv projectAndEnv) {
 		if (projectAndEnv.hasEnv()) {
@@ -666,41 +688,5 @@ public class AwsFacade implements AwsProvider {
 		}
 		return cfnRepository.getStacks();
 	}
-
-//	@Override
-//	@Deprecated
-//	public void initEnvAndProjectForStack(String stackName,
-//			ProjectAndEnv projAndEnv) throws CfnAssistException {
-//		// TODO this does not work, the EC2 part of the API does not recognize the resource ID returned by the CFN part of the API
-//		// This functionality is disabled at the CLI level at the moment, and the test is set ignored
-//		DescribeStacksRequest request = new DescribeStacksRequest();
-//		request.setStackName(stackName);
-//		DescribeStacksResult result = cfnClient.describeStacks(request );
-//		
-//		List<Stack> stacks = result.getStacks();
-//		if (stacks.size()!=1) {
-//			throw new WrongNumberOfStacksException(1, stacks.size());
-//		}
-//		
-//		Stack stack = stacks.get(0);
-//		// TODO check tags not already set
-//		
-//		logger.info(String.format("Add %s to stackname '%s'", projAndEnv, stackName));
-//		// tags here are different type from the tags during the stack create call
-//		Collection<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
-//		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(ENVIRONMENT_TAG).withValue(projAndEnv.getEnv()));
-//		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(PROJECT_TAG).withValue(projAndEnv.getProject()));
-//		String ids[] = { stack.getStackId() };
-//		
-//		CreateTagsRequest createTagsRequest= new CreateTagsRequest();
-//		Collection<String> resources = Arrays.asList(ids);
-//		createTagsRequest.setResources(resources);
-//		createTagsRequest.setTags(tags);
-//		logger.debug("Making call to createTags");
-//		ec2Client.createTags(createTagsRequest);
-//		
-//		// TODO how to check status of this call?
-//	}
-
 
 }

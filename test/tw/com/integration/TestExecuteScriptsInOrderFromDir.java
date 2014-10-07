@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -78,14 +77,21 @@ public class TestExecuteScriptsInOrderFromDir {
 		createExpectedNames();	
 		deletesStacks = new DeletesStacks(cfnClient).
 				ifPresent("CfnAssistTest01createSubnet").
-				ifPresent("CfnAssistTest02createAcls");
+				ifPresent("CfnAssistTest02createAcls").
+				ifPresent("CfnAssistTest03createRoutes");
 		deletesStacks.act();
 		
 		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		vpcRepository = new VpcRepository(ec2Client);
 		
+		deleteFile(THIRD_FILE);	
 	}
-
+		
+	@After
+	public void afterAllTestsHaveRun() throws IOException, CfnAssistException {	
+		deletesStacks.act();
+	}
+	
 	private AwsFacade createFacade(CfnRepository cfnRepository,
 			VpcRepository vpcRepository, MonitorStackEvents monitor) throws CannotFindVpcException {
 		AwsFacade aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
@@ -93,12 +99,7 @@ public class TestExecuteScriptsInOrderFromDir {
 		aws.resetDeltaIndex(mainProjectAndEnv);
 		return aws;
 	}
-	
-	@After
-	public void afterAllTestsHaveRun() throws IOException, CfnAssistException {	
 
-		deletesStacks.act();
-	}
 
 	@Test
 	public void shouldCreateTheStacksRequiredOnly() throws CfnAssistException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
@@ -181,6 +182,11 @@ public class TestExecuteScriptsInOrderFromDir {
 
 		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
 		return destFile;
+	}
+	
+	private void deleteFile(String filename) throws IOException {
+		Path destFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, filename);
+		Files.deleteIfExists(destFile);	
 	}
 
 	private String formName(String part) {

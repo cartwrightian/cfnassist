@@ -16,6 +16,15 @@ public class UploadProgressListener implements ProgressListener {
 
 	@Override
 	public void progressChanged(ProgressEvent progressEvent) {
+		try {
+			processReceivedEvent(progressEvent);
+		}
+		catch(Exception exception) {
+			logger.error("Error handling S3 progress event ", exception);
+		}
+	}
+
+	private void processReceivedEvent(ProgressEvent progressEvent) {
 		ProgressEventType eventType = progressEvent.getEventType();
 		
 		long bytesTransferred = progressEvent.getBytesTransferred();

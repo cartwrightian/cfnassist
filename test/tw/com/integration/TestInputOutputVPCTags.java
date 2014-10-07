@@ -38,7 +38,7 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
-public class TestInjectVPCTagsIntoParameters {
+public class TestInputOutputVPCTags {
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;
 	private static VpcRepository vpcRepository;
@@ -46,7 +46,8 @@ public class TestInjectVPCTagsIntoParameters {
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private static ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj, env);
-
+	private DeletesStacks deletesStacks;
+	
 	@BeforeClass
 	public static void beforeAllTestsOnce() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
@@ -59,8 +60,6 @@ public class TestInjectVPCTagsIntoParameters {
 		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 	}
 
-	private DeletesStacks deletesStacks;
-	
 	@Before
 	public void beforeEachTestRuns() {
 		deletesStacks = new DeletesStacks(cfnClient);
@@ -90,6 +89,5 @@ public class TestInjectVPCTagsIntoParameters {
 		expectedTags.add(new Tag().withKey("expectedTAG").withValue("originalTagValue"));
 		assert(tags.containsAll(expectedTags));	
 	}
-	
 	
 }
