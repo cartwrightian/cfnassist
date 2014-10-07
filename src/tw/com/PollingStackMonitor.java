@@ -1,11 +1,13 @@
 package tw.com;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
@@ -93,6 +95,39 @@ public class PollingStackMonitor extends StackMonitor {
 			throw new WrongStackStatus(id, complete, result);
 		}
 		return result;
+	}
+
+	@Override
+	public List<String> waitForDeleteFinished(DeletionsPending pending, SetsDeltaIndex setDeltaIndex) {
+		return monitorDeletions(pending, setDeltaIndex);
+	}
+	
+	private List<String> monitorDeletions(DeletionsPending pending, SetsDeltaIndex setDeltaIndex) {
+		List<String> deletedOk = new LinkedList<String>();
+		try {
+			for(DeletionPending delta : pending) {
+				StackId id = delta.getStackId();
+				logger.info("Now waiting for deletion of " + id);
+				waitForDeleteFinished(id );
+				deletedOk.add(id.getStackName());
+				int newDelta = delta.getDelta()-1;
+				if (newDelta>=0) {
+					logger.info("Resetting delta to " + newDelta);
+					setDeltaIndex.setDeltaIndex(newDelta);
+				}
+			}
+		}
+		catch(CfnAssistException exception) {
+			reportDeletionIssue(exception);
+		} catch (InterruptedException exception) {
+			reportDeletionIssue(exception);
+		}
+		return deletedOk;
+	}
+
+	private void reportDeletionIssue(Exception exception) {
+		logger.error("Unable to wait for stack deletion ",exception);
+		logger.error("Please manually check stack deletion and delta index values");
 	}
 
 

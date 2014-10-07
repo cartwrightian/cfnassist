@@ -42,6 +42,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
@@ -224,6 +225,8 @@ public class SNSMonitor extends StackMonitor  {
 		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE.toString(), Arrays.asList(CREATE_ABORTS));
 	}
 	
+	
+	
 	@Override
 	public String waitForDeleteFinished(StackId stackId)
 			throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
@@ -243,11 +246,53 @@ public class SNSMonitor extends StackMonitor  {
 		guardForInit();
 		return waitForStatus(id, StackStatus.ROLLBACK_COMPLETE.toString(), Arrays.asList(ROLLBACK_ABORTS));
 	}
+	
+	@Override
+	public List<String> waitForDeleteFinished(DeletionsPending pending,
+			SetsDeltaIndex setsDeltaIndex) throws CfnAssistException {
+		logger.info("Waiting for delete notifications");
+		ReceiveMessageRequest receiveMessageRequest = createWaitRequest();
+		int count = 0;
+		List<Message> msgs = new LinkedList<Message>();
+		while ((count<LIMIT) && (pending.hasMore())) {
+			while (msgs.size()==0) {
+				logger.info("Waiting for messages for queue " + queueURL);
+				ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
+				msgs = result.getMessages();
+			}
+					
+			if (msgs.size()==0) {
+				logger.info("No messages received within timeout, increment try counter");
+				count++;
+			} else {
+				processMessages(pending, msgs, setsDeltaIndex);
+			}
+			msgs.clear();	
+		}
+		pending.updateDeltaIndex(setsDeltaIndex);
+		return pending.getNamesOfDeleted();
+	}
+
+	private void processMessages(DeletionsPending pending, List<Message> msgs,
+			SetsDeltaIndex setsDeltaIndex) {
+		for(Message msg : msgs) {
+			ObjectMapper objectMapper = new ObjectMapper();
+			try {
+				JsonNode messageNode = extractMessageNode(msg, objectMapper);
+				StackNotification notification = StackNotification.parseNotificationMessage(messageNode.textValue());
+				logger.info(String.format("Received notification for %s status was %s", notification.getStackId(), notification.getStatus()));
+				pending.markIdAsDeleted(notification.getStackId());
+				deleteMessage(msg);
+			} catch (IOException e) {
+				logger.error("Unable to process message: " + e.getMessage());
+				logger.error("Message body was: " + msg.getBody());
+			}
+		}	
+	}
 
 	private String waitForStatus(StackId stackId, String requiredStatus, List<String> aborts) throws InterruptedException, WrongStackStatus {
 		logger.info(String.format("Waiting for stack %s to change to status %s", stackId, requiredStatus));
-		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL);
-		receiveMessageRequest.setWaitTimeSeconds(QUEUE_READ_TIMEOUT_SECS);
+		ReceiveMessageRequest receiveMessageRequest = createWaitRequest();
 		List<Message> msgs = new LinkedList<Message>();
 		int count = 0;
 		String status = "";
@@ -273,6 +318,12 @@ public class SNSMonitor extends StackMonitor  {
 		}
 		logger.error("Timed out waiting for status to change");
 		throw new WrongStackStatus(stackId, requiredStatus, status);
+	}
+
+	private ReceiveMessageRequest createWaitRequest() {
+		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL);
+		receiveMessageRequest.setWaitTimeSeconds(QUEUE_READ_TIMEOUT_SECS);
+		return receiveMessageRequest;
 	}
 
 	private void guardForInit() throws NotReadyException {
@@ -332,7 +383,6 @@ public class SNSMonitor extends StackMonitor  {
 		sqsClient.deleteMessage(new DeleteMessageRequest()
 	    .withQueueUrl(queueURL)
 	    .withReceiptHandle(msg.getReceiptHandle()));
-		
 	}
 
 	public String getArn() throws NotReadyException {

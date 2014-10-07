@@ -583,7 +583,7 @@ public class AwsFacade implements AwsProvider {
 		return folder;
 	}
 	
-	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, CfnAssistException {
+	public List<String> rollbackTemplatesInFolder(String folderPath, final ProjectAndEnv projAndEnv) throws InvalidParameterException, CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -592,47 +592,28 @@ public class AwsFacade implements AwsProvider {
 		int highestAppliedDelta = getDeltaIndex(projAndEnv);
 		logger.info("Current delta is " + highestAppliedDelta);
 		for(File file : files) {
-			int deltaIndex = extractIndexFrom(file);
-			String stackName = createStackName(file, projAndEnv);
-			if (deltaIndex>highestAppliedDelta) {
-				logger.warn(String.format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
-			} else {			
-				logger.info(String.format("About to request deletion of stackname %s", stackName));
-				StackId id = cfnRepository.getStackId(stackName); // important to get id's before deletion request, may throw otherwise
-				deleteStackNonBlocking(stackName);
-				pending.add(deltaIndex,id);
-			}
-			
-		}	
-		return monitorDeletions(pending, projAndEnv);
-	}
-
-	private List<String> monitorDeletions(DeletionsPending pending, ProjectAndEnv projAndEnv) {
-		List<String> deletedOk = new LinkedList<String>();
-		try {
-			for(DeletionPending delta : pending) {
-				StackId id = delta.getStackId();
-				logger.info("Now waiting for deletion of " + id);
-				monitor.waitForDeleteFinished(id );
-				deletedOk.add(id.getStackName());
-				int newDelta = delta.getDelta()-1;
-				if (newDelta>=0) {
-					logger.info("Resetting delta to " + newDelta);
-					this.setDeltaIndex(projAndEnv, newDelta);
+			if (!isDelta(file)) {
+				int deltaIndex = extractIndexFrom(file);
+				String stackName = createStackName(file, projAndEnv);
+				if (deltaIndex>highestAppliedDelta) {
+					logger.warn(String.format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
+				} else {			
+					logger.info(String.format("About to request deletion of stackname %s", stackName));
+					StackId id = cfnRepository.getStackId(stackName); // important to get id's before deletion request, may throw otherwise
+					deleteStackNonBlocking(stackName);
+					pending.add(deltaIndex,id);
 				}
+			} else {
+				logger.info(String.format("Skipping file %s as it is a stack update file",file.getAbsolutePath()));
 			}
-		}
-		catch(CfnAssistException exception) {
-			reportDeletionIssue(exception);
-		} catch (InterruptedException exception) {
-			reportDeletionIssue(exception);
-		}
-		return deletedOk;
-	}
-
-	private void reportDeletionIssue(Exception exception) {
-		logger.error("Unable to wait for stack deletion ",exception);
-		logger.error("Please manually check stack deletion and delta index values");
+		}	
+		SetsDeltaIndex setDeltaIndex = new SetsDeltaIndex() {	
+			@Override
+			public void setDeltaIndex(int newDelta) throws CannotFindVpcException {
+				AwsFacade.this.setDeltaIndex(projAndEnv, newDelta);	
+			}
+		};
+		return monitor.waitForDeleteFinished(pending, setDeltaIndex);
 	}
 
 	private int extractIndexFrom(File file) {
