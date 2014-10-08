@@ -280,8 +280,21 @@ public class SNSMonitor extends StackMonitor  {
 			try {
 				JsonNode messageNode = extractMessageNode(msg, objectMapper);
 				StackNotification notification = StackNotification.parseNotificationMessage(messageNode.textValue());
-				logger.info(String.format("Received notification for %s status was %s", notification.getStackId(), notification.getStatus()));
-				pending.markIdAsDeleted(notification.getStackId());
+							
+				String resourceType = notification.getResourceType();
+				if (resourceType.equals(STACK_RESOURCE_TYPE)) {
+					String status = notification.getStatus();
+					String stackName = notification.getStackName();
+					String stackId = notification.getStackId();
+					if (status.equals(StackStatus.DELETE_COMPLETE.toString())) {
+						logger.info(String.format("Delete complete for stack name %s and id %s", stackName, stackId));
+						pending.markIdAsDeleted(stackId);
+					} else {
+						logger.info(String.format("Delete not yet complete for stack %s status is %s",stackName, notification.getStatus()));
+					}			
+				} else {
+					logger.info(String.format("Got notification for resource type %s, status is %s", resourceType, notification.getStatus()));
+				}
 				deleteMessage(msg);
 			} catch (IOException e) {
 				logger.error("Unable to process message: " + e.getMessage());
