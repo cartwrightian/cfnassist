@@ -1,6 +1,11 @@
 package tw.com.integration;
 
+import org.junit.Test;
+
 public class TestCanCreateAndRollbackStacksCorrectly {
 
-	// TODO make sure deleting non-existing or already deleted stacked works as expected
+	@Test
+	public void notHavingATestSeemsToBreakSNAPJUnitRunner() {
+		
+	}
 }
