@@ -15,22 +15,21 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.EnvironmentTag;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.NotReadyException;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.StackId;
-import tw.com.VpcRepository;
+import tw.com.entity.EnvironmentTag;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -50,7 +49,7 @@ public class TestCfnRepository {
 	private static VpcRepository vpcRepository;
 	
 	private Vpc mainTestVPC;
-	private AwsProvider awsProvider;
+	private AwsFacade awsProvider;
 	private Vpc otherVPC;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
@@ -96,8 +95,8 @@ public class TestCfnRepository {
 		String cidrB = "10.0.11.0/24";
 	
 		//create two subnets with same logical id's but different VPCs		
-		StackId stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
-		StackId stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
+		StackNameAndId stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
+		StackNameAndId stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
 		
 		// should report as existing
 		assertTrue(cfnRepository.stackExists(stackA.getStackName()));
@@ -174,7 +173,7 @@ public class TestCfnRepository {
 		return result;
 	}
 
-	private StackId invokeSubnetCreation(String cidr, ProjectAndEnv projectAndEnv)
+	private StackNameAndId invokeSubnetCreation(String cidr, ProjectAndEnv projectAndEnv)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, CfnAssistException, InterruptedException {
 		Collection<Parameter> parameters = new LinkedList<Parameter>();

@@ -15,21 +15,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.AwsFacade;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.NotReadyException;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;

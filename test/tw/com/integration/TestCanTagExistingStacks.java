@@ -12,17 +12,17 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.EnvironmentTag;
 import tw.com.MonitorStackEvents;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.StackId;
-import tw.com.VpcRepository;
+import tw.com.entity.EnvironmentTag;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -52,7 +52,7 @@ public class TestCanTagExistingStacks {
 		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		
-		StackId stackId = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpc.getVpcId(),"");	
+		StackNameAndId stackId = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpc.getVpcId(),"");	
 		monitor.waitForCreateFinished(stackId);
 	}
 	

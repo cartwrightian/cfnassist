@@ -10,8 +10,8 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Vpc;
 
 import tw.com.EnvironmentSetupForTests;
-import tw.com.VpcRepository;
 import tw.com.commandline.Main;
+import tw.com.repository.VpcRepository;
 
 public class TestCommandLineVLCoperations {
 	

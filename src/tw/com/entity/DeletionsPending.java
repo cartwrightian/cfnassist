@@ -1,4 +1,4 @@
-package tw.com;
+package tw.com.entity;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -8,6 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.SetsDeltaIndex;
 import tw.com.exceptions.CannotFindVpcException;
 
 public class DeletionsPending implements Iterable<DeletionPending> {
@@ -26,7 +27,7 @@ public class DeletionsPending implements Iterable<DeletionPending> {
 		deleted = new LinkedList<DeletionPending>();
 	}
 
-	public void add(int delta, StackId stackId) {
+	public void add(int delta, StackNameAndId stackId) {
 		DeletionPending item = new DeletionPending(delta, stackId);
 		items.add(item);	
 	}
@@ -52,7 +53,7 @@ public class DeletionsPending implements Iterable<DeletionPending> {
 
 	public void markIdAsDeleted(String stackId) {
 		for(DeletionPending item : items) {
-			StackId itemStackId = item.getStackId();
+			StackNameAndId itemStackId = item.getStackId();
 			if (itemStackId.getStackId().equals(stackId)) {
 				logger.info(String.format("Matched stackid %s, marking stack as deleted", stackId));
 				deleted.add(item);

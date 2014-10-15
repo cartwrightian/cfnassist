@@ -17,17 +17,16 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.StackId;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -42,7 +41,7 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestBuiltInParameterInjectionAndTagging {
-	private AwsProvider awsProvider;
+	private AwsFacade awsFacade;
 	private String env = EnvironmentSetupForTests.ENV;
 	private String project = EnvironmentSetupForTests.PROJECT;
 	private ProjectAndEnv mainProjectAndEnv;
@@ -71,8 +70,8 @@ public class TestBuiltInParameterInjectionAndTagging {
 		monitor = new PollingStackMonitor(cfnRepository);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
-		awsProvider = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
-		awsProvider.setCommentTag(testName);
+		awsFacade = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		awsFacade.setCommentTag(testName);
 
 		mainProjectAndEnv = new ProjectAndEnv(project, env);
 		vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
@@ -93,9 +92,9 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Test
 	public void setNoteAOnStack() throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException {
 		String theComment = "hereIsAComment";
-		awsProvider.setCommentTag(theComment); // override for this test
+		awsFacade.setCommentTag(theComment); // override for this test
 		File templateFile = new File(FilesForTesting.SUBNET_STACK);
-		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
+		StackNameAndId stackId = awsFacade.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		List<Tag> expectedStackTags = createExpectedStackTags("");
 		List<com.amazonaws.services.ec2.model.Tag> expectedEc2Tags = createExpectedEc2Tags("");
@@ -109,7 +108,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Test
 	public void canBuildAndDeleteSimpleStackWithCorrectTags() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException {	
 		File templateFile = new File(FilesForTesting.SUBNET_STACK);
-		StackId stackId = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
+		StackNameAndId stackId = awsFacade.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		validateCreateAndDeleteWorks(stackId, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
 	}
@@ -121,7 +120,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		
 		String buildNumber = "456";
 		mainProjectAndEnv.addBuildNumber(buildNumber); 
-		StackId stackName = awsProvider.applyTemplate(templateFile, mainProjectAndEnv);
+		StackNameAndId stackName = awsFacade.applyTemplate(templateFile, mainProjectAndEnv);
 		
 		// tagging should still work even if json does not take build parameter
 		List<com.amazonaws.services.ec2.model.Tag> expectedEC2Tags = createExpectedEc2Tags(testName);
@@ -135,7 +134,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		
 		Collection<Parameter> params = new LinkedList<Parameter>();
 		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
-		StackId stackName = awsProvider.applyTemplate(new File(FilesForTesting.SUBNET_WITH_PARAM), mainProjectAndEnv, params);
+		StackNameAndId stackName = awsFacade.applyTemplate(new File(FilesForTesting.SUBNET_WITH_PARAM), mainProjectAndEnv, params);
 				
 		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
 	}
@@ -145,7 +144,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		String buildNumber = "42";
 		
 		mainProjectAndEnv.addBuildNumber(buildNumber);
-		StackId stackName = awsProvider.applyTemplate(new File(FilesForTesting.SUBNET_WITH_BUILD), mainProjectAndEnv);	
+		StackNameAndId stackName = awsFacade.applyTemplate(new File(FilesForTesting.SUBNET_WITH_BUILD), mainProjectAndEnv);	
 	
 		validateCreateAndDeleteWorks(stackName, 
 				createCfnExpectedTagListWithBuild(buildNumber, testName), 
@@ -154,7 +153,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		deletesStacks.ifPresent(stackName);
 	}
 
-	private void validateCreateAndDeleteWorks(StackId stackId, List<Tag> expectedStackTags, 
+	private void validateCreateAndDeleteWorks(StackNameAndId stackId, List<Tag> expectedStackTags, 
 			List<com.amazonaws.services.ec2.model.Tag> expectedEc2Tags)
 			throws CfnAssistException, InterruptedException {
 		String status = monitor.waitForCreateFinished(stackId);

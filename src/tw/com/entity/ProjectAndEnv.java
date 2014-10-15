@@ -1,4 +1,5 @@
-package tw.com;
+package tw.com.entity;
+
 
 public class ProjectAndEnv {
 	

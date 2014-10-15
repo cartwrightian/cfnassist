@@ -1,6 +1,6 @@
 package tw.com.exceptions;
 
-import tw.com.ProjectAndEnv;
+import tw.com.entity.ProjectAndEnv;
 
 @SuppressWarnings("serial")
 public class CannotFindVpcException extends CfnAssistException {

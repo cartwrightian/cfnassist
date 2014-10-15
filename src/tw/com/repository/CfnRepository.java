@@ -1,10 +1,16 @@
-package tw.com;
+package tw.com.repository;
 
 import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.CheckStackExists;
+import tw.com.StackCache;
+import tw.com.entity.EnvironmentTag;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackEntry;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.AmazonServiceException;
@@ -196,11 +202,11 @@ public class CfnRepository implements CheckStackExists {
 		return stackStatus;
 	}
 
-	public StackId getStackId(String stackName)
+	public StackNameAndId getStackId(String stackName)
 			throws WrongNumberOfStacksException {
 		Stack stack = describeStack(stackName);
 		String id = stack.getStackId();
-		return new StackId(stackName, id);
+		return new StackNameAndId(stackName, id);
 	}
 
 	private Stack describeStack(String stackName)
@@ -272,7 +278,7 @@ public class CfnRepository implements CheckStackExists {
 		return results;	
 	}
 
-	public Stack updateRepositoryFor(StackId id) throws WrongNumberOfStacksException {
+	public Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
 		return stackCache.updateRepositoryFor(id);		
 	}
 

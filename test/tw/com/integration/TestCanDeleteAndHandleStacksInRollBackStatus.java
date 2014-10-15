@@ -14,20 +14,19 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.NotReadyException;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.StackId;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -39,7 +38,7 @@ public class TestCanDeleteAndHandleStacksInRollBackStatus {
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;
 	
-	private AwsProvider aws;
+	private AwsFacade aws;
 	private ProjectAndEnv projectAndEnv;
 	private MonitorStackEvents monitor;
 	private VpcRepository vpcRepository;
@@ -108,7 +107,7 @@ public class TestCanDeleteAndHandleStacksInRollBackStatus {
 	@Test
 	public void handlesRollBackCompleteStatusAutomatically() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException {
 
-		StackId id = null;
+		StackNameAndId id = null;
 		try {
 			aws.applyTemplate(new File(FilesForTesting.CAUSEROLLBACK), projectAndEnv);
 			fail("should have thrown");

@@ -17,14 +17,22 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.entity.DeletionsPending;
+import tw.com.entity.EnvironmentTag;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackEntry;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.BadVPCDeltaIndexException;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
@@ -42,7 +50,7 @@ import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
 import com.amazonaws.services.ec2.model.Vpc;
 
-public class AwsFacade implements AwsProvider {
+public class AwsFacade {
 
 	private static final String DELTA_EXTENSTION = ".delta";
 
@@ -102,20 +110,18 @@ public class AwsFacade implements AwsProvider {
 		return validateTemplate(contents);
 	}
 	
-	@Override
-	public StackId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException, CannotFindVpcException {
+	public StackNameAndId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException, CannotFindVpcException {
 		File file = new File(filename);
 		return applyTemplate(file, projAndEnv);
 	}
 	
-	@Override
-	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv)
+	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	public StackId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException, CannotFindVpcException {
+	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException, CannotFindVpcException {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
@@ -135,7 +141,7 @@ public class AwsFacade implements AwsProvider {
 		return (file.getName().contains(DELTA_EXTENSTION));
 	}
 
-	private StackId updateStack(File file, ProjectAndEnv projAndEnv,
+	private StackNameAndId updateStack(File file, ProjectAndEnv projAndEnv,
 			Collection<Parameter> userParameters, Vpc vpcForEnv,
 			List<TemplateParameter> declaredParameters, String contents) throws FileNotFoundException, InvalidParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
 		logger.info("Request to update a stack, filename is " + file.getAbsolutePath());
@@ -164,7 +170,7 @@ public class AwsFacade implements AwsProvider {
 		updateStackRequest.setTemplateBody(contents);
 		UpdateStackResult result = cfnClient.updateStack(updateStackRequest);
 
-		StackId id = new StackId(stackName,result.getStackId());
+		StackNameAndId id = new StackNameAndId(stackName,result.getStackId());
 		try {
 			monitor.waitForUpdateFinished(id);
 		} catch (WrongStackStatus stackFailedToCreate) {
@@ -195,7 +201,7 @@ public class AwsFacade implements AwsProvider {
 	}
 
 	
-	private StackId createStack(File file, ProjectAndEnv projAndEnv,
+	private StackNameAndId createStack(File file, ProjectAndEnv projAndEnv,
 			Collection<Parameter> userParameters, Vpc vpcForEnv,
 			List<TemplateParameter> declaredParameters, String contents)
 			throws WrongNumberOfStacksException, NotReadyException,
@@ -223,7 +229,7 @@ public class AwsFacade implements AwsProvider {
 		logger.info("Making createStack call to AWS");
 		
 		CreateStackResult result = cfnClient.createStack(createStackRequest);
-		StackId id = new StackId(stackName,result.getStackId());
+		StackNameAndId id = new StackNameAndId(stackName,result.getStackId());
 		try {
 			monitor.waitForCreateFinished(id);
 		} catch (WrongStackStatus stackFailedToCreate) {
@@ -280,7 +286,7 @@ public class AwsFacade implements AwsProvider {
 		String currentStatus = cfnRepository.getStackStatus(stackName);
 		if (currentStatus.length()!=0) {
 			logger.warn("Stack already exists: " + stackName);
-			StackId stackId = cfnRepository.getStackId(stackName);
+			StackNameAndId stackId = cfnRepository.getStackId(stackName);
 			if (isRollingBack(stackId)) {
 				logger.warn("Stack is rolled back so delete it and recreate " + stackId);
 				deleteStackNonBlocking(stackId.getStackName());
@@ -292,7 +298,7 @@ public class AwsFacade implements AwsProvider {
 		}
 	}
 
-	private boolean isRollingBack(StackId id) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+	private boolean isRollingBack(StackNameAndId id) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
 		String currentStatus = cfnRepository.getStackStatus(id.getStackName());
 		if (currentStatus.equals(StackStatus.ROLLBACK_IN_PROGRESS)) {
 			monitor.waitForRollbackComplete(id);
@@ -324,8 +330,6 @@ public class AwsFacade implements AwsProvider {
 		return tags;
 	}
 	
-
-	@Override
 	public void setCommentTag(String commentTag) {
 		this.commentTag = commentTag;		
 	}
@@ -414,7 +418,7 @@ public class AwsFacade implements AwsProvider {
 	
 	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv) {
 		String stackName = createStackName(templateFile, projectAndEnv);
-		StackId stackId;
+		StackNameAndId stackId;
 		try {
 			stackId = cfnRepository.getStackId(stackName);
 		} catch (WrongNumberOfStacksException e) {
@@ -447,7 +451,6 @@ public class AwsFacade implements AwsProvider {
 		return FileUtils.readFileToString(file, Charset.defaultCharset());
 	}
 
-	@Override
 	public List<Parameter> fetchAutopopulateParametersFor(File file, ProjectAndEnv projectAndEnv, List<TemplateParameter> declaredParameters) throws FileNotFoundException, IOException, InvalidParameterException, CannotFindVpcException {
 		logger.info(String.format("Discover and populate parameters for %s and %s", file.getAbsolutePath(), projectAndEnv));
 		List<Parameter> matches = new LinkedList<Parameter>();
@@ -523,18 +526,16 @@ public class AwsFacade implements AwsProvider {
 		return description.startsWith(PARAM_PREFIX);
 	}
 	
-	@Override
-	public ArrayList<StackId> applyTemplatesFromFolder(String folderPath,
+	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv) throws InvalidParameterException,
 			FileNotFoundException, IOException, CfnAssistException,
 			InterruptedException {
 		return applyTemplatesFromFolder(folderPath, projAndEnv, new LinkedList<Parameter>());
 	}
 
-	@Override
-	public ArrayList<StackId> applyTemplatesFromFolder(String folderPath,
+	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException {
-		ArrayList<StackId> updatedStacks = new ArrayList<>();
+		ArrayList<StackNameAndId> updatedStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
 		List<File> files = loadFiles(folder);
@@ -552,7 +553,7 @@ public class AwsFacade implements AwsProvider {
 			int deltaIndex = extractIndexFrom(file);
 			if (deltaIndex>highestAppliedDelta) {
 				logger.info(String.format("Apply template file: %s, index is %s",file.getAbsolutePath(), deltaIndex));
-				StackId stackId = applyTemplate(file, projAndEnv, cfnParams);
+				StackNameAndId stackId = applyTemplate(file, projAndEnv, cfnParams);
 				logger.info("Create/Updated stack " + stackId);
 				updatedStacks.add(stackId); 
 				setDeltaIndex(projAndEnv, deltaIndex);
@@ -598,7 +599,7 @@ public class AwsFacade implements AwsProvider {
 					logger.warn(String.format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
 				} else {			
 					logger.info(String.format("About to request deletion of stackname %s", stackName));
-					StackId id = cfnRepository.getStackId(stackName); // important to get id's before deletion request, may throw otherwise
+					StackNameAndId id = cfnRepository.getStackId(stackName); // important to get id's before deletion request, may throw otherwise
 					deleteStackNonBlocking(stackName);
 					pending.add(deltaIndex,id);
 				}
@@ -628,17 +629,14 @@ public class AwsFacade implements AwsProvider {
 		return Integer.parseInt(indexPart.toString());
 	}
 
-	@Override
 	public void resetDeltaIndex(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, "0");
 	}
 
-	@Override
 	public void setDeltaIndex(ProjectAndEnv projAndEnv, Integer index) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, index.toString());
 	}
 
-	@Override
 	public int getDeltaIndex(ProjectAndEnv projAndEnv) throws CfnAssistException {
 		String tag = vpcRepository.getVpcIndexTag(projAndEnv);
 		int result = -1;
@@ -661,7 +659,6 @@ public class AwsFacade implements AwsProvider {
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
 	}
 	
-	@Override
 	public List<StackEntry> listStacks(ProjectAndEnv projectAndEnv) {
 		if (projectAndEnv.hasEnv()) {
 			return cfnRepository.getStacks(projectAndEnv.getEnvTag());

@@ -14,8 +14,8 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
-import tw.com.ProjectAndEnv;
-import tw.com.StackId;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 
@@ -31,7 +31,7 @@ public class FileAction extends SharedAction {
 		File templateFile = new File(filename);
 		AwsFacade aws = factory.createFacade();
 		uploadArtifacts(factory, projectAndEnv, artifacts, cfnParams);
-		StackId stackId = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
+		StackNameAndId stackId = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
 		logger.info("Created stack name "+stackId);
 	}
 	

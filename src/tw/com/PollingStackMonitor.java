@@ -7,9 +7,14 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.entity.DeletionPending;
+import tw.com.entity.DeletionsPending;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.repository.CfnRepository;
 
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
@@ -23,7 +28,7 @@ public class PollingStackMonitor extends StackMonitor {
 	}
 
 	@Override
-	public String waitForCreateFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException, WrongStackStatus {	
+	public String waitForCreateFinished(StackNameAndId stackId) throws WrongNumberOfStacksException, InterruptedException, WrongStackStatus {	
 		String stackName = stackId.getStackName();
 		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(CREATE_ABORTS));
 		String expected = StackStatus.CREATE_COMPLETE.toString();
@@ -36,7 +41,7 @@ public class PollingStackMonitor extends StackMonitor {
 	}
 	
 	@Override
-	public String waitForRollbackComplete(StackId id) throws NotReadyException,
+	public String waitForRollbackComplete(StackNameAndId id) throws NotReadyException,
 			 WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
 		String stackName = id.getStackName();
 		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.ROLLBACK_IN_PROGRESS, Arrays.asList(ROLLBACK_ABORTS));
@@ -48,7 +53,7 @@ public class PollingStackMonitor extends StackMonitor {
 		return result;
 	}
 	
-	public String waitForDeleteFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException {
+	public String waitForDeleteFinished(StackNameAndId stackId) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus requiredStatus = StackStatus.DELETE_IN_PROGRESS;
 		String result = StackStatus.DELETE_FAILED.toString();
 		try {
@@ -83,7 +88,7 @@ public class PollingStackMonitor extends StackMonitor {
 	}
 
 	@Override
-	public String waitForUpdateFinished(StackId id) throws WrongNumberOfStacksException, InterruptedException, WrongStackStatus {
+	public String waitForUpdateFinished(StackNameAndId id) throws WrongNumberOfStacksException, InterruptedException, WrongStackStatus {
 		String stackName = id.getStackName();
 		String result = cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.UPDATE_IN_PROGRESS, Arrays.asList(UPDATE_ABORTS));
 		if (result.equals(StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS.toString())) {
@@ -107,7 +112,7 @@ public class PollingStackMonitor extends StackMonitor {
 		List<String> deletedOk = new LinkedList<String>();
 		try {
 			for(DeletionPending delta : pending) {
-				StackId id = delta.getStackId();
+				StackNameAndId id = delta.getStackId();
 				logger.info("Now waiting for deletion of " + id);
 				waitForDeleteFinished(id );
 				deletedOk.add(id.getStackName());

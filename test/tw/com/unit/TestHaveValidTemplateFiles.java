@@ -10,11 +10,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.PollingStackMonitor;
-import tw.com.VpcRepository;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -47,7 +46,7 @@ public class TestHaveValidTemplateFiles {
 		validateFolder(aws, folder);
 	}
 
-	private void validateFolder(AwsProvider facade, File folder)
+	private void validateFolder(AwsFacade facade, File folder)
 			throws FileNotFoundException, IOException, InterruptedException {
 		File[] files = folder.listFiles();
 		for(File file : files) {

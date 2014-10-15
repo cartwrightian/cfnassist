@@ -1,11 +1,11 @@
-package tw.com;
+package tw.com.entity;
 
-public class StackId {
+public class StackNameAndId {
 
 	private String stackName;
 	private String stackId;
 
-	public StackId(String stackName, String stackId) {
+	public StackNameAndId(String stackName, String stackId) {
 		this.stackName = stackName;
 		this.stackId = stackId;
 	}
@@ -28,7 +28,7 @@ public class StackId {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		StackId other = (StackId) obj;
+		StackNameAndId other = (StackNameAndId) obj;
 		if (stackId == null) {
 			if (other.stackId != null)
 				return false;

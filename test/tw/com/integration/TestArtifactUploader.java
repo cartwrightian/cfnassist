@@ -14,9 +14,9 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import tw.com.ArtifactUploader;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
+import tw.com.providers.ArtifactUploader;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.model.Parameter;

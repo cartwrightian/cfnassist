@@ -13,16 +13,15 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.TagsAlreadyInit;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -37,7 +36,7 @@ public class TestDeltaIndexTagging {
 
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 	private ProjectAndEnv altProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
-	private AwsProvider aws;
+	private AwsFacade aws;
 	private Vpc altVpc;
 	
 	@BeforeClass

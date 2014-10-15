@@ -6,6 +6,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.entity.EnvironmentTag;
+import tw.com.entity.StackEntry;
+import tw.com.entity.StackNameAndId;
+import tw.com.entity.StackResources;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -108,7 +112,7 @@ public class StackCache {
 		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));			 
 	}
 	
-	public Stack updateRepositoryFor(StackId id) throws WrongNumberOfStacksException {
+	public Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
 		logger.info("Update stack repository for stack: " + id);
 		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
 		describeStacksRequest.setStackName(id.getStackName());

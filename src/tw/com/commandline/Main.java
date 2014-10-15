@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.FacadeFactory;
-import tw.com.ProjectAndEnv;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.TagsAlreadyInit;

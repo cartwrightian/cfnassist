@@ -17,23 +17,22 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
-import tw.com.ELBRepository;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.NotReadyException;
-import tw.com.ProjectAndEnv;
-import tw.com.SNSEventSource;
 import tw.com.SNSMonitor;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.SNSEventSource;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.ELBRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -52,7 +51,7 @@ public class TestELBSwitchOver {
 	private static AmazonSQSClient sqsClient;
 	private static AmazonElasticLoadBalancingClient elbClient;
 	
-	private static AwsProvider aws;
+	private static AwsFacade aws;
 	private static ProjectAndEnv projAndEnv;
 	private static MonitorStackEvents monitor;
 	private static VpcRepository vpcRepository;

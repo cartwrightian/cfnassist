@@ -1,4 +1,5 @@
-package tw.com;
+package tw.com.entity;
+
 
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;

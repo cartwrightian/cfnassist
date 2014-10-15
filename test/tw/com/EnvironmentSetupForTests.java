@@ -11,6 +11,10 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
+import tw.com.repository.VpcRepository;
+
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
@@ -141,7 +145,7 @@ public class EnvironmentSetupForTests {
 		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	}
 	
-	public static StackId createTemporarySimpleStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
+	public static StackNameAndId createTemporarySimpleStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setStackName(TEMPORARY_STACK);
 		File file = new File(FilesForTesting.SIMPLE_STACK);
@@ -157,7 +161,7 @@ public class EnvironmentSetupForTests {
 		}
 		createStackRequest.setParameters(parameters);
 		CreateStackResult result = cfnClient.createStack(createStackRequest);
-		return new StackId(TEMPORARY_STACK, result.getStackId());
+		return new StackNameAndId(TEMPORARY_STACK, result.getStackId());
 	}
 	
 	private static Parameter createParam(String key, String value) {

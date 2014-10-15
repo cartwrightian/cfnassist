@@ -6,7 +6,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.StackId;
+import tw.com.entity.StackNameAndId;
 
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
@@ -34,7 +34,7 @@ public class DeletesStacks {
 		return this;
 	}
 	
-	public DeletesStacks ifPresent(StackId stackId) {
+	public DeletesStacks ifPresent(StackNameAndId stackId) {
 		return ifPresent(stackId.getStackName());	
 	}
 	

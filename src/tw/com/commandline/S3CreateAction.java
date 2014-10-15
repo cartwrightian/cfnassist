@@ -8,7 +8,7 @@ import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 
 import tw.com.FacadeFactory;
-import tw.com.ProjectAndEnv;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.WrongNumberOfStacksException;

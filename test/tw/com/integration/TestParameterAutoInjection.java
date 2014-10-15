@@ -15,19 +15,18 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.StackId;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -39,9 +38,9 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 public class TestParameterAutoInjection {
 	
-	private static AwsProvider aws;
+	private static AwsFacade aws;
 	private static VpcRepository vpcRepository;
-	private static StackId subnetStackName;
+	private static StackNameAndId subnetStackName;
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
 	private static ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj, env);

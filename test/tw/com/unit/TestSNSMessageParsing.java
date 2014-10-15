@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import tw.com.StackNotification;
+import tw.com.entity.StackNotification;
 
 public class TestSNSMessageParsing {
 

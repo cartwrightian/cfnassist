@@ -1,4 +1,4 @@
-package tw.com;
+package tw.com.repository;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,6 +8,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.AwsFacade;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;

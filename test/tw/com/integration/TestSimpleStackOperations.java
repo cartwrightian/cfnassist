@@ -25,40 +25,39 @@ import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
 import tw.com.AwsFacade;
-import tw.com.AwsProvider;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.NotReadyException;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.SNSEventSource;
 import tw.com.SNSMonitor;
-import tw.com.StackEntry;
-import tw.com.StackId;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackEntry;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.SNSEventSource;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 public class TestSimpleStackOperations {
 	private static final String TAG_NAME = "SUBNET";
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;
 	
-	private static AwsProvider aws;
+	private static AwsFacade aws;
 	private static ProjectAndEnv projectAndEnv;
 	private static MonitorStackEvents monitor;
 	private static VpcRepository vpcRepository;
 	private static CfnRepository cfnRepository;
 
 	private static DeletesStacks deletesStacks;
-	private static StackId theStack;
+	private static StackNameAndId theStack;
 	private static DefaultAWSCredentialsProviderChain credentialsProvider;
 	private static Vpc vpc;
 	
@@ -152,7 +151,7 @@ public class TestSimpleStackOperations {
 		// check TAG set by outputs matchs the created VPC TAG
 		assertTrue(checkForVPCTag(TAG_NAME, beforeID));
 		
-		StackId after = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK_DELTA), projectAndEnv);
+		StackNameAndId after = aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK_DELTA), projectAndEnv);
 		List<Subnet> afterSubnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
 		String afterID = cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "testSubnet");
 		

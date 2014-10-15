@@ -19,20 +19,20 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import tw.com.AwsFacade;
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.PollingStackMonitor;
-import tw.com.ProjectAndEnv;
-import tw.com.SNSEventSource;
 import tw.com.SNSMonitor;
-import tw.com.StackId;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.providers.SNSEventSource;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -107,12 +107,12 @@ public class TestExecuteScriptsInOrderFromDir {
 		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);
 		AwsFacade aws = createFacade(cfnRepository, vpcRepository, monitor);
 		
-		List<StackId> stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
+		List<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
 		
 		assertEquals(expectedList.size(), stackIds.size());
 		
 		for(int i=0; i<expectedList.size(); i++) {
-			StackId stackId = stackIds.get(i);
+			StackNameAndId stackId = stackIds.get(i);
 			assertEquals(expectedList.get(i), stackId.getStackName());
 			// TODO should just be a call to get current status because applyTemplatesFromFolder is a blocking call
 			String status = monitor.waitForCreateFinished(stackId);
@@ -163,7 +163,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	private void applyDeltasAsStackUpdates(AwsFacade aws)
 			throws InvalidParameterException, FileNotFoundException,
 			IOException, CfnAssistException, InterruptedException {
-		List<StackId> stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER, mainProjectAndEnv);
+		List<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER, mainProjectAndEnv);
 		assertEquals(2, stackIds.size());
 		
 		// a delta updates an exitsing stack, so the stack id should be the same

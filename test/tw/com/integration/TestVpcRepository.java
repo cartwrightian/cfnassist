@@ -8,9 +8,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import tw.com.EnvironmentSetupForTests;
-import tw.com.ProjectAndEnv;
-import tw.com.VpcRepository;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
+import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;

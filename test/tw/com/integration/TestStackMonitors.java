@@ -10,20 +10,20 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import tw.com.CfnRepository;
 import tw.com.DeletesStacks;
-import tw.com.DeletionsPending;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.NotReadyException;
 import tw.com.PollingStackMonitor;
-import tw.com.SNSEventSource;
 import tw.com.SNSMonitor;
 import tw.com.SetsDeltaIndex;
-import tw.com.StackId;
+import tw.com.entity.DeletionsPending;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.SNSEventSource;
+import tw.com.repository.CfnRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -73,20 +73,20 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	
 	@Test
 	public void ShouldCheckStackHasBeenCreated() throws CfnAssistException, InterruptedException, IOException {
-		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
+		StackNameAndId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
 		assertEquals(CREATE_COMPLETE, pollingMonitor.waitForCreateFinished(id));
 	}
 	
 	@Test
 	public void ShouldCheckStackHasBeenCreatedSNS() throws CfnAssistException, InterruptedException, IOException, MissingArgumentException {	
 		snsMonitor.init();
-		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId, eventSource.getArn());
+		StackNameAndId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId, eventSource.getArn());
 		assertEquals(CREATE_COMPLETE, snsMonitor.waitForCreateFinished(id));
 	}
 	
 	@Test 
 	public void ShouldCheckStackHasBeenDeleted() throws CfnAssistException, InterruptedException, IOException {
-		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
+		StackNameAndId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
 		pollingMonitor.waitForCreateFinished(id);
 		new DeletesStacks(cfnClient).ifPresentNonBlocking(stackName).act(); 
 		assertEquals(DELETED, pollingMonitor.waitForDeleteFinished(id));
@@ -95,7 +95,7 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	@Test 
 	public void ShouldCheckStackHasBeenDeletedWithSNS() throws CfnAssistException, InterruptedException, IOException, MissingArgumentException {
 		snsMonitor.init();
-		StackId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId, eventSource.getArn());
+		StackNameAndId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId, eventSource.getArn());
 		snsMonitor.waitForCreateFinished(id);
 		new DeletesStacks(cfnClient).ifPresentNonBlocking(stackName).act(); 
 		assertEquals(DELETED, snsMonitor.waitForDeleteFinished(id));
@@ -103,14 +103,14 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	
 	@Test
 	public void ShouldCopeWithNonExistanceStack() throws WrongNumberOfStacksException, InterruptedException {
-		StackId id = new StackId("alreadyGone", "11222");
+		StackNameAndId id = new StackNameAndId("alreadyGone", "11222");
 		assertEquals(DELETED, pollingMonitor.waitForDeleteFinished(id));
 	}
 	
 	@Test
 	public void ShouldCopeWithNonExistanceStackSNS() throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus, MissingArgumentException {
 		snsMonitor.init();
-		StackId id = new StackId("alreadyGone", "11222");
+		StackNameAndId id = new StackNameAndId("alreadyGone", "11222");
 		assertEquals(DELETED, snsMonitor.waitForDeleteFinished(id));
 	}
 	
@@ -130,9 +130,9 @@ public class TestStackMonitors implements SetsDeltaIndex {
 
 	private DeletionsPending createPendingDeletes() {
 		DeletionsPending pending = new DeletionsPending();
-		pending.add(3, new StackId("alreadyGone1","11")); // final index should end up as 2
-		pending.add(4, new StackId("alreadyGone2","12"));
-		pending.add(5, new StackId("alreadyGone3","13"));
+		pending.add(3, new StackNameAndId("alreadyGone1","11")); // final index should end up as 2
+		pending.add(4, new StackNameAndId("alreadyGone2","12"));
+		pending.add(5, new StackNameAndId("alreadyGone3","13"));
 		return pending;
 	}
 

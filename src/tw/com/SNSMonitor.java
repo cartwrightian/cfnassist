@@ -7,7 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.cloudformation.model.StackStatus;
+
+import tw.com.entity.DeletionPending;
+import tw.com.entity.DeletionsPending;
+import tw.com.entity.StackNameAndId;
+import tw.com.entity.StackNotification;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 
@@ -26,7 +32,7 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 	}
 
 	@Override
-	public String waitForCreateFinished(StackId stackId)
+	public String waitForCreateFinished(StackNameAndId stackId)
 			throws WrongNumberOfStacksException, InterruptedException,
 			NotReadyException, WrongStackStatus {
 		guardForInit();
@@ -34,7 +40,7 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 	}
 	
 	@Override
-	public String waitForDeleteFinished(StackId stackId)
+	public String waitForDeleteFinished(StackNameAndId stackId)
 			throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
 		guardForInit();
 		if (!checkStackExists.stackExists(stackId.getStackName())) {
@@ -44,14 +50,14 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 	}
 
 	@Override
-	public String waitForUpdateFinished(StackId stackId) throws WrongNumberOfStacksException, InterruptedException,
+	public String waitForUpdateFinished(StackNameAndId stackId) throws WrongNumberOfStacksException, InterruptedException,
 			WrongStackStatus, NotReadyException {
 		guardForInit();
 		return waitForStatus(stackId, StackStatus.UPDATE_COMPLETE.toString(), Arrays.asList(UPDATE_ABORTS));
 	}
 	
 	@Override
-	public String waitForRollbackComplete(StackId id) throws NotReadyException, InterruptedException, WrongStackStatus {
+	public String waitForRollbackComplete(StackNameAndId id) throws NotReadyException, InterruptedException, WrongStackStatus {
 		guardForInit();
 		return waitForStatus(id, StackStatus.ROLLBACK_COMPLETE.toString(), Arrays.asList(ROLLBACK_ABORTS));
 	}
@@ -97,7 +103,7 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 					pending.markIdAsDeleted(stackId);
 				} else if (deleteAborts.contains(status)) {
 					logger.error(String.format("Detected delete has failed for stackid %s name %s status was %s", stackId, stackName, status));
-					throw new WrongStackStatus(new StackId(stackName, stackId), deleteStatus, status);
+					throw new WrongStackStatus(new StackNameAndId(stackName, stackId), deleteStatus, status);
 				}
 				else {
 					logger.info(String.format("Delete not yet complete for stack %s status is %s",stackName, notification.getStatus()));
@@ -108,7 +114,7 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 		}	
 	}
 
-	private String waitForStatus(StackId stackId, String requiredStatus, List<String> aborts) throws InterruptedException, WrongStackStatus {
+	private String waitForStatus(StackNameAndId stackId, String requiredStatus, List<String> aborts) throws InterruptedException, WrongStackStatus {
 		logger.info(String.format("Waiting for stack %s to change to status %s", stackId, requiredStatus));
 		int retryCount = 0;
 		while (retryCount<LIMIT) {
@@ -128,7 +134,7 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 		throw new WrongStackStatus(stackId, requiredStatus, "timed out");
 	}
 
-	private String processNotification(StackId stackId, String requiredStatus, List<String> aborts, List<StackNotification> notifications)
+	private String processNotification(StackNameAndId stackId, String requiredStatus, List<String> aborts, List<StackNotification> notifications)
 			throws WrongStackStatus {
 		for(StackNotification notification : notifications) {
 			if (isMatchingStackNotif(notification, stackId)) {
@@ -152,7 +158,7 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 		}
 	}
 
-	private boolean isMatchingStackNotif(StackNotification notification, StackId stackId) {
+	private boolean isMatchingStackNotif(StackNotification notification, StackNameAndId stackId) {
 		if (notification.getStackId().equals(stackId.getStackId())) {
 			logger.info(String.format("Received notification for %s status was %s", notification.getResourceType(), notification.getStatus()));
 			if (notification.getStatus().equals(StackStatus.CREATE_FAILED.toString())) {

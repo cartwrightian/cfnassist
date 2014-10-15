@@ -6,9 +6,9 @@ import java.util.LinkedList;
 
 import org.junit.Test;
 
-import tw.com.DeletionPending;
-import tw.com.DeletionsPending;
-import tw.com.StackId;
+import tw.com.entity.DeletionPending;
+import tw.com.entity.DeletionsPending;
+import tw.com.entity.StackNameAndId;
 
 public class TestDeletionsPending {
 
@@ -16,9 +16,9 @@ public class TestDeletionsPending {
 	public void shouldIterateOverPendingsInCorrectOrder() {
 		DeletionsPending list = new DeletionsPending();
 		
-		list.add(1, new StackId("112", "nameA"));
-		list.add(0, new StackId("113", "nameB"));
-		list.add(2, new StackId("114", "nameC"));
+		list.add(1, new StackNameAndId("112", "nameA"));
+		list.add(0, new StackNameAndId("113", "nameB"));
+		list.add(2, new StackNameAndId("114", "nameC"));
 		
 		LinkedList<Integer> results = new LinkedList<Integer>();
 		for(DeletionPending pending : list) {

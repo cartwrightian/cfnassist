@@ -1,4 +1,5 @@
-package tw.com;
+package tw.com.entity;
+
 
 public class DeletionPending implements Comparable<DeletionPending> {
 
@@ -25,9 +26,9 @@ public class DeletionPending implements Comparable<DeletionPending> {
 	}
 
 	private int delta;
-	private StackId stackId;
+	private StackNameAndId stackId;
 
-	public DeletionPending(int delta, StackId stackId) {
+	public DeletionPending(int delta, StackNameAndId stackId) {
 		this.delta = delta;
 		this.stackId = stackId;
 	}
@@ -36,7 +37,7 @@ public class DeletionPending implements Comparable<DeletionPending> {
 		return delta;
 	}
 
-	public StackId getStackId() {
+	public StackNameAndId getStackId() {
 		return stackId;
 	}
 

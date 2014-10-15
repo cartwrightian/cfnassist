@@ -14,8 +14,8 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
-import tw.com.ProjectAndEnv;
-import tw.com.StackId;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 
@@ -31,9 +31,9 @@ public class DirAction extends SharedAction {
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String folderPath, Collection<Parameter> cfnParams, 
 			Collection<Parameter> artifacts) throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
-		ArrayList<StackId> stackIds = aws.applyTemplatesFromFolder(folderPath, projectAndEnv, cfnParams);
+		ArrayList<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(folderPath, projectAndEnv, cfnParams);
 		logger.info(String.format("Created %s stacks", stackIds.size()));
-		for(StackId name : stackIds) {
+		for(StackNameAndId name : stackIds) {
 			logger.info("Created stack " +name);
 		}
 	}

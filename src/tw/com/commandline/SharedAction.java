@@ -6,9 +6,9 @@ import org.apache.commons.cli.Option;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
-import tw.com.ArtifactUploader;
 import tw.com.FacadeFactory;
-import tw.com.ProjectAndEnv;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.providers.ArtifactUploader;
 
 public abstract class SharedAction implements CommandLineAction {
 

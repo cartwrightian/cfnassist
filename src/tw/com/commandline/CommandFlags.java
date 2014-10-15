@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.SNSEventSource;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.providers.SNSEventSource;
 
 public class CommandFlags {
 	private static final Logger logger = LoggerFactory.getLogger(CommandFlags.class);
