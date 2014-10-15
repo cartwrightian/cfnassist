@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.SNSMonitor;
+import tw.com.SNSEventSource;
 import tw.com.exceptions.InvalidParameterException;
 
 public class CommandFlags {
@@ -104,7 +104,7 @@ public class CommandFlags {
 		snsParam = OptionBuilder.withArgName("sns").
 				withDescription(
 						String.format("Use SNS to publish updates from cloud formation, uses the topic %s"
-						,SNSMonitor.SNS_TOPIC_NAME)).create("sns");
+						,SNSEventSource.SNS_TOPIC_NAME)).create("sns");
 		
 		commentParam = OptionBuilder.withArgName("comment").hasArg().
 				withDescription("Add a comment within the tag " + AwsFacade.COMMENT_TAG).create("comment");

@@ -34,7 +34,7 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 
-public class TestCanDeleteAndHandleRollback {
+public class TestCanDeleteAndHandleStacksInRollBackStatus {
 
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;

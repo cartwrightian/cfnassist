@@ -51,9 +51,10 @@ public class FacadeFactory {
 
 	public AwsFacade createFacade() throws MissingArgumentException {		
 		if (awsFacade==null) {
+			SNSEventSource eventSource = new SNSEventSource(snsClient, sqsClient);
 			MonitorStackEvents monitor = null;
-			if (arnMonitoring) {					
-				monitor = new SNSMonitor(snsClient, sqsClient);
+			if (arnMonitoring) {	
+				monitor = new SNSMonitor(eventSource, cfnRepository);
 			} else {
 				monitor = new PollingStackMonitor(cfnRepository);
 			}

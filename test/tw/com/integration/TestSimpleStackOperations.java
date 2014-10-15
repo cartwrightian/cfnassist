@@ -34,6 +34,7 @@ import tw.com.MonitorStackEvents;
 import tw.com.NotReadyException;
 import tw.com.PollingStackMonitor;
 import tw.com.ProjectAndEnv;
+import tw.com.SNSEventSource;
 import tw.com.SNSMonitor;
 import tw.com.StackEntry;
 import tw.com.StackId;
@@ -116,7 +117,7 @@ public class TestSimpleStackOperations {
 		AmazonSNSClient snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
 		AmazonSQSClient sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
 		
-		MonitorStackEvents snsMonitor = new SNSMonitor(snsClient, sqsClient);
+		MonitorStackEvents snsMonitor = new SNSMonitor(new SNSEventSource(snsClient, sqsClient), cfnRepository);
 		snsMonitor.init();
 		AwsFacade snsAws = new AwsFacade(snsMonitor, cfnClient, cfnRepository, vpcRepository);
 		try {		

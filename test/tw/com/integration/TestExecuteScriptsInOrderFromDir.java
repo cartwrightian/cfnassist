@@ -26,6 +26,7 @@ import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.PollingStackMonitor;
 import tw.com.ProjectAndEnv;
+import tw.com.SNSEventSource;
 import tw.com.SNSMonitor;
 import tw.com.StackId;
 import tw.com.VpcRepository;
@@ -152,7 +153,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	
 	@Test
 	public void shouldApplyDeltasAsStackUpdatesSNSMonitor() throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
-		SNSMonitor monitor = new SNSMonitor(snsClient, sqsClient);
+		SNSMonitor monitor = new SNSMonitor(new SNSEventSource(snsClient, sqsClient), cfnRepository);
 		monitor.init();
 		AwsFacade aws = createFacade(cfnRepository, vpcRepository, monitor);
 		

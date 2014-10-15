@@ -26,6 +26,7 @@ import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.NotReadyException;
 import tw.com.ProjectAndEnv;
+import tw.com.SNSEventSource;
 import tw.com.SNSMonitor;
 import tw.com.VpcRepository;
 import tw.com.exceptions.CfnAssistException;
@@ -82,7 +83,7 @@ public class TestELBSwitchOver {
 		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		vpcRepository = new VpcRepository(ec2Client);
 		
-		monitor = new SNSMonitor(snsClient, sqsClient);
+		monitor = new SNSMonitor(new SNSEventSource(snsClient, sqsClient), cfnRepository);
 		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
 		monitor.init();
 		projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);

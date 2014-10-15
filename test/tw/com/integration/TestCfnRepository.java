@@ -1,9 +1,6 @@
 package tw.com.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
+import static org.junit.Assert.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -102,6 +99,10 @@ public class TestCfnRepository {
 		StackId stackA = invokeSubnetCreation(cidrA, mainProjectAndEnv);	
 		StackId stackB = invokeSubnetCreation(cidrB,  altProjectAndEnv);
 		
+		// should report as existing
+		assertTrue(cfnRepository.stackExists(stackA.getStackName()));
+		assertTrue(cfnRepository.stackExists(stackB.getStackName()));
+		
 		// find the id's
 		String physicalIdA = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(EnvironmentSetupForTests.ENV), TEST_CIDR_SUBNET);
 		String physicalIdB = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(EnvironmentSetupForTests.ALT_ENV), TEST_CIDR_SUBNET);
@@ -154,10 +155,14 @@ public class TestCfnRepository {
 	}
 	
 	@Test
-	public void emptyStatusIfNoSuchStatck() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidParameterException, InterruptedException {			
-		String result = cfnRepository.getStackStatus("thisStackShouldNotExist");
-		
+	public void emptyStatusIfNoSuchStack() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidParameterException, InterruptedException {			
+		String result = cfnRepository.getStackStatus("thisStackShouldNotExist");		
 		assertEquals(0, result.length());
+	}
+	
+	@Test
+	public void shouldReturnFalseForNonExistantStack() {
+		assertFalse(cfnRepository.stackExists("someMadeUpName"));
 	}
 
 	private DescribeSubnetsResult getSubnetDetails(String physicalId) {

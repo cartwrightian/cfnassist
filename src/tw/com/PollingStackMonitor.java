@@ -55,6 +55,7 @@ public class PollingStackMonitor extends StackMonitor {
 			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), requiredStatus, Arrays.asList(DELETE_ABORTS));
 		}
 		catch(com.amazonaws.AmazonServiceException awsException) {
+			logger.warn("Caught exception during status check", awsException);
 			String errorCode = awsException.getErrorCode();
 			if (errorCode.equals("ValidationError")) {
 				result = StackStatus.DELETE_COMPLETE.toString();

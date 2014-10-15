@@ -18,7 +18,7 @@ import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
-public class CfnRepository {
+public class CfnRepository implements CheckStackExists {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
 
 	private static final String AWS_EC2_INSTANCE_TYPE = "AWS::EC2::Instance";
@@ -94,7 +94,6 @@ public class CfnRepository {
 			logger.warn("Unable to check for resources, stack name: "
 					+ stackName, exception);
 		}
-
 		return null;
 	}
 
@@ -147,6 +146,24 @@ public class CfnRepository {
 		return result.getStackEvents();
 	}
 
+	@Override
+	public boolean stackExists(String stackName) {
+		logger.info("Check if stack exists for " + stackName);
+		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
+		describeStacksRequest.setStackName(stackName);
+		
+		try { //  throws if stack does not exist
+			cfnClient.describeStacks(describeStacksRequest);
+			return true;
+		}
+		catch (AmazonServiceException exception) { 
+			if (exception.getStatusCode()==400) {
+				return false;
+			}
+			throw exception;
+		}
+	}
+	
 	public String getStackStatus(String stackName) {
 		logger.info("Getting stack status for " + stackName);
 		for (StackEntry entry : stackCache.getEntries()) {
@@ -159,7 +176,7 @@ public class CfnRepository {
 					logger.warn("Mismatch on stack status", e);
 					return "";
 				} catch (AmazonServiceException e) {
-					logger.warn(e.toString());
+					logger.warn("Could not check status of stack " +stackName,e);
 					if (e.getStatusCode()==400) {
 						return ""; // stack does not exist, perhaps a delete was in progress
 					}
@@ -216,7 +233,6 @@ public class CfnRepository {
 				logger.info("Not adding stack :" + entry.getStackName());
 			}
 		}
-
 		return instanceIds;
 	}
 
@@ -259,6 +275,5 @@ public class CfnRepository {
 	public Stack updateRepositoryFor(StackId id) throws WrongNumberOfStacksException {
 		return stackCache.updateRepositoryFor(id);		
 	}
-
 
 }

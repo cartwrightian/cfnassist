@@ -73,7 +73,8 @@ public class AwsFacade implements AwsProvider {
 
 	private String commentTag="";
 
-	public AwsFacade(MonitorStackEvents monitor, AmazonCloudFormationClient cfnClient, CfnRepository cfnRepository, VpcRepository vpcRepository) {
+	public AwsFacade(MonitorStackEvents monitor, AmazonCloudFormationClient cfnClient, CfnRepository cfnRepository, 
+			VpcRepository vpcRepository) {
 		this.monitor = monitor;
 		this.cfnClient = cfnClient;
 		this.cfnRepository = cfnRepository;
@@ -214,8 +215,7 @@ public class AwsFacade implements AwsProvider {
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
 		if (monitor instanceof SNSMonitor) {
-			SNSMonitor snsMonitor = (SNSMonitor) monitor;
-			createSNSMonitoring(createStackRequest, snsMonitor);
+			addMonitoringARNToStackRequest(createStackRequest, (ProvidesMonitoringARN)monitor);
 		}
 		Collection<Tag> tags = createTagsForStack(projAndEnv);
 		createStackRequest.setTags(tags);
@@ -266,9 +266,8 @@ public class AwsFacade implements AwsProvider {
 		return parameters;
 	}
 
-	private void createSNSMonitoring(CreateStackRequest createStackRequest,
-			SNSMonitor snsMonitor) throws NotReadyException {
-		String arn = snsMonitor.getArn();
+	private void addMonitoringARNToStackRequest(CreateStackRequest createStackRequest, ProvidesMonitoringARN providesARN) throws NotReadyException {
+		String arn = providesARN.getArn();
 		logger.info("Setting arn for sns events to " + arn);
 		Collection<String> arns = new LinkedList<String>();
 		arns.add(arn);
