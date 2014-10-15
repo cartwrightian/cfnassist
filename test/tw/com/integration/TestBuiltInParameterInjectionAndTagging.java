@@ -70,7 +70,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		monitor = new PollingStackMonitor(cfnRepository);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
-		awsFacade = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository);
 		awsFacade.setCommentTag(testName);
 
 		mainProjectAndEnv = new ProjectAndEnv(project, env);

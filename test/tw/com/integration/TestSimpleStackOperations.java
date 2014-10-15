@@ -74,7 +74,7 @@ public class TestSimpleStackOperations {
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
-		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		
 		vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
@@ -118,7 +118,7 @@ public class TestSimpleStackOperations {
 		
 		MonitorStackEvents snsMonitor = new SNSMonitor(new SNSEventSource(snsClient, sqsClient), cfnRepository);
 		snsMonitor.init();
-		AwsFacade snsAws = new AwsFacade(snsMonitor, cfnClient, cfnRepository, vpcRepository);
+		AwsFacade snsAws = new AwsFacade(snsMonitor, cfnRepository, vpcRepository);
 		try {		
 			snsAws.applyTemplate(new File(FilesForTesting.SUBNET_STACK_DELTA), projectAndEnv);
 			fail("Should have thrown");

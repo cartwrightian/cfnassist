@@ -33,9 +33,9 @@ public class ELBRepository {
 	AmazonElasticLoadBalancingClient elbClient;
 	AmazonEC2Client ec2Client;
 	VpcRepository vpcRepository;
-	CfnRepository cfnRepository;
+	ResourceRepository cfnRepository;
 	
-	public ELBRepository(AmazonElasticLoadBalancingClient elbClient, AmazonEC2Client ec2Client, VpcRepository vpcRepository, CfnRepository cfnRepository) {
+	public ELBRepository(AmazonElasticLoadBalancingClient elbClient, AmazonEC2Client ec2Client, VpcRepository vpcRepository, ResourceRepository cfnRepository) {
 		this.elbClient = elbClient;
 		this.vpcRepository = vpcRepository;
 		this.cfnRepository = cfnRepository;

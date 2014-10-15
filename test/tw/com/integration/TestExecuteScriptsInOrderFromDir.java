@@ -95,7 +95,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	
 	private AwsFacade createFacade(CfnRepository cfnRepository,
 			VpcRepository vpcRepository, MonitorStackEvents monitor) throws CannotFindVpcException {
-		AwsFacade aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		AwsFacade aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
 		aws.setCommentTag(test.getMethodName());
 		aws.resetDeltaIndex(mainProjectAndEnv);
 		return aws;

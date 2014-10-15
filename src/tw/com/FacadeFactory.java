@@ -67,7 +67,7 @@ public class FacadeFactory {
 			}
 			
 			monitor.init();
-			awsFacade = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository);
 			if (comment!=null) {
 				awsFacade.setCommentTag(comment);
 			}

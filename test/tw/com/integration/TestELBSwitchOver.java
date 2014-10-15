@@ -83,7 +83,7 @@ public class TestELBSwitchOver {
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new SNSMonitor(new SNSEventSource(snsClient, sqsClient), cfnRepository);
-		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
 		monitor.init();
 		projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		aws.applyTemplate(FilesForTesting.ELB, projAndEnv);

@@ -22,6 +22,8 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.repository.CfnRepository;
+import tw.com.repository.ResourceRepository;
+import tw.com.repository.StackRepository;
 import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -49,7 +51,7 @@ public class TestCanTagExistingStacks {
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		StackRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
 		
 		StackNameAndId stackId = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpc.getVpcId(),"");	
@@ -66,7 +68,7 @@ public class TestCanTagExistingStacks {
 	@Test
 	public void shouldBeAbleToLabelExistingStack() throws IOException, CfnAssistException {
 
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		ResourceRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		String createdSubnet = cfnRepository.findPhysicalIdByLogicalId(new EnvironmentTag(projectAndEnv.getEnv()), "testSubnet");
 		
 		assertNotNull(createdSubnet);

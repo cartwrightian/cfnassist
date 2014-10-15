@@ -57,7 +57,7 @@ public class TestInputOutputVPCTags {
 		
 		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
-		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
 	}
 
 	@Before

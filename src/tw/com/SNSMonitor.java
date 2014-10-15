@@ -1,11 +1,14 @@
 package tw.com;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.cli.MissingArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
 import tw.com.entity.DeletionPending;
@@ -16,8 +19,9 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.repository.CheckStackExists;
 
-public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
+public class SNSMonitor extends StackMonitor  {
 	private static final Logger logger = LoggerFactory.getLogger(SNSMonitor.class);
 	private static final int LIMIT = 50;
 	private static final String STACK_RESOURCE_TYPE = "AWS::CloudFormation::Stack";
@@ -177,9 +181,12 @@ public class SNSMonitor extends StackMonitor implements ProvidesMonitoringARN  {
 	}
 
 	@Override
-	public String getArn() throws NotReadyException {
-		return notifProvider.getArn();
+	public void addMonitoringTo(CreateStackRequest createStackRequest) throws NotReadyException {
+		String arn = notifProvider.getArn();
+		logger.info("Setting arn for sns events to " + arn);
+		Collection<String> arns = new LinkedList<String>();
+		arns.add(arn);
+		createStackRequest.setNotificationARNs(arns);
 	}
-
 
 }

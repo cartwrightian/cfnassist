@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.NotificationProvider;
-import tw.com.ProvidesMonitoringARN;
 import tw.com.entity.StackNotification;
 import tw.com.exceptions.NotReadyException;
 
@@ -45,7 +44,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class SNSEventSource implements NotificationProvider, ProvidesMonitoringARN {
+public class SNSEventSource implements NotificationProvider {
 	private static final int QUEUE_READ_TIMEOUT_SECS = 20; // 20 is max allowed
 	private static final Logger logger = LoggerFactory.getLogger(SNSEventSource.class);
 	private static final String SQS_QUEUE_NAME = "CFN_ASSIST_EVENT_QUEUE";

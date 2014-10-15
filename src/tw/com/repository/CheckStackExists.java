@@ -1,4 +1,4 @@
-package tw.com;
+package tw.com.repository;
 
 public interface CheckStackExists {
 

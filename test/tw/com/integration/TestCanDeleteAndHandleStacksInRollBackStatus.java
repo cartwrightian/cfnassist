@@ -61,7 +61,7 @@ public class TestCanDeleteAndHandleStacksInRollBackStatus {
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
-		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
 		aws.setCommentTag(testName.getMethodName());
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 		

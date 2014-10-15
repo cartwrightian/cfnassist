@@ -73,7 +73,7 @@ public class TestCfnRepository {
 	@Before
 	public void beforeEachTestIsRun() {						
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository );
-		awsProvider = new AwsFacade(monitor , cfnClient, cfnRepository, vpcRepository);
+		awsProvider = new AwsFacade(monitor , cfnRepository, vpcRepository);
 		awsProvider.setCommentTag(test.getMethodName());
 		
 		mainTestVPC = vpcRepository.getCopyOfVpc(mainProjectAndEnv);

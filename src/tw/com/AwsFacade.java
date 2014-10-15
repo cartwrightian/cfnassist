@@ -34,17 +34,12 @@ import tw.com.exceptions.WrongStackStatus;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
-import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.Output;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 import com.amazonaws.services.cloudformation.model.UpdateStackResult;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
@@ -71,8 +66,6 @@ public class AwsFacade {
 	private static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
 	
 	private static final String PARAMETER_STACKNAME = "stackname";
-
-	private AmazonCloudFormationClient cfnClient;
 	
 	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
@@ -81,10 +74,8 @@ public class AwsFacade {
 
 	private String commentTag="";
 
-	public AwsFacade(MonitorStackEvents monitor, AmazonCloudFormationClient cfnClient, CfnRepository cfnRepository, 
-			VpcRepository vpcRepository) {
+	public AwsFacade(MonitorStackEvents monitor, CfnRepository cfnRepository, VpcRepository vpcRepository) {
 		this.monitor = monitor;
-		this.cfnClient = cfnClient;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
 
@@ -98,7 +89,7 @@ public class AwsFacade {
 		ValidateTemplateRequest validateTemplateRequest = new ValidateTemplateRequest();
 		validateTemplateRequest.setTemplateBody(templateBody);
 
-		ValidateTemplateResult result = cfnClient.validateTemplate(validateTemplateRequest);
+		ValidateTemplateResult result = cfnRepository.validateStackTemplate(validateTemplateRequest);
 		List<TemplateParameter> parameters = result.getParameters();
 		logger.info(String.format("Found %s parameters", parameters.size()));
 		return parameters;
@@ -150,27 +141,9 @@ public class AwsFacade {
 		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId );
 		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
 		
-		if (monitor instanceof SNSMonitor) {
-			logger.debug("SNS monitoring enabled, check if stack has a notification ARN set");
-			Stack target = cfnRepository.getStack(stackName);
-			List<String> notificationARNs = target.getNotificationARNs();
-			if (notificationARNs.size()<=0) {
-				logger.error("Stack does not have notification ARN set, progress cannot be monitored via SNS");
-				throw new InvalidParameterException("Cannot use SNS, original stack was not created with a notification ARN");
-			}
-			for(String arn : notificationARNs) {
-				logger.info("Notification ARNs set on stack " + arn);
-			}
-		}
-		
-		logger.info("Will attempt to update stack: " + stackName);
-		UpdateStackRequest updateStackRequest = new UpdateStackRequest();	
-		updateStackRequest.setParameters(parameters);
-		updateStackRequest.setStackName(stackName);
-		updateStackRequest.setTemplateBody(contents);
-		UpdateStackResult result = cfnClient.updateStack(updateStackRequest);
-
+		UpdateStackResult result = cfnRepository.updateStack(contents, parameters, monitor, stackName);
 		StackNameAndId id = new StackNameAndId(stackName,result.getStackId());
+		
 		try {
 			monitor.waitForUpdateFinished(id);
 		} catch (WrongStackStatus stackFailedToCreate) {
@@ -180,8 +153,7 @@ public class AwsFacade {
 		}
 		Stack createdStack = cfnRepository.updateRepositoryFor(id);
 		createOutputTags(createdStack, projAndEnv);
-		return id;
-			
+		return id;		
 	}
 
 	private String findStackToUpdate(List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws InvalidParameterException {
@@ -200,7 +172,6 @@ public class AwsFacade {
 		throw new InvalidParameterException(PARAMETER_STACKNAME);
 	}
 
-	
 	private StackNameAndId createStack(File file, ProjectAndEnv projAndEnv,
 			Collection<Parameter> userParameters, Vpc vpcForEnv,
 			List<TemplateParameter> declaredParameters, String contents)
@@ -216,20 +187,9 @@ public class AwsFacade {
 		
 		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId);
 		
-		CreateStackRequest createStackRequest = new CreateStackRequest();
-		createStackRequest.setTemplateBody(contents);
-		createStackRequest.setStackName(stackName);
-		createStackRequest.setParameters(parameters);
-		if (monitor instanceof SNSMonitor) {
-			addMonitoringARNToStackRequest(createStackRequest, (ProvidesMonitoringARN)monitor);
-		}
-		Collection<Tag> tags = createTagsForStack(projAndEnv);
-		createStackRequest.setTags(tags);
-		
-		logger.info("Making createStack call to AWS");
-		
-		CreateStackResult result = cfnClient.createStack(createStackRequest);
+		CreateStackResult result = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, commentTag);
 		StackNameAndId id = new StackNameAndId(stackName,result.getStackId());
+		
 		try {
 			monitor.waitForCreateFinished(id);
 		} catch (WrongStackStatus stackFailedToCreate) {
@@ -272,14 +232,6 @@ public class AwsFacade {
 		return parameters;
 	}
 
-	private void addMonitoringARNToStackRequest(CreateStackRequest createStackRequest, ProvidesMonitoringARN providesARN) throws NotReadyException {
-		String arn = providesARN.getArn();
-		logger.info("Setting arn for sns events to " + arn);
-		Collection<String> arns = new LinkedList<String>();
-		arns.add(arn);
-		createStackRequest.setNotificationARNs(arns);
-	}
-
 	private void handlePossibleRollback(String stackName)
 			throws WrongNumberOfStacksException, NotReadyException,
 			WrongStackStatus, InterruptedException, DuplicateStackException {
@@ -289,8 +241,7 @@ public class AwsFacade {
 			StackNameAndId stackId = cfnRepository.getStackId(stackName);
 			if (isRollingBack(stackId)) {
 				logger.warn("Stack is rolled back so delete it and recreate " + stackId);
-				deleteStackNonBlocking(stackId.getStackName());
-				//deleteStack(stackId);
+				cfnRepository.deleteStack(stackName);
 			} else {
 				logger.error("Stack exists and is not rolled back, cannot create another stack with name:" +stackName);
 				throw new DuplicateStackException(stackName);
@@ -315,30 +266,9 @@ public class AwsFacade {
 			logger.info(String.format("Parameter key='%s' value='%s'", param.getParameterKey(), param.getParameterValue()));
 		}
 	}
-
-	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv) {	
-		Collection<Tag> tags = new ArrayList<Tag>();
-		tags.add(createTag(PROJECT_TAG, projectAndEnv.getProject()));
-		tags.add(createTag(ENVIRONMENT_TAG, projectAndEnv.getEnv()));
-		if (projectAndEnv.hasBuildNumber()) {
-			tags.add(createTag(BUILD_TAG, projectAndEnv.getBuildNumber()));
-		}
-		if (!commentTag.isEmpty()) {
-			logger.info(String.format("Adding %s: %s", COMMENT_TAG, commentTag));
-			tags.add(createTag(COMMENT_TAG, commentTag));
-		}
-		return tags;
-	}
 	
 	public void setCommentTag(String commentTag) {
 		this.commentTag = commentTag;		
-	}
-
-	private Tag createTag(String key, String value) {
-		Tag tag = new Tag();
-		tag.setKey(key);
-		tag.setValue(value);
-		return tag;
 	}
 
 	private void addBuiltInParameters(Collection<Parameter> parameters, List<TemplateParameter> declared, ProjectAndEnv projAndEnv, String vpcId) {
@@ -427,7 +357,7 @@ public class AwsFacade {
 		}
 				
 		logger.info("Found ID for stack: " + stackId);
-		deleteStackNonBlocking(stackName);
+		cfnRepository.deleteStack(stackName);
 		
 		try {
 			monitor.waitForDeleteFinished(stackId);
@@ -440,12 +370,8 @@ public class AwsFacade {
 		
 	}
 	
-	private void deleteStackNonBlocking(String stackName) {
-		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
-		deleteStackRequest.setStackName(stackName);
-		logger.info("Requesting deletion of stack " + stackName);
-		cfnClient.deleteStack(deleteStackRequest);	
-	}
+//	private void deleteStackNonBlocking(String stackName) {
+//	}
 
 	private String loadFileContents(File file) throws IOException {
 		return FileUtils.readFileToString(file, Charset.defaultCharset());
@@ -600,7 +526,7 @@ public class AwsFacade {
 				} else {			
 					logger.info(String.format("About to request deletion of stackname %s", stackName));
 					StackNameAndId id = cfnRepository.getStackId(stackName); // important to get id's before deletion request, may throw otherwise
-					deleteStackNonBlocking(stackName);
+					cfnRepository.deleteStack(stackName);
 					pending.add(deltaIndex,id);
 				}
 			} else {

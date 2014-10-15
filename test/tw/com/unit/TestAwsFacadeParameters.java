@@ -56,7 +56,7 @@ public class TestAwsFacadeParameters {
 		projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 
 
-		aws = new AwsFacade(monitor, cfnClient, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
 	}
 
 	@Test

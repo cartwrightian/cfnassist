@@ -14,16 +14,17 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
-import tw.com.repository.CfnRepository;
+import tw.com.repository.StackRepository;
 
+import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
 public class PollingStackMonitor extends StackMonitor {
 	private static final Logger logger = LoggerFactory.getLogger(PollingStackMonitor.class);
-	private CfnRepository cfnRepository;
+	private StackRepository cfnRepository;
 	
-	public PollingStackMonitor(CfnRepository cfnRepository) {
+	public PollingStackMonitor(StackRepository cfnRepository) {
 		this.cfnRepository = cfnRepository;
 	}
 
@@ -134,6 +135,11 @@ public class PollingStackMonitor extends StackMonitor {
 	private void reportDeletionIssue(Exception exception) {
 		logger.error("Unable to wait for stack deletion ",exception);
 		logger.error("Please manually check stack deletion and delta index values");
+	}
+
+	@Override
+	public void addMonitoringTo(CreateStackRequest createStackRequest) {
+		// does nothing in this implementation
 	}
 
 
