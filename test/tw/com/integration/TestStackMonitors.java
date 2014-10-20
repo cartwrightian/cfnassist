@@ -22,6 +22,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 
@@ -58,7 +59,7 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	@Before
 	public void beforeTestsRun() {
 		deltaIndexResult = -1;
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);	
+		CfnRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);	
 		pollingMonitor = new PollingStackMonitor(cfnRepository);	
 		vpcId = EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV;
 		eventSource = new SNSEventSource(snsClient, sqsClient);

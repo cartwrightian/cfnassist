@@ -25,6 +25,7 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
@@ -66,7 +67,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 	@Before
 	public void beforeTestsRun() {
 		testName = test.getMethodName();
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		CfnRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
 		monitor = new PollingStackMonitor(cfnRepository);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
@@ -96,10 +97,10 @@ public class TestBuiltInParameterInjectionAndTagging {
 		File templateFile = new File(FilesForTesting.SUBNET_STACK);
 		StackNameAndId stackId = awsFacade.applyTemplate(templateFile, mainProjectAndEnv);
 		
-		List<Tag> expectedStackTags = createExpectedStackTags("");
+		List<Tag> expectedStackTags = EnvironmentSetupForTests.createExpectedStackTags("");
 		List<com.amazonaws.services.ec2.model.Tag> expectedEc2Tags = createExpectedEc2Tags("");
 		
-		expectedStackTags.add(createCfnTag("CFN_COMMENT", theComment));
+		expectedStackTags.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_COMMENT", theComment));
 		expectedEc2Tags.add(createEc2Tag("CFN_COMMENT", theComment));
 		
 		validateCreateAndDeleteWorks(stackId, expectedStackTags, expectedEc2Tags);
@@ -110,7 +111,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		File templateFile = new File(FilesForTesting.SUBNET_STACK);
 		StackNameAndId stackId = awsFacade.applyTemplate(templateFile, mainProjectAndEnv);
 		
-		validateCreateAndDeleteWorks(stackId, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
+		validateCreateAndDeleteWorks(stackId, EnvironmentSetupForTests.createExpectedStackTags(testName), createExpectedEc2Tags(testName));
 	}
 	
 	@Test
@@ -136,7 +137,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
 		StackNameAndId stackName = awsFacade.applyTemplate(new File(FilesForTesting.SUBNET_WITH_PARAM), mainProjectAndEnv, params);
 				
-		validateCreateAndDeleteWorks(stackName, createExpectedStackTags(testName), createExpectedEc2Tags(testName));
+		validateCreateAndDeleteWorks(stackName, EnvironmentSetupForTests.createExpectedStackTags(testName), createExpectedEc2Tags(testName));
 	}
 
 	@Test
@@ -184,17 +185,7 @@ public class TestBuiltInParameterInjectionAndTagging {
 		assertEquals(1,stacks.size());
 		return stacks;
 	}
-	
-	private List<Tag> createExpectedStackTags(String comment) {
-		List<Tag> expectedTags = new LinkedList<Tag>();
-		expectedTags.add(createCfnTag("CFN_ASSIST_ENV", "Test"));
-		expectedTags.add(createCfnTag("CFN_ASSIST_PROJECT", "CfnAssist"));
-		if (!comment.isEmpty()) {
-			expectedTags.add(createCfnTag("CFN_COMMENT", comment));
-		}
-		return expectedTags;
-	}
-	
+		
 	private List<com.amazonaws.services.ec2.model.Tag> createExpectedEc2Tags(String comment) {
 		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
 		tags.add(createEc2Tag("TagEnv",mainProjectAndEnv.getEnv()));
@@ -222,16 +213,9 @@ public class TestBuiltInParameterInjectionAndTagging {
 	}
 
 	private List<Tag> createCfnExpectedTagListWithBuild(String buildNumber, String comment) {
-		List<Tag> tags = createExpectedStackTags(comment);
-		tags.add(createCfnTag("CFN_ASSIST_BUILD", buildNumber));
+		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags(comment);
+		tags.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_ASSIST_BUILD", buildNumber));
 		return tags;
-	}
-
-	private Tag createCfnTag(String key, String value) {
-		Tag tag = new Tag();
-		tag.setKey(key);
-		tag.setValue(value);
-		return tag;
 	}
 
 }

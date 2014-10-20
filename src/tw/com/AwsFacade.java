@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -34,13 +35,11 @@ import tw.com.exceptions.WrongStackStatus;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
-import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.Output;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.cloudformation.model.UpdateStackResult;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -141,8 +140,7 @@ public class AwsFacade {
 		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId );
 		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
 		
-		UpdateStackResult result = cfnRepository.updateStack(contents, parameters, monitor, stackName);
-		StackNameAndId id = new StackNameAndId(stackName,result.getStackId());
+		StackNameAndId id = cfnRepository.updateStack(contents, parameters, monitor, stackName);
 		
 		try {
 			monitor.waitForUpdateFinished(id);
@@ -187,8 +185,7 @@ public class AwsFacade {
 		
 		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId);
 		
-		CreateStackResult result = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, commentTag);
-		StackNameAndId id = new StackNameAndId(stackName,result.getStackId());
+		StackNameAndId id = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, commentTag);
 		
 		try {
 			monitor.waitForCreateFinished(id);

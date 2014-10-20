@@ -30,6 +30,7 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
@@ -82,7 +83,7 @@ public class TestExecuteScriptsInOrderFromDir {
 				ifPresent("CfnAssistTest03createRoutes");
 		deletesStacks.act();
 		
-		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		deleteFile(THIRD_FILE);	

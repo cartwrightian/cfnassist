@@ -41,6 +41,7 @@ import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
@@ -70,7 +71,7 @@ public class TestSimpleStackOperations {
 		deletesStacks = new DeletesStacks(cfnClient).ifPresent("CfnAssistTestsubnet");
 		deletesStacks.act();
 		
-		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	

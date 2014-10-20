@@ -11,12 +11,8 @@ import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.entity.StackResources;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.providers.CloudFormationClient;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesResult;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.Tag;
@@ -25,12 +21,12 @@ public class StackCache {
 	private static final Logger logger = LoggerFactory.getLogger(StackCache.class);
 
 	private List<StackEntry> theEntries;
-	AmazonCloudFormationClient cfnClient;
+	CloudFormationClient formationClient;
 	private StackResources stackResources;
 	private String project;
 	
-	public StackCache(AmazonCloudFormationClient cfnClient, String project) {
-		this.cfnClient = cfnClient;
+	public StackCache(CloudFormationClient formationClient, String project) {
+		this.formationClient = formationClient;
 		this.project = project;
 		stackResources = new StackResources();
 		theEntries = new LinkedList<StackEntry>();
@@ -45,16 +41,13 @@ public class StackCache {
 		// TODO handle "next token"?
 		if (theEntries.size() == 0) {
 			logger.info("No cached stacks, loading all stacks");
-			DescribeStacksRequest describeStackRequest = new DescribeStacksRequest();
-			DescribeStacksResult results = cfnClient.describeStacks(describeStackRequest);
-
-			List<Stack> stacks = results.getStacks();
+	
+			List<Stack> stacks = formationClient.describeAllStacks();
 			populateEntriesIfProjectMatches(stacks);
 			logger.info(String.format("Loaded %s stacks", theEntries.size()));
 		} else {
 			logger.info("Cache hit on stacks");
 		}
-		//return stackEntries;
 	}
 	
 	private void populateEntriesIfProjectMatches(List<Stack> stacks) {
@@ -114,20 +107,19 @@ public class StackCache {
 	
 	public Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
 		logger.info("Update stack repository for stack: " + id);
-		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(id.getStackName());
-		DescribeStacksResult results = cfnClient.describeStacks(describeStacksRequest);
+		Stack stack = formationClient.describeStack(id.getStackName());
 		
-		if (results.getStacks().size()!=1) {
-			logger.error("Expected only one stack in the results");
-			throw new WrongNumberOfStacksException(1, results.getStacks().size());
-		}
-
-		populateEntriesIfProjectMatches(results.getStacks());
+		populateEntriesIfProjectMatches(stack);
 		
-		return results.getStacks().get(0);
+		return stack;
 	}
 	
+	private void populateEntriesIfProjectMatches(Stack stack) {
+		LinkedList<Stack> list = new LinkedList<Stack>();
+		list.add(stack);
+		this.populateEntriesIfProjectMatches(list);
+	}
+
 	public List<StackResource> getResourcesForStack(String stackName) {
 
 		List<StackResource> resources = null;
@@ -136,12 +128,8 @@ public class StackCache {
 			resources = stackResources.getStackResources(stackName);
 		} else {
 			logger.info("Cache miss, loading resources for stack " + stackName);
-			DescribeStackResourcesRequest request = new DescribeStackResourcesRequest();
-			request.setStackName(stackName);
-			DescribeStackResourcesResult results = cfnClient
-					.describeStackResources(request);
-
-			resources = results.getStackResources();
+			resources = formationClient.describeStackResources(stackName);
+		
 			stackResources.addStackResources(stackName, resources);
 		}
 		return resources;

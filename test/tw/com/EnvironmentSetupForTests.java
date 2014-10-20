@@ -216,4 +216,21 @@ public class EnvironmentSetupForTests {
 		return requestResult.getObjectSummaries();
 	}
 
+	public static List<com.amazonaws.services.cloudformation.model.Tag> createExpectedStackTags(String comment) {
+		List<com.amazonaws.services.cloudformation.model.Tag> expectedTags = new LinkedList<com.amazonaws.services.cloudformation.model.Tag>();
+		expectedTags.add(createCfnStackTAG("CFN_ASSIST_ENV", "Test"));
+		expectedTags.add(createCfnStackTAG("CFN_ASSIST_PROJECT", "CfnAssist"));
+		if (!comment.isEmpty()) {
+			expectedTags.add(createCfnStackTAG("CFN_COMMENT", comment));
+		}
+		return expectedTags;
+	}
+
+	public static com.amazonaws.services.cloudformation.model.Tag createCfnStackTAG(String key, String value) {
+		com.amazonaws.services.cloudformation.model.Tag tag = new com.amazonaws.services.cloudformation.model.Tag();
+		tag.setKey(key);
+		tag.setValue(value);
+		return tag;
+	}
+
 }

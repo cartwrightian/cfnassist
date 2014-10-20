@@ -12,6 +12,7 @@ import org.junit.Test;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.PollingStackMonitor;
+import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
@@ -34,7 +35,7 @@ public class TestHaveValidTemplateFiles {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		CfnRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
 		VpcRepository vpcRepository = new VpcRepository(ec2Client);
 		
 		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);	

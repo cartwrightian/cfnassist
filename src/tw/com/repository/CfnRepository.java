@@ -1,13 +1,11 @@
 package tw.com.repository;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.SNSMonitor;
 import tw.com.StackCache;
@@ -18,24 +16,14 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.providers.CloudFormationClient;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.CreateStackRequest;
-import com.amazonaws.services.cloudformation.model.CreateStackResult;
-import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackEventsRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackEventsResult;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.Tag;
-import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
-import com.amazonaws.services.cloudformation.model.UpdateStackResult;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
 
@@ -45,12 +33,12 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 	private static final String AWS_EC2_INSTANCE_TYPE = "AWS::EC2::Instance";
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1000;
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
-	private AmazonCloudFormationClient cfnClient;
+	private CloudFormationClient formationClient;
 
 	private StackCache stackCache;
-	public CfnRepository(AmazonCloudFormationClient cfnClient, String project) {
-		this.cfnClient = cfnClient;
-		stackCache = new StackCache(cfnClient, project);
+	public CfnRepository(CloudFormationClient cfnClient, String project) {
+		this.formationClient = cfnClient;
+		stackCache = new StackCache(formationClient, project);
 	}
 	
 	@Override
@@ -125,26 +113,16 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 	public String waitForStatusToChangeFrom(String stackName,
 			StackStatus currentStatus, List<String> aborts)
 			throws WrongNumberOfStacksException, InterruptedException {
-		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(stackName);
+		
 		long pause = STATUS_CHECK_INTERVAL_MILLIS;
 
-		logger.info(String.format(
-				"Waiting for stack %s to change FROM status %s", stackName,
-				currentStatus));
+		logger.info(String.format("Waiting for stack %s to change FROM status %s", stackName, currentStatus));
 		String status = currentStatus.toString();
 		Stack stack = null;
 		while (status.equals(currentStatus.toString())) {
 			Thread.sleep(pause);
-			DescribeStacksResult result = cfnClient
-					.describeStacks(describeStacksRequest);
-			List<Stack> stacks = result.getStacks();
-			int numberOfStacks = stacks.size();
-			if (numberOfStacks != 1) {
-				logger.error("Wrong number of stacks found: " + numberOfStacks);
-				throw new WrongNumberOfStacksException(1, numberOfStacks);
-			}
-			stack = stacks.get(0);
+		
+			stack = formationClient.describeStack(stackName);
 			status = stack.getStackStatus();
 			logger.debug(String
 					.format("Waiting for status of stack %s, status was %s, pause was %s",
@@ -165,21 +143,15 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 
 	@Override
 	public List<StackEvent> getStackEvents(String stackName) {
-		DescribeStackEventsRequest request = new DescribeStackEventsRequest();
-		request.setStackName(stackName);
-		DescribeStackEventsResult result = cfnClient
-				.describeStackEvents(request);
-		return result.getStackEvents();
+		return formationClient.describeStackEvents(stackName); 
 	}
 
 	@Override
-	public boolean stackExists(String stackName) {
+	public boolean stackExists(String stackName) throws WrongNumberOfStacksException {
 		logger.info("Check if stack exists for " + stackName);
-		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(stackName);
-		
+
 		try { //  throws if stack does not exist
-			cfnClient.describeStacks(describeStacksRequest);
+			formationClient.describeStack(stackName);
 			return true;
 		}
 		catch (AmazonServiceException exception) { 
@@ -187,6 +159,13 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 				return false;
 			}
 			throw exception;
+		} catch (WrongNumberOfStacksException wrongNumberException) {
+			if (wrongNumberException.getNumber()!=0) {
+				throw wrongNumberException;
+			} else 
+			{
+				return false;
+			}
 		}
 	}
 	
@@ -216,31 +195,19 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 
 	private String getStackCurrentStatus(String stackName)
 			throws WrongNumberOfStacksException {
-		Stack stack = describeStack(stackName);
+		Stack stack = formationClient.describeStack(stackName);
 		String stackStatus = stack.getStackStatus();
-		logger.info(String.format("Got status %s for stack %s", stackStatus,
-				stackName));
+		logger.info(String.format("Got status %s for stack %s", stackStatus, stackName));
 		return stackStatus;
 	}
 
+	// TODO rename
 	@Override
 	public StackNameAndId getStackId(String stackName)
 			throws WrongNumberOfStacksException {
-		Stack stack = describeStack(stackName);
+		Stack stack = formationClient.describeStack(stackName);
 		String id = stack.getStackId();
 		return new StackNameAndId(stackName, id);
-	}
-
-	private Stack describeStack(String stackName)
-			throws WrongNumberOfStacksException {
-		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(stackName);
-		DescribeStacksResult result = cfnClient
-				.describeStacks(describeStacksRequest);
-		if (result.getStacks().size() != 1) {
-			throw new WrongNumberOfStacksException(1, result.getStacks().size());
-		}
-		return result.getStacks().get(0);
 	}
 
 	@Override
@@ -285,7 +252,8 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 				return entry.getStack();
 			}
 		}
-		return describeStack(stackName);
+		// TODO we can only get here if stack is not tagged by cfn assist managed, should we throw?
+		return formationClient.describeStack(stackName);
 	}
 	
 	@Override
@@ -293,7 +261,7 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 		return stackCache.getEntries();
 	}
 
-
+	// TODO make private, the cache updates should be moved into this class
 	@Override
 	public Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
 		return stackCache.updateRepositoryFor(id);		
@@ -302,65 +270,25 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 	// TODO into interface
 	public ValidateTemplateResult validateStackTemplate(
 			ValidateTemplateRequest validateTemplateRequest) {
-		return cfnClient.validateTemplate(validateTemplateRequest);
+		return formationClient.validateTemplate(validateTemplateRequest);
 	}
 
-	public UpdateStackResult updateStack(UpdateStackRequest updateStackRequest) {
-		return cfnClient.updateStack(updateStackRequest);
-	}
-
-	public CreateStackResult createStack(CreateStackRequest createStackRequest) {
-		return cfnClient.createStack(createStackRequest);
-	}
-
+	// TODO cache updates into this class
 	@Override
 	public void deleteStack(String stackName) {
-		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
-		deleteStackRequest.setStackName(stackName);
-		logger.info("Requesting deletion of stack " + stackName);
-		cfnClient.deleteStack(deleteStackRequest);	
+		formationClient.deleteStack(stackName);	
 	}
 
+	// TODO cache updates into this class
 	@Override
-	public CreateStackResult createStack(ProjectAndEnv projAndEnv,
+	public StackNameAndId createStack(ProjectAndEnv projAndEnv,
 			String contents, String stackName, Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws NotReadyException {
-		CreateStackRequest createStackRequest = new CreateStackRequest();
-		createStackRequest.setTemplateBody(contents);
-		createStackRequest.setStackName(stackName);
-		createStackRequest.setParameters(parameters);
-		monitor.addMonitoringTo(createStackRequest);
-		Collection<Tag> tags = createTagsForStack(projAndEnv, commentTag);
-		createStackRequest.setTags(tags);
-		
-		logger.info("Making createStack call to AWS");
-		
-		CreateStackResult result = cfnClient.createStack(createStackRequest);
-		return result;
+		return formationClient.createStack(projAndEnv,contents, stackName, parameters, monitor, commentTag);		
 	}
 
-	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv, String commentTag) {	
-		Collection<Tag> tags = new ArrayList<Tag>();
-		tags.add(createTag(AwsFacade.PROJECT_TAG, projectAndEnv.getProject()));
-		tags.add(createTag(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv()));
-		if (projectAndEnv.hasBuildNumber()) {
-			tags.add(createTag(AwsFacade.BUILD_TAG, projectAndEnv.getBuildNumber()));
-		}
-		if (!commentTag.isEmpty()) {
-			logger.info(String.format("Adding %s: %s", AwsFacade.COMMENT_TAG, commentTag));
-			tags.add(createTag(AwsFacade.COMMENT_TAG, commentTag));
-		}
-		return tags;
-	}
-	
-	private Tag createTag(String key, String value) {
-		Tag tag = new Tag();
-		tag.setKey(key);
-		tag.setValue(value);
-		return tag;
-	}
-
+	// TODO cache updates into this class
 	@Override
-	public UpdateStackResult updateStack(String contents,
+	public StackNameAndId updateStack(String contents,
 			Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws InvalidParameterException, WrongNumberOfStacksException {
 			
 			// TODO move into sns monitor
@@ -377,13 +305,7 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 				}
 			}
 			
-			logger.info("Will attempt to update stack: " + stackName);
-			UpdateStackRequest updateStackRequest = new UpdateStackRequest();	
-			updateStackRequest.setParameters(parameters);
-			updateStackRequest.setStackName(stackName);
-			updateStackRequest.setTemplateBody(contents);
-			UpdateStackResult result = cfnClient.updateStack(updateStackRequest);
-			return result;
+			return formationClient.updateStack(contents, parameters, monitor, stackName);
 	}
 	
 }

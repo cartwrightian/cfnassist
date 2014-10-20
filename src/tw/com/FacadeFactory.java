@@ -4,6 +4,7 @@ import org.apache.commons.cli.MissingArgumentException;
 
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.ArtifactUploader;
+import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.ELBRepository;
@@ -52,7 +53,7 @@ public class FacadeFactory {
 		s3Client = new AmazonS3Client(credentialsProvider);
 		s3Client.setRegion(region);
 		
-		cfnRepository = new CfnRepository(cfnClient, project);
+		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), project);
 		vpcRepository = new VpcRepository(ec2Client);
 	}
 

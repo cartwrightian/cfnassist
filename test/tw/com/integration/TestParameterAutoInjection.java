@@ -25,6 +25,7 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
@@ -55,7 +56,7 @@ public class TestParameterAutoInjection {
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);		
 		vpcRepository = new VpcRepository(ec2Client);
 		
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		CfnRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
 		

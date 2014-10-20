@@ -20,6 +20,7 @@ import tw.com.PollingStackMonitor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
@@ -42,7 +43,7 @@ public class TestAwsFacadeParameters {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
-		cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
 		vpcRepository = new VpcRepository(ec2Client);
 		
 		monitor = new PollingStackMonitor(cfnRepository);	

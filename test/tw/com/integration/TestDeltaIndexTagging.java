@@ -20,6 +20,7 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.TagsAlreadyInit;
+import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
@@ -50,7 +51,7 @@ public class TestDeltaIndexTagging {
 	
 	@Before
 	public void beforeTestsRun() {
-		CfnRepository cfnRepository = new CfnRepository(cfnClient, EnvironmentSetupForTests.PROJECT);
+		CfnRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
 		MonitorStackEvents monitor = new PollingStackMonitor(cfnRepository);	
 		vpcRepos = new VpcRepository(directClient);
 		aws = new AwsFacade(monitor , cfnRepository, vpcRepos);	

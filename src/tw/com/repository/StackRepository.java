@@ -12,12 +12,10 @@ import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.UpdateStackResult;
 
 public interface StackRepository {
 
@@ -30,20 +28,19 @@ public interface StackRepository {
 			throws WrongNumberOfStacksException, InterruptedException;
 
 	public abstract List<StackEvent> getStackEvents(String stackName);
-	public abstract boolean stackExists(String stackName);
+	//public abstract boolean stackExists(String stackName);
 	public abstract String getStackStatus(String stackName);
 
 	public abstract StackNameAndId getStackId(String stackName) throws WrongNumberOfStacksException;
 	public abstract Stack getStack(String stackName) throws WrongNumberOfStacksException;
 
-	
 	public abstract Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException;
 
-	public abstract UpdateStackResult updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
+	public abstract StackNameAndId updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
 			String stackName) throws InvalidParameterException,
 			WrongNumberOfStacksException;
 
-	public abstract CreateStackResult createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
+	public abstract StackNameAndId createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
 			Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws NotReadyException;
 
 	public abstract void deleteStack(String stackName);
