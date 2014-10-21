@@ -1,6 +1,5 @@
 package tw.com.integration;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -25,13 +24,13 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 
 public class TestCanDeleteAndHandleStacksInRollBackStatus {
@@ -59,7 +58,7 @@ public class TestCanDeleteAndHandleStacksInRollBackStatus {
 	@Before
 	public void beforeTestsRun() {
 		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
-		vpcRepository = new VpcRepository(ec2Client);
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
@@ -75,36 +74,7 @@ public class TestCanDeleteAndHandleStacksInRollBackStatus {
 		deletesStacks.act();
 	}
 	
-	@Test
-	public void deleteSimpleStack() throws FileNotFoundException, IOException, CfnAssistException, 
-		InterruptedException, InvalidParameterException {
-		
-		DescribeStacksResult before = cfnClient.describeStacks();
-		File templateFile = new File(FilesForTesting.SIMPLE_STACK);
-		aws.applyTemplate(templateFile, projectAndEnv);	
-		
-		aws.deleteStackFrom(templateFile, projectAndEnv);
-		DescribeStacksResult after = cfnClient.describeStacks();
-		
-		assertEquals(before.getStacks().size(), after.getStacks().size());
-	}
-	
-	@Test
-	public void deleteSimpleStackWithBuildNumber() throws FileNotFoundException, IOException, CfnAssistException, 
-		InterruptedException, InvalidParameterException {
-		
-		DescribeStacksResult before = cfnClient.describeStacks();
-		File templateFile = new File(FilesForTesting.SIMPLE_STACK);
-		projectAndEnv.addBuildNumber("987");
-		aws.applyTemplate(templateFile, projectAndEnv);	
-		
-		aws.deleteStackFrom(templateFile, projectAndEnv);
-		DescribeStacksResult after = cfnClient.describeStacks();
-		
-		deletesStacks.ifPresent("CfnAssist987TestsimpleStack");
-		assertEquals(before.getStacks().size(), after.getStacks().size());
-	}
-	
+	// TODO SHOULD BE A TEST ON THE MONITORS NOT AWS
 	@Test
 	public void handlesRollBackCompleteStatusAutomatically() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException {
 

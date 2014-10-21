@@ -21,6 +21,7 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.ResourceRepository;
@@ -49,7 +50,7 @@ public class TestCanTagExistingStacks {
 	public void beforeEachTestRuns() throws IOException, CfnAssistException, InterruptedException {
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 		
-		VpcRepository vpcRepository = new VpcRepository(ec2Client);
+		VpcRepository vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		Vpc vpc = vpcRepository.getCopyOfVpc(projectAndEnv);
 		
 		StackRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);

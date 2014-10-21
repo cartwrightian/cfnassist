@@ -30,6 +30,7 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
@@ -59,6 +60,7 @@ public class TestExecuteScriptsInOrderFromDir {
 	
 	private static String env = EnvironmentSetupForTests.ENV;
 	private static String proj = EnvironmentSetupForTests.PROJECT;
+	private static CloudClient cloudClient;
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(proj,env);
 
 	ArrayList<String> expectedList = new ArrayList<String>();
@@ -70,6 +72,7 @@ public class TestExecuteScriptsInOrderFromDir {
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
 		snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
 		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
+		cloudClient = new CloudClient(ec2Client);
 	}
 	
 	@Rule public TestName test = new TestName();
@@ -84,7 +87,7 @@ public class TestExecuteScriptsInOrderFromDir {
 		deletesStacks.act();
 		
 		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
-		vpcRepository = new VpcRepository(ec2Client);
+		vpcRepository = new VpcRepository(cloudClient);
 		
 		deleteFile(THIRD_FILE);	
 	}
@@ -170,7 +173,7 @@ public class TestExecuteScriptsInOrderFromDir {
 		// a delta updates an exitsing stack, so the stack id should be the same
 		assertEquals(stackIds.get(0), stackIds.get(1));
 		
-		VpcRepository vpcRepository = new VpcRepository(ec2Client);
+		VpcRepository vpcRepository = new VpcRepository(cloudClient);
 		Vpc vpc = vpcRepository.getCopyOfVpc(mainProjectAndEnv);
 		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
 		assertEquals(1, subnets.size());

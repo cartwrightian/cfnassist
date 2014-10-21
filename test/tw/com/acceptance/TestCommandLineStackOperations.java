@@ -20,6 +20,7 @@ import tw.com.FilesForTesting;
 import tw.com.commandline.Main;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
+import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -47,7 +48,7 @@ public class TestCommandLineStackOperations {
 	String testName = "";
 	@Before
 	public void beforeEveryTestRun() {
-		vpcRepository = new VpcRepository(ec2Client);
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
 		EnvironmentSetupForTests.getMainProjectAndEnv();
 		

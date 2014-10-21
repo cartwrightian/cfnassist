@@ -32,7 +32,7 @@ import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
-import tw.com.repository.CfnRepository;
+import tw.com.repository.CloudFormRepository;
 import tw.com.repository.VpcRepository;
 
 import com.amazonaws.services.cloudformation.model.Output;
@@ -40,8 +40,6 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
-import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class AwsFacade {
@@ -68,12 +66,12 @@ public class AwsFacade {
 	
 	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
-	private CfnRepository cfnRepository;
+	private CloudFormRepository cfnRepository;
 	private MonitorStackEvents monitor;
 
 	private String commentTag="";
 
-	public AwsFacade(MonitorStackEvents monitor, CfnRepository cfnRepository, VpcRepository vpcRepository) {
+	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
@@ -85,11 +83,7 @@ public class AwsFacade {
 	}
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
-		ValidateTemplateRequest validateTemplateRequest = new ValidateTemplateRequest();
-		validateTemplateRequest.setTemplateBody(templateBody);
-
-		ValidateTemplateResult result = cfnRepository.validateStackTemplate(validateTemplateRequest);
-		List<TemplateParameter> parameters = result.getParameters();
+		List<TemplateParameter> parameters = cfnRepository.validateStackTemplate(templateBody);
 		logger.info(String.format("Found %s parameters", parameters.size()));
 		return parameters;
 	}
@@ -236,7 +230,7 @@ public class AwsFacade {
 		if (currentStatus.length()!=0) {
 			logger.warn("Stack already exists: " + stackName);
 			StackNameAndId stackId = cfnRepository.getStackId(stackName);
-			if (isRollingBack(stackId)) {
+			if (isRollingBack(stackId,currentStatus)) {
 				logger.warn("Stack is rolled back so delete it and recreate " + stackId);
 				cfnRepository.deleteStack(stackName);
 			} else {
@@ -246,9 +240,8 @@ public class AwsFacade {
 		}
 	}
 
-	private boolean isRollingBack(StackNameAndId id) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
-		String currentStatus = cfnRepository.getStackStatus(id.getStackName());
-		if (currentStatus.equals(StackStatus.ROLLBACK_IN_PROGRESS)) {
+	private boolean isRollingBack(StackNameAndId id, String currentStatus) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+		if (currentStatus.equals(StackStatus.ROLLBACK_IN_PROGRESS.toString())) {
 			monitor.waitForRollbackComplete(id);
 			return true;
 		} else if (currentStatus.equals(StackStatus.ROLLBACK_COMPLETE.toString())) {
@@ -366,9 +359,6 @@ public class AwsFacade {
 		}
 		
 	}
-	
-//	private void deleteStackNonBlocking(String stackName) {
-//	}
 
 	private String loadFileContents(File file) throws IOException {
 		return FileUtils.readFileToString(file, Charset.defaultCharset());

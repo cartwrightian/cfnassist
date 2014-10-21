@@ -1,25 +1,21 @@
-package tw.com.unit;
+package tw.com.integration;
 
 import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.PollingStackMonitor;
 import tw.com.providers.CloudFormationClient;
-import tw.com.repository.CfnRepository;
-import tw.com.repository.VpcRepository;
-
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 
 public class TestHaveValidTemplateFiles {
 
@@ -33,29 +29,24 @@ public class TestHaveValidTemplateFiles {
 	@Test
 	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException, InterruptedException {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		
-		CfnRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
-		VpcRepository vpcRepository = new VpcRepository(ec2Client);
-		
-		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);	
-		AwsFacade aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
-	
+		CloudFormationClient cloudClient = new CloudFormationClient(cfnClient);
 		File folder = new File("src/cfnScripts");
 		
 		assertTrue(folder.exists());	
-		validateFolder(aws, folder);
+		validateFolder(cloudClient, folder);
 	}
 
-	private void validateFolder(AwsFacade facade, File folder)
+	private void validateFolder(CloudFormationClient cloudClient, File folder)
 			throws FileNotFoundException, IOException, InterruptedException {
 		File[] files = folder.listFiles();
 		for(File file : files) {
 			if (file.isDirectory()) {
-				validateFolder(facade, file);		
+				validateFolder(cloudClient, file);		
 			} else 
 			{
-				facade.validateTemplate(file);
+				String contents = FileUtils.readFileToString(file, Charset.defaultCharset());
+				cloudClient.validateTemplate(contents);
+				
 				Thread.sleep(200); // to avoid rate limit errors on AWS api
 			}
 		}

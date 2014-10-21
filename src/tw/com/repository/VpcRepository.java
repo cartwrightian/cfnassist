@@ -1,6 +1,5 @@
 package tw.com.repository;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,22 +10,18 @@ import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
+import tw.com.providers.CloudClient;
 
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.CreateTagsRequest;
-import com.amazonaws.services.ec2.model.DeleteTagsRequest;
-import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
-import com.amazonaws.services.ec2.model.DescribeVpcsResult;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
 public class VpcRepository {
 	private static final Logger logger = LoggerFactory.getLogger(VpcRepository.class);
-	private AmazonEC2Client ec2Client;
+	private CloudClient cloudClient;
 	private HashMap<ProjectAndEnv, String> idCache; // used to avoid search by tag unless needed
 	
-	public VpcRepository(AmazonEC2Client ec2Client) {
-		this.ec2Client = ec2Client;
+	public VpcRepository(CloudClient cloudClient) {
+		this.cloudClient = cloudClient;
 		idCache = new HashMap<ProjectAndEnv, String>();
 	}
 	
@@ -54,18 +49,11 @@ public class VpcRepository {
 	}
 
 	private Vpc getVpcById(String vpcId) {
-		logger.info("Get VPC by ID " + vpcId);
-		DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
-		Collection<String> vpcIds = new LinkedList<String>();
-		vpcIds.add(vpcId);
-		describeVpcsRequest.setVpcIds(vpcIds);
-		DescribeVpcsResult results = ec2Client.describeVpcs(describeVpcsRequest);
-		return results.getVpcs().get(0);
+		return cloudClient.describeVpc(vpcId);
 	}
 
 	private Vpc findVpcUsingProjectAndEnv(ProjectAndEnv key) {
-		DescribeVpcsResult describeVpcsResults = ec2Client.describeVpcs();
-		List<Vpc> vpcs = describeVpcsResults.getVpcs();
+		List<Vpc> vpcs = cloudClient.describeVpcs();
 
 		for(Vpc vpc : vpcs) {
 			String vpcId = vpc.getVpcId();
@@ -123,13 +111,10 @@ public class VpcRepository {
 	}
 
 	private void setTags(String vpcId, List<Tag> tags) {
-		List<String> resources = createResources(vpcId);
-		CreateTagsRequest createTagsRequest = new CreateTagsRequest(resources , tags);
-		
-		ec2Client.createTags(createTagsRequest);
+		cloudClient.addTagsToResources(createResourceList(vpcId), tags);
 	}
 
-	private List<String> createResources(String vpcId) {
+	private List<String> createResourceList(String vpcId) {
 		List<String> resources = new LinkedList<String>();	
 		resources.add(vpcId);
 		return resources;
@@ -137,12 +122,11 @@ public class VpcRepository {
 	
 	public void deleteVpcTag(ProjectAndEnv projectAndEnv, String key) {
 		Vpc vpc = getCopyOfVpc(projectAndEnv);
-		List<String> resources = createResources(vpc.getVpcId());
-		
+		List<String> resources = createResourceList(vpc.getVpcId());
 		Tag tag = new Tag().withKey(key);
-		DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest().withResources(resources).withTags(tag);
+		cloudClient.deleteTagsFromResources(resources, tag);
+				
 		logger.info(String.format("Delete Tag Key'%s' on VPC:%s", key, vpc.getVpcId()));
-		ec2Client.deleteTags(deleteTagsRequest);	
 	}
 
 	public String getVpcIndexTag(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
@@ -177,7 +161,5 @@ public class VpcRepository {
 		}
 		return getTagByName(vpc, tagName);
 	}
-
-
 
 }

@@ -11,6 +11,7 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 import tw.com.EnvironmentSetupForTests;
 import tw.com.commandline.Main;
+import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
 
 public class TestCommandLineVLCoperations {
@@ -21,7 +22,7 @@ public class TestCommandLineVLCoperations {
 	
 	@Before
 	public void beforeEveryTestRun() {
-		vpcRepository = new VpcRepository(ec2Client);		
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client));		
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
 	}
 

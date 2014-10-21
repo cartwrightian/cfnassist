@@ -233,4 +233,25 @@ public class EnvironmentSetupForTests {
 		return tag;
 	}
 
+	public static List<com.amazonaws.services.ec2.model.Tag> createExpectedEc2Tags(ProjectAndEnv projAndEnv, String comment) {
+		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
+		tags.add(createEc2Tag("TagEnv",projAndEnv.getEnv()));
+		tags.add(createEc2Tag("Name", "testSubnet"));
+		// stack tags appear to be inherited
+		tags.add(createEc2Tag("CFN_ASSIST_ENV", projAndEnv.getEnv()));
+		tags.add(createEc2Tag("CFN_ASSIST_PROJECT", projAndEnv.getProject()));
+		if (!comment.isEmpty()) {
+			tags.add(createEc2Tag("CFN_COMMENT", comment));
+		}
+		return tags;
+	}
+
+	public static com.amazonaws.services.ec2.model.Tag createEc2Tag(String key, String value) {
+		return new com.amazonaws.services.ec2.model.Tag().withKey(key).withValue(value);
+	}
+
+	public static String loadFile(String filename) throws IOException {
+		return FileUtils.readFileToString(new File(filename), Charset.defaultCharset());
+	}
+
 }

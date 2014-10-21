@@ -32,7 +32,6 @@ import tw.com.MonitorStackEvents;
 import tw.com.PollingStackMonitor;
 import tw.com.SNSMonitor;
 import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
@@ -41,6 +40,7 @@ import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
@@ -72,7 +72,7 @@ public class TestSimpleStackOperations {
 		deletesStacks.act();
 		
 		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
-		vpcRepository = new VpcRepository(ec2Client);
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		
 		monitor = new PollingStackMonitor(cfnRepository);	
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
@@ -128,20 +128,7 @@ public class TestSimpleStackOperations {
 			// expected this as SNS notifications will not be available on the stack
 		}	
 	}
-	
-	@Test
-	public void catchesStackAlreadyExistingAsExpected() throws FileNotFoundException, IOException, CfnAssistException, 
-		InterruptedException, InvalidParameterException {
-		
-		try {
-			aws.applyTemplate(new File(FilesForTesting.SUBNET_STACK), projectAndEnv);
-			fail("Should have thrown exception");
-		} 
-		catch(DuplicateStackException expected) {
-			// expected
-		}		
-	}
-		
+			
 	@Test
 	public void createsAndThenUpdateSimpleStack() throws FileNotFoundException, IOException, CfnAssistException, 
 		InterruptedException, InvalidParameterException {
@@ -167,23 +154,6 @@ public class TestSimpleStackOperations {
 		
 		// check the VPC tag was updated as well
 		assertTrue(checkForVPCTag(TAG_NAME, afterID));	
-	}
-	
-	@Test
-	public void canListOutCfnAssistStacks() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException {		
-		List<StackEntry> results = aws.listStacks(projectAndEnv);
-
-		boolean seenEntry = false;
-		for(StackEntry result : results) {
-			if (result.getStack().getStackId().equals(theStack.getStackId())) {
-				assertEquals("CfnAssistTestsubnet", result.getStackName());
-				assertEquals("Test", result.getEnvTag().getEnv());
-				assertEquals("CfnAssist", result.getProject());
-				seenEntry = true;
-				break;
-			}
-		}
-		assertTrue(seenEntry);	
 	}
 	
 	private boolean checkForVPCTag(String tagName, String expectedId) {

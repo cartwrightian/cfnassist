@@ -28,10 +28,10 @@ import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.Tag;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 import com.amazonaws.services.cloudformation.model.UpdateStackResult;
 import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
-import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
 
 public class CloudFormationClient {
 	private static final Logger logger = LoggerFactory.getLogger(CloudFormationClient.class);
@@ -64,9 +64,10 @@ public class CloudFormationClient {
 		return result.getStackEvents();
 	}
 
-	public ValidateTemplateResult validateTemplate(
-			ValidateTemplateRequest validateTemplateRequest) {
-		return cfnClient.validateTemplate(validateTemplateRequest);
+	public List<TemplateParameter> validateTemplate(String contents) {
+		ValidateTemplateRequest validateTemplateRequest = new ValidateTemplateRequest();
+		validateTemplateRequest.setTemplateBody(contents);
+		return cfnClient.validateTemplate(validateTemplateRequest).getParameters();
 	}
 
 	public void deleteStack(String stackName) {

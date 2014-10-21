@@ -24,10 +24,9 @@ import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
-import com.amazonaws.services.cloudformation.model.ValidateTemplateResult;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
-public class CfnRepository implements CheckStackExists, StackRepository, ResourceRepository {
+public class CfnRepository implements CloudFormRepository {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
 
 	private static final String AWS_EC2_INSTANCE_TYPE = "AWS::EC2::Instance";
@@ -267,10 +266,8 @@ public class CfnRepository implements CheckStackExists, StackRepository, Resourc
 		return stackCache.updateRepositoryFor(id);		
 	}
 
-	// TODO into interface
-	public ValidateTemplateResult validateStackTemplate(
-			ValidateTemplateRequest validateTemplateRequest) {
-		return formationClient.validateTemplate(validateTemplateRequest);
+	public List<TemplateParameter> validateStackTemplate(String templateBody) {
+		return formationClient.validateTemplate(templateBody);
 	}
 
 	// TODO cache updates into this class

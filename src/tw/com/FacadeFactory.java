@@ -4,6 +4,7 @@ import org.apache.commons.cli.MissingArgumentException;
 
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.ArtifactUploader;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
@@ -23,7 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 public class FacadeFactory {
 	
 	private AmazonCloudFormationClient cfnClient;
-	private AmazonEC2Client ec2Client;
+	//private AmazonEC2Client ec2Client;
 	private AWSCredentialsProviderChain credentialsProvider;
 	private AmazonSQSClient sqsClient;
 	private AmazonSNSClient snsClient;
@@ -36,13 +37,14 @@ public class FacadeFactory {
 	private ELBRepository elbRepository;
 	private String comment;
 	private ArtifactUploader artifactUploader;
+	private CloudClient cloudClient;
 
 	public FacadeFactory(Region region, String project,boolean arnMonitoring) {
 		this.arnMonitoring = arnMonitoring;
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(region);
-		ec2Client = new AmazonEC2Client(credentialsProvider);
+		AmazonEC2Client ec2Client = new AmazonEC2Client(credentialsProvider);
 		ec2Client.setRegion(region);
 		snsClient = new AmazonSNSClient(credentialsProvider);
 		snsClient.setRegion(region);
@@ -54,7 +56,8 @@ public class FacadeFactory {
 		s3Client.setRegion(region);
 		
 		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), project);
-		vpcRepository = new VpcRepository(ec2Client);
+		cloudClient = new CloudClient(ec2Client);
+		vpcRepository = new VpcRepository(cloudClient);
 	}
 
 	public AwsFacade createFacade() throws MissingArgumentException {		
@@ -79,7 +82,7 @@ public class FacadeFactory {
 
 	public ELBRepository createElbRepo() {
 		if (elbRepository==null) {
-			elbRepository = new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);
+			elbRepository = new ELBRepository(elbClient, cloudClient, vpcRepository, cfnRepository);
 		}
 		
 		return elbRepository;

@@ -11,11 +11,8 @@ import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.MustHaveBuildNumber;
+import tw.com.providers.CloudClient;
 
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
@@ -31,15 +28,15 @@ import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLo
 public class ELBRepository {
 	private static final Logger logger = LoggerFactory.getLogger(ELBRepository.class);
 	AmazonElasticLoadBalancingClient elbClient;
-	AmazonEC2Client ec2Client;
+	CloudClient cloudClient;
 	VpcRepository vpcRepository;
 	ResourceRepository cfnRepository;
 	
-	public ELBRepository(AmazonElasticLoadBalancingClient elbClient, AmazonEC2Client ec2Client, VpcRepository vpcRepository, ResourceRepository cfnRepository) {
+	public ELBRepository(AmazonElasticLoadBalancingClient elbClient, CloudClient cloudClient, VpcRepository vpcRepository, ResourceRepository cfnRepository) {
 		this.elbClient = elbClient;
 		this.vpcRepository = vpcRepository;
 		this.cfnRepository = cfnRepository;
-		this.ec2Client = ec2Client;
+		this.cloudClient = cloudClient;
 	}
 
 	public LoadBalancerDescription findELBFor(ProjectAndEnv projAndEnv) {
@@ -160,19 +157,7 @@ public class ELBRepository {
 
 	private List<Tag> getTagsForInstance(String id)
 			throws WrongNumberOfInstancesException {
-		DescribeInstancesRequest request = new DescribeInstancesRequest().withInstanceIds(id);
-		DescribeInstancesResult result = ec2Client.describeInstances(request);
-		List<Reservation> res = result.getReservations();
-		if (res.size()!=1) {
-			throw new WrongNumberOfInstancesException(id, res.size());
-		}
-		List<com.amazonaws.services.ec2.model.Instance> ins = res.get(0).getInstances();
-		if (ins.size()!=1) {
-			throw new WrongNumberOfInstancesException(id, ins.size());
-		}
-		com.amazonaws.services.ec2.model.Instance instance = ins.get(0);
-		List<Tag> tags = instance.getTags();
-		return tags;
+		return cloudClient.getTagsForInstance(id);
 	}
 
 	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String type) throws MustHaveBuildNumber, WrongNumberOfInstancesException {

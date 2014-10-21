@@ -17,6 +17,7 @@ import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.commandline.Main;
 import tw.com.entity.ProjectAndEnv;
+import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
@@ -56,7 +57,7 @@ public class TestCommandLineS3Operations {
 
 		deleteTestKeysFromBucket();
 		
-		vpcRepository = new VpcRepository(ec2Client);
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 		
 		deletesStacks = new DeletesStacks(cfnClient);

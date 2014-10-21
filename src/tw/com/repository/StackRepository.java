@@ -16,6 +16,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 public interface StackRepository {
 
@@ -44,5 +45,7 @@ public interface StackRepository {
 			Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws NotReadyException;
 
 	public abstract void deleteStack(String stackName);
+	
+	List<TemplateParameter> validateStackTemplate(String templateContents);
 
 }

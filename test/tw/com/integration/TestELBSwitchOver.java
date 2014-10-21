@@ -29,6 +29,7 @@ import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
@@ -60,6 +61,7 @@ public class TestELBSwitchOver {
 	
 	private static String webType = "web";
 	private static DeletesStacks deleter;
+	private static CloudClient cloudClient;
 		
 	@BeforeClass
 	public static void beforeAllTestsOnce() throws FileNotFoundException, CfnAssistException, NotReadyException, IOException, InvalidParameterException, InterruptedException, MissingArgumentException {
@@ -69,6 +71,7 @@ public class TestELBSwitchOver {
 		snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
 		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
 		elbClient = EnvironmentSetupForTests.createELBClient(credentialsProvider);
+		cloudClient = new CloudClient(ec2Client);
 		
 		deleter = new DeletesStacks(cfnClient);
 		deleter.ifPresent("CfnAssist123Testinstance")
@@ -81,7 +84,7 @@ public class TestELBSwitchOver {
 		// ELB very slow to create and delete so do it once for all the tests
 		////
 		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
-		vpcRepository = new VpcRepository(ec2Client);
+		vpcRepository = new VpcRepository(cloudClient);
 		
 		monitor = new SNSMonitor(new SNSEventSource(snsClient, sqsClient), cfnRepository);
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
@@ -113,7 +116,7 @@ public class TestELBSwitchOver {
 	
 	@Test
 	public void testShouldFindELBInTheVPC() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException {
-		ELBRepository elbRepository = new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);	
+		ELBRepository elbRepository = new ELBRepository(elbClient, cloudClient, vpcRepository, cfnRepository);	
 		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
 		
 		assertNotNull(elb);
@@ -122,7 +125,7 @@ public class TestELBSwitchOver {
 	
 	@Test
 	public void shouldJAddInstancesWithMatchingBuildNumber() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
-		ELBRepository elbRepository = new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);
+		ELBRepository elbRepository = new ELBRepository(elbClient, cloudClient, vpcRepository, cfnRepository);
 		elbRepository.updateInstancesMatchingBuild(projAndEnv, webType);
 		
 		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
@@ -140,7 +143,7 @@ public class TestELBSwitchOver {
 
 	@Test
 	public void shouldAddInstancesWithMatchingBuildNumberAndRemoveNonMatching() throws FileNotFoundException, CfnAssistException, IOException, InvalidParameterException, InterruptedException {
-		ELBRepository elbRepository = new ELBRepository(elbClient, ec2Client, vpcRepository, cfnRepository);
+		ELBRepository elbRepository = new ELBRepository(elbClient, cloudClient, vpcRepository, cfnRepository);
 	
 		LoadBalancerDescription elb = elbRepository.findELBFor(projAndEnv);
 		List<Instance> instances = elb.getInstances();

@@ -20,6 +20,7 @@ import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
@@ -383,6 +384,18 @@ public class TestCfnRepository extends EasyMockSupport {
 		assertEquals("stackName", result.getStackName());
 		assertEquals("someStackId", result.getStackId());
 		verifyAll();
+	}
+	
+	@Test
+	public void shouldValidateTemplates() {
+		
+		List<TemplateParameter> params = new LinkedList<TemplateParameter>();
+		params.add(new TemplateParameter().withDefaultValue("aDefaultValue"));
+		EasyMock.expect(formationClient.validateTemplate("someContents")).andReturn(params);
+		
+		replayAll();
+		List<TemplateParameter> result = repository.validateStackTemplate("someContents");
+		assertEquals(1, result.size());
 	}
 		
 }
