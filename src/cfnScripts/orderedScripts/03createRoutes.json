@@ -1,0 +1,33 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"03 - create route table association",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		},
+		"webSubnet":{
+			"Type":"String",
+			"Description":"::webSubnet"
+		},
+		"dbSubnet":{
+			"Type":"String",
+			"Description":"::dbSubnet"
+		},
+		"dbRouteTable": {
+			"Type":"String",
+			"Description":"::dbRouteTable"
+		}	
+	},
+	"Resources":{
+        "dbRouteTableAssociation" : {
+         "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+         "Properties" : {
+            "SubnetId" : { "Ref" : "dbSubnet" },
+            "RouteTableId" : { "Ref" : "dbRouteTable" }
+            }
+        }
+	}
+}

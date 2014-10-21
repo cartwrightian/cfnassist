@@ -83,8 +83,8 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		templateParameters.add(new TemplateParameter().withParameterKey("vpc").withDefaultValue(VPC_ID));
 
 		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
-		TestAwsFacade.addParam(creationParameters, "env", projectAndEnv.getEnv());
-		TestAwsFacade.addParam(creationParameters, "vpc", VPC_ID);
+		TestAwsFacadeCreatesStacks.addParam(creationParameters, "env", projectAndEnv.getEnv());
+		TestAwsFacadeCreatesStacks.addParam(creationParameters, "vpc", VPC_ID);
 
 		StackNameAndId stackNameAndId = setUpdateExpectations(stackName, filename, templateParameters, creationParameters);
 		
@@ -103,8 +103,8 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		templateParameters.add(new TemplateParameter().withParameterKey("stackname").withDefaultValue("subnet"));
 		Collection<Parameter> userParameters  = new LinkedList<Parameter>();
 		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
-		TestAwsFacade.addParam(userParameters, "userKey", "value");
-		TestAwsFacade.addParam(creationParameters, "userKey", "value");
+		TestAwsFacadeCreatesStacks.addParam(userParameters, "userKey", "value");
+		TestAwsFacadeCreatesStacks.addParam(creationParameters, "userKey", "value");
 
 		StackNameAndId stackNameAndId = setUpdateExpectations(stackName, filename, templateParameters, creationParameters);
 		

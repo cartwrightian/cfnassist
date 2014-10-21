@@ -4,13 +4,9 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -38,7 +34,6 @@ import tw.com.repository.VpcRepository;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -46,10 +41,6 @@ import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 
 public class TestExecuteScriptsInOrderFromDir {
-	
-	private static final String THIRD_FILE = "03createRoutes.json";
-	private Path thirdFile;
-	
 	private static AmazonCloudFormationClient cfnClient;
 	private static AmazonEC2Client ec2Client;
 	private static AmazonSNSClient snsClient;
@@ -87,9 +78,7 @@ public class TestExecuteScriptsInOrderFromDir {
 		deletesStacks.act();
 		
 		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);
-		vpcRepository = new VpcRepository(cloudClient);
-		
-		deleteFile(THIRD_FILE);	
+		vpcRepository = new VpcRepository(cloudClient);	
 	}
 		
 	@After
@@ -104,49 +93,8 @@ public class TestExecuteScriptsInOrderFromDir {
 		aws.resetDeltaIndex(mainProjectAndEnv);
 		return aws;
 	}
-
-
-	@Test
-	public void shouldCreateTheStacksRequiredOnly() throws CfnAssistException, InterruptedException, FileNotFoundException, InvalidParameterException, IOException {
-		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);
-		AwsFacade aws = createFacade(cfnRepository, vpcRepository, monitor);
-		
-		List<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
-		
-		assertEquals(expectedList.size(), stackIds.size());
-		
-		for(int i=0; i<expectedList.size(); i++) {
-			StackNameAndId stackId = stackIds.get(i);
-			assertEquals(expectedList.get(i), stackId.getStackName());
-			// TODO should just be a call to get current status because applyTemplatesFromFolder is a blocking call
-			String status = monitor.waitForCreateFinished(stackId);
-			assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
-		}
-		
-		// we are up to date, should not apply the files again
-		stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
-		assertEquals(0, stackIds.size());
-		
-		// copy in one extra files to dir
-		thirdFile = copyInFile(THIRD_FILE);
-		
-		stackIds = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
-		assertEquals(1, stackIds.size());
-		
-		expectedList.add(formName("03createRoutes"));
-		assertEquals(expectedList.get(2), stackIds.get(0).getStackName());
-		
-		// tidy up the stacks
-		List<String> deletedStacks = aws.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, mainProjectAndEnv);
-		assertEquals(3, deletedStacks.size());
-		assert(deletedStacks.containsAll(expectedList));
-		
-		int finalIndex = aws.getDeltaIndex(mainProjectAndEnv);
-		assertEquals(0, finalIndex);
-		
-		Files.deleteIfExists(thirdFile);
-	}
 	
+	// TODO : into monitor tests
 	@Test
 	public void shouldApplyDeltasAsStackUpdatesPollingMonitor() throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException {
 		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);
@@ -155,6 +103,7 @@ public class TestExecuteScriptsInOrderFromDir {
 		applyDeltasAsStackUpdates(aws);
 	}
 	
+	// TODO : into monitor tests
 	@Test
 	public void shouldApplyDeltasAsStackUpdatesSNSMonitor() throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		SNSMonitor monitor = new SNSMonitor(new SNSEventSource(snsClient, sqsClient), cfnRepository);
@@ -178,20 +127,6 @@ public class TestExecuteScriptsInOrderFromDir {
 		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpc);
 		assertEquals(1, subnets.size());
 		assertEquals("10.0.99.0/24", subnets.get(0).getCidrBlock()); // check CIDR from the delta script not the orginal one
-	}
-	
-	private Path copyInFile(String filename) throws IOException {
-		Path srcFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "holding", filename);
-		Path destFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, filename);
-		Files.deleteIfExists(destFile);
-
-		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
-		return destFile;
-	}
-	
-	private void deleteFile(String filename) throws IOException {
-		Path destFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, filename);
-		Files.deleteIfExists(destFile);	
 	}
 
 	private String formName(String part) {
