@@ -26,6 +26,7 @@ import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
 import tw.com.PollingStackMonitor;
+import tw.com.SNSMonitor;
 import tw.com.StackMonitor;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
@@ -383,6 +384,28 @@ public class TestCfnRepository extends EasyMockSupport {
 		StackNameAndId result = repository.updateStack("contents", parameters, monitor, "stackName");
 		assertEquals("stackName", result.getStackName());
 		assertEquals("someStackId", result.getStackId());
+		verifyAll();
+	}
+	
+	// TOOD can now update stacks with SNS
+	@Test
+	public void shouldThrowIfUpdateStackSNSNowEnabled() throws NotReadyException, WrongNumberOfStacksException, InvalidParameterException {
+		SNSMonitor snsMonitor = createMock(SNSMonitor.class);
+		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		
+		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("");
+		List<Stack> stacks = new LinkedList<Stack>();
+		stacks.add(new Stack().withStackName("stackName").withTags(tags)); // no arns set
+		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks);
+		replayAll();
+		
+		try {
+			repository.updateStack("contents", parameters, snsMonitor, "stackName");
+			fail("should have thrown");
+		}
+		catch(InvalidParameterException expected) {
+			// expected
+		}
 		verifyAll();
 	}
 	

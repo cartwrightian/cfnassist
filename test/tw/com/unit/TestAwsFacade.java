@@ -577,7 +577,7 @@ public class TestAwsFacade extends EasyMockSupport {
 		EasyMock.expect(monitor.waitForDeleteFinished(stackNameAndId)).andReturn(StackStatus.DELETE_COMPLETE.toString());
 	}
 
-	private void addParam(Collection<Parameter> creationParameters, String key, String value) {
+	public static void addParam(Collection<Parameter> creationParameters, String key, String value) {
 		creationParameters.add(new Parameter().withParameterKey(key).withParameterValue(value));
 		
 	}
