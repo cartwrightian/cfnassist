@@ -12,7 +12,6 @@ import org.junit.Test;
 
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.PollingStackMonitor;
 import tw.com.SNSMonitor;
 import tw.com.SetsDeltaIndex;
 import tw.com.entity.DeletionsPending;
@@ -38,7 +37,6 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	private static final String CREATE_COMPLETE = StackStatus.CREATE_COMPLETE.toString();
 	private static final String stackName = EnvironmentSetupForTests.TEMPORARY_STACK;
 	private static AmazonCloudFormationClient cfnClient;
-	private PollingStackMonitor pollingMonitor;
 	private String vpcId;
 	private SNSMonitor snsMonitor;
 	private static AmazonSQSClient sqsClient;
@@ -60,7 +58,6 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	public void beforeTestsRun() {
 		deltaIndexResult = -1;
 		CfnRepository cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), EnvironmentSetupForTests.PROJECT);	
-		pollingMonitor = new PollingStackMonitor(cfnRepository);	
 		vpcId = EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV;
 		eventSource = new SNSEventSource(snsClient, sqsClient);
 		snsMonitor = new SNSMonitor(eventSource, cfnRepository);
@@ -73,24 +70,10 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	}
 	
 	@Test
-	public void ShouldCheckStackHasBeenCreated() throws CfnAssistException, InterruptedException, IOException {
-		StackNameAndId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
-		assertEquals(CREATE_COMPLETE, pollingMonitor.waitForCreateFinished(id));
-	}
-	
-	@Test
 	public void ShouldCheckStackHasBeenCreatedSNS() throws CfnAssistException, InterruptedException, IOException, MissingArgumentException {	
 		snsMonitor.init();
 		StackNameAndId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId, eventSource.getArn());
 		assertEquals(CREATE_COMPLETE, snsMonitor.waitForCreateFinished(id));
-	}
-	
-	@Test 
-	public void ShouldCheckStackHasBeenDeleted() throws CfnAssistException, InterruptedException, IOException {
-		StackNameAndId id = EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, vpcId,"");
-		pollingMonitor.waitForCreateFinished(id);
-		new DeletesStacks(cfnClient).ifPresentNonBlocking(stackName).act(); 
-		assertEquals(DELETED, pollingMonitor.waitForDeleteFinished(id));
 	}
 	
 	@Test 
@@ -103,23 +86,10 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	}
 	
 	@Test
-	public void ShouldCopeWithNonExistanceStack() throws WrongNumberOfStacksException, InterruptedException {
-		StackNameAndId id = new StackNameAndId("alreadyGone", "11222");
-		assertEquals(DELETED, pollingMonitor.waitForDeleteFinished(id));
-	}
-	
-	@Test
 	public void ShouldCopeWithNonExistanceStackSNS() throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus, MissingArgumentException {
 		snsMonitor.init();
 		StackNameAndId id = new StackNameAndId("alreadyGone", "11222");
 		assertEquals(DELETED, snsMonitor.waitForDeleteFinished(id));
-	}
-	
-	@Test
-	public void ShouldCopeWithListOfNonExistanceStacksToDelete() {
-		DeletionsPending pending = createPendingDeletes();
-		pollingMonitor.waitForDeleteFinished(pending, this);
-		assertEquals(2, deltaIndexResult);
 	}
 	
 	@Test
@@ -138,8 +108,9 @@ public class TestStackMonitors implements SetsDeltaIndex {
 	}
 
 	@Override
-	public void setDeltaIndex(int newDelta) throws CannotFindVpcException {
-		this.deltaIndexResult = newDelta;	
+	public void setDeltaIndex(Integer newDelta) throws CannotFindVpcException {
+		deltaIndexResult = newDelta;
 	}
+
 
 }

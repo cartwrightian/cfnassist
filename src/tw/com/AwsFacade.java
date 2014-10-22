@@ -497,7 +497,7 @@ public class AwsFacade {
 		return folder;
 	}
 	
-	public List<String> rollbackTemplatesInFolder(String folderPath, final ProjectAndEnv projAndEnv) throws InvalidParameterException, CfnAssistException {
+	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -520,14 +520,9 @@ public class AwsFacade {
 			} else {
 				logger.info(String.format("Skipping file %s as it is a stack update file",file.getAbsolutePath()));
 			}
-		}	
-		SetsDeltaIndex setDeltaIndex = new SetsDeltaIndex() {	
-			@Override
-			public void setDeltaIndex(int newDelta) throws CannotFindVpcException {
-				AwsFacade.this.setDeltaIndex(projAndEnv, newDelta);	
-			}
-		};
-		return monitor.waitForDeleteFinished(pending, setDeltaIndex);
+		}
+		SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);	
+		return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
 	}
 
 	private int extractIndexFrom(File file) {
@@ -579,5 +574,4 @@ public class AwsFacade {
 		}
 		return cfnRepository.getStacks();
 	}
-
 }

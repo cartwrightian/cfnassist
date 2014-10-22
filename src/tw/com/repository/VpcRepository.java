@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
+import tw.com.SetsDeltaIndex;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.providers.CloudClient;
@@ -162,4 +163,8 @@ public class VpcRepository {
 		return getTagByName(vpc, tagName);
 	}
 
+	public SetsDeltaIndex getSetsDeltaIndexFor(ProjectAndEnv projAndEnv) {
+		return new SetDeltaIndexForProjectAndEnv(projAndEnv, this);
+	}
+	
 }

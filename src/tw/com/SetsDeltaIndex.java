@@ -3,5 +3,5 @@ package tw.com;
 import tw.com.exceptions.CannotFindVpcException;
 
 public interface SetsDeltaIndex {
-	void setDeltaIndex(int newDelta) throws CannotFindVpcException;
+	void setDeltaIndex(Integer newDelta) throws CannotFindVpcException;
 }

@@ -49,20 +49,22 @@ public class PollingStackMonitor extends StackMonitor {
 		String complete = StackStatus.ROLLBACK_COMPLETE.toString();
 		if (!result.equals(complete)) {
 			logger.error("Expected " + complete);
+			logStackEvents(cfnRepository.getStackEvents(stackName));
 			throw new WrongStackStatus(id, complete, result);
 		}
 		return result;
 	}
 	
 	public String waitForDeleteFinished(StackNameAndId stackId) throws WrongNumberOfStacksException, InterruptedException {
-		StackStatus requiredStatus = StackStatus.DELETE_IN_PROGRESS;
+		StackStatus initialStatus = StackStatus.DELETE_IN_PROGRESS;
 		String result = StackStatus.DELETE_FAILED.toString();
 		try {
-			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), requiredStatus, Arrays.asList(DELETE_ABORTS));
+			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), initialStatus, Arrays.asList(DELETE_ABORTS));
 		}
 		catch(com.amazonaws.AmazonServiceException awsException) {
 			logger.warn("Caught exception during status check", awsException);
 			String errorCode = awsException.getErrorCode();
+			// TODO should this be using statuscode=400?
 			if (errorCode.equals("ValidationError")) {
 				result = StackStatus.DELETE_COMPLETE.toString();
 			} else {
@@ -99,6 +101,7 @@ public class PollingStackMonitor extends StackMonitor {
 		String complete = StackStatus.UPDATE_COMPLETE.toString();
 		if (!result.equals(complete)) {
 			logger.error("Expected " + complete);
+			logStackEvents(cfnRepository.getStackEvents(id.getStackName()));
 			throw new WrongStackStatus(id, complete, result);
 		}
 		return result;
@@ -109,18 +112,22 @@ public class PollingStackMonitor extends StackMonitor {
 		return monitorDeletions(pending, setDeltaIndex);
 	}
 	
-	private List<String> monitorDeletions(DeletionsPending pending, SetsDeltaIndex setDeltaIndex) {
+	private List<String> monitorDeletions(DeletionsPending allPending, SetsDeltaIndex setDeltaIndex) {
 		List<String> deletedOk = new LinkedList<String>();
 		try {
-			for(DeletionPending delta : pending) {
-				StackNameAndId id = delta.getStackId();
+			for(DeletionPending pending : allPending) {
+				StackNameAndId id = pending.getStackId();
 				logger.info("Now waiting for deletion of " + id);
-				waitForDeleteFinished(id );
-				deletedOk.add(id.getStackName());
-				int newDelta = delta.getDelta()-1;
-				if (newDelta>=0) {
-					logger.info("Resetting delta to " + newDelta);
-					setDeltaIndex.setDeltaIndex(newDelta);
+				String status = waitForDeleteFinished(id );
+				if (StackStatus.DELETE_COMPLETE.toString().equals(status)) {
+					deletedOk.add(id.getStackName());
+					int newDelta = pending.getDelta()-1;
+					if (newDelta>=0) {
+						logger.info("Resetting delta to " + newDelta);
+						setDeltaIndex.setDeltaIndex(newDelta);
+					}
+				} else {
+					break;
 				}
 			}
 		}

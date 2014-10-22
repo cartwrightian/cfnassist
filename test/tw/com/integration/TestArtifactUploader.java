@@ -11,7 +11,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import tw.com.EnvironmentSetupForTests;
@@ -142,17 +141,17 @@ public class TestArtifactUploader {
 		assertFalse(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
 	}
 	
-	@Test
-	@Ignore("For debugging of large file uploads only")
-	public void testUploadLargeFile() {
-		List<Parameter> arts = new LinkedList<Parameter>();
-		Parameter artA = new Parameter().withParameterKey("urlA").withParameterValue("cfnassit-1.0.DEV.zip"); 
-		
-		arts.add(artA);
-		
-		ArtifactUploader uploader = new ArtifactUploader(s3Client, EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER);
-		uploader.uploadArtifacts(arts);
-				
-	}
+//	@Test
+//	@Ignore("For debugging of large file uploads only")
+//	public void testUploadLargeFile() {
+//		List<Parameter> arts = new LinkedList<Parameter>();
+//		Parameter artA = new Parameter().withParameterKey("urlA").withParameterValue("cfnassit-1.0.DEV.zip"); 
+//		
+//		arts.add(artA);
+//		
+//		ArtifactUploader uploader = new ArtifactUploader(s3Client, EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER);
+//		uploader.uploadArtifacts(arts);
+//				
+//	}
 
 }

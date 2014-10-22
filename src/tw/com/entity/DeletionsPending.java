@@ -15,6 +15,37 @@ public class DeletionsPending implements Iterable<DeletionPending> {
 	private static final Logger logger = LoggerFactory.getLogger(DeletionsPending.class);
 
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((deleted == null) ? 0 : deleted.hashCode());
+		result = prime * result + ((items == null) ? 0 : items.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DeletionsPending other = (DeletionsPending) obj;
+		if (deleted == null) {
+			if (other.deleted != null)
+				return false;
+		} else if (!deleted.equals(other.deleted))
+			return false;
+		if (items == null) {
+			if (other.items != null)
+				return false;
+		} else if (!items.equals(other.items))
+			return false;
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		return "DeletionsPending [items=" + items + "]";
 	}

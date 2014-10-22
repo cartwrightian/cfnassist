@@ -33,6 +33,7 @@ import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.JsonExtensionFilter;
 import tw.com.MonitorStackEvents;
+import tw.com.entity.DeletionsPending;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
@@ -42,6 +43,7 @@ import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.SetDeltaIndexForProjectAndEnv;
 import tw.com.repository.VpcRepository;
 
 @RunWith(EasyMockRunner.class)
@@ -144,6 +146,43 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
 		assertEquals(1, result.size());
 		verifyAll();	
+	}
+	
+	@Test
+	public void shouldRollbackFilesInAFolder() throws InvalidParameterException, CfnAssistException {
+		String stackA = "CfnAssistTest01createSubnet";
+		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
+		String stackB = "CfnAssistTest02createAcls";
+		StackNameAndId stackBNameAndId = new StackNameAndId(stackB, "id2");
+
+		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
+
+		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
+		EasyMock.expect(cfnRepository.getStackId(stackB)).andReturn(stackBNameAndId);
+		cfnRepository.deleteStack(stackB);
+		EasyMock.expectLastCall();
+		EasyMock.expect(cfnRepository.getStackId(stackA)).andReturn(stackANameAndId);
+		cfnRepository.deleteStack(stackA);
+		EasyMock.expectLastCall();
+		EasyMock.expect(vpcRepository.getSetsDeltaIndexFor(projectAndEnv)).
+			andReturn(setDeltaIndexForProjectAndEnv);
+		
+		DeletionsPending pending = new DeletionsPending();
+		pending.add(2, stackBNameAndId);
+		pending.add(1, stackANameAndId);
+	
+		List<String> deletedStacks = new LinkedList<String>();
+		deletedStacks.add(stackB);
+		deletedStacks.add(stackA);
+		
+		EasyMock.expect(monitor.waitForDeleteFinished(pending, setDeltaIndexForProjectAndEnv)).andReturn(deletedStacks);
+		
+		replayAll();
+		List<String> result = aws.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
+		verifyAll();
+		assertEquals(2, result.size());
+		assertTrue(result.contains(stackA));
+		assertTrue(result.contains(stackB));
 	}
 
 	private void setExpectationsForValidationPass(List<File> allFiles)

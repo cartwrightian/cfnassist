@@ -19,7 +19,6 @@ import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.PollingStackMonitor;
 import tw.com.SNSMonitor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
@@ -92,15 +91,6 @@ public class TestExecuteScriptsInOrderFromDir {
 		aws.setCommentTag(test.getMethodName());
 		aws.resetDeltaIndex(mainProjectAndEnv);
 		return aws;
-	}
-	
-	// TODO : into monitor tests
-	@Test
-	public void shouldApplyDeltasAsStackUpdatesPollingMonitor() throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException {
-		PollingStackMonitor monitor = new PollingStackMonitor(cfnRepository);
-		AwsFacade aws = createFacade(cfnRepository, vpcRepository, monitor);
-		
-		applyDeltasAsStackUpdates(aws);
 	}
 	
 	// TODO : into monitor tests
