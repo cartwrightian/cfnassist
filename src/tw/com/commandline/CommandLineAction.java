@@ -13,6 +13,7 @@ import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.TooManyELBException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 public interface CommandLineAction {
@@ -21,7 +22,7 @@ public interface CommandLineAction {
 
 	String getArgName();
 
-	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String argument, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CfnAssistException, MissingArgumentException;
+	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String argument, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CfnAssistException, MissingArgumentException, TooManyELBException;
 
 	void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws CommandLineException;

@@ -8,7 +8,7 @@ public class StackNotification {
 	private String resourceType;
 	private String statusReason;
 	
-	private StackNotification(String stackName, String status, String stackId, String resourceType, String statusReason) {
+	public StackNotification(String stackName, String status, String stackId, String resourceType, String statusReason) {
 		this.status = status;
 		this.resourceName = stackName;
 		this.resourceId = stackId;

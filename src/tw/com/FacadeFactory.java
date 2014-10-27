@@ -3,9 +3,11 @@ package tw.com;
 import org.apache.commons.cli.MissingArgumentException;
 
 import tw.com.entity.ProjectAndEnv;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.ArtifactUploader;
 import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
+import tw.com.providers.LoadBalancerClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.ELBRepository;
@@ -60,7 +62,7 @@ public class FacadeFactory {
 		vpcRepository = new VpcRepository(cloudClient);
 	}
 
-	public AwsFacade createFacade() throws MissingArgumentException {		
+	public AwsFacade createFacade() throws MissingArgumentException, CfnAssistException, InterruptedException {		
 		if (awsFacade==null) {
 			SNSEventSource eventSource = new SNSEventSource(snsClient, sqsClient);
 			MonitorStackEvents monitor = null;
@@ -82,7 +84,8 @@ public class FacadeFactory {
 
 	public ELBRepository createElbRepo() {
 		if (elbRepository==null) {
-			elbRepository = new ELBRepository(elbClient, cloudClient, vpcRepository, cfnRepository);
+			LoadBalancerClient loadBalancerClient = new LoadBalancerClient(elbClient);
+			elbRepository = new ELBRepository(loadBalancerClient, cloudClient, vpcRepository, cfnRepository);
 		}
 		
 		return elbRepository;

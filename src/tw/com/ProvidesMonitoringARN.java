@@ -4,6 +4,6 @@ import tw.com.exceptions.NotReadyException;
 
 public interface ProvidesMonitoringARN {
 
-	String getArn() throws NotReadyException;
+	String getSNSArn() throws NotReadyException;
 
 }

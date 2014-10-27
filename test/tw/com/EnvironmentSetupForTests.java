@@ -46,14 +46,16 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 public class EnvironmentSetupForTests {
 	private static final Logger logger = LoggerFactory.getLogger(EnvironmentSetupForTests.class);
 
+	///////////////
 	// User/Env specific constants, these will need to change for others running these tests!
-	static final String ARN_FOR_TESTING = "arn:aws:sns:eu-west-1:619378453009:cfn_assist";
+	public static final String AVAILABILITY_ZONE = "eu-west-1c";
+	public static final String AMI_FOR_INSTANCE = "ami-9c7ad8eb"; // eu amazon linux instance
 	public static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
 	public static final String BUCKET_NAME="cfnassists3testbucket";
 	public static final String S3_PREFIX = "https://"+BUCKET_NAME+".s3-eu-west-1.amazonaws.com";
-	
-	// TODO should we pick this up from the environment?
 	private static final Regions AWS_REGION = Regions.EU_WEST_1;
+	//
+	///////////////
 	
 	public static final String PROJECT = "CfnAssist";
 	public static final String ENV = "Test";
@@ -210,6 +212,7 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static final int FAILURE_STATUS = -1;
+
 
 	public static List<S3ObjectSummary> getBucketObjects(AmazonS3Client s3Client) {
 		ObjectListing requestResult = s3Client.listObjects(EnvironmentSetupForTests.BUCKET_NAME);

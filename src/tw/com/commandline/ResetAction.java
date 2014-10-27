@@ -12,7 +12,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
 
 public class ResetAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(ResetAction.class);
@@ -23,7 +23,7 @@ public class ResetAction extends SharedAction {
 				withDescription("Warning: Resets the Delta Tag "+AwsFacade.INDEX_TAG+ " to zero").create("reset");
 	}
 	
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String unusedArg, Collection<Parameter> unusedParams, Collection<Parameter> artifacts) throws CannotFindVpcException, MissingArgumentException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String unusedArg, Collection<Parameter> unusedParams, Collection<Parameter> artifacts) throws MissingArgumentException, CfnAssistException, InterruptedException {
 		logger.info("Reseting index for " + projectAndEnv);
 		AwsFacade aws = factory.createFacade();
 		aws.resetDeltaIndex(projectAndEnv);	

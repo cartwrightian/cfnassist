@@ -68,6 +68,7 @@ public class SNSMonitor extends StackMonitor  {
 	
 	@Override
 	public List<String> waitForDeleteFinished(DeletionsPending pending, SetsDeltaIndex setsDeltaIndex) throws CfnAssistException {
+		guardForInit();
 		logger.info("Waiting for delete notifications");
 		
 		for(DeletionPending item : pending) {
@@ -118,7 +119,7 @@ public class SNSMonitor extends StackMonitor  {
 		}	
 	}
 
-	private String waitForStatus(StackNameAndId stackId, String requiredStatus, List<String> aborts) throws InterruptedException, WrongStackStatus {
+	private String waitForStatus(StackNameAndId stackId, String requiredStatus, List<String> aborts) throws InterruptedException, WrongStackStatus, NotReadyException {
 		logger.info(String.format("Waiting for stack %s to change to status %s", stackId, requiredStatus));
 		int retryCount = 0;
 		while (retryCount<LIMIT) {
@@ -176,13 +177,13 @@ public class SNSMonitor extends StackMonitor  {
 	}
 
 	@Override
-	public void init() throws MissingArgumentException {
+	public void init() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		notifProvider.init();
 	}
 
 	@Override
 	public void addMonitoringTo(CreateStackRequest createStackRequest) throws NotReadyException {
-		String arn = notifProvider.getArn();
+		String arn = notifProvider.getSNSArn();
 		logger.info("Setting arn for sns events to " + arn);
 		Collection<String> arns = new LinkedList<String>();
 		arns.add(arn);

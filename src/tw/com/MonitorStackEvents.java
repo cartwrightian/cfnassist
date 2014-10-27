@@ -20,7 +20,7 @@ public interface MonitorStackEvents {
 	String waitForUpdateFinished(StackNameAndId id) throws WrongNumberOfStacksException, InterruptedException, WrongStackStatus, NotReadyException;
 	List<String> waitForDeleteFinished(DeletionsPending pending, SetsDeltaIndex setsDeltaIndex) throws CfnAssistException;
 	
-	void init() throws MissingArgumentException;
+	void init() throws MissingArgumentException, CfnAssistException, InterruptedException;
 	
 	void addMonitoringTo(CreateStackRequest createStackRequest) throws NotReadyException;
 }
