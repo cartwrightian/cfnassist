@@ -230,7 +230,7 @@ public class AwsFacade {
 		String currentStatus = cfnRepository.getStackStatus(stackName);
 		if (currentStatus.length()!=0) {
 			logger.warn("Stack already exists: " + stackName);
-			StackNameAndId stackId = cfnRepository.getStackId(stackName);
+			StackNameAndId stackId = cfnRepository.getStackNameAndId(stackName);
 			if (isRollingBack(stackId,currentStatus)) {
 				logger.warn("Stack is rolled back so delete it and recreate " + stackId);
 				cfnRepository.deleteStack(stackName);
@@ -341,7 +341,7 @@ public class AwsFacade {
 		String stackName = createStackName(templateFile, projectAndEnv);
 		StackNameAndId stackId;
 		try {
-			stackId = cfnRepository.getStackId(stackName);
+			stackId = cfnRepository.getStackNameAndId(stackName);
 		} catch (WrongNumberOfStacksException e) {
 			logger.warn("Unable to find stack " + stackName);
 			return;
@@ -513,7 +513,7 @@ public class AwsFacade {
 					logger.warn(String.format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
 				} else {			
 					logger.info(String.format("About to request deletion of stackname %s", stackName));
-					StackNameAndId id = cfnRepository.getStackId(stackName); // important to get id's before deletion request, may throw otherwise
+					StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
 					cfnRepository.deleteStack(stackName);
 					pending.add(deltaIndex,id);
 				}

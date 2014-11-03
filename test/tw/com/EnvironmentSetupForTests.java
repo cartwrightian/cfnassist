@@ -33,6 +33,10 @@ import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
 import com.amazonaws.services.ec2.model.DescribeTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeTagsResult;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.InstanceType;
+import com.amazonaws.services.ec2.model.RunInstancesRequest;
+import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -255,6 +259,14 @@ public class EnvironmentSetupForTests {
 
 	public static String loadFile(String filename) throws IOException {
 		return FileUtils.readFileToString(new File(filename), Charset.defaultCharset());
+	}
+
+	public static Instance createSimpleInstance(AmazonEC2Client ec2Client) {		
+		RunInstancesRequest runInstancesRequest = new RunInstancesRequest(EnvironmentSetupForTests.AMI_FOR_INSTANCE, 1, 1).
+				withInstanceType(InstanceType.T1Micro);
+		RunInstancesResult instancesResults = ec2Client.runInstances(runInstancesRequest);
+		List<Instance> instances = instancesResults.getReservation().getInstances();	
+		return instances.get(0);
 	}
 
 }

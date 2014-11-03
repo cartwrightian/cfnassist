@@ -287,7 +287,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(stack);
 		
 		replayAll();
-		StackNameAndId result = repository.getStackId(stackName);
+		StackNameAndId result = repository.getStackNameAndId(stackName);
 		assertEquals(stackName, result.getStackName());
 		assertEquals(stackId, result.getStackId());
 		verifyAll();

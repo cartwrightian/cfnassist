@@ -245,7 +245,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	private void setDeleteExpectations(String stackName,
 			StackNameAndId stackNameAndId) throws WrongNumberOfStacksException,
 			InterruptedException, NotReadyException, WrongStackStatus {
-		EasyMock.expect(cfnRepository.getStackId(stackName)).andReturn(stackNameAndId);
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
 		cfnRepository.deleteStack(stackName);
 		EasyMock.expectLastCall();
 		EasyMock.expect(monitor.waitForDeleteFinished(stackNameAndId)).andReturn(StackStatus.DELETE_COMPLETE.toString());

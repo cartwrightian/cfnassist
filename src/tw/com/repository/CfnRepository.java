@@ -200,9 +200,8 @@ public class CfnRepository implements CloudFormRepository {
 		return stackStatus;
 	}
 
-	// TODO rename
 	@Override
-	public StackNameAndId getStackId(String stackName)
+	public StackNameAndId getStackNameAndId(String stackName)
 			throws WrongNumberOfStacksException {
 		Stack stack = formationClient.describeStack(stackName);
 		String id = stack.getStackId();

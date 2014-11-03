@@ -32,7 +32,7 @@ public interface StackRepository {
 	//public abstract boolean stackExists(String stackName);
 	public abstract String getStackStatus(String stackName);
 
-	public abstract StackNameAndId getStackId(String stackName) throws WrongNumberOfStacksException;
+	public abstract StackNameAndId getStackNameAndId(String stackName) throws WrongNumberOfStacksException;
 	public abstract Stack getStack(String stackName) throws WrongNumberOfStacksException;
 
 	public abstract Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException;

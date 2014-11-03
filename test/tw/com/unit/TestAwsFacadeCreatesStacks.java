@@ -132,7 +132,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
-		EasyMock.expect(cfnRepository.getStackId(stackName)).andReturn(stackNameAndId);
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
 		
 		replayAll();
 		try {
@@ -160,7 +160,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_COMPLETE.toString());	
-		EasyMock.expect(cfnRepository.getStackId(stackName)).andReturn(stackNameAndId);
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
 		cfnRepository.deleteStack(stackName);
 		EasyMock.expectLastCall();
 		// now proceed with creation
@@ -190,7 +190,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_IN_PROGRESS.toString());	
-		EasyMock.expect(cfnRepository.getStackId(stackName)).andReturn(stackNameAndId);
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForRollbackComplete(stackNameAndId)).andReturn(StackStatus.ROLLBACK_COMPLETE.toString());
 		cfnRepository.deleteStack(stackName);
 		EasyMock.expectLastCall();

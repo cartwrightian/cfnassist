@@ -158,10 +158,10 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
 
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
-		EasyMock.expect(cfnRepository.getStackId(stackB)).andReturn(stackBNameAndId);
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackB)).andReturn(stackBNameAndId);
 		cfnRepository.deleteStack(stackB);
 		EasyMock.expectLastCall();
-		EasyMock.expect(cfnRepository.getStackId(stackA)).andReturn(stackANameAndId);
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackA)).andReturn(stackANameAndId);
 		cfnRepository.deleteStack(stackA);
 		EasyMock.expectLastCall();
 		EasyMock.expect(vpcRepository.getSetsDeltaIndexFor(projectAndEnv)).

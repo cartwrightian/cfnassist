@@ -12,9 +12,6 @@ import org.junit.Test;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.InstanceType;
-import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerRequest;
@@ -41,7 +38,7 @@ public class TestLoadBalancerClient  {
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		
 		createLoadBalancer();
-		createInstance();
+		instance = EnvironmentSetupForTests.createSimpleInstance(ec2Client);
 	}
 	
 	@AfterClass
@@ -116,14 +113,6 @@ public class TestLoadBalancerClient  {
 	
 	private static void deleteLoadBalancer() {
 		elbClient.deleteLoadBalancer(new DeleteLoadBalancerRequest(LB_NAME));
-	}
-	
-	private static void createInstance() {
-		RunInstancesRequest runInstancesRequest = new RunInstancesRequest(EnvironmentSetupForTests.AMI_FOR_INSTANCE, 1, 1).
-				withInstanceType(InstanceType.T1Micro);
-		RunInstancesResult instancesResults = ec2Client.runInstances(runInstancesRequest);
-		List<Instance> instances = instancesResults.getReservation().getInstances();	
-		instance = instances.get(0);
 	}
 
 	private static void deleteInstance() {
