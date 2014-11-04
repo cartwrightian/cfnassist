@@ -16,6 +16,7 @@ import tw.com.entity.StackNotification;
 import tw.com.exceptions.FailedToCreateQueueException;
 import tw.com.exceptions.NotReadyException;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Condition;
 import com.amazonaws.auth.policy.Policy;
@@ -136,7 +137,7 @@ public class SNSEventSource implements NotificationProvider {
 				logger.info("Received notification for stackid: " + notification.getStackId());
 				notifications.add(notification);
 			} catch (ArrayIndexOutOfBoundsException | IOException e) {
-				logger.warn("unable to parse message: " +msg, e);
+				logger.warn("unable to parse message: " +msg);
 			} 
 			deleteMessage(msg);
 		}	
@@ -234,6 +235,10 @@ public class SNSEventSource implements NotificationProvider {
 			catch(QueueDeletedRecentlyException exception) {
 				logger.warn("Queue recently deleted, must pause before retry. " + exception.toString());
 				// aws docs say have to wait >60 seconds before trying again
+				Thread.sleep(QUEUE_RETRY_INTERNAL_MILLIS);
+			}
+			catch(AmazonServiceException serviceException) {
+				logger.error("Caught service exception during queue creation: " +serviceException.getErrorMessage());
 				Thread.sleep(QUEUE_RETRY_INTERNAL_MILLIS);
 			}
 		}

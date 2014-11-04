@@ -9,7 +9,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidParameterException;
@@ -25,9 +24,9 @@ public class ParameterFactory {
 	public ParameterFactory(List<PopulatesParameters> populators) {
 		this.populators = populators;
 		reservedParameters = new LinkedList<String>();
-		reservedParameters.add(AwsFacade.PARAMETER_ENV);
-		reservedParameters.add(AwsFacade.PARAMETER_VPC);
-		reservedParameters.add(AwsFacade.PARAMETER_BUILD_NUMBER);
+		reservedParameters.add(PopulatesParameters.PARAMETER_ENV);
+		reservedParameters.add(PopulatesParameters.PARAMETER_VPC);
+		reservedParameters.add(PopulatesParameters.PARAMETER_BUILD_NUMBER);
 	}
 
 	public Collection<Parameter> createRequiredParameters(ProjectAndEnv projAndEnv, Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters)

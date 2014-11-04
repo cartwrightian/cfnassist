@@ -3,7 +3,6 @@ package tw.com.parameters;
 import java.util.Collection;
 import java.util.List;
 
-import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -20,10 +19,10 @@ public class CfnBuiltInParams extends PopulatesParameters {
 	@Override
 	public void addParameters(Collection<Parameter> result,
 			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) {
-		addParameterTo(result, declaredParameters, AwsFacade.PARAMETER_ENV, projAndEnv.getEnv());
-		addParameterTo(result, declaredParameters, AwsFacade.PARAMETER_VPC, vpcId);
+		addParameterTo(result, declaredParameters, PopulatesParameters.PARAMETER_ENV, projAndEnv.getEnv());
+		addParameterTo(result, declaredParameters, PopulatesParameters.PARAMETER_VPC, vpcId);
 		if (projAndEnv.hasBuildNumber()) {
-			addParameterTo(result, declaredParameters, AwsFacade.PARAMETER_BUILD_NUMBER, projAndEnv.getBuildNumber());
+			addParameterTo(result, declaredParameters, PopulatesParameters.PARAMETER_BUILD_NUMBER, projAndEnv.getBuildNumber());
 		}	
 	}
 }

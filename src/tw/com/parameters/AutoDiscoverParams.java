@@ -10,7 +10,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tw.com.AwsFacade;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
@@ -63,7 +62,7 @@ public class AutoDiscoverParams extends PopulatesParameters {
 	}
 	
 	private boolean isBuiltInParamater(String name) {
-		boolean result = name.equals(AwsFacade.PARAMETER_ENV);
+		boolean result = name.equals(PopulatesParameters.PARAMETER_ENV);
 		if (result) {
 			logger.info("Found built in parameter");
 		}
@@ -74,12 +73,12 @@ public class AutoDiscoverParams extends PopulatesParameters {
 		if (description==null) {
 			return false;
 		}
-		return description.startsWith(AwsFacade.PARAM_PREFIX);
+		return description.startsWith(PopulatesParameters.PARAM_PREFIX);
 	}
 	
 	private void populateParameter(ProjectAndEnv projectAndEnv, List<Parameter> matches, String parameterName, String parameterDescription, List<TemplateParameter> declaredParameters)
 			throws InvalidParameterException, CannotFindVpcException {
-		if (parameterDescription.equals(AwsFacade.CFN_TAG_ON_OUTPUT)) {
+		if (parameterDescription.equals(PopulatesParameters.CFN_TAG_ON_OUTPUT)) {
 			populateParameterFromVPCTag(projectAndEnv, matches, parameterName, parameterDescription, declaredParameters);
 		} else {
 			populateParameterFromPhysicalID(projectAndEnv.getEnvTag(), matches, parameterName,
@@ -106,7 +105,7 @@ public class AutoDiscoverParams extends PopulatesParameters {
 			String parameterDescription,
 			List<TemplateParameter> declaredParameters)
 			throws InvalidParameterException {
-		String logicalId = parameterDescription.substring(AwsFacade.PARAM_PREFIX.length());
+		String logicalId = parameterDescription.substring(PopulatesParameters.PARAM_PREFIX.length());
 		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
 		String value = cfnRepository.findPhysicalIdByLogicalId(envTag, logicalId);
 		if (value==null) {

@@ -59,13 +59,6 @@ public class AwsFacade {
 	public static final String COMMENT_TAG = "CFN_COMMENT";
 	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
 	
-	// TODO move these into ParameterFactor
-	public static final String PARAMETER_ENV = "env";
-	public static final String PARAMETER_VPC = "vpc";
-	public static final String PARAMETER_BUILD_NUMBER = "build";
-	public static final String PARAM_PREFIX = "::";
-	public static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
-	
 	private static final String PARAMETER_STACKNAME = "stackname";
 	
 	private VpcRepository vpcRepository;
@@ -74,14 +67,10 @@ public class AwsFacade {
 
 	private String commentTag="";
 
-	//private ParameterFactory parameterFactory;
-
 	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
-		
-		//this.parameterFactory = new ParameterFactory(vpcRepository, cfnRepository);
 	}
 	
 	public void setCommentTag(String commentTag) {
@@ -210,7 +199,7 @@ public class AwsFacade {
 	}
 
 	private boolean shouldCreateTag(String description) {
-		return description.equals(CFN_TAG_ON_OUTPUT);
+		return description.equals(PopulatesParameters.CFN_TAG_ON_OUTPUT);
 	}
 
 	private void handlePossibleRollback(String stackName)

@@ -13,6 +13,7 @@ import org.junit.Test;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
 import tw.com.EnvironmentSetupForTests;
@@ -71,7 +72,10 @@ public class TestSNSEventSource {
 		anotherEventSource.init();
 		// should be able to send via sns and then receive from sqs if everything worked ok
 		snsClient.publish(anotherEventSource.getSNSArn(), "aMessage");
-		ReceiveMessageResult result = sqsClient.receiveMessage(anotherEventSource.getQueueURL());
+		ReceiveMessageRequest request = new ReceiveMessageRequest().
+				withQueueUrl(anotherEventSource.getQueueURL()).
+				withWaitTimeSeconds(10);
+		ReceiveMessageResult result = sqsClient.receiveMessage(request);
 		assertTrue(result.getMessages().size()>0);
 	}
 	

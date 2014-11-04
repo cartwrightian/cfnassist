@@ -18,6 +18,12 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 public abstract class PopulatesParameters {
 	private static final Logger logger = LoggerFactory.getLogger(PopulatesParameters.class);
 
+	public static final String PARAMETER_ENV = "env";
+	public static final String PARAMETER_VPC = "vpc";
+	public static final String PARAMETER_BUILD_NUMBER = "build";
+	public static final String PARAM_PREFIX = "::";
+	public static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
+
 	abstract void addParameters(Collection<Parameter> result,
 			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws FileNotFoundException, CannotFindVpcException, IOException, InvalidParameterException;
 	
