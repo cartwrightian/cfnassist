@@ -57,7 +57,7 @@ public class SNSEventSource implements NotificationProvider {
 	private static final String QUEUE_ARN_KEY = "QueueArn";
 	private static final String QUEUE_POLICY_KEY = "Policy";
 	private static final int QUEUE_CREATE_RETRYS = 3;
-	private static final long QUEUE_RETRY_INTERNAL_MILLIS = 65 * 1000;
+	private static final long QUEUE_RETRY_INTERNAL_MILLIS = 70 * 1000;
 	private Collection<String> attributeNames = new LinkedList<String>();
 	
 	private AmazonSNSClient snsClient;

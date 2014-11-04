@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.entity.DeletionsPending;
-import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
@@ -32,6 +31,10 @@ import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.parameters.AutoDiscoverParams;
+import tw.com.parameters.CfnBuiltInParams;
+import tw.com.parameters.ParameterFactory;
+import tw.com.parameters.PopulatesParameters;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.VpcRepository;
 
@@ -56,30 +59,33 @@ public class AwsFacade {
 	public static final String COMMENT_TAG = "CFN_COMMENT";
 	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
 	
-	private static final String PARAMETER_ENV = "env";
-	private static final String PARAMETER_VPC = "vpc";
-	private static final String PARAMETER_BUILD_NUMBER = "build";
-	private static final String PARAM_PREFIX = "::";
-	private static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
+	// TODO move these into ParameterFactor
+	public static final String PARAMETER_ENV = "env";
+	public static final String PARAMETER_VPC = "vpc";
+	public static final String PARAMETER_BUILD_NUMBER = "build";
+	public static final String PARAM_PREFIX = "::";
+	public static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
 	
 	private static final String PARAMETER_STACKNAME = "stackname";
 	
-	private List<String> reservedParameters;
 	private VpcRepository vpcRepository;
 	private CloudFormRepository cfnRepository;
 	private MonitorStackEvents monitor;
 
 	private String commentTag="";
 
+	//private ParameterFactory parameterFactory;
+
 	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
-
-		reservedParameters = new LinkedList<String>();
-		reservedParameters.add(PARAMETER_ENV);
-		reservedParameters.add(PARAMETER_VPC);
-		reservedParameters.add(PARAMETER_BUILD_NUMBER);
+		
+		//this.parameterFactory = new ParameterFactory(vpcRepository, cfnRepository);
+	}
+	
+	public void setCommentTag(String commentTag) {
+		this.commentTag = commentTag;		
 	}
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
@@ -111,14 +117,18 @@ public class AwsFacade {
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
 
+		List<PopulatesParameters> populators = new LinkedList<PopulatesParameters>();
+		populators.add(new CfnBuiltInParams(vpcForEnv.getVpcId()));
+		populators.add(new AutoDiscoverParams(file, vpcRepository, cfnRepository));	
+		ParameterFactory parameterFactory= new ParameterFactory(populators);
+		
 		String contents = loadFileContents(file);
 		
 		if (isDelta(file)) {
-			return updateStack(file, projAndEnv, userParameters, vpcForEnv,
-					declaredParameters, contents);
+			logger.info("Request to update a stack, filename is " + file.getAbsolutePath());
+			return updateStack(projAndEnv, userParameters, declaredParameters, contents, parameterFactory);
 		} else {
-			return createStack(file, projAndEnv, userParameters, vpcForEnv,
-					declaredParameters, contents);
+			return createStack(file, projAndEnv, userParameters, declaredParameters, contents, parameterFactory);
 		}	
 	}
 
@@ -126,13 +136,10 @@ public class AwsFacade {
 		return (file.getName().contains(DELTA_EXTENSTION));
 	}
 
-	private StackNameAndId updateStack(File file, ProjectAndEnv projAndEnv,
-			Collection<Parameter> userParameters, Vpc vpcForEnv,
-			List<TemplateParameter> declaredParameters, String contents) throws FileNotFoundException, InvalidParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
-		logger.info("Request to update a stack, filename is " + file.getAbsolutePath());
+	private StackNameAndId updateStack(ProjectAndEnv projAndEnv,
+			Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory) throws FileNotFoundException, InvalidParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
 		
-		String vpcId = vpcForEnv.getVpcId();
-		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId );
+		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters);
 		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
 		
 		StackNameAndId id = cfnRepository.updateStack(contents, parameters, monitor, stackName);
@@ -166,8 +173,8 @@ public class AwsFacade {
 	}
 
 	private StackNameAndId createStack(File file, ProjectAndEnv projAndEnv,
-			Collection<Parameter> userParameters, Vpc vpcForEnv,
-			List<TemplateParameter> declaredParameters, String contents)
+			Collection<Parameter> userParameters,
+			List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory)
 			throws WrongNumberOfStacksException, NotReadyException,
 			WrongStackStatus, InterruptedException, DuplicateStackException,
 			InvalidParameterException, FileNotFoundException, IOException, CannotFindVpcException {
@@ -175,11 +182,9 @@ public class AwsFacade {
 		logger.info("Stackname is " + stackName);
 		
 		handlePossibleRollback(stackName);
-		
-		String vpcId = vpcForEnv.getVpcId();
-		
-		Collection<Parameter> parameters = createRequiredParameters(file, projAndEnv, userParameters, declaredParameters, vpcId);
-		
+						
+		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters);
+
 		StackNameAndId id = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, commentTag);
 		
 		try {
@@ -206,22 +211,6 @@ public class AwsFacade {
 
 	private boolean shouldCreateTag(String description) {
 		return description.equals(CFN_TAG_ON_OUTPUT);
-	}
-
-	private Collection<Parameter> createRequiredParameters(File file,
-			ProjectAndEnv projAndEnv, Collection<Parameter> userParameters,
-			List<TemplateParameter> declaredParameters, String vpcId)
-			throws InvalidParameterException, FileNotFoundException,
-			IOException, CannotFindVpcException {
-		Collection<Parameter> parameters  = new LinkedList<Parameter>();
-		parameters.addAll(userParameters);
-		
-		checkNoClashWithBuiltInParameters(parameters);
-		addBuiltInParameters(parameters, declaredParameters, projAndEnv, vpcId);
-		addAutoDiscoveryParameters(projAndEnv, file, parameters, declaredParameters);
-		
-		logAllParameters(parameters);
-		return parameters;
 	}
 
 	private void handlePossibleRollback(String stackName)
@@ -251,25 +240,6 @@ public class AwsFacade {
 		return false;
 	}
 
-	private void logAllParameters(Collection<Parameter> parameters) {
-		logger.info("Invoking with following parameters");
-		for(Parameter param : parameters) {
-			logger.info(String.format("Parameter key='%s' value='%s'", param.getParameterKey(), param.getParameterValue()));
-		}
-	}
-	
-	public void setCommentTag(String commentTag) {
-		this.commentTag = commentTag;		
-	}
-
-	private void addBuiltInParameters(Collection<Parameter> parameters, List<TemplateParameter> declared, ProjectAndEnv projAndEnv, String vpcId) {
-		addParameterTo(parameters, declared, PARAMETER_ENV, projAndEnv.getEnv());
-		addParameterTo(parameters, declared, PARAMETER_VPC, vpcId);
-		if (projAndEnv.hasBuildNumber()) {
-			addParameterTo(parameters, declared, PARAMETER_BUILD_NUMBER, projAndEnv.getBuildNumber());
-		}
-	}
-
 	private Vpc findVpcForEnv(ProjectAndEnv projAndEnv) throws InvalidParameterException {
 		Vpc vpcForEnv = vpcRepository.getCopyOfVpc(projAndEnv);
 		if (vpcForEnv==null) {
@@ -280,41 +250,6 @@ public class AwsFacade {
 		return vpcForEnv;
 	}
 
-	private void addAutoDiscoveryParameters(ProjectAndEnv projectAndEnv, File file, 
-			Collection<Parameter> parameters, List<TemplateParameter> declaredParameters) throws FileNotFoundException,
-			IOException, InvalidParameterException, CannotFindVpcException {
-		List<Parameter> autoPopulatedParametes = this.fetchAutopopulateParametersFor(file, projectAndEnv, declaredParameters);
-		for (Parameter autoPop : autoPopulatedParametes) {
-			parameters.add(autoPop);
-		}
-	}
-
-	private void addParameterTo(Collection<Parameter> parameters, List<TemplateParameter> declared, String parameterName, String parameterValue) {
-		boolean isDeclared = false;
-		for(TemplateParameter declaration : declared) {
-			isDeclared = (declaration.getParameterKey().equals(parameterName));
-			if (isDeclared==true) break;
-		}
-		if (!isDeclared) {
-			logger.info(String.format("Not populating parameter %s as it is not declared in the json file", parameterName));
-		} else {
-			logger.info(String.format("Setting %s parameter to %s", parameterName, parameterValue));
-			Parameter parameter = new Parameter();
-			parameter.setParameterKey(parameterName);
-			parameter.setParameterValue(parameterValue);
-			parameters.add(parameter);
-		}
-	}
-
-	private void checkNoClashWithBuiltInParameters(Collection<Parameter> parameters) throws InvalidParameterException {
-		for(Parameter param : parameters) {
-			String parameterKey = param.getParameterKey();
-			if (reservedParameters.contains(parameterKey)) {
-				logger.error("Attempt to overide built in and autoset parameter called " + parameterKey);
-				throw new InvalidParameterException(parameterKey);
-			}
-		}	
-	}
 
 	public String createStackName(File file, ProjectAndEnv projAndEnv) {
 		// note: aws only allows [a-zA-Z][-a-zA-Z0-9]* in stacknames
@@ -365,81 +300,6 @@ public class AwsFacade {
 		return FileUtils.readFileToString(file, Charset.defaultCharset());
 	}
 
-	public List<Parameter> fetchAutopopulateParametersFor(File file, ProjectAndEnv projectAndEnv, List<TemplateParameter> declaredParameters) throws FileNotFoundException, IOException, InvalidParameterException, CannotFindVpcException {
-		logger.info(String.format("Discover and populate parameters for %s and %s", file.getAbsolutePath(), projectAndEnv));
-		List<Parameter> matches = new LinkedList<Parameter>();
-		for(TemplateParameter templateParam : declaredParameters) {
-			String name = templateParam.getParameterKey();
-			if (isBuiltInParamater(name))
-			{
-				continue;
-			}
-			logger.info("Checking if parameter should be auto-populated from an existing resource, param name is " + name);
-			// TODO find way to respect templateParam.getNoEcho()
-			String description = templateParam.getDescription();
-			if (shouldPopulateFor(description)) {
-				populateParameter(projectAndEnv, matches, name, description, declaredParameters);
-			}
-		}
-		return matches;
-	}
-
-	private boolean isBuiltInParamater(String name) {
-		boolean result = name.equals(PARAMETER_ENV);
-		if (result) {
-			logger.info("Found built in parameter");
-		}
-		return result;
-	}
-
-	private void populateParameter(ProjectAndEnv projectAndEnv, List<Parameter> matches, String parameterName, String parameterDescription, List<TemplateParameter> declaredParameters)
-			throws InvalidParameterException, CannotFindVpcException {
-		if (parameterDescription.equals(CFN_TAG_ON_OUTPUT)) {
-			populateParameterFromVPCTag(projectAndEnv, matches, parameterName, parameterDescription, declaredParameters);
-		} else {
-			populateParameterFromPhysicalID(projectAndEnv.getEnvTag(), matches, parameterName,
-					parameterDescription, declaredParameters);
-		}	
-	}
-
-	private void populateParameterFromVPCTag(ProjectAndEnv projectAndEnv,
-			List<Parameter> matches, String parameterName,
-			String parameterDescription,
-			List<TemplateParameter> declaredParameters) throws CannotFindVpcException, InvalidParameterException {
-		logger.info("Attempt to find VPC matching name: " + parameterName);
-		String value = vpcRepository.getVpcTag(parameterName, projectAndEnv);
-		if (value==null) {
-			String msg = String.format("Failed to find VPC TAG to matching: %s", parameterName);
-			logger.error(msg);
-			throw new InvalidParameterException(msg);
-		}
-		addParameterTo(matches, declaredParameters, parameterName, value);		
-	}
-
-	private void populateParameterFromPhysicalID(EnvironmentTag envTag,
-			List<Parameter> matches, String parameterName,
-			String parameterDescription,
-			List<TemplateParameter> declaredParameters)
-			throws InvalidParameterException {
-		String logicalId = parameterDescription.substring(PARAM_PREFIX.length());
-		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
-		String value = cfnRepository.findPhysicalIdByLogicalId(envTag, logicalId);
-		if (value==null) {
-			String msg = String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" , logicalId, parameterName);
-			logger.error(msg);
-			throw new InvalidParameterException(msg);
-		}
-		logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, parameterName));
-		addParameterTo(matches, declaredParameters, parameterName, value);
-	}
-
-	private boolean shouldPopulateFor(String description) {
-		if (description==null) {
-			return false;
-		}
-		return description.startsWith(PARAM_PREFIX);
-	}
-	
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv) throws InvalidParameterException,
 			FileNotFoundException, IOException, CfnAssistException,

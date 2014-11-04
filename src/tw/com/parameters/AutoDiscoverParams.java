@@ -1,0 +1,122 @@
+package tw.com.parameters;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import tw.com.AwsFacade;
+import tw.com.entity.EnvironmentTag;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.InvalidParameterException;
+import tw.com.repository.CloudFormRepository;
+import tw.com.repository.VpcRepository;
+
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
+
+public class AutoDiscoverParams extends PopulatesParameters {
+	private static final Logger logger = LoggerFactory.getLogger(AutoDiscoverParams.class);
+
+	private File templateFile;
+	private VpcRepository vpcRepository;
+	private CloudFormRepository cfnRepository;
+
+	public AutoDiscoverParams(File file,VpcRepository vpcRepository,CloudFormRepository cfnRepository) {
+		this.vpcRepository = vpcRepository;
+		this.cfnRepository = cfnRepository;
+		this.templateFile = file;
+	}
+
+	@Override
+	public void addParameters(Collection<Parameter> result,
+			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws FileNotFoundException, CannotFindVpcException, IOException, InvalidParameterException {
+		List<Parameter> autoPopulatedParametes = fetchAutopopulateParametersFor(templateFile, projAndEnv, declaredParameters);
+		for (Parameter autoPop : autoPopulatedParametes) {
+			result.add(autoPop);
+		}	
+	}
+	
+	private List<Parameter> fetchAutopopulateParametersFor(File file, ProjectAndEnv projectAndEnv, List<TemplateParameter> declaredParameters) throws FileNotFoundException, IOException, InvalidParameterException, CannotFindVpcException {
+		logger.info(String.format("Discover and populate parameters for %s and %s", file.getAbsolutePath(), projectAndEnv));
+		List<Parameter> matches = new LinkedList<Parameter>();
+		for(TemplateParameter templateParam : declaredParameters) {
+			String name = templateParam.getParameterKey();
+			if (isBuiltInParamater(name))
+			{
+				continue;
+			}
+			logger.info("Checking if parameter should be auto-populated from an existing resource, param name is " + name);
+			// TODO find way to respect templateParam.getNoEcho()
+			String description = templateParam.getDescription();
+			if (shouldPopulateFor(description)) {
+				populateParameter(projectAndEnv, matches, name, description, declaredParameters);
+			}
+		}
+		return matches;
+	}
+	
+	private boolean isBuiltInParamater(String name) {
+		boolean result = name.equals(AwsFacade.PARAMETER_ENV);
+		if (result) {
+			logger.info("Found built in parameter");
+		}
+		return result;
+	}
+
+	private boolean shouldPopulateFor(String description) {
+		if (description==null) {
+			return false;
+		}
+		return description.startsWith(AwsFacade.PARAM_PREFIX);
+	}
+	
+	private void populateParameter(ProjectAndEnv projectAndEnv, List<Parameter> matches, String parameterName, String parameterDescription, List<TemplateParameter> declaredParameters)
+			throws InvalidParameterException, CannotFindVpcException {
+		if (parameterDescription.equals(AwsFacade.CFN_TAG_ON_OUTPUT)) {
+			populateParameterFromVPCTag(projectAndEnv, matches, parameterName, parameterDescription, declaredParameters);
+		} else {
+			populateParameterFromPhysicalID(projectAndEnv.getEnvTag(), matches, parameterName,
+					parameterDescription, declaredParameters);
+		}	
+	}
+	
+	private void populateParameterFromVPCTag(ProjectAndEnv projectAndEnv,
+			List<Parameter> matches, String parameterName,
+			String parameterDescription,
+			List<TemplateParameter> declaredParameters) throws CannotFindVpcException, InvalidParameterException {
+		logger.info("Attempt to find VPC matching name: " + parameterName);
+		String value = vpcRepository.getVpcTag(parameterName, projectAndEnv);
+		if (value==null) {
+			String msg = String.format("Failed to find VPC TAG to matching: %s", parameterName);
+			logger.error(msg);
+			throw new InvalidParameterException(msg);
+		}
+		addParameterTo(matches, declaredParameters, parameterName, value);		
+	}
+
+	private void populateParameterFromPhysicalID(EnvironmentTag envTag,
+			List<Parameter> matches, String parameterName,
+			String parameterDescription,
+			List<TemplateParameter> declaredParameters)
+			throws InvalidParameterException {
+		String logicalId = parameterDescription.substring(AwsFacade.PARAM_PREFIX.length());
+		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
+		String value = cfnRepository.findPhysicalIdByLogicalId(envTag, logicalId);
+		if (value==null) {
+			String msg = String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" , logicalId, parameterName);
+			logger.error(msg);
+			throw new InvalidParameterException(msg);
+		}
+		logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, parameterName));
+		addParameterTo(matches, declaredParameters, parameterName, value);
+	}
+	
+
+}
