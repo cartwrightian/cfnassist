@@ -74,6 +74,24 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
+	public void shouldApplySimpleTemplateParametersWithOutDescriptions() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+		String filename = FilesForTesting.SIMPLE_STACK;
+		String stackName = "CfnAssistTestsimpleStack";
+		String contents = EnvironmentSetupForTests.loadFile(filename);
+		
+		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
+		templateParameters.add(new TemplateParameter().withParameterKey("noDescription").withDefaultValue("defaultValue"));
+		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
+		
+		StackNameAndId stackNameAndId = SetCreateExpectations(stackName, contents, templateParameters, creationParameters);
+		
+		replayAll();
+		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
+		assertEquals(result, stackNameAndId);
+		verifyAll();
+	}
+	
+	@Test
 	public void shouldApplySimpleTemplateOutputParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
@@ -245,6 +263,29 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		replayAll();
 		List<Parameter> userParams = new LinkedList<Parameter>();
 		addParam(userParams, "subnet", "subnetValue");
+		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
+		assertEquals(result, stackNameAndId);
+		verifyAll();
+	}
+	
+	///////
+	// needs environmental variable set to testEnvVar set to testValue
+	///////
+	@Test
+	public void shouldApplySimpleTemplateEnvVarParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+		String filename = FilesForTesting.SIMPLE_STACK;
+		String stackName = "CfnAssistTestsimpleStack";
+		String contents = EnvironmentSetupForTests.loadFile(filename);
+		
+		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
+		templateParameters.add(new TemplateParameter().withParameterKey("testEnvVar").withDescription("::ENV"));
+		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
+		addParam(creationParameters, "testEnvVar", "testValue");
+		
+		StackNameAndId stackNameAndId = SetCreateExpectations(stackName, contents, templateParameters, creationParameters);
+		
+		replayAll();
+		List<Parameter> userParams = new LinkedList<Parameter>();
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
 		assertEquals(result, stackNameAndId);
 		verifyAll();

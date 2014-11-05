@@ -23,11 +23,12 @@ public abstract class PopulatesParameters {
 	public static final String PARAMETER_BUILD_NUMBER = "build";
 	public static final String PARAM_PREFIX = "::";
 	public static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
+	public static final String ENV_TAG = PARAM_PREFIX+"ENV";
 
 	abstract void addParameters(Collection<Parameter> result,
 			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws FileNotFoundException, CannotFindVpcException, IOException, InvalidParameterException;
 	
-	public void addParameterTo(Collection<Parameter> parameters, List<TemplateParameter> declared, String parameterName, String parameterValue) {
+	protected void addParameterTo(Collection<Parameter> parameters, List<TemplateParameter> declared, String parameterName, String parameterValue) {
 		boolean isDeclared = false;
 		for(TemplateParameter declaration : declared) {
 			isDeclared = (declaration.getParameterKey().equals(parameterName));

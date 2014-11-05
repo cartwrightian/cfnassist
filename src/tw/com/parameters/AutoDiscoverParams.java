@@ -73,7 +73,7 @@ public class AutoDiscoverParams extends PopulatesParameters {
 		if (description==null) {
 			return false;
 		}
-		return description.startsWith(PopulatesParameters.PARAM_PREFIX);
+		return description.startsWith(PopulatesParameters.PARAM_PREFIX) && (!description.equals(PopulatesParameters.ENV_TAG));
 	}
 	
 	private void populateParameter(ProjectAndEnv projectAndEnv, List<Parameter> matches, String parameterName, String parameterDescription, List<TemplateParameter> declaredParameters)

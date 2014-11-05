@@ -97,7 +97,9 @@
 		<attribute name="classes"/>
 		<sequential>
 			<mkdir dir="${junit.output.dir}"/>
-	        <junit fork="yes" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
+	        <junit fork="no" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
+				<!-- next line to support the environmental variable parameter populator tests -->
+				<env key="testEnvVar" value="testValue"/>
 	            <formatter type="xml"/>
 	            <classpath refid="cfnassist.classpath"/>
 				<batchtest fork="yes" todir="${junit.output.dir}">

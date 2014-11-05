@@ -33,6 +33,7 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.parameters.AutoDiscoverParams;
 import tw.com.parameters.CfnBuiltInParams;
+import tw.com.parameters.EnvVarParams;
 import tw.com.parameters.ParameterFactory;
 import tw.com.parameters.PopulatesParameters;
 import tw.com.repository.CloudFormRepository;
@@ -109,6 +110,7 @@ public class AwsFacade {
 		List<PopulatesParameters> populators = new LinkedList<PopulatesParameters>();
 		populators.add(new CfnBuiltInParams(vpcForEnv.getVpcId()));
 		populators.add(new AutoDiscoverParams(file, vpcRepository, cfnRepository));	
+		populators.add(new EnvVarParams());
 		ParameterFactory parameterFactory= new ParameterFactory(populators);
 		
 		String contents = loadFileContents(file);
