@@ -29,7 +29,6 @@ public interface StackRepository {
 			throws WrongNumberOfStacksException, InterruptedException;
 
 	public abstract List<StackEvent> getStackEvents(String stackName);
-	//public abstract boolean stackExists(String stackName);
 	public abstract String getStackStatus(String stackName);
 
 	public abstract StackNameAndId getStackNameAndId(String stackName) throws WrongNumberOfStacksException;

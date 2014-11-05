@@ -52,7 +52,6 @@ public class AutoDiscoverParams extends PopulatesParameters {
 				continue;
 			}
 			logger.info("Checking if parameter should be auto-populated from an existing resource, param name is " + name);
-			// TODO find way to respect templateParam.getNoEcho()
 			String description = templateParam.getDescription();
 			if (shouldPopulateFor(description)) {
 				populateParameter(projectAndEnv, matches, name, description, declaredParameters);

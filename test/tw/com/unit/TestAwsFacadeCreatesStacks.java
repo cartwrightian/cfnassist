@@ -291,6 +291,30 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		verifyAll();
 	}
 	
+	///////
+	// needs environmental variable set to testEnvVar set to testValue
+	///////
+	@Test
+	public void shouldApplySimpleTemplateEnvVarParametersNoEchoSet() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+		String filename = FilesForTesting.SIMPLE_STACK;
+		String stackName = "CfnAssistTestsimpleStack";
+		String contents = EnvironmentSetupForTests.loadFile(filename);
+		
+		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
+		templateParameters.add(new TemplateParameter().withParameterKey("testEnvVar").
+				withDescription("::ENV").withNoEcho(true));
+		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
+		addParam(creationParameters, "testEnvVar", "testValue");
+		
+		StackNameAndId stackNameAndId = SetCreateExpectations(stackName, contents, templateParameters, creationParameters);
+		
+		replayAll();
+		List<Parameter> userParams = new LinkedList<Parameter>();
+		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
+		assertEquals(result, stackNameAndId);
+		verifyAll();
+	}
+	
 	@Test
 	public void shouldApplyAutoDiscoveryTemplateInputParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;

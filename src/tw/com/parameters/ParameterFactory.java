@@ -41,15 +41,33 @@ public class ParameterFactory {
 			populator.addParameters(result, declaredParameters, projAndEnv);
 		}
 		
-		logAllParameters(result);
+		logAllParameters(result, declaredParameters);
 		return result;
 	}
 	
-	private void logAllParameters(Collection<Parameter> parameters) {
+	private void logAllParameters(Collection<Parameter> parameters, List<TemplateParameter> declaredParameters) {
 		logger.info("Invoking with following parameters");
 		for(Parameter param : parameters) {
-			logger.info(String.format("Parameter key='%s' value='%s'", param.getParameterKey(), param.getParameterValue()));
+			if (noEchoIsSet(param, declaredParameters)) {
+				logger.info(String.format("Parameter key='%s' value=<NoEchoIsSet>", param.getParameterKey()));				
+			}
+			else {
+				logger.info(String.format("Parameter key='%s' value='%s'", param.getParameterKey(), param.getParameterValue()));
+			}			
 		}
+	}
+
+	private boolean noEchoIsSet(Parameter param,
+			List<TemplateParameter> declaredParameters) {
+		for(TemplateParameter declared : declaredParameters) {
+			if (declared.getParameterKey().equals(param.getParameterKey())) {
+				if (declared.getNoEcho()==null) {
+					return false; 
+				}
+				return declared.getNoEcho();
+			}
+		}
+		return false;
 	}
 
 	private void checkNoClashWithBuiltInParameters(Collection<Parameter> parameters) throws InvalidParameterException {

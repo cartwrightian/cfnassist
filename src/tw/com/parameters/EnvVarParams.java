@@ -53,7 +53,7 @@ public class EnvVarParams extends PopulatesParameters {
 			String value = System.getenv(name);
 			if (value==null) {
 				logger.error("Environment variable not set, name was " + name);
-				throw new tw.com.exceptions.InvalidParameterException(name);
+				throw new InvalidParameterException(name);
 			}
 			result.add(new Parameter().withParameterKey(name).withParameterValue(value));
 		}
