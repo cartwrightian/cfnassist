@@ -5,12 +5,12 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 
 Current Release
 ---------------
-[Download Currnet Release version 1.0.36](https://cfnassist-release.s3-eu-west-1.amazonaws.com/36/cfnassit-1.0.36.zip)
+[Download Currnet Release version 1.0.61](https://cfnassist-release.s3-eu-west-1.amazonaws.com/61/cfnassit-1.0.61.zip)
 
 Old Releases
 ------------
+[Version 1.0.36](https://cfnassist-release.s3-eu-west-1.amazonaws.com/36/cfnassit-1.0.36.zip)
 [Version 1.0.33](https://cfnassist-release.s3-eu-west-1.amazonaws.com/33/cfnassit-1.0.33.zip)
-[Version 1.0.29](https://s3-eu-west-1.amazonaws.com/cfnassist-release/29/cfnassit-1.0.29.zip)
 
 Build Status
 ------------
@@ -23,9 +23,11 @@ Key Features
 * Manages application of create and delta cloudformation scripts against particular Projects and Environments
 * Tracks which scripts need to be applied to projects and environments using a simple delta tracking mechanism borrowed from [dbdeploy](http://dbdeploy.com/)
 * Autopopulates physical id's based on logical identifiers plus the project & environment, this means you can break large scripts apart and think about project/env/logical ids instead of VPC id/physical id
-* Assists with the [Phoenix Server](http://martinfowler.com/bliki/PhoenixServer.html) pattern by automating the switch over of instances for an ELB based on build numbers
+* Assists with the [Phoenix Server](http://martinfowler.com/bliki/PhoenixServer.html) pattern by automating the switch over of instances for 
+an ELB based on build numbers
 * Allows upload to S3; along with the option of passing S3 urls of new aritifacts directly into cloudformation templates
 * Use VPC Tags as input or output to templates using a simple convention in the parameter description
+* Automatically pick up values from environmental variables to use in template parameters
 
 Usage
 -----
@@ -357,4 +359,15 @@ You can also use a VPC Tag value as in input parameter, just use the same conven
 >		}	
 
 This example will try and find a TAG called testVPCTAG on the current VPC and inject it's value into the template.
+
+16.Using Environemental Variables
+---------------------------------
+You can pick up a input parameter value from an environmental variable using the following convention in the description.
+
+>"Parameters" : {  
+>	"nameOfEnvVar":{ "Type":"String", "Description":"::ENV" }	
+> }
+
+This example will try and find a environmental variable called 'nameOfEnvVar' and inject it's value into the template using a 
+parameter of the same name i.e. 'nameOfEnvVar'
 
