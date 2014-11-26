@@ -57,8 +57,8 @@ public class FacadeFactory {
 		s3Client = new AmazonS3Client(credentialsProvider);
 		s3Client.setRegion(region);
 		
-		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), project);
 		cloudClient = new CloudClient(ec2Client);
+		cfnRepository = new CfnRepository(new CloudFormationClient(cfnClient), cloudClient, project);
 		vpcRepository = new VpcRepository(cloudClient);
 	}
 
@@ -73,7 +73,7 @@ public class FacadeFactory {
 			}
 			
 			monitor.init();
-			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository);
+			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository);
 			if (comment!=null) {
 				awsFacade.setCommentTag(comment);
 			}
@@ -85,7 +85,7 @@ public class FacadeFactory {
 	public ELBRepository createElbRepo() {
 		if (elbRepository==null) {
 			LoadBalancerClient loadBalancerClient = new LoadBalancerClient(elbClient);
-			elbRepository = new ELBRepository(loadBalancerClient, cloudClient, vpcRepository, cfnRepository);
+			elbRepository = new ELBRepository(loadBalancerClient, vpcRepository, cfnRepository);
 		}
 		
 		return elbRepository;

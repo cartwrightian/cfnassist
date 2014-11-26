@@ -36,6 +36,7 @@ import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
 @RunWith(EasyMockRunner.class)
@@ -46,14 +47,16 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private CloudFormRepository cfnRepository;
 	private VpcRepository vpcRepository;
 	private MonitorStackEvents monitor;
+	private ELBRepository elbRepository;
 
 	@Before
 	public void beforeEachTestRuns() {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
 		vpcRepository = createMock(VpcRepository.class);
+		elbRepository = createMock(ELBRepository.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository);
 	}
 	
 	@Test

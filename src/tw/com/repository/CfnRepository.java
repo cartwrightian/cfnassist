@@ -6,6 +6,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.SNSMonitor;
 import tw.com.StackCache;
@@ -15,7 +16,9 @@ import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
+import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 
 import com.amazonaws.AmazonServiceException;
@@ -25,6 +28,8 @@ import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.ec2.model.Tag;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
 
 public class CfnRepository implements CloudFormRepository {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
@@ -33,10 +38,12 @@ public class CfnRepository implements CloudFormRepository {
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1000;
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 	private CloudFormationClient formationClient;
+	private CloudClient cloudClient;
 
 	private StackCache stackCache;
-	public CfnRepository(CloudFormationClient cfnClient, String project) {
-		this.formationClient = cfnClient;
+	public CfnRepository(CloudFormationClient formationClient, CloudClient cloudClient, String project) {
+		this.formationClient = formationClient;
+		this.cloudClient = cloudClient;
 		stackCache = new StackCache(formationClient, project);
 	}
 	
@@ -61,6 +68,20 @@ public class CfnRepository implements CloudFormRepository {
 			}
 		}
 		return results;	
+	}
+	
+
+	public List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name) {
+		logger.info(String.format("Find stacks matching env %s and name %s", envTag, name));
+		List<StackEntry> results = new LinkedList<StackEntry>();
+		for(StackEntry entry : stackCache.getEntries()) {
+			logger.debug("Check if entry matches " + entry);
+			if (entry.getEnvTag().equals(envTag) && entry.getBaseName().equals(name)) {
+				results.add(entry);		
+			}
+		}
+		
+		return results;
 	}
 
 	@Override
@@ -209,7 +230,7 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	@Override
-	public List<String> getInstancesFor(ProjectAndEnv projAndEnv) {
+	public List<String> getAllInstancesFor(ProjectAndEnv projAndEnv) {
 		logger.info("Finding instances for " + projAndEnv);
 		String buildNumber = "";
 		if (projAndEnv.hasBuildNumber()) {
@@ -222,7 +243,7 @@ public class CfnRepository implements CloudFormRepository {
 		for (StackEntry entry : stacks) {
 			if (entry.isLive()) {
 				logger.info("Found stack :" + entry.getStackName());
-				instanceIds.addAll(findInstancesForStack(entry.getStack()));
+				instanceIds.addAll(getInstancesFor(entry.getStackName()));
 			} else {
 				logger.info("Not adding stack :" + entry.getStackName());
 			}
@@ -230,9 +251,9 @@ public class CfnRepository implements CloudFormRepository {
 		return instanceIds;
 	}
 
-	private List<String> findInstancesForStack(Stack stack) {
+	public List<String> getInstancesFor(String stackname) {
 		List<String> instanceIds = new LinkedList<String>();
-		List<StackResource> resources = stackCache.getResourcesForStack(stack.getStackName());
+		List<StackResource> resources = stackCache.getResourcesForStack(stackname);
 		for (StackResource resource : resources) {
 			String type = resource.getResourceType();
 			if (type.equals(AWS_EC2_INSTANCE_TYPE)) {
@@ -303,5 +324,40 @@ public class CfnRepository implements CloudFormRepository {
 			
 			return formationClient.updateStack(contents, parameters, monitor, stackName);
 	}
+
+	@Override
+	public List<Instance> getAllInstancesMatchingType(ProjectAndEnv projAndEnv,
+			String typeTag) throws WrongNumberOfInstancesException {
+		Collection<String> instancesIds = getAllInstancesFor(projAndEnv);
+		
+		List<Instance> instances = new LinkedList<Instance>();
+		for (String id : instancesIds) {
+			if (instanceHasCorrectType(typeTag, id)) {
+				logger.info(String.format("Adding instance %s as it matched %s %s",id, AwsFacade.TYPE_TAG, typeTag));
+				instances.add(new Instance(id));
+			} else {
+				logger.info(String.format("Not adding instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, typeTag));
+			}	
+		}
+		logger.info(String.format("Found %s instances matching %s and type: %s", instances.size(), projAndEnv, typeTag));
+		return instances;
+	}
+	
+	private boolean instanceHasCorrectType(String type, String id) throws WrongNumberOfInstancesException {
+		List<Tag> tags = getTagsForInstance(id);
+		for(Tag tag : tags) {
+			if (tag.getKey().equals(AwsFacade.TYPE_TAG)) {
+				return tag.getValue().equals(type);
+			}
+		}
+		return false;
+	}
+
+	private List<Tag> getTagsForInstance(String id)
+			throws WrongNumberOfInstancesException {
+		return cloudClient.getTagsForInstance(id);
+	}
+
+
 	
 }

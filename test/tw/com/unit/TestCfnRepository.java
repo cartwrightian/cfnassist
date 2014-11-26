@@ -21,6 +21,7 @@ import com.amazonaws.services.cloudformation.model.StackResource;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
 
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
@@ -34,7 +35,9 @@ import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
+import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 
@@ -44,14 +47,16 @@ public class TestCfnRepository extends EasyMockSupport {
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 
     private CloudFormationClient formationClient;
+	private CloudClient cloudClient; 
 	private CfnRepository repository;
 
-	private EnvironmentTag envTag; 
+	private EnvironmentTag envTag;
 	
 	@Before
 	public void beforeEachTestRuns() {
 		formationClient = createMock(CloudFormationClient.class);
-		repository = new CfnRepository(formationClient, mainProjectAndEnv.getProject());	
+		cloudClient = createMock(CloudClient.class);
+		repository = new CfnRepository(formationClient, cloudClient, mainProjectAndEnv.getProject());	
 		envTag = new EnvironmentTag(EnvironmentSetupForTests.ENV);
 	}
 	
@@ -124,7 +129,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test 
-	public void testShouldFindResourcesInsideOfAStack()  {
+	public void testShouldFindResourcesByIdInsideOfAStack()  {
 		String logicalId = "logicalIdOfResource";
 		String expectedPhyId = "physicalIdOfResource";
 		String stackName = "testStackName";
@@ -294,14 +299,14 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldFindTheInstancesForAStack() {
+	public void shouldFindInstancesForProjectAndEnv() {
 		String stackName = "testStack";
 		String stackId = "theIdOfTheStack";
 		String instanceId = "theInstanceId";
 		
 		List<StackResource> resources = new LinkedList<StackResource>();
 		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceId));
-		resources.add(new StackResource().withResourceType("AWS::EC2::ELB").withPhysicalResourceId("wrongId"));
+		resources.add(new StackResource().withResourceType("AWS::EC2::ELB").withPhysicalResourceId("notAnInstance"));
 		
 		Stack stack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("")).
 				withStackName(stackName).
@@ -314,12 +319,68 @@ public class TestCfnRepository extends EasyMockSupport {
 		EasyMock.expect(formationClient.describeStackResources(stackName)).andReturn(resources);
 		replayAll();
 		
-		List<String> result = repository.getInstancesFor(EnvironmentSetupForTests.getMainProjectAndEnv());
+		List<String> result = repository.getAllInstancesFor(EnvironmentSetupForTests.getMainProjectAndEnv());
 		assertEquals(result.size(),1);
-		result = repository.getInstancesFor(EnvironmentSetupForTests.getMainProjectAndEnv()); // cached call
+		result = repository.getAllInstancesFor(EnvironmentSetupForTests.getMainProjectAndEnv()); // cached call
 		assertEquals(result.size(),1);
 
 		assertEquals(instanceId, result.get(0));
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldFindInstancesForStack() {
+		String stackName = "testStack";
+		String instanceId = "theInstanceId";
+		
+		List<StackResource> resources = new LinkedList<StackResource>();
+		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceId));
+		resources.add(new StackResource().withResourceType("AWS::EC2::ELB").withPhysicalResourceId("notAnInstance"));
+		
+		EasyMock.expect(formationClient.describeStackResources(stackName)).andReturn(resources);
+		
+		replayAll();
+		List<String> result = repository.getInstancesFor(stackName);
+		assertEquals(result.size(),1);
+		result = repository.getInstancesFor(stackName); // cached call
+		verifyAll();
+		
+		assertEquals(result.size(),1);
+		assertEquals(instanceId, result.get(0));
+
+	}
+	
+	@Test
+	public void shouldFindInstancesForProjAndEnvMakingTypeTag() throws WrongNumberOfInstancesException {
+		String stackName = "testStack";
+		String stackId = "theIdOfTheStack";
+		String instanceIdA = "InstanceIdA";
+		String instanceIdB = "InstanceIdB";
+		
+		List<StackResource> resources = new LinkedList<StackResource>();
+		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceIdA));
+		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceIdB));
+		
+		Stack stack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("")).
+				withStackName(stackName).
+				withStackId(stackId).
+				withStackStatus(StackStatus.CREATE_COMPLETE);
+				
+		List<Stack> stacks = new LinkedList<>();
+		stacks.add(stack);
+		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks);
+		EasyMock.expect(formationClient.describeStackResources(stackName)).andReturn(resources);
+		String typeTag = "theTypeTag";
+		EasyMock.expect(cloudClient.getTagsForInstance(instanceIdA)).andStubReturn(withTags("0042", typeTag));
+		EasyMock.expect(cloudClient.getTagsForInstance(instanceIdB)).andStubReturn(withTags("0042", "wrongTypeTag"));
+		replayAll();
+		
+		List<Instance> result = repository.getAllInstancesMatchingType(EnvironmentSetupForTests.getMainProjectAndEnv(),typeTag);
+		assertEquals(result.size(),1);
+		result = repository.getAllInstancesMatchingType(EnvironmentSetupForTests.getMainProjectAndEnv(), typeTag); // cached call
+		assertEquals(result.size(),1);
+
+		assertEquals(instanceIdA, result.get(0).getInstanceId());
 		verifyAll();
 	}
 	
@@ -329,7 +390,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		List<Stack> list = new LinkedList<>();
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("");
-		list.add(new Stack().withStackName(stackName).withStackId("correctId").withTags(tags ));
+		list.add(new Stack().withStackName(stackName).withStackId("correctId").withTags(tags));
 		list.add(new Stack().withStackName("someOtherName").withStackId("wrongId").withTags(tags));
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 		
@@ -343,6 +404,33 @@ public class TestCfnRepository extends EasyMockSupport {
 		verifyAll();
 	}
 	
+	@Test
+	public void shouldGetStacksMatchingProjectEnvAndName() {
+		List<Stack> list = new LinkedList<>();
+		
+		list.add(new Stack().withStackName("CfnAssist001TestsimpleStack").withStackId("idA").withTags(createTags("001")));
+		list.add(new Stack().withStackName("CfnAssist078TestsomeOtherName").withStackId("idC").withTags(createTags("078")));
+		list.add(new Stack().withStackName("CfnAssist002TestsimpleStack").withStackId("idB").withTags(createTags("002")));
+		list.add(new Stack().withStackName("CfnAssistTestsomeOtherName").withStackId("idE").
+				withTags(EnvironmentSetupForTests.createExpectedStackTags("")));
+		
+		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
+		
+		replayAll();
+		List<StackEntry> result = repository.getStacksMatching(mainProjectAndEnv.getEnvTag(),"simpleStack");
+		verifyAll();
+		
+		assertEquals(2, result.size());
+		assertEquals("idA", result.get(0).getStack().getStackId());
+		assertEquals("idB", result.get(1).getStack().getStackId());
+	}
+	
+	private List<Tag> createTags(String buildNumber) {
+		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("");
+		tags.add(EnvironmentSetupForTests.createCfnStackTAG(AwsFacade.BUILD_TAG, buildNumber));
+		return tags;
+	}
+
 	@Test
 	public void shouldDeleteStack() {
 		// this smells, at least until we pull cache updates down into repository
@@ -419,6 +507,14 @@ public class TestCfnRepository extends EasyMockSupport {
 		replayAll();
 		List<TemplateParameter> result = repository.validateStackTemplate("someContents");
 		assertEquals(1, result.size());
+	}
+	
+	
+	private List<com.amazonaws.services.ec2.model.Tag> withTags(String buidNumber, String typeTag) {
+		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<>();
+		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(AwsFacade.BUILD_TAG).withValue(buidNumber));
+		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(AwsFacade.TYPE_TAG).withValue(typeTag));
+		return tags;
 	}
 		
 }

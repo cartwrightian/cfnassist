@@ -29,6 +29,7 @@ import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
+import tw.com.exceptions.TooManyELBException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.parameters.AutoDiscoverParams;
@@ -37,6 +38,7 @@ import tw.com.parameters.EnvVarParams;
 import tw.com.parameters.ParameterFactory;
 import tw.com.parameters.PopulatesParameters;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
 import com.amazonaws.services.cloudformation.model.Output;
@@ -45,6 +47,7 @@ import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
 
 public class AwsFacade {
 
@@ -64,14 +67,16 @@ public class AwsFacade {
 	
 	private VpcRepository vpcRepository;
 	private CloudFormRepository cfnRepository;
+	private ELBRepository elbRepository;
 	private MonitorStackEvents monitor;
 
 	private String commentTag="";
 
-	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository) {
+	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, ELBRepository elbRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
+		this.elbRepository = elbRepository;
 	}
 	
 	public void setCommentTag(String commentTag) {
@@ -265,6 +270,10 @@ public class AwsFacade {
 	
 	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv) {
 		String stackName = createStackName(templateFile, projectAndEnv);
+		deleteStack(stackName, projectAndEnv);
+	}
+	
+	private void deleteStack(String stackName, ProjectAndEnv projectAndEnv) {
 		StackNameAndId stackId;
 		try {
 			stackId = cfnRepository.getStackNameAndId(stackName);
@@ -424,5 +433,47 @@ public class AwsFacade {
 			return cfnRepository.getStacks(projectAndEnv.getEnvTag());
 		}
 		return cfnRepository.getStacks();
+	}
+
+	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv) throws InvalidParameterException, TooManyELBException {
+		String filename = file.getName();
+		String name = FilenameUtils.removeExtension(filename);
+		if (name.endsWith(DELTA_EXTENSTION)) {
+			throw new InvalidParameterException("Cannot invoke for .delta files");
+		}
+
+		List<StackEntry> candidateStacks = cfnRepository.getStacksMatching(projectAndEnv.getEnvTag(), name);
+		
+		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv);
+		List<String> registeredIds = new LinkedList<String>();
+		for(Instance ins : registeredInstances) {
+			registeredIds.add(ins.getInstanceId());
+		}
+		
+		List<StackEntry> toDelete = new LinkedList<StackEntry>();
+		for(StackEntry entry : candidateStacks) {
+			List<String> ids = cfnRepository.getInstancesFor(entry.getStackName());
+			if (containsAny(registeredIds,ids)) {
+				logger.info(String.format("Stack %s contains instances registered to LB", entry.getStackName()));
+			} else {
+				logger.warn(String.format("Stack %s has not registered instances, will be deleted", entry.getStackName()));
+				toDelete.add(entry);
+			}
+		}
+		
+		for(StackEntry delete : toDelete) {
+			logger.warn("Deleting stack " + delete.getStackName());
+			deleteStack(delete.getStackName(), projectAndEnv);
+		}
+		
+	}
+	
+	public boolean containsAny(List<String> first, List<String> second) {
+		for(String candidate : second) {
+			if (first.contains(candidate)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

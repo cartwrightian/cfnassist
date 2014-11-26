@@ -131,7 +131,9 @@
 	        <mkdir dir="dist/bin/lib"/>
 	    	<mkdir dir="dist/bin/conf"/>
 	        <copy file="src/cfnassist.sh" todir="dist/bin"/>
+  			<symlink link="dist/bin/cfnassist" resource="./cfnassist.sh"/>
 			<chmod file="dist/bin/cfnassist.sh" perm="700"/>
+			<chmod file="dist/bin/cfnassist" perm="700"/>
 			<!-- TODO single jar file with all libs -->
 			<jar destfile="dist/bin/cfnassist.jar">
 			    <fileset dir="${output}"/>

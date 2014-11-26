@@ -12,18 +12,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.exceptions.TooManyELBException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
-import tw.com.providers.CloudClient;
 import tw.com.providers.LoadBalancerClient;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.ResourceRepository;
 import tw.com.repository.VpcRepository;
 
-import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
@@ -31,9 +28,8 @@ import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription
 @RunWith(EasyMockRunner.class)
 public class TestELBRepository extends EasyMockSupport {
 	
-	ELBRepository repository;
+	ELBRepository elbRepository;
 	private LoadBalancerClient elbClient;
-	private CloudClient cloudClient;
 	private VpcRepository vpcRepository;
 	private ResourceRepository cfnRepository;
 	private ProjectAndEnv projAndEnv = new ProjectAndEnv("proj", "testEnv");
@@ -41,11 +37,10 @@ public class TestELBRepository extends EasyMockSupport {
 	@Before
 	public void beforeEachTestRuns() {
 		elbClient = createMock(LoadBalancerClient.class);
-		cloudClient = createMock(CloudClient.class);
 		vpcRepository  = createMock(VpcRepository.class);
 		cfnRepository = createMock(ResourceRepository.class);
 		
-		repository = new ELBRepository(elbClient, cloudClient, vpcRepository, cfnRepository);
+		elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
 	}
 	
 	@Test
@@ -60,7 +55,7 @@ public class TestELBRepository extends EasyMockSupport {
 		
 		replayAll();
 		try {
-			repository.findELBFor(projAndEnv );
+			elbRepository.findELBFor(projAndEnv );
 			fail("should have thrown");
 		}
 		catch(TooManyELBException expectedException) {
@@ -80,7 +75,7 @@ public class TestELBRepository extends EasyMockSupport {
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
 		
 		replayAll();
-		LoadBalancerDescription result = repository.findELBFor(projAndEnv );
+		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv );
 		assertEquals("lb2Name", result.getLoadBalancerName());
 		verifyAll();
 	}
@@ -100,6 +95,12 @@ public class TestELBRepository extends EasyMockSupport {
 		instanceIds.add(insB2.getInstanceId());
 		instanceIds.add(insB3.getInstanceId());
 		
+		List<Instance> instancesThatMatch = new LinkedList<Instance>();
+		instancesThatMatch.add(insA1);
+		instancesThatMatch.add(insA2);
+		instancesThatMatch.add(insB1);
+		instancesThatMatch.add(insB2);
+		
 		List<Instance> instancesToAdd = new LinkedList<>();
 		instancesToAdd.add(insB1);
 		instancesToAdd.add(insB2);
@@ -110,7 +111,6 @@ public class TestELBRepository extends EasyMockSupport {
 		
 		String vpcId = "myVPC";
 		String newBuildNumber = "0011";
-		String oldBuildNumber = "0010";
 		projAndEnv.addBuildNumber(newBuildNumber);
 
 		List<LoadBalancerDescription> initalLoadBalancers = new LinkedList<LoadBalancerDescription>();
@@ -125,38 +125,47 @@ public class TestELBRepository extends EasyMockSupport {
 	
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(new Vpc().withVpcId(vpcId));
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(initalLoadBalancers);
-		EasyMock.expect(cfnRepository.getInstancesFor(projAndEnv)).andReturn(instanceIds);
-		EasyMock.expect(cloudClient.getTagsForInstance(insA1.getInstanceId())).andReturn(withTags(oldBuildNumber, "typeTag"));
-		EasyMock.expect(cloudClient.getTagsForInstance(insA2.getInstanceId())).andReturn(withTags(oldBuildNumber, "typeTag"));
-		EasyMock.expect(cloudClient.getTagsForInstance(insB1.getInstanceId())).andReturn(withTags(newBuildNumber, "typeTag"));
-		EasyMock.expect(cloudClient.getTagsForInstance(insB2.getInstanceId())).andReturn(withTags(newBuildNumber, "typeTag"));
-		EasyMock.expect(cloudClient.getTagsForInstance(insB3.getInstanceId())).andReturn(withTags(newBuildNumber, "xxxTag"));
+		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(projAndEnv, "typeTag")).andReturn(instancesThatMatch);
+
 		elbClient.registerInstances(instancesToAdd, "lbName");
 		EasyMock.expectLastCall();
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(updatedLoadBalancers);
 		EasyMock.expect(elbClient.degisterInstancesFromLB(toRemove, "lbName")).andReturn(instancesToAdd);
 		
 		replayAll();
-		List<Instance> result = repository.updateInstancesMatchingBuild(projAndEnv, "typeTag");
+		List<Instance> result = elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag");
 		assertEquals(2, result.size());
 		assertEquals(insB1.getInstanceId(), result.get(0).getInstanceId());
 		assertEquals(insB2.getInstanceId(), result.get(1).getInstanceId());
-		verifyAll();		
-		
+		verifyAll();			
 	}
 	
-	private List<Tag> withTags(String buidNumber, String typeTag) {
-		List<Tag> tags = new LinkedList<>();
-		tags.add(new Tag().withKey(AwsFacade.BUILD_TAG).withValue(buidNumber));
-		tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue(typeTag));
-		return tags;
-	}
+	@Test
+	public void shouldGetInstancesForTheLB() throws TooManyELBException {
+		String vpcId = "myVPC";
+		Instance insA = new Instance().withInstanceId("instanceA"); // associated
+		
+		List<LoadBalancerDescription> theLB = new LinkedList<LoadBalancerDescription>();
+		theLB.add(new LoadBalancerDescription().withVPCId(vpcId).
+				withInstances(insA).
+				withLoadBalancerName("lbName").withDNSName("dnsName"));
 
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(new Vpc().withVpcId(vpcId));
+		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(theLB);
+		
+		replayAll();
+		List<Instance> result = elbRepository.findInstancesAssociatedWithLB(projAndEnv);
+		verifyAll();
+		
+		assertEquals(1,  result.size());
+		assertEquals("instanceA", result.get(0).getInstanceId());
+	}
+	
 	@Test
 	public void shouldThrowIfNoBuildNumberIsGiven() throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
 		replayAll();	
 		try {
-			repository.updateInstancesMatchingBuild(projAndEnv, "typeTag");
+			elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag");
 			fail("should have thrown");
 		}
 		catch(MustHaveBuildNumber expectedException) {

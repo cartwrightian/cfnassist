@@ -16,6 +16,12 @@ public class StackEntry {
 		this.stack = stack;
 		this.project = project;
 	}
+	
+	@Override
+	public String toString() {
+		return String.format("StackEntry [env=%s, project=%s, stackName=%s, buildNumber='%s']", 
+				environmentTag.getEnv(), project, stack.getStackName(), buildNumber);
+	}
 
 	public EnvironmentTag getEnvTag() {
 		return environmentTag;
@@ -75,6 +81,18 @@ public class StackEntry {
 
 	public String getProject() {
 		return project;
+	}
+
+	public String getBaseName() {
+		String fullName = stack.getStackName();	
+		String withoutProject = fullName.replace(project, "");
+		
+		String withoutBuild = withoutProject;
+		if (!buildNumber.isEmpty()) {
+			withoutBuild =  withoutProject.replace(buildNumber, "");
+		}
+		
+		return withoutBuild.replace(environmentTag.getEnv(), "");
 	}
 
 

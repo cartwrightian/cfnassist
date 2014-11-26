@@ -23,6 +23,7 @@ public interface StackRepository {
 	public abstract List<StackEntry> stacksMatchingEnvAndBuild(EnvironmentTag envTag, String buildNumber);	
 	public abstract List<StackEntry> getStacks();
 	public abstract List<StackEntry> getStacks(EnvironmentTag envTag);
+	public abstract List<StackEntry> getStacksMatching(EnvironmentTag envTag, String string);
 
 	public abstract String waitForStatusToChangeFrom(String stackName,
 			StackStatus currentStatus, List<String> aborts)

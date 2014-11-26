@@ -22,11 +22,13 @@ import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
 
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
+import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
@@ -36,9 +38,11 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
+import tw.com.exceptions.TooManyELBException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
 @RunWith(EasyMockRunner.class)
@@ -48,15 +52,19 @@ public class TestAwsFacade extends EasyMockSupport {
 	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	private CloudFormRepository cfnRepository;
 	private VpcRepository vpcRepository;
+	private ELBRepository elbRepository;
 	private MonitorStackEvents monitor;
+	private String project = projectAndEnv.getProject();
+	private EnvironmentTag environmentTag = projectAndEnv.getEnvTag();
 
 	@Before
 	public void beforeEachTestRuns() {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
 		vpcRepository = createMock(VpcRepository.class);
+		elbRepository = createMock(ELBRepository.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository);
 	}
 	
 	@Test
@@ -240,6 +248,47 @@ public class TestAwsFacade extends EasyMockSupport {
 		replayAll();
 		aws.deleteStackFrom(file, projectAndEnv);
 		verifyAll();
+	}
+	
+	@Test
+	public void shouldDeleteNamedStacksNotAssociatedWithLB() throws WrongNumberOfStacksException, NotReadyException, WrongStackStatus, InterruptedException, InvalidParameterException, TooManyELBException {
+		String filename = FilesForTesting.SIMPLE_STACK;
+		File file = new File(filename);	
+		
+		Stack stackA = new Stack().withStackName("CfnAssist0057TestsimpleStack").withStackId("idA");
+		Stack stackB = new Stack().withStackName("CfnAssist0058TestsimpleStack").withStackId("idB");
+		Stack stackC = new Stack().withStackName("CfnAssist0059TestsimpleStack").withStackId("idC"); // only this one associated with LB
+		
+		List<StackEntry> stacksForProj = new LinkedList<StackEntry>();
+		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
+		stacksForProj.add(new StackEntry(project, environmentTag, stackB));
+		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
+		List<Instance> elbInstances = new LinkedList<Instance>();
+		
+		elbInstances.add(new Instance().withInstanceId("matchingInstanceId"));
+		
+		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv)).andReturn(elbInstances);
+		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
+		EasyMock.expect(cfnRepository.getInstancesFor(stackA.getStackName())).andReturn(createInstancesFor(stackA,"123"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackB.getStackName())).andReturn(createInstancesFor(stackA,"567"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackC.getStackName())).andReturn(createInstancesFor(stackA,"matchingInstanceId"));
+		
+		setDeleteExpectations(stackA.getStackName(), createNameAndId(stackA));
+		setDeleteExpectations(stackB.getStackName(), createNameAndId(stackB));
+		
+		replayAll();
+		aws.tidyNonLBAssocStacks(file, projectAndEnv);
+		verifyAll();
+	}
+
+	private List<String> createInstancesFor(Stack stackA, String id) {
+		List<String> instances = new LinkedList<String>();
+		instances.add(id);
+		return instances;
+	}
+
+	private StackNameAndId createNameAndId(Stack stack) {
+		return new StackNameAndId(stack.getStackName(), stack.getStackId());
 	}
 
 	private void setDeleteExpectations(String stackName,

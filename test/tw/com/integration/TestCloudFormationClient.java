@@ -57,6 +57,9 @@ public class TestCloudFormationClient {
 	private static AmazonCloudFormationClient cfnClient;
 	private static AmazonEC2Client ec2Client;
 	
+	private PollingStackMonitor monitor;
+	private ProjectAndEnv projAndEnv;
+	private CloudClient cloudClient;
 	private static VpcRepository vpcRepository;
 	CloudFormationClient formationClient;
 	private DeletesStacks deletesStacks;
@@ -73,13 +76,12 @@ public class TestCloudFormationClient {
 	}
 	
 	@Rule public TestName test = new TestName();
-	private PollingStackMonitor monitor;
-	private ProjectAndEnv projAndEnv;
-	
+
 	@Before
 	public void beforeEachTestRuns() {
 		formationClient = new CloudFormationClient(cfnClient);
-		CfnRepository cfnRepository = new CfnRepository(formationClient, EnvironmentSetupForTests.PROJECT);
+		cloudClient = new CloudClient(ec2Client);
+		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudClient, EnvironmentSetupForTests.PROJECT);
 		monitor = new PollingStackMonitor(cfnRepository );
 		
 		deletesStacks = new DeletesStacks(cfnClient);
