@@ -131,10 +131,12 @@ public class FacadeFactory {
 	}
 
 	public AmazonS3Client getS3Client() {
+		init();
 		return s3Client;
 	}
 
 	public ArtifactUploader createArtifactUploader(ProjectAndEnv projectAndEnv) {
+		init();
 		if (artifactUploader==null) {
 			artifactUploader = new ArtifactUploader(s3Client, projectAndEnv.getS3Bucket(),
 					projectAndEnv.getBuildNumber());

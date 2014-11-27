@@ -139,8 +139,7 @@ public class TestCommandLineS3Operations {
 				"-s3create",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", BUILD_NUMBER,
-				"-sns"
+				"-build", BUILD_NUMBER
 				};
 				
 		Main main = new Main(argsS3create);
@@ -161,8 +160,7 @@ public class TestCommandLineS3Operations {
 				"-s3delete",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", BUILD_NUMBER,
-				"-sns"
+				"-build", BUILD_NUMBER
 				};
 		
 		main = new Main(argsS3Delete);
