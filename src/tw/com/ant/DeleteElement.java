@@ -19,7 +19,7 @@ import tw.com.exceptions.InvalidParameterException;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 public class DeleteElement implements ActionElement {
-private File target;
+	private File target;
 	
 	public DeleteElement() {
 

@@ -27,9 +27,11 @@ import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.TooManyELBException;
+import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.parameters.AutoDiscoverParams;
@@ -446,9 +448,17 @@ public class AwsFacade {
 		
 		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv);
 		List<String> registeredIds = new LinkedList<String>();
-		for(Instance ins : registeredInstances) {
-			registeredIds.add(ins.getInstanceId());
+		if (registeredInstances.isEmpty()) {
+			logger.warn("No instances associated with ELB");
+		} else {
+			for(Instance ins : registeredInstances) {
+				registeredIds.add(ins.getInstanceId());
+			}
 		}
+		
+		if (candidateStacks.isEmpty()) {
+			logger.warn("No matching stacks found for possible deletion");
+		} 
 		
 		List<StackEntry> toDelete = new LinkedList<StackEntry>();
 		for(StackEntry entry : candidateStacks) {
@@ -461,9 +471,13 @@ public class AwsFacade {
 			}
 		}
 		
-		for(StackEntry delete : toDelete) {
-			logger.warn("Deleting stack " + delete.getStackName());
-			deleteStack(delete.getStackName(), projectAndEnv);
+		if (toDelete.isEmpty()) {
+			logger.info("No stacks to delete");
+		} else {
+			for(StackEntry delete : toDelete) {
+				logger.warn("Deleting stack " + delete.getStackName());
+				deleteStack(delete.getStackName(), projectAndEnv);
+			}
 		}
 		
 	}
@@ -475,5 +489,11 @@ public class AwsFacade {
 			}
 		}
 		return false;
+	}
+
+	public List<Instance> updateELBToInstancesMatchingBuild(ProjectAndEnv projectAndEnv,
+			String typeTag) throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
+		logger.info(String.format("Update instances for ELB to match %s and type tag %s", projectAndEnv, typeTag));
+		return elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);	
 	}
 }

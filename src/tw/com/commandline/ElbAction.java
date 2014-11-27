@@ -4,15 +4,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 
+import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.repository.ELBRepository;
-
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 public class ElbAction extends SharedAction {
@@ -28,9 +28,10 @@ public class ElbAction extends SharedAction {
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws InvalidParameterException, FileNotFoundException,
 			IOException, WrongNumberOfStacksException, InterruptedException,
-			CfnAssistException {
-		ELBRepository repository = factory.createElbRepo();
-		repository.updateInstancesMatchingBuild(projectAndEnv, typeTag);
+			CfnAssistException, MissingArgumentException {
+
+		AwsFacade facade = factory.createFacade();
+		facade.updateELBToInstancesMatchingBuild(projectAndEnv, typeTag);
 	}
 
 	@Override

@@ -14,6 +14,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.CLIArgBuilder;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -46,6 +47,7 @@ public class TestCommandLineStackOperations {
 	
 	@Rule public TestName test = new TestName();
 	String testName = "";
+	
 	@Before
 	public void beforeEveryTestRun() {
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
@@ -69,16 +71,20 @@ public class TestCommandLineStackOperations {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SIMPLE_STACK,
-				"-comment", testName
-				};
+		String[] args = CLIArgBuilder.createSimpleStack(testName);
+
 		Main main = new Main(args);
 		int result = main.parse();
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
+		assertEquals(0,result);
+	}
+		
+	@Test
+	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
+		String[] args = CLIArgBuilder.createSimpleStackWithBuildNumber(testName, "876");
+		Main main = new Main(args);
+		int result = main.parse();
+		deletesStacks.ifPresent("CfnAssist876TestsimpleStack");
 		assertEquals(0,result);
 	}
 	
@@ -86,22 +92,11 @@ public class TestCommandLineStackOperations {
 	public void testListStacks() throws InterruptedException, TimeoutException {
         PrintStream origStream = System.out;
 
-		String[] create = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SIMPLE_STACK,
-				"-comment", testName
-				};
+		String[] create = CLIArgBuilder.createSimpleStack(testName);
 		Main main = new Main(create);
 		int status = main.parse();
 		
-		String[] list = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-ls"
-				};
+		String[] list = CLIArgBuilder.listStacks();
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		PrintStream output = new PrintStream(stream);
@@ -109,7 +104,9 @@ public class TestCommandLineStackOperations {
 		
 		main = new Main(list);
 		status = main.parse();
-		
+
+		System.setOut(origStream);
+	
 		String result = stream.toString();
 		String lines[] = result.split("\\r?\\n");
 
@@ -120,33 +117,20 @@ public class TestCommandLineStackOperations {
 		}
 		assert(found);
 
-		System.setOut(origStream);
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0, status);
 	}
 	
 	@Test
 	public void testDeleteViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
-		String[] createArgs = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SIMPLE_STACK,
-				"-build", "0915",
-				"-comment", testName
-				};
+		String buildNumber = "0915";
+		
+		String[] createArgs = CLIArgBuilder.createSimpleStackWithBuildNumber(testName, buildNumber);
 		Main main = new Main(createArgs);
 		int createResult = main.parse();
 		assertEquals(0,createResult);
 		
-		String[] deleteArgs = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-delete", FilesForTesting.SIMPLE_STACK,
-				"-build", "0915",
-				"-comment", testName
-				};
+		String[] deleteArgs = CLIArgBuilder.deleteSimpleStackWithBuildNumber(testName, buildNumber);
 		main = new Main(deleteArgs);
 		int deleteResult = main.parse();
 		assertEquals(0,deleteResult);
@@ -156,24 +140,12 @@ public class TestCommandLineStackOperations {
 	
 	@Test
 	public void testDeleteViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
-		String[] createArgs = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SIMPLE_STACK,
-				"-comment", testName
-				};
+		String[] createArgs = CLIArgBuilder.createSimpleStack(testName);
 		Main main = new Main(createArgs);
 		int createResult = main.parse();
 		assertEquals(0,createResult);
 		
-		String[] deleteArgs = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-delete", FilesForTesting.SIMPLE_STACK,
-				"-comment", testName
-				};
+		String[] deleteArgs = CLIArgBuilder.deleteSimpleStack(testName);
 		main = new Main(deleteArgs);
 		int deleteResult = main.parse();
 		assertEquals(0,deleteResult);
@@ -182,41 +154,22 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SIMPLE_STACK,
-				"-build", "876",
-				"-comment", testName
-				};
-		Main main = new Main(args);
-		int result = main.parse();
-		deletesStacks.ifPresent("CfnAssist876TestsimpleStack");
-		assertEquals(0,result);
-	}
-	
-	@Test
-	public void testInvokeViaCommandLineDeploySwitchELBInstances() throws InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeploySwitchELBInstances() throws InterruptedException, TimeoutException {		
+		String buildNumber = "876";
+		String typeTag = "web";
+		
 		String[] createIns = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-build", "876",
+				"-build", buildNumber,
 				"-file", FilesForTesting.ELB_AND_INSTANCE,
 				"-comment", testName
 				};
 		Main main = new Main(createIns);
 		main.parse();
 				
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-build", "876",
-				"-elbUpdate", "web"
-				};
+		String[] args = CLIArgBuilder.updateELB(typeTag, buildNumber, testName);
 		main = new Main(args);
 		int result = main.parse();
 		
@@ -226,14 +179,7 @@ public class TestCommandLineStackOperations {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWithFileAndSNS() throws InterruptedException, TimeoutException {
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SIMPLE_STACK,
-				"-sns", 
-				"-comment", testName
-				};
+		String[] args = CLIArgBuilder.createSimpleStackWithSNS(testName);
 		Main main = new Main(args);
 		int result = main.parse();
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
@@ -242,14 +188,7 @@ public class TestCommandLineStackOperations {
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWithFilePassedInParam() throws InterruptedException, TimeoutException {
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SUBNET_WITH_PARAM,
-				"-parameters", "zoneA=eu-west-1a",
-				"-comment", testName
-				};
+		String[] args = CLIArgBuilder.createSubnetStackWithParams(testName);
 		Main main = new Main(args);
 		int result = main.parse();
 		deletesStacks.ifPresent("CfnAssistTestsubnetWithParam");
@@ -284,25 +223,12 @@ public class TestCommandLineStackOperations {
 			String sns, String orderedScriptsFolder) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, "0");
 		
-		String[] argsDeploy = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-dir", orderedScriptsFolder,
-				"-comment", testName,
-				sns
-				};
+		String[] argsDeploy = CLIArgBuilder.deployFromDir(orderedScriptsFolder, sns, testName);
 		Main main = new Main(argsDeploy);
 		int result = main.parse();
 		assertEquals("deploy failed",0,result);
 		
-		String[] rollbackDeploy = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-rollback", orderedScriptsFolder,
-				sns
-				};
+		String[] rollbackDeploy = CLIArgBuilder.rollbackFromDir(orderedScriptsFolder, sns, testName);
 		main = new Main(rollbackDeploy);
 		result = main.parse();
 		
@@ -313,7 +239,6 @@ public class TestCommandLineStackOperations {
 		// check
 		assertEquals("rollback failed",0,result);
 	}
-	
 	
 	@Ignore("cant find way to label at existing stack via apis")
 	@Test

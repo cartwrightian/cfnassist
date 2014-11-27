@@ -96,4 +96,11 @@ public abstract class SharedAction implements CommandLineAction {
 		ArtifactUploader artifactUploader = factory.createArtifactUploader(projectAndEnv);
 		cfnParams.addAll(artifactUploader.uploadArtifacts(artifacts));
 	}
+
+	public void guardForSNSNotSet(ProjectAndEnv projectAndEnv) throws CommandLineException {
+		if (projectAndEnv.useSNS()) {
+			throw new CommandLineException("Setting sns does not work with this action");
+		}
+		
+	}
 }

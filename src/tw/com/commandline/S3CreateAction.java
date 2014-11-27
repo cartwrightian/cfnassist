@@ -36,6 +36,7 @@ public class S3CreateAction extends SharedAction {
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws CommandLineException {
 		super.guardForArtifactAndRequiredParams(projectAndEnv, artifacts);
+		super.guardForSNSNotSet(projectAndEnv);
 	}
 
 }

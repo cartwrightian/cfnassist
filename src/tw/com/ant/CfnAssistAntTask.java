@@ -62,7 +62,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	}
 	
 	// NOTE
-	// addConfigured is looked for by ant, the rest if the name of the Element
+	// addConfigured is looked for by ant, the rest is the name of the Element
 	
 	public void addConfiguredTemplates(TemplatesElement fileElement) {
 		actionElements.add(fileElement);
@@ -88,6 +88,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		actionElements.add(s3delete);
 	}
 	
+	public void addConfiguredTidyStacks(TidyStacksElement tidyStacksElement) {
+		actionElements.add(tidyStacksElement);
+	}
+	
 	public void execute() {
 		ProjectAndEnv projectAndEnv = new ProjectAndEnv(cfnProject, cfnEnv);
 		if (snsMonitoring) {
@@ -103,7 +107,12 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 
 		Collection<Parameter> cfnParameters = createParameterList();
 		Collection<Parameter> artifacts = createArtifactList();	
-		FacadeFactory factory = new FacadeFactory(region,cfnProject,projectAndEnv.useSNS());
+		
+		FacadeFactory factory = new FacadeFactory();
+		factory.setRegion(region);
+		factory.setProject(cfnProject);
+		factory.setSNSMonitoring(projectAndEnv.useSNS());
+		
 		try {
 			for(ActionElement element : actionElements) {
 				element.execute(factory, projectAndEnv, cfnParameters, artifacts);

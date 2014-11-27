@@ -44,7 +44,9 @@ public class ELBRepository {
 				if (possible.equals(vpcID)) {
 					logger.info(String.format("Matched ELB %s for VPC: %s", dnsName, vpcID));
 					foundELBForVPC.add(elb);
-				} 
+				} else {
+					logger.info(String.format("Not matched ELB %s as VPC id %s does not match: %s", dnsName, possible, vpcID));
+				}
 			} else {
 				logger.debug("No VPC ID for ELB " + dnsName);
 			}
@@ -55,6 +57,7 @@ public class ELBRepository {
 		if (foundELBForVPC.size()==1) {
 			return foundELBForVPC.get(0);
 		}
+		logger.error("No matching ELB found for " + projAndEnv);
 		return null; // ugly but preserves current api
 	}
 

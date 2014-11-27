@@ -59,18 +59,5 @@ public class TestCommandLineVLCoperations {
 		Main main = new Main(args);
 		assertEquals(0,main.parse());
 	}
-	
-	@Test
-	public void testInvokeResetViaCommandLineWithExtraParams() {
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-reset",
-				"-parameters", "testA=123;testB=123"
-				};
-		Main main = new Main(args);
-		assertEquals(0,main.parse());
-	}
 
 }

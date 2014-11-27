@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
@@ -52,11 +53,11 @@ public class Main {
 	}
 
 	public int parse() {
-		return parse(true);
+		FacadeFactory factory = new FacadeFactory();
+		return parse(factory, true);
 	}
 
-	public int parse(boolean act) {
-		
+	public int parse(FacadeFactory factory, boolean act) {	
 		try {
 			CommandLineParser parser = new BasicParser();
 			CommandLine commandLine = parser.parse(commandLineOptions, args);
@@ -84,20 +85,29 @@ public class Main {
 			Collection<Parameter> artifacts = flags.getUploadParams();
 			action.validate(projectAndEnv, argumentForAction, flags.getAdditionalParameters(), artifacts);
 			
-			FacadeFactory factory = new FacadeFactory(awsRegion, flags.getProject(),flags.getSns());
+			factory.setRegion(awsRegion);
+			factory.setProject(flags.getProject());
 			factory.setCommentTag(flags.getComment());	
+			factory.setSNSMonitoring(flags.getSns());
 			Collection<Parameter> additionalParams = flags.getAdditionalParameters();
 			
-			if (act) {	
-				
+			if (act) {				
 				action.invoke(factory, projectAndEnv, argumentForAction, additionalParams, artifacts);
 			} else {
 				logger.info("Not invoking");
 			}
 		}
-		catch (Exception exception) {
-			//  back to caller via exit status
-			logger.error("CommandLine fail: ", exception);
+		catch (CfnAssistException exception) {
+			logger.error("CommandLine fail due to cfn assit problem: ", exception);
+			return -1;
+		} catch (MissingArgumentException | IOException | InvalidParameterException | InterruptedException e) {
+			logger.error("Processing failed: ", e);
+			return -1;
+		} catch (CommandLineException e) {
+			logger.error("CommandLine processing failed: ", e);
+			return -1;
+		} catch (ParseException e) {
+			logger.error("Unable to parse commandline: ", e);
 			return -1;
 		}
 		logger.debug("CommandLine ok");

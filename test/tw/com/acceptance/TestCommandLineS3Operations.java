@@ -12,6 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import tw.com.CLIArgBuilder;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -90,19 +91,8 @@ public class TestCommandLineS3Operations {
 	
 	@Test
 	public void testUploadArtifactsToS3AndAutopopulateAsParameters() {		
-		String artifacts = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
-		String[] argsDeploy = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
-				"-artifacts", artifacts,
-				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", BUILD_NUMBER,
-				"-sns"
-				};
 				
-		Main main = new Main(argsDeploy);
+		Main main = new Main(CLIArgBuilder.createSubnetStackWithArtifactUpload(BUILD_NUMBER, testName));
 		int result = main.parse();
 		deletesStacks.ifPresent("CfnAssist9987TestsubnetWithS3Param");
 		
@@ -121,19 +111,8 @@ public class TestCommandLineS3Operations {
 	
 	@Test
 	public void testUploadAndDeleteFileArtifacts() {		
-		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
-		String[] argsS3create = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-s3create",
-				"-artifacts", artifacts,
-				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", BUILD_NUMBER,
-				"-sns"
-				};
-				
-		Main main = new Main(argsS3create);
+			
+		Main main = new Main(CLIArgBuilder.uploadArtifacts(BUILD_NUMBER));
 		int result = main.parse();
 		assertEquals("create failed", 0, result);
 		
@@ -141,19 +120,7 @@ public class TestCommandLineS3Operations {
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
 		
-		artifacts = String.format("art1=%s;art2=%s", filenameA, filenameB);
-		String[] argsS3Delete = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-s3delete",
-				"-artifacts", artifacts,
-				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", BUILD_NUMBER,
-				"-sns"
-				};
-		
-		main = new Main(argsS3Delete);
+		main = new Main(CLIArgBuilder.deleteArtifacts(BUILD_NUMBER, filenameA, filenameB));
 		result = main.parse();
 		assertEquals("delete failed", 0, result);
 	

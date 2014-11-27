@@ -38,8 +38,7 @@ public class TestELBRepository extends EasyMockSupport {
 	public void beforeEachTestRuns() {
 		elbClient = createMock(LoadBalancerClient.class);
 		vpcRepository  = createMock(VpcRepository.class);
-		cfnRepository = createMock(ResourceRepository.class);
-		
+		cfnRepository = createMock(ResourceRepository.class);	
 		elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
 	}
 	

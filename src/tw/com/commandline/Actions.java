@@ -58,6 +58,7 @@ public class Actions {
 		actions.add(new ListAction());
 		actions.add(new S3CreateAction());
 		actions.add(new S3DeleteAction());
+		actions.add(new TidyOldStacksAction());
 	}
 
 }
