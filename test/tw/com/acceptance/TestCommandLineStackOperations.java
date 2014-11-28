@@ -13,6 +13,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
 
 import tw.com.CLIArgBuilder;
 import tw.com.DeletesStacks;
@@ -47,6 +48,9 @@ public class TestCommandLineStackOperations {
 	
 	@Rule public TestName test = new TestName();
 	String testName = "";
+	
+	@Rule
+    public Timeout globalTimeout = new Timeout(180*1000);
 	
 	@Before
 	public void beforeEveryTestRun() {

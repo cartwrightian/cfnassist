@@ -11,6 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
 
 import tw.com.CLIArgBuilder;
 import tw.com.DeletesStacks;
@@ -88,6 +89,9 @@ public class TestCommandLineS3Operations {
 	
 	@Rule public TestName test = new TestName();
 	String testName = "";
+	
+	@Rule
+    public Timeout globalTimeout = new Timeout(100*1000);
 	
 	@Test
 	public void testUploadArtifactsToS3AndAutopopulateAsParameters() {		

@@ -97,16 +97,17 @@
 		<attribute name="classes"/>
 		<sequential>
 			<mkdir dir="${junit.output.dir}"/>
-	        <junit fork="no" printsummary="withOutAndErr" haltonfailure="true" haltonerror="true">
+	        <junit fork="no" haltonfailure="true" haltonerror="true">
 				<!-- next line to support the environmental variable parameter populator tests -->
 				<env key="testEnvVar" value="testValue"/>
-	            <formatter type="xml"/>
 	            <classpath refid="cfnassist.classpath"/>
 				<batchtest fork="yes" todir="${junit.output.dir}">
 					<fileset dir="test">
 						<include name="@{classes}"/>
 					</fileset>
 				</batchtest>
+	        	<formatter type="xml"/>
+	        	<formatter type="plain" usefile="false" />
 	        </junit>
 		</sequential>
 	</macrodef>
