@@ -16,6 +16,7 @@ import tw.com.providers.LoadBalancerClient;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
+import com.amazonaws.services.elasticloadbalancing.model.Tag;
 
 public class ELBRepository {
 	private static final Logger logger = LoggerFactory.getLogger(ELBRepository.class);
@@ -52,13 +53,42 @@ public class ELBRepository {
 			}
 		}
 		if (foundELBForVPC.size()>1) {
-			throw new TooManyELBException(foundELBForVPC.size(), "Found too many elbs for vpc " + vpcID);
+			return checkForMatchingTag(foundELBForVPC, vpcID);
 		}
 		if (foundELBForVPC.size()==1) {
 			return foundELBForVPC.get(0);
 		}
 		logger.error("No matching ELB found for " + projAndEnv);
 		return null; // ugly but preserves current api
+	}
+
+	private LoadBalancerDescription checkForMatchingTag(
+			List<LoadBalancerDescription> descriptions, String vpcID) throws TooManyELBException {
+		List<LoadBalancerDescription> found = new LinkedList<LoadBalancerDescription>();
+		
+		for(LoadBalancerDescription desc : descriptions) {
+			logger.info("Checking LB for tags, name is " + desc.getLoadBalancerName());
+			List<Tag> tags = elbClient.getTagsFor(desc.getLoadBalancerName());
+			if (containsCorrectTag(tags)) {
+				found.add(desc);
+			}
+		}
+		if (found.size()==1) {
+			return found.get(0);
+		}
+	
+		throw new TooManyELBException(found.size(), String.format("Found too many elbs for vpc (%s) that matched tag %s",
+				vpcID,
+				AwsFacade.TYPE_TAG));
+	}
+
+	private boolean containsCorrectTag(List<Tag> tags) {
+		for(Tag tag : tags) {
+			if (tag.getKey().equals(AwsFacade.TYPE_TAG)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private String getVpcId(ProjectAndEnv projAndEnv) {

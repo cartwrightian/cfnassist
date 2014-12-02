@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.exceptions.TooManyELBException;
@@ -24,6 +25,7 @@ import tw.com.repository.VpcRepository;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
+import com.amazonaws.services.elasticloadbalancing.model.Tag;
 
 @RunWith(EasyMockRunner.class)
 public class TestELBRepository extends EasyMockSupport {
@@ -43,7 +45,10 @@ public class TestELBRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void ShouldThrowIfMoreThanOneELB() {
+	public void ShouldUseTagIfMoreThanOneELB() throws TooManyELBException {
+		List<Tag> tags = new LinkedList<>();
+		tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue("unused"));
+		
 		List<LoadBalancerDescription> lbs = new LinkedList<LoadBalancerDescription>();
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
@@ -51,6 +56,30 @@ public class TestELBRepository extends EasyMockSupport {
 		Vpc vpc = new Vpc().withVpcId("vpcId");
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
+		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(new LinkedList<Tag>());
+		EasyMock.expect(elbClient.getTagsFor("lb2Name")).andReturn(tags);
+		
+		replayAll();
+		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv);
+		verifyAll();
+		
+		assertEquals("lb2Name", result.getLoadBalancerName());
+	}
+	
+	@Test
+	public void ShouldThrowIfMoreThanOneELBAndNoMatchingTags() {
+		List<Tag> tags = new LinkedList<>();
+		tags.add(new Tag().withKey("someOtherTag").withValue("unused"));
+		
+		List<LoadBalancerDescription> lbs = new LinkedList<LoadBalancerDescription>();
+		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
+		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
+		
+		Vpc vpc = new Vpc().withVpcId("vpcId");
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
+		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
+		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(new LinkedList<Tag>());
+		EasyMock.expect(elbClient.getTagsFor("lb2Name")).andReturn(tags);
 		
 		replayAll();
 		try {

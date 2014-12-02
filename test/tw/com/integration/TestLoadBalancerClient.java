@@ -19,7 +19,8 @@ import com.amazonaws.services.elasticloadbalancing.model.DeleteLoadBalancerReque
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersResult;
 import com.amazonaws.services.elasticloadbalancing.model.Listener;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-
+import com.amazonaws.services.elasticloadbalancing.model.Tag;
+import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.LoadBalancerClient;
 
@@ -56,14 +57,20 @@ public class TestLoadBalancerClient  {
 	public void shouldDescribeELBs() {		
 		List<LoadBalancerDescription> results = client.describeLoadBalancers();
 		
+		List<Tag> tags = null;
 		boolean found = false;
 		for(LoadBalancerDescription candidate : results) {
 			if (candidate.getLoadBalancerName().equals(LB_NAME)) {
+				tags = client.getTagsFor(LB_NAME);
 				found = true;
 				break;
 			}
 		}
 		assertTrue(found);
+		assertEquals(1, tags.size());
+		Tag theTag = tags.get(0);
+		assertEquals(AwsFacade.TYPE_TAG, theTag.getKey());
+		assertEquals("unused", theTag.getValue());
 	}
 	
 	@Test
@@ -107,10 +114,14 @@ public class TestLoadBalancerClient  {
 		CreateLoadBalancerRequest createLoadBalancerRequest = new CreateLoadBalancerRequest().
 				withLoadBalancerName(LB_NAME).
 				withListeners(new Listener("HTTP",8000,8000)).
-				withAvailabilityZones(EnvironmentSetupForTests.AVAILABILITY_ZONE);
+				withAvailabilityZones(EnvironmentSetupForTests.AVAILABILITY_ZONE).withTags(createTags());
 		elbClient.createLoadBalancer(createLoadBalancerRequest);
 	}
 	
+	private static Tag createTags() {
+		return new Tag().withKey(AwsFacade.TYPE_TAG).withValue("unused");
+	}
+
 	private static void deleteLoadBalancer() {
 		elbClient.deleteLoadBalancer(new DeleteLoadBalancerRequest(LB_NAME));
 	}

@@ -10,10 +10,14 @@ import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFrom
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerResult;
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersRequest;
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersResult;
+import com.amazonaws.services.elasticloadbalancing.model.DescribeTagsRequest;
+import com.amazonaws.services.elasticloadbalancing.model.DescribeTagsResult;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLoadBalancerResult;
+import com.amazonaws.services.elasticloadbalancing.model.Tag;
+import com.amazonaws.services.elasticloadbalancing.model.TagDescription;
 
 public class LoadBalancerClient {
 	private static final Logger logger = LoggerFactory.getLogger(LoadBalancerClient.class);
@@ -53,6 +57,14 @@ public class LoadBalancerClient {
 		List<Instance> remaining = result.getInstances();
 		logger.info(String.format("ELB %s now has %s instances registered", loadBalancerName, remaining.size()));
 		return remaining;
+	}
+
+	public List<Tag> getTagsFor(String loadBalancerName) {
+		DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest().withLoadBalancerNames(loadBalancerName);
+		DescribeTagsResult result = elbClient.describeTags(describeTagsRequest);
+		List<TagDescription> descriptions = result.getTagDescriptions();
+		logger.info(String.format("Fetching %s tags for LB %s ", descriptions.size(), loadBalancerName));
+		return descriptions.get(0).getTags();
 	}
 
 }
