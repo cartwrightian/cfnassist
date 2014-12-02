@@ -1,7 +1,26 @@
 package tw.com;
 
-public class CLIArgBuilder {
+import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+
+import com.amazonaws.services.cloudformation.model.StackStatus;
+
+public class CLIArgBuilder {
+	
+	public static void checkForExpectedLine(String stackName, String project,
+			String env, ByteArrayOutputStream stream) {
+		String result = stream.toString();
+		String lines[] = result.split("\\r?\\n");
+		
+		boolean found=false;
+		for(String line : lines) {
+			found = line.equals(String.format("%s\t%s\t%s\t%s",stackName, project, env, StackStatus.CREATE_COMPLETE.toString()));
+			if (found) break;
+		}
+		assertTrue(found);
+	}
+	
 	public static String[] createSimpleStack(String testName) {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 

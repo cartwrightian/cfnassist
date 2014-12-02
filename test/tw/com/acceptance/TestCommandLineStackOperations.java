@@ -112,15 +112,7 @@ public class TestCommandLineStackOperations {
 
 		System.setOut(origStream);
 	
-		String result = stream.toString();
-		String lines[] = result.split("\\r?\\n");
-
-		boolean found=false;
-		for(String line : lines) {
-			found = line.equals("CfnAssistTestsimpleStack\tCfnAssist\tTest");
-			if (found) break;
-		}
-		assert(found);
+		CLIArgBuilder.checkForExpectedLine("CfnAssistTestsimpleStack", "CfnAssist", "Test", stream);
 
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0, status);

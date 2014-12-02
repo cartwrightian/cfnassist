@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 
 import tw.com.AwsFacade;
@@ -228,12 +229,16 @@ public class TestCommandLineActions extends EasyMockSupport {
 	@Test
 	public void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
 		PrintStream origStream = System.out;
+		String stackName = "theStackName";
+		String project = "theProject";
+		String stackId = "theStackId";
+		String env = "theEnv";
 		
 		setFactoryExpectations(false);
 			
 		List<StackEntry> stackEntries = new LinkedList<StackEntry>();
-		Stack stack = new Stack().withStackName("theStackName").withStackId("theStackId");
-		stackEntries.add(new StackEntry("theProject", new EnvironmentTag("theEnv"), stack));
+		Stack stack = new Stack().withStackName(stackName).withStackId(stackId).withStackStatus(StackStatus.CREATE_COMPLETE);
+		stackEntries.add(new StackEntry(project, new EnvironmentTag(env), stack));
 		EasyMock.expect(facade.listStacks(projectAndEnv)).andReturn(stackEntries);
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -244,17 +249,9 @@ public class TestCommandLineActions extends EasyMockSupport {
 		
 		System.setOut(origStream);
 		
-		String result = stream.toString();
-		String lines[] = result.split("\\r?\\n");
-		
-		boolean found=false;
-		for(String line : lines) {
-			found = line.equals("theStackName\ttheProject\ttheEnv");
-			if (found) break;
-		}
-		assert(found);
+		CLIArgBuilder.checkForExpectedLine(stackName, project, env, stream);
 	}
-	
+
 	@Test
 	public void shouldCreateStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {
 		setFactoryExpectations(false);

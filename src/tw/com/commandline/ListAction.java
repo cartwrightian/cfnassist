@@ -46,7 +46,11 @@ public class ListAction extends SharedAction {
 	private void render(List<StackEntry> results) {
 		System.out.println("Stackname\tProject\tEnvironment");
 		for(StackEntry entry : results) {
-			System.out.println(String.format("%s\t%s\t%s", entry.getStackName(), entry.getProject(), entry.getEnvTag().getEnv()));
+			System.out.println(String.format("%s\t%s\t%s\t%s", 
+					entry.getStackName(), 
+					entry.getProject(), 
+					entry.getEnvTag().getEnv(),
+					entry.getStack().getStackStatus().toString()));
 		}
 	}
 
