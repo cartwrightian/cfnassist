@@ -13,6 +13,29 @@ public class CLIArgBuilder {
 		return args;
 	}
 	
+	public static String[] createSubnetStack(String testName) {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-file", FilesForTesting.SUBNET_STACK, 
+				"-comment", testName
+				};
+		return args;
+	}
+	
+	public static String[] updateSimpleStack(String testName, String sns) {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-file", FilesForTesting.SUBNET_STACK_DELTA,
+				sns, 
+				"-comment", testName
+				};
+		return args;
+	}
+	
 	public static String[] createSimpleStackWithSNS(String testName) {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -175,5 +198,7 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
+
+
 
 }

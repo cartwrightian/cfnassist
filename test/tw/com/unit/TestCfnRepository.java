@@ -475,25 +475,18 @@ public class TestCfnRepository extends EasyMockSupport {
 		verifyAll();
 	}
 	
-	// TOOD can now update stacks with SNS
 	@Test
-	public void shouldThrowIfUpdateStackSNSNowEnabled() throws NotReadyException, WrongNumberOfStacksException, InvalidParameterException {
+	public void shouldUpdateStackWithSNS() throws NotReadyException, WrongNumberOfStacksException, InvalidParameterException {
+		// this smells, at least until we pull cache updates down into repository
 		SNSMonitor snsMonitor = createMock(SNSMonitor.class);
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
 		
-		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("");
-		List<Stack> stacks = new LinkedList<Stack>();
-		stacks.add(new Stack().withStackName("stackName").withTags(tags)); // no arns set
-		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks);
+		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		EasyMock.expect(formationClient.updateStack("contents", parameters, snsMonitor, "stackName")).andReturn(new StackNameAndId("stackName", "someStackId"));
 		replayAll();
 		
-		try {
-			repository.updateStack("contents", parameters, snsMonitor, "stackName");
-			fail("should have thrown");
-		}
-		catch(InvalidParameterException expected) {
-			// expected
-		}
+		StackNameAndId result = repository.updateStack("contents", parameters, snsMonitor, "stackName");
+		assertEquals("stackName", result.getStackName());
+		assertEquals("someStackId", result.getStackId());
 		verifyAll();
 	}
 	

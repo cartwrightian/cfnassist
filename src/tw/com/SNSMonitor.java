@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 
 import tw.com.entity.DeletionPending;
 import tw.com.entity.DeletionsPending;
@@ -183,11 +184,23 @@ public class SNSMonitor extends StackMonitor  {
 
 	@Override
 	public void addMonitoringTo(CreateStackRequest createStackRequest) throws NotReadyException {
+		Collection<String> arns = getArns();
+		createStackRequest.setNotificationARNs(arns);
+	}
+
+	@Override
+	public void addMonitoringTo(UpdateStackRequest updateStackRequest) throws NotReadyException {
+		Collection<String> arns = getArns();
+		updateStackRequest.setNotificationARNs(arns);	
+	}
+	
+	private Collection<String> getArns() throws NotReadyException {
 		String arn = notifProvider.getSNSArn();
 		logger.info("Setting arn for sns events to " + arn);
 		Collection<String> arns = new LinkedList<String>();
 		arns.add(arn);
-		createStackRequest.setNotificationARNs(arns);
+		return arns;
 	}
+
 
 }

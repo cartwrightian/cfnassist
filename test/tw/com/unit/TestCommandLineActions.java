@@ -66,7 +66,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	}
 	
-	
 	@Test
 	public void shouldInitVPCWithEnvironmentAndProject() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		
@@ -119,6 +118,25 @@ public class TestCommandLineActions extends EasyMockSupport {
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
 		validate(CLIArgBuilder.createSimpleStack(testName));
+	}
+	
+	@Test
+	public void shouldUpdateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+		setFactoryExpectations(false);
+		File file = new File(FilesForTesting.SUBNET_STACK_DELTA);		
+		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
+			
+		validate(CLIArgBuilder.updateSimpleStack(testName,""));
+	}
+	
+	@Test
+	public void shouldUpdateStackSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+		setFactoryExpectations(true);
+		File file = new File(FilesForTesting.SUBNET_STACK_DELTA);		
+		projectAndEnv.setUseSNS();
+		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
+			
+		validate(CLIArgBuilder.updateSimpleStack(testName,"-sns"));
 	}
 	
 	@Test

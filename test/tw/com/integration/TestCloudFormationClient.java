@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -35,11 +36,14 @@ import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sqs.AmazonSQSClient;
 
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.PollingStackMonitor;
+import tw.com.SNSMonitor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
@@ -49,6 +53,7 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
+import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.VpcRepository;
 
@@ -57,10 +62,13 @@ public class TestCloudFormationClient {
 	private static AmazonCloudFormationClient cfnClient;
 	private static AmazonEC2Client ec2Client;
 	
-	private PollingStackMonitor monitor;
+	private PollingStackMonitor polligMonitor;
 	private ProjectAndEnv projAndEnv;
 	private CloudClient cloudClient;
 	private static VpcRepository vpcRepository;
+	private static SNSEventSource snsNotifProvider;
+	private static AmazonSNSClient snsClient;
+	private static AmazonSQSClient sqsClient;
 	CloudFormationClient formationClient;
 	private DeletesStacks deletesStacks;
 	private Vpc mainTestVPC;
@@ -71,18 +79,24 @@ public class TestCloudFormationClient {
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		snsClient =  EnvironmentSetupForTests.createSNSClient(credentialsProvider);
+		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
+		snsNotifProvider = new SNSEventSource(snsClient, sqsClient);
 		
 		new DeletesStacks(cfnClient).ifPresent("queryStackTest").ifPresent("createStackTest").act();
 	}
 	
 	@Rule public TestName test = new TestName();
+	private SNSMonitor snsMonitor;
 
 	@Before
-	public void beforeEachTestRuns() {
+	public void beforeEachTestRuns() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		formationClient = new CloudFormationClient(cfnClient);
 		cloudClient = new CloudClient(ec2Client);
 		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudClient, EnvironmentSetupForTests.PROJECT);
-		monitor = new PollingStackMonitor(cfnRepository );
+		polligMonitor = new PollingStackMonitor(cfnRepository );
+		snsMonitor = new SNSMonitor(snsNotifProvider, cfnRepository);
+		snsMonitor.init();
 		
 		deletesStacks = new DeletesStacks(cfnClient);
 		projAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
@@ -103,12 +117,12 @@ public class TestCloudFormationClient {
 		String stackName = "createStackTest";
 		String comment = test.getMethodName();
 		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment); // no comment
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, monitor, comment);
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
 		deletesStacks.ifPresent(stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());
 		
-		String status = monitor.waitForCreateFinished(nameAndId);
+		String status = polligMonitor.waitForCreateFinished(nameAndId);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
 		DescribeStacksResult queryResult = cfnClient.describeStacks(new DescribeStacksRequest().withStackName(stackName));
@@ -123,7 +137,7 @@ public class TestCloudFormationClient {
 		///////
 		// now delete
 		formationClient.deleteStack(stackName);
-		status = monitor.waitForDeleteFinished(nameAndId);
+		status = polligMonitor.waitForDeleteFinished(nameAndId);
 		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 		
 		try {
@@ -152,10 +166,10 @@ public class TestCloudFormationClient {
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		parameters.add(new Parameter().withParameterKey("cidr").withParameterValue(cidr));
 		String stackName = "queryStackTest";
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, monitor, test.getMethodName());
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, test.getMethodName());
 		deletesStacks.ifPresent(nameAndId);
 		
-		String status = monitor.waitForCreateFinished(nameAndId);
+		String status = polligMonitor.waitForCreateFinished(nameAndId);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
 		// query all stacks
@@ -189,12 +203,12 @@ public class TestCloudFormationClient {
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, monitor, test.getMethodName());
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, test.getMethodName());
 		deletesStacks.ifPresent(stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());
 		
-		String status = monitor.waitForCreateFinished(nameAndId);
+		String status = polligMonitor.waitForCreateFinished(nameAndId);
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
 		assertCIDR(nameAndId, "10.0.10.0/24", vpcId);
@@ -203,11 +217,44 @@ public class TestCloudFormationClient {
 		// now update
 		
 		String newContents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_DELTA), Charset.defaultCharset());
-		nameAndId = formationClient.updateStack(newContents, parameters, monitor, stackName);
+		nameAndId = formationClient.updateStack(newContents, parameters, polligMonitor, stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());
 		
-		status = monitor.waitForUpdateFinished(nameAndId);
+		status = polligMonitor.waitForUpdateFinished(nameAndId);
+		assertEquals(StackStatus.UPDATE_COMPLETE.toString(), status);
+
+		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);	
+		
+		// TODO Check TAGS?
+	}
+	
+	@Test
+	public void shouldCreateAndThenUpdateAStackAddingSNS() throws IOException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+		String vpcId = mainTestVPC.getVpcId();
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
+		
+		Collection<Parameter> parameters = createStandardParameters(vpcId);
+		String stackName = "createStackTest";
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, test.getMethodName());
+		deletesStacks.ifPresent(stackName);
+		
+		assertEquals(stackName, nameAndId.getStackName());
+		
+		String status = polligMonitor.waitForCreateFinished(nameAndId);
+		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+		
+		assertCIDR(nameAndId, "10.0.10.0/24", vpcId);
+		
+		/////
+		// now update
+
+		String newContents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_DELTA), Charset.defaultCharset());
+		nameAndId = formationClient.updateStack(newContents, parameters, snsMonitor, stackName);
+		
+		assertEquals(stackName, nameAndId.getStackName());
+		
+		status = snsMonitor.waitForUpdateFinished(nameAndId);
 		assertEquals(StackStatus.UPDATE_COMPLETE.toString(), status);
 
 		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);	

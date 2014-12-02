@@ -39,7 +39,7 @@ public interface StackRepository {
 
 	public abstract StackNameAndId updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
 			String stackName) throws InvalidParameterException,
-			WrongNumberOfStacksException;
+			WrongNumberOfStacksException, NotReadyException;
 
 	public abstract StackNameAndId createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
 			Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws NotReadyException;

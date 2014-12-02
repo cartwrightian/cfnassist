@@ -5,6 +5,7 @@ import java.util.List;
 import org.apache.commons.cli.MissingArgumentException;
 
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
+import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.StackNameAndId;
@@ -23,4 +24,5 @@ public interface MonitorStackEvents {
 	void init() throws MissingArgumentException, CfnAssistException, InterruptedException;
 	
 	void addMonitoringTo(CreateStackRequest createStackRequest) throws NotReadyException;
+	void addMonitoringTo(UpdateStackRequest updateStackRequest) throws NotReadyException;
 }

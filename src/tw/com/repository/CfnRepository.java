@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
-import tw.com.SNSMonitor;
 import tw.com.StackCache;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
@@ -306,23 +305,8 @@ public class CfnRepository implements CloudFormRepository {
 	// TODO cache updates into this class
 	@Override
 	public StackNameAndId updateStack(String contents,
-			Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws InvalidParameterException, WrongNumberOfStacksException {
-			
-			// TODO move into sns monitor
-			if (monitor instanceof SNSMonitor) {
-				logger.debug("SNS monitoring enabled, check if stack has a notification ARN set");
-				Stack target = getStack(stackName);
-				List<String> notificationARNs = target.getNotificationARNs();
-				if (notificationARNs.size()<=0) {
-					logger.error("Stack does not have notification ARN set, progress cannot be monitored via SNS");
-					throw new InvalidParameterException("Cannot use SNS, original stack was not created with a notification ARN");
-				}
-				for(String arn : notificationARNs) {
-					logger.info("Notification ARNs set on stack " + arn);
-				}
-			}
-			
-			return formationClient.updateStack(contents, parameters, monitor, stackName);
+			Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws InvalidParameterException, WrongNumberOfStacksException, NotReadyException {			
+		return formationClient.updateStack(contents, parameters, monitor, stackName);
 	}
 
 	@Override

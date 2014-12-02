@@ -131,13 +131,14 @@ public class CloudFormationClient {
 	}
 
 	public StackNameAndId updateStack(String contents, Collection<Parameter> parameters,
-			MonitorStackEvents monitor, String stackName) {
+			MonitorStackEvents monitor, String stackName) throws NotReadyException {
 		
 		logger.info("Will attempt to update stack: " + stackName);
 		UpdateStackRequest updateStackRequest = new UpdateStackRequest();	
 		updateStackRequest.setParameters(parameters);
 		updateStackRequest.setStackName(stackName);
 		updateStackRequest.setTemplateBody(contents);
+		monitor.addMonitoringTo(updateStackRequest);
 		UpdateStackResult result = cfnClient.updateStack(updateStackRequest);
 		
 		return new StackNameAndId(stackName,result.getStackId());

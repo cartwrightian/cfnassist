@@ -63,7 +63,8 @@ public class TestCommandLineStackOperations {
 		deletesStacks.ifPresent(EnvironmentSetupForTests.TEMPORARY_STACK)
 			.ifPresent("CfnAssistTest01createSubnet")
 			.ifPresent("CfnAssistTest02createAcls")
-			.ifPresent("CfnAssistTestsimpleStack");
+			.ifPresent("CfnAssistTestsimpleStack")
+			.ifPresent("CfnAssistTestsubnet");
 		deletesStacks.act();
 		testName = test.getMethodName();
 	}
@@ -187,6 +188,20 @@ public class TestCommandLineStackOperations {
 		Main main = new Main(args);
 		int result = main.parse();
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
+		assertEquals(0,result);
+	}
+	
+	@Test
+	public void testUpdateViaCommandLineDeployWithFileAndSNS() throws InterruptedException, TimeoutException {
+		String[] create = CLIArgBuilder.createSubnetStack(testName); // no sns
+		Main main = new Main(create);
+		int result = main.parse();
+		
+		String[] update = CLIArgBuilder.updateSimpleStack(testName, "-sns");
+		main = new Main(update);
+		result = main.parse();
+		
+		deletesStacks.ifPresent("CfnAssistTestsubnet");
 		assertEquals(0,result);
 	}
 	

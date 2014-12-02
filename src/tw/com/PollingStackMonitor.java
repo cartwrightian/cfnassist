@@ -19,6 +19,7 @@ import tw.com.repository.StackRepository;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.StackEvent;
 import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 
 public class PollingStackMonitor extends StackMonitor {
 	private static final Logger logger = LoggerFactory.getLogger(PollingStackMonitor.class);
@@ -149,6 +150,10 @@ public class PollingStackMonitor extends StackMonitor {
 		// does nothing in this implementation
 	}
 
-
+	@Override
+	public void addMonitoringTo(UpdateStackRequest updateStackRequest)
+			throws NotReadyException {
+		// does nothing in this implementation	
+	}
 
 }
