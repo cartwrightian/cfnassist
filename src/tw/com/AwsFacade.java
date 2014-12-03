@@ -448,28 +448,25 @@ public class AwsFacade {
 
 		List<StackEntry> candidateStacks = cfnRepository.getStacksMatching(projectAndEnv.getEnvTag(), name);
 		
-		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv, typeTag);
-		List<String> regInstanceIds = new LinkedList<String>();
-		if (registeredInstances.isEmpty()) {
-			logger.warn("No instances associated with ELB");
-		} else {
-			for(Instance ins : registeredInstances) {
-				regInstanceIds.add(ins.getInstanceId());
-			}
-		}
-		
 		if (candidateStacks.isEmpty()) {
 			logger.warn("No matching stacks found for possible deletion");
+			return;
 		} 
 		
+		List<String> regInstanceIds = currentlyRegisteredInstanceIDs(projectAndEnv, typeTag);
+	
 		List<StackEntry> toDelete = new LinkedList<StackEntry>();
 		for(StackEntry entry : candidateStacks) {
 			List<String> ids = cfnRepository.getInstancesFor(entry.getStackName());
-			if (containsAny(regInstanceIds,ids)) {
-				logger.info(String.format("Stack %s contains instances registered to LB", entry.getStackName()));
+			if (ids.isEmpty()) {
+				logger.warn(String.format("Stack %s has no instances at all, will not be deleted", entry.getStackName()));
 			} else {
-				logger.warn(String.format("Stack %s has not registered instances, will be deleted", entry.getStackName()));
-				toDelete.add(entry);
+				if (containsAny(regInstanceIds,ids)) {
+					logger.info(String.format("Stack %s contains instances registered to LB, will not be deleted", entry.getStackName()));
+				} else {
+					logger.warn(String.format("Stack %s has no registered instances, will be deleted", entry.getStackName()));
+					toDelete.add(entry);
+				}
 			}
 		}
 		
@@ -482,6 +479,21 @@ public class AwsFacade {
 			}
 		}
 		
+	}
+
+	private List<String> currentlyRegisteredInstanceIDs(
+			ProjectAndEnv projectAndEnv, String typeTag)
+			throws TooManyELBException {
+		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv, typeTag);
+		List<String> regInstanceIds = new LinkedList<String>();
+		if (registeredInstances.isEmpty()) {
+			logger.warn("No instances associated with ELB");
+		} else {
+			for(Instance ins : registeredInstances) {
+				regInstanceIds.add(ins.getInstanceId());
+			}
+		}
+		return regInstanceIds;
 	}
 	
 	public boolean containsAny(List<String> first, List<String> second) {
