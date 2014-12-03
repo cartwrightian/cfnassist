@@ -28,8 +28,8 @@ public class S3Create implements ActionElement {
 		
 		S3CreateAction action = new S3CreateAction();
 		
-		action.validate(projectAndEnv, "", cfnParams, artifacts);
-		action.invoke(factory, projectAndEnv, "", cfnParams, artifacts);	
+		action.validate(projectAndEnv, cfnParams, artifacts, "");
+		action.invoke(factory, projectAndEnv, cfnParams, artifacts, "");	
 	}
 
 }

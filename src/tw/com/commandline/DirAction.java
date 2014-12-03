@@ -28,10 +28,11 @@ public class DirAction extends SharedAction {
 				withDescription("The directory/folder containing delta templates to apply").create("dir");
 	}
 
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String folderPath, Collection<Parameter> cfnParams, 
-			Collection<Parameter> artifacts) throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, 
+			String... args) throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
-		ArrayList<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(folderPath, projectAndEnv, cfnParams);
+		String folderPath = args[0];
+		ArrayList<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(folderPath , projectAndEnv, cfnParams);
 		logger.info(String.format("Created %s stacks", stackIds.size()));
 		for(StackNameAndId name : stackIds) {
 			logger.info("Created stack " +name);
@@ -39,8 +40,8 @@ public class DirAction extends SharedAction {
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);		
 		guardForNoBuildNumber(projectAndEnv);	

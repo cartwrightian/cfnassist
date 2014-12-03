@@ -165,7 +165,7 @@ public class CLIArgBuilder {
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-tidyOldStakcs", FilesForTesting.SIMPLE_STACK
+				"-tidyOldStacks", FilesForTesting.SIMPLE_STACK, "typeTag"
 				};
 		return args;
 	}

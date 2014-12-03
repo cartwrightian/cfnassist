@@ -38,8 +38,8 @@ public class RollbackElement implements ActionElement {
 		
 		CommandLineAction actionToInvoke = new RollbackAction();
 
-		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams, artifacts);
-		actionToInvoke.invoke(factory, projectAndEnv, absolutePath, cfnParams, artifacts);		
+		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, absolutePath);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, absolutePath);		
 	}
 
 }

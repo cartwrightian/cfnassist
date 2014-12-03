@@ -27,17 +27,18 @@ public class InitAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,  String vpcId,
-			Collection<Parameter> unused, Collection<Parameter> artifacts) throws InvalidParameterException,
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,  Collection<Parameter> unused,
+			Collection<Parameter> artifacts, String... args) throws InvalidParameterException,
 			FileNotFoundException, IOException, InterruptedException, CfnAssistException, MissingArgumentException {
+		String vpcId = args[0];
 		logger.info("Invoke init of tags for VPC: " + vpcId);
 		AwsFacade aws = factory.createFacade();
 		aws.initEnvAndProjectForVPC(vpcId, projectAndEnv);		
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);	
 		guardForNoBuildNumber(projectAndEnv);	

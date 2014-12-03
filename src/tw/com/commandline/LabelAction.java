@@ -27,8 +27,8 @@ public class LabelAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String stackname,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... stackname)
 			throws InvalidParameterException, FileNotFoundException,
 			IOException, InterruptedException, CfnAssistException {
 		logger.info("Invoke label of existing stack: " + stackname);
@@ -38,8 +38,8 @@ public class LabelAction extends SharedAction {
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);	
 		guardForNoBuildNumber(projectAndEnv);	

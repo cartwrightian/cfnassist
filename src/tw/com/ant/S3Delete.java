@@ -26,8 +26,8 @@ public class S3Delete implements ActionElement {
 		
 		S3DeleteAction action = new S3DeleteAction();
 		
-		action.validate(projectAndEnv, "", cfnParams, artifacts);
-		action.invoke(factory, projectAndEnv, "", cfnParams, artifacts);
+		action.validate(projectAndEnv, cfnParams, artifacts, "");
+		action.invoke(factory, projectAndEnv, cfnParams, artifacts, "");
 	}
 
 }

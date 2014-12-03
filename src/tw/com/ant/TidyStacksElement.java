@@ -18,9 +18,14 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 public class TidyStacksElement implements ActionElement {
 	private File target;
+	private String typeTag;
 
 	public void setTarget(File target) {
 		this.target = target;
+	}
+	
+	public void setTypeTag(String typeTag) {
+		this.typeTag = typeTag;
 	}
 	
 	public TidyStacksElement() {
@@ -36,8 +41,8 @@ public class TidyStacksElement implements ActionElement {
 		TidyOldStacksAction actionToInvoke = new TidyOldStacksAction();
 		String absolutePath = target.getAbsolutePath();
 
-		actionToInvoke.validate(projectAndEnv, absolutePath, cfnParams, artifacts);
-		actionToInvoke.invoke(factory, projectAndEnv, absolutePath, cfnParams, artifacts);
+		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, absolutePath, typeTag);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, absolutePath, typeTag);
 
 	}
 

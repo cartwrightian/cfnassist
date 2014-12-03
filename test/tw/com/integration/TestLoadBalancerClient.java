@@ -70,7 +70,7 @@ public class TestLoadBalancerClient  {
 		assertEquals(1, tags.size());
 		Tag theTag = tags.get(0);
 		assertEquals(AwsFacade.TYPE_TAG, theTag.getKey());
-		assertEquals("unused", theTag.getValue());
+		assertEquals("tagValue", theTag.getValue());
 	}
 	
 	@Test
@@ -119,7 +119,7 @@ public class TestLoadBalancerClient  {
 	}
 	
 	private static Tag createTags() {
-		return new Tag().withKey(AwsFacade.TYPE_TAG).withValue("unused");
+		return new Tag().withKey(AwsFacade.TYPE_TAG).withValue("tagValue");
 	}
 
 	private static void deleteLoadBalancer() {

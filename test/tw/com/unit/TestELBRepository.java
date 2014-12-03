@@ -46,8 +46,13 @@ public class TestELBRepository extends EasyMockSupport {
 	
 	@Test
 	public void ShouldUseTagIfMoreThanOneELB() throws TooManyELBException {
-		List<Tag> tags = new LinkedList<>();
-		tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue("unused"));
+		String typeTag = "expectedType";
+		
+		List<Tag> lb1Tags = new LinkedList<>();
+		lb1Tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue("someNonMatchingTag"));
+
+		List<Tag> lb2Tags = new LinkedList<>();
+		lb2Tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue(typeTag));
 		
 		List<LoadBalancerDescription> lbs = new LinkedList<LoadBalancerDescription>();
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
@@ -56,11 +61,11 @@ public class TestELBRepository extends EasyMockSupport {
 		Vpc vpc = new Vpc().withVpcId("vpcId");
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
-		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(new LinkedList<Tag>());
-		EasyMock.expect(elbClient.getTagsFor("lb2Name")).andReturn(tags);
+		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(lb1Tags);
+		EasyMock.expect(elbClient.getTagsFor("lb2Name")).andReturn(lb2Tags);
 		
 		replayAll();
-		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv);
+		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv, typeTag);
 		verifyAll();
 		
 		assertEquals("lb2Name", result.getLoadBalancerName());
@@ -69,7 +74,7 @@ public class TestELBRepository extends EasyMockSupport {
 	@Test
 	public void ShouldThrowIfMoreThanOneELBAndNoMatchingTags() {
 		List<Tag> tags = new LinkedList<>();
-		tags.add(new Tag().withKey("someOtherTag").withValue("unused"));
+		tags.add(new Tag().withKey("someOtherTag").withValue("someOtherValue"));
 		
 		List<LoadBalancerDescription> lbs = new LinkedList<LoadBalancerDescription>();
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
@@ -83,7 +88,7 @@ public class TestELBRepository extends EasyMockSupport {
 		
 		replayAll();
 		try {
-			elbRepository.findELBFor(projAndEnv );
+			elbRepository.findELBFor(projAndEnv,"notMatchingAnLB");
 			fail("should have thrown");
 		}
 		catch(TooManyELBException expectedException) {
@@ -103,7 +108,7 @@ public class TestELBRepository extends EasyMockSupport {
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
 		
 		replayAll();
-		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv );
+		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv,"ignoredWhenOnlyOneMatchingLB");
 		assertEquals("lb2Name", result.getLoadBalancerName());
 		verifyAll();
 	}
@@ -182,7 +187,7 @@ public class TestELBRepository extends EasyMockSupport {
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(theLB);
 		
 		replayAll();
-		List<Instance> result = elbRepository.findInstancesAssociatedWithLB(projAndEnv);
+		List<Instance> result = elbRepository.findInstancesAssociatedWithLB(projAndEnv,"typeNotUsedWhenOneMatchingLB");
 		verifyAll();
 		
 		assertEquals(1,  result.size());

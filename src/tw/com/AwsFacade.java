@@ -437,22 +437,24 @@ public class AwsFacade {
 		return cfnRepository.getStacks();
 	}
 
-	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv) throws InvalidParameterException, TooManyELBException {
+	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws InvalidParameterException, TooManyELBException {
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
 		if (name.endsWith(DELTA_EXTENSTION)) {
 			throw new InvalidParameterException("Cannot invoke for .delta files");
 		}
+		logger.info(String.format("Checking for non-instance-associated stacks for %s and name %s. Will use %s:%s if >1 ELB",
+				projectAndEnv, name, AwsFacade.TYPE_TAG,typeTag));
 
 		List<StackEntry> candidateStacks = cfnRepository.getStacksMatching(projectAndEnv.getEnvTag(), name);
 		
-		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv);
-		List<String> registeredIds = new LinkedList<String>();
+		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv, typeTag);
+		List<String> regInstanceIds = new LinkedList<String>();
 		if (registeredInstances.isEmpty()) {
 			logger.warn("No instances associated with ELB");
 		} else {
 			for(Instance ins : registeredInstances) {
-				registeredIds.add(ins.getInstanceId());
+				regInstanceIds.add(ins.getInstanceId());
 			}
 		}
 		
@@ -463,7 +465,7 @@ public class AwsFacade {
 		List<StackEntry> toDelete = new LinkedList<StackEntry>();
 		for(StackEntry entry : candidateStacks) {
 			List<String> ids = cfnRepository.getInstancesFor(entry.getStackName());
-			if (containsAny(registeredIds,ids)) {
+			if (containsAny(regInstanceIds,ids)) {
 				logger.info(String.format("Stack %s contains instances registered to LB", entry.getStackName()));
 			} else {
 				logger.warn(String.format("Stack %s has not registered instances, will be deleted", entry.getStackName()));

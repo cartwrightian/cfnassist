@@ -107,7 +107,7 @@
 			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
 				<Templates target="src/cfnScripts/elb.json"/>
 				<Templates target="src/cfnScripts/simpleStack.json"/>
-				<TidyStacks target="src/cfnScripts/simpleStack.json"/>
+				<TidyStacks target="src/cfnScripts/simpleStack.json" typeTag="web"/> 
 				<Delete target="src/cfnScripts/elb.json"/>
 			</cfnassist>
 	</target>

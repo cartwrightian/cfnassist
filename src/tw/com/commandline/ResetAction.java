@@ -23,15 +23,15 @@ public class ResetAction extends SharedAction {
 				withDescription("Warning: Resets the Delta Tag "+AwsFacade.INDEX_TAG+ " to zero").create("reset");
 	}
 	
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String unusedArg, Collection<Parameter> unusedParams, Collection<Parameter> artifacts) throws MissingArgumentException, CfnAssistException, InterruptedException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unusedParams, Collection<Parameter> artifacts, String... unusedArg) throws MissingArgumentException, CfnAssistException, InterruptedException {
 		logger.info("Reseting index for " + projectAndEnv);
 		AwsFacade aws = factory.createFacade();
 		aws.resetDeltaIndex(projectAndEnv);	
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);	

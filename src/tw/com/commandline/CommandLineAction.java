@@ -22,9 +22,10 @@ public interface CommandLineAction {
 
 	String getArgName();
 
-	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String argument, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CfnAssistException, MissingArgumentException, TooManyELBException;
+	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
+			Collection<Parameter> artifacts, String... argument) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CfnAssistException, MissingArgumentException, TooManyELBException;
 
-	void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws CommandLineException;
+	void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException;
 
 }

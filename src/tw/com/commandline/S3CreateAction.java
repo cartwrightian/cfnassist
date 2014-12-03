@@ -24,16 +24,16 @@ public class S3CreateAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			String argument, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts) throws InvalidParameterException,
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
+			String... argument) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		super.uploadArtifacts(factory, projectAndEnv, artifacts, cfnParams);
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
 		super.guardForArtifactAndRequiredParams(projectAndEnv, artifacts);
 		super.guardForSNSNotSet(projectAndEnv);

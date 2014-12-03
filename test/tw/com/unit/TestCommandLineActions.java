@@ -210,7 +210,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		setFactoryExpectations(false);
 		
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
-		facade.tidyNonLBAssocStacks(file, projectAndEnv);
+		facade.tidyNonLBAssocStacks(file, projectAndEnv, "typeTag");
 				
 		validate(CLIArgBuilder.tidyNonLBAssociatedStacks(testName));
 	}
@@ -456,6 +456,17 @@ public class TestCommandLineActions extends EasyMockSupport {
 				"-artifacts", uploads,
 				"-build", "9987",
 				"-sns"
+				};
+		expectCommandLineFailureStatus(args);
+	}
+	
+	@Test
+	public void testMustGiveFileAndTypeTagWhenInvokingStackTidyCommand() {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-tidyOldStacks", FilesForTesting.SIMPLE_STACK
 				};
 		expectCommandLineFailureStatus(args);
 	}

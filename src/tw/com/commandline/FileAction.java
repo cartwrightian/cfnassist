@@ -27,8 +27,9 @@ public class FileAction extends SharedAction {
 		option = OptionBuilder.withArgName("file").hasArg().withDescription("The single template file to apply").create("file");
 	}
 	
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException, MissingArgumentException {
-		File templateFile = new File(filename);
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
+			Collection<Parameter> artifacts, String... args) throws FileNotFoundException, IOException, CfnAssistException, InterruptedException, InvalidParameterException, MissingArgumentException {
+		File templateFile = new File(args[0]);
 		AwsFacade aws = factory.createFacade();
 		uploadArtifacts(factory, projectAndEnv, artifacts, cfnParams);
 		StackNameAndId stackId = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
@@ -36,8 +37,8 @@ public class FileAction extends SharedAction {
 	}
 	
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws CommandLineException {
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		guardForArtifactAndRequiredParams(projectAndEnv, artifacts);
 	}

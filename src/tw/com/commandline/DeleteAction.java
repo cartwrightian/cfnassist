@@ -30,9 +30,11 @@ public class DeleteAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String filename, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws InvalidParameterException,
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
+			Collection<Parameter> artifacts, String... args) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
+		String filename = args[0];
 		logger.info(String.format("Attempting to delete corresponding to %s and %s", filename, projectAndEnv));
 		File templateFile = new File(filename);
 		AwsFacade aws = factory.createFacade();
@@ -40,8 +42,8 @@ public class DeleteAction extends SharedAction {
 	}
 	
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws CommandLineException {
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		guardForNoArtifacts(artifacts);
 	}

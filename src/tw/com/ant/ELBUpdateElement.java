@@ -34,8 +34,8 @@ public class ELBUpdateElement implements ActionElement {
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		ElbAction actionToInvoke = new ElbAction(); 
 		
-		actionToInvoke.validate(projectAndEnv, typeTag, cfnParams, artifacts);
-		actionToInvoke.invoke(factory, projectAndEnv, typeTag, cfnParams, artifacts);
+		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, typeTag);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, typeTag);
 
 	}
 

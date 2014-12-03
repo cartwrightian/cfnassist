@@ -24,19 +24,19 @@ public class ElbAction extends SharedAction {
 	}
 	
 	@Override
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String typeTag,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... args)
 			throws InvalidParameterException, FileNotFoundException,
 			IOException, WrongNumberOfStacksException, InterruptedException,
 			CfnAssistException, MissingArgumentException {
 
 		AwsFacade facade = factory.createFacade();
-		facade.updateELBToInstancesMatchingBuild(projectAndEnv, typeTag);
+		facade.updateELBToInstancesMatchingBuild(projectAndEnv, args[0]);
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws CommandLineException {
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		guardForNoArtifacts(artifacts);
 		if (!projectAndEnv.hasBuildNumber()) {

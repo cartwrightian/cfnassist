@@ -81,9 +81,10 @@ public class Main {
 			}
 			logger.info("Invoking for " + projectAndEnv);
 			
-			String argumentForAction = commandLine.getOptionValue(action.getArgName());
+			//String argumentForAction = commandLine.getOptionValue(action.getArgName());
+			String[] argumentForAction = commandLine.getOptionValues(action.getArgName());
 			Collection<Parameter> artifacts = flags.getUploadParams();
-			action.validate(projectAndEnv, argumentForAction, flags.getAdditionalParameters(), artifacts);
+			action.validate(projectAndEnv, flags.getAdditionalParameters(), artifacts, argumentForAction);
 			
 			factory.setRegion(awsRegion);
 			factory.setProject(flags.getProject());
@@ -92,7 +93,7 @@ public class Main {
 			Collection<Parameter> additionalParams = flags.getAdditionalParameters();
 			
 			if (act) {				
-				action.invoke(factory, projectAndEnv, argumentForAction, additionalParams, artifacts);
+				action.invoke(factory, projectAndEnv, additionalParams, artifacts, argumentForAction);
 			} else {
 				logger.info("Not invoking");
 			}

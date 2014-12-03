@@ -30,12 +30,11 @@ public class ELBRepository {
 		this.cfnRepository = cfnRepository;
 	}
 
-	// TODO AWS Now lets us tag ELBs, so could use that to distinguish if more then one ELB found??
-	public LoadBalancerDescription findELBFor(ProjectAndEnv projAndEnv) throws TooManyELBException {
+	public LoadBalancerDescription findELBFor(ProjectAndEnv projAndEnv, String type) throws TooManyELBException {
 		String vpcID = getVpcId(projAndEnv);
 		List<LoadBalancerDescription> foundELBForVPC = new LinkedList<LoadBalancerDescription>();
 		
-		logger.info("Searching for load balancers for " + vpcID);
+		logger.info(String.format("Searching for load balancers for %s (will use tag %s:%s if >1 found)", vpcID, AwsFacade.TYPE_TAG,type));
 		List<LoadBalancerDescription> elbs = elbClient.describeLoadBalancers();
 		for (LoadBalancerDescription elb : elbs) {
 			String dnsName = elb.getDNSName();
@@ -53,7 +52,7 @@ public class ELBRepository {
 			}
 		}
 		if (foundELBForVPC.size()>1) {
-			return checkForMatchingTag(foundELBForVPC, vpcID);
+			return checkForMatchingTag(foundELBForVPC, vpcID, type);
 		}
 		if (foundELBForVPC.size()==1) {
 			return foundELBForVPC.get(0);
@@ -63,13 +62,15 @@ public class ELBRepository {
 	}
 
 	private LoadBalancerDescription checkForMatchingTag(
-			List<LoadBalancerDescription> descriptions, String vpcID) throws TooManyELBException {
+			List<LoadBalancerDescription> descriptions, String vpcID, String type) throws TooManyELBException {
 		List<LoadBalancerDescription> found = new LinkedList<LoadBalancerDescription>();
 		
 		for(LoadBalancerDescription desc : descriptions) {
-			logger.info("Checking LB for tags, name is " + desc.getLoadBalancerName());
-			List<Tag> tags = elbClient.getTagsFor(desc.getLoadBalancerName());
-			if (containsCorrectTag(tags)) {
+			String loadBalancerName = desc.getLoadBalancerName();
+			logger.info(String.format("Checking LB for tag %s:%s, ELB name is %s", AwsFacade.TYPE_TAG, type, loadBalancerName));
+			List<Tag> tags = elbClient.getTagsFor(loadBalancerName);
+			if (containsCorrectTag(tags, type)) {
+				logger.info("LB matched " + loadBalancerName);
 				found.add(desc);
 			}
 		}
@@ -82,10 +83,10 @@ public class ELBRepository {
 				AwsFacade.TYPE_TAG));
 	}
 
-	private boolean containsCorrectTag(List<Tag> tags) {
+	private boolean containsCorrectTag(List<Tag> tags, String type) {
 		for(Tag tag : tags) {
 			if (tag.getKey().equals(AwsFacade.TYPE_TAG)) {
-				return true;
+				return tag.getValue().equals(type);
 			}
 		}
 		return false;
@@ -101,7 +102,7 @@ public class ELBRepository {
 		if (!projAndEnv.hasBuildNumber()) {
 			throw new MustHaveBuildNumber();
 		}
-		LoadBalancerDescription elb = findELBFor(projAndEnv);	
+		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);	
 		List<Instance> currentInstances = elb.getInstances();
 		String lbName = elb.getLoadBalancerName();
 		List<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(projAndEnv, typeTag);
@@ -127,14 +128,14 @@ public class ELBRepository {
 	}
 
 	public List<Instance> findInstancesAssociatedWithLB(
-			ProjectAndEnv projAndEnv) throws TooManyELBException {
-		LoadBalancerDescription elb = findELBFor(projAndEnv);
+			ProjectAndEnv projAndEnv, String typeTag) throws TooManyELBException {
+		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);
 		return elb.getInstances();
 	}
 
 	// returns remaining instances
-	private List<Instance> removeInstancesNotMatching(ProjectAndEnv projAndEnv, List<Instance> matchingInstances) throws MustHaveBuildNumber, TooManyELBException {	
-		LoadBalancerDescription elb = findELBFor(projAndEnv);
+	private List<Instance> removeInstancesNotMatching(ProjectAndEnv projAndEnv, List<Instance> matchingInstances, String typeTag) throws MustHaveBuildNumber, TooManyELBException {	
+		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);
 		logger.info("Checking if instances should be removed from ELB " + elb.getLoadBalancerName());
 		List<Instance> currentInstances = elb.getInstances();	
 				
@@ -165,8 +166,8 @@ public class ELBRepository {
 
 	}
 
-	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String type) throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
-		List<Instance> matchinginstances = addInstancesThatMatchBuildAndType(projAndEnv, type); 
-		return removeInstancesNotMatching(projAndEnv, matchinginstances);	
+	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String typeTag) throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
+		List<Instance> matchinginstances = addInstancesThatMatchBuildAndType(projAndEnv, typeTag); 
+		return removeInstancesNotMatching(projAndEnv, matchinginstances, typeTag);	
 	}
 }

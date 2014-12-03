@@ -24,15 +24,17 @@ public class RollbackAction extends SharedAction {
 					withDescription("Warning: Rollback all current deltas and reset index accordingly").create("rollback");
 	}
 
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, String folder, Collection<Parameter> unused, Collection<Parameter> artifacts) throws InvalidParameterException, CfnAssistException, MissingArgumentException, InterruptedException {
-		logger.info("Invoking rollback for " + projectAndEnv);
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused, 
+			Collection<Parameter> artifacts, String... args) throws InvalidParameterException, CfnAssistException, MissingArgumentException, InterruptedException {
+		String folder = args[0];
+		logger.info("Invoking rollback for " + projectAndEnv + " and folder " + folder);
 		AwsFacade aws = factory.createFacade();
 		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);	

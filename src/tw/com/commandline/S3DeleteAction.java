@@ -25,8 +25,8 @@ public class S3DeleteAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			String argument, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts) throws InvalidParameterException,
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
+			String... argument) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		ArtifactUploader uploader = factory.createArtifactUploader(projectAndEnv);
@@ -36,8 +36,8 @@ public class S3DeleteAction extends SharedAction {
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
 		super.guardForArtifactAndRequiredParams(projectAndEnv, artifacts);
 		super.guardForSNSNotSet(projectAndEnv);

@@ -267,21 +267,21 @@ public class TestAwsFacade extends EasyMockSupport {
 		
 		elbInstances.add(new Instance().withInstanceId("matchingInstanceId"));
 		
-		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv)).andReturn(elbInstances);
+		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
-		EasyMock.expect(cfnRepository.getInstancesFor(stackA.getStackName())).andReturn(createInstancesFor(stackA,"123"));
-		EasyMock.expect(cfnRepository.getInstancesFor(stackB.getStackName())).andReturn(createInstancesFor(stackA,"567"));
-		EasyMock.expect(cfnRepository.getInstancesFor(stackC.getStackName())).andReturn(createInstancesFor(stackA,"matchingInstanceId"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackA.getStackName())).andReturn(createInstancesFor("123"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackB.getStackName())).andReturn(createInstancesFor("567"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackC.getStackName())).andReturn(createInstancesFor("matchingInstanceId"));
 		
 		setDeleteExpectations(stackA.getStackName(), createNameAndId(stackA));
 		setDeleteExpectations(stackB.getStackName(), createNameAndId(stackB));
 		
 		replayAll();
-		aws.tidyNonLBAssocStacks(file, projectAndEnv);
+		aws.tidyNonLBAssocStacks(file, projectAndEnv,"typeTag");
 		verifyAll();
 	}
 
-	private List<String> createInstancesFor(Stack stackA, String id) {
+	private List<String> createInstancesFor(String id) {
 		List<String> instances = new LinkedList<String>();
 		instances.add(id);
 		return instances;

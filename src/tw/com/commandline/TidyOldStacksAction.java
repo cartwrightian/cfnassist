@@ -22,26 +22,34 @@ public class TidyOldStacksAction extends SharedAction {
 	
 	@SuppressWarnings("static-access")
 	public TidyOldStacksAction() {
-		option = OptionBuilder.withArgName("tidyOldStakcs").hasArg().
-				withDescription("delete stacks matching given template no longer associated to the LB via an instance").create("tidyOldStakcs");
+		option = OptionBuilder.withArgName("tidyOldStacks").hasArgs(2).
+				withDescription("Delete stacks matching given template no longer associated to the LB via an instance."+ 
+								"Pass template filename and type tag").
+				create("tidyOldStacks");
 	}
 	
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			String argument, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts) throws InvalidParameterException,
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
+			String... args) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, CfnAssistException, MissingArgumentException,
 			TooManyELBException {
 		AwsFacade facade = factory.createFacade();
-		File file = new File(argument);
-		facade.tidyNonLBAssocStacks(file, projectAndEnv);
+		File file = new File(args[0]);
+		facade.tidyNonLBAssocStacks(file, projectAndEnv, args[1]);
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, String argumentForAction,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+			Collection<Parameter> artifacts, String... args)
 			throws CommandLineException {
+		if (args.length!=2) {
+			throw new CommandLineException("Missing arguments for command");
+		}
+		if ((args[0]==null) || (args[1]==null)) {
+			throw new CommandLineException("Missing arguments for command");
+		}
 		super.guardForNoBuildNumber(projectAndEnv);
 	}
 
