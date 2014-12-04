@@ -22,8 +22,6 @@ import com.amazonaws.services.rds.model.DBSubnetGroup;
 
 public class DescribesVPC {
 	private static final Logger logger = LoggerFactory.getLogger(DescribesVPC.class);
-
-	private static final int DIAGRAM_TITLE_FONT_SIZE = 36;
 	
 	private Vpc vpc;
 	private Graph networkDiagram;
@@ -76,8 +74,7 @@ public class DescribesVPC {
 		if (!name.isEmpty()) {
 			title = title + String.format(" (%s)", name);
 		}
-		diagram.addLabel(title);
-		diagram.fontSize(DIAGRAM_TITLE_FONT_SIZE);
+		diagram.addTitle(title);
 	}
 	
 	public void recordToFile() throws IOException {

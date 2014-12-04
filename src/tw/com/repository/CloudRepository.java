@@ -64,9 +64,12 @@ public class CloudRepository {
 		loadInstances();
 		List<Instance> result = new LinkedList<Instance>();
 
-		for(Instance i : instancesCache) {
-			if (i.getSubnetId().equals(subnetId)) {
-				result.add(i);
+		for(Instance i : instancesCache) {	
+			String instanceSubnetId = i.getSubnetId();
+			if (instanceSubnetId!=null) {
+				if (instanceSubnetId.equals(subnetId)) {
+					result.add(i);
+				}
 			}
 		}
 		return result;

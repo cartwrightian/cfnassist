@@ -4,6 +4,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Graph extends NodesAndEdges implements Renders {
+	private static final int DIAGRAM_TITLE_FONT_SIZE = 36;
+
 	private List<SubGraph> subs = new LinkedList<SubGraph>();
 	
 	public Graph() {
@@ -31,5 +33,10 @@ public class Graph extends NodesAndEdges implements Renders {
 			sub.render(recorder);
 		}
 		recorder.write("}");
+	}
+
+	public void addTitle(String title) {
+		addLabel(title);
+		fontSize(DIAGRAM_TITLE_FONT_SIZE);	
 	}
 }
