@@ -10,13 +10,24 @@ import org.slf4j.LoggerFactory;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DeleteTagsRequest;
+import com.amazonaws.services.ec2.model.DescribeAddressesResult;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
+import com.amazonaws.services.ec2.model.DescribeNetworkAclsResult;
+import com.amazonaws.services.ec2.model.DescribeRouteTablesResult;
+import com.amazonaws.services.ec2.model.DescribeSecurityGroupsResult;
+import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
 import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcsResult;
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.RouteTable;
+import com.amazonaws.services.ec2.model.SecurityGroup;
+import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
@@ -57,6 +68,7 @@ public class CloudClient {
 		ec2Client.deleteTags(deleteTagsRequest);	
 	}
 
+	// TODO Move into repository
 	public List<Tag> getTagsForInstance(String id) throws WrongNumberOfInstancesException {
 		DescribeInstancesRequest request = new DescribeInstancesRequest().withInstanceIds(id);
 		DescribeInstancesResult result = ec2Client.describeInstances(request);
@@ -71,6 +83,46 @@ public class CloudClient {
 		com.amazonaws.services.ec2.model.Instance instance = ins.get(0);
 		List<Tag> tags = instance.getTags();
 		return tags;
+	}
+	
+	public List<Vpc> getVpcs() {
+		DescribeVpcsResult describeVpcsResults = ec2Client.describeVpcs();
+		return describeVpcsResults.getVpcs();
+	}
+
+	public List<Subnet> getAllSubnets() {
+		DescribeSubnetsResult describeResults = ec2Client.describeSubnets();
+		return describeResults.getSubnets();
+	}
+
+	public List<SecurityGroup> getSecurityGroups() {
+		DescribeSecurityGroupsResult result = ec2Client.describeSecurityGroups();
+		return result.getSecurityGroups();
+	}
+
+	public List<NetworkAcl> getACLs() {
+		DescribeNetworkAclsResult result = ec2Client.describeNetworkAcls();
+		return result.getNetworkAcls();		
+	}
+	
+	public List<Instance> getInstances() {
+		List<Instance> instances = new LinkedList<Instance>();
+		DescribeInstancesResult result = ec2Client.describeInstances();
+		List<Reservation> reservations = result.getReservations();
+		for(Reservation res : reservations) {
+			instances.addAll(res.getInstances());
+		}
+		return instances;
+	}
+	
+	public List<RouteTable> getRouteTables() {
+		DescribeRouteTablesResult result = ec2Client.describeRouteTables();
+		return result.getRouteTables();	
+	}
+
+	public List<Address> getEIPs() {
+		DescribeAddressesResult result = ec2Client.describeAddresses();
+		return result.getAddresses();
 	}
 
 }

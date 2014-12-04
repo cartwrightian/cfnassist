@@ -37,6 +37,8 @@ public class CfnRepository implements CloudFormRepository {
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1000;
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 	private CloudFormationClient formationClient;
+	
+	// TODO Use CloudRepository instead
 	private CloudClient cloudClient;
 
 	private StackCache stackCache;

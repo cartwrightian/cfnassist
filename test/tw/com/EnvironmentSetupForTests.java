@@ -41,6 +41,7 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.rds.AmazonRDSClient;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -98,6 +99,13 @@ public class EnvironmentSetupForTests {
 		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
 		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
 		return cfnClient;
+	}
+	
+
+	public static AmazonRDSClient createRDSClient(AWSCredentialsProvider credentialsProvider) {
+		AmazonRDSClient rdsClient = new AmazonRDSClient(credentialsProvider);
+		rdsClient.setRegion(EnvironmentSetupForTests.getRegion());
+		return rdsClient;
 	}
 	
 	public static Vpc createVpc(AmazonEC2Client client) {
@@ -192,7 +200,7 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static AmazonElasticLoadBalancingClient createELBClient(
-			DefaultAWSCredentialsProviderChain credentialsProvider) {
+			AWSCredentialsProvider credentialsProvider) {
 		AmazonElasticLoadBalancingClient client = new AmazonElasticLoadBalancingClient(credentialsProvider);
 		client.setRegion(getRegion());
 		return client;

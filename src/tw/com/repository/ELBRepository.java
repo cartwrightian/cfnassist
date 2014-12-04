@@ -170,4 +170,19 @@ public class ELBRepository {
 		List<Instance> matchinginstances = addInstancesThatMatchBuildAndType(projAndEnv, typeTag); 
 		return removeInstancesNotMatching(projAndEnv, matchinginstances, typeTag);	
 	}
+
+	// TODO
+	public List<LoadBalancerDescription> findELBForVPC(String vpcId) {	
+		List<LoadBalancerDescription> result = elbClient.describeLoadBalancers(); // seems to be no filter for vpc on elbs
+		
+		List<LoadBalancerDescription> filtered = new LinkedList<LoadBalancerDescription>();	
+		for(LoadBalancerDescription lb : result) {
+			if (lb.getVPCId()!=null) {
+				if (lb.getVPCId().equals(vpcId)) {
+					filtered.add(lb);
+				}
+			}
+		}
+		return filtered;
+	}
 }
