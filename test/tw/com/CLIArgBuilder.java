@@ -79,25 +79,23 @@ public class CLIArgBuilder {
 		return createArgs;
 	}
 
-	public static String[] deleteSimpleStackWithBuildNumber(String testName, String buildNumber) {
+	public static String[] deleteSimpleStackWithBuildNumber(String buildNumber) {
 		String[] deleteArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-delete", FilesForTesting.SIMPLE_STACK,
-				"-build", buildNumber,
-				"-comment", testName
+				"-build", buildNumber
 				};
 		return deleteArgs;
 	}
 
-	public static String[] deleteSimpleStack(String testName) {
+	public static String[] deleteSimpleStack() {
 		String[] deleteArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-delete", FilesForTesting.SIMPLE_STACK,
-				"-comment", testName
+				"-delete", FilesForTesting.SIMPLE_STACK
 				};
 		return deleteArgs;
 	}
@@ -110,6 +108,14 @@ public class CLIArgBuilder {
 			"-ls"
 			};
 		return args;
+	}
+	
+	public static String[] createDiagrams(String folder) {
+		String[] args = { 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-diagrams", folder
+				};
+			return args;
 	}
 
 	public static String[] createSubnetStackWithParams(String testName) {
@@ -137,8 +143,7 @@ public class CLIArgBuilder {
 		return args;
 	}
 
-	public static String[] rollbackFromDir(String orderedScriptsFolder,
-			String sns, String testName) {
+	public static String[] rollbackFromDir(String orderedScriptsFolder, String sns) {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -149,7 +154,7 @@ public class CLIArgBuilder {
 		return args;
 	}
 
-	public static String[] updateELB(String typeTag, String buildNumber, String testName) {
+	public static String[] updateELB(String typeTag, String buildNumber) {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -160,7 +165,7 @@ public class CLIArgBuilder {
 		return args;
 	}
 
-	public static String[] tidyNonLBAssociatedStacks(String testName) {
+	public static String[] tidyNonLBAssociatedStacks() {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -170,8 +175,7 @@ public class CLIArgBuilder {
 		return args;
 	}
 
-	public static String[] createSubnetStackWithArtifactUpload(
-			String buildNumber, String testName) {
+	public static String[] createSubnetStackWithArtifactUpload(String buildNumber, String testName) {
 		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 
 		String[] args = { 
@@ -182,7 +186,8 @@ public class CLIArgBuilder {
 				"-artifacts", uploads,
 				"-build", buildNumber,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-sns"
+				"-sns", 
+				"-comment", testName
 				};
 		
 		return args;
@@ -217,7 +222,5 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
-
-
 
 }

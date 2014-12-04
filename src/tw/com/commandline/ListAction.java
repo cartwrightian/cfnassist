@@ -54,4 +54,19 @@ public class ListAction extends SharedAction {
 		}
 	}
 
+	@Override
+	public boolean usesProject() {
+		return true;
+	}
+
+	@Override
+	public boolean usesComment() {
+		return false;
+	}
+
+	@Override
+	public boolean usesSNS() {
+		return false;
+	}
+
 }

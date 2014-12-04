@@ -44,4 +44,19 @@ public class ElbAction extends SharedAction {
 		}
 	}
 
+	@Override
+	public boolean usesProject() {
+		return true;
+	}
+
+	@Override
+	public boolean usesComment() {
+		return true;
+	}
+
+	@Override
+	public boolean usesSNS() {
+		return false;
+	}
+
 }

@@ -2,6 +2,7 @@ package tw.com.pictures.dot;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -19,6 +20,23 @@ public class FileRecorder implements Recorder {
 	
 	public FileRecorder(Path folder) {
 		this.folder = folder;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FileRecorder other = (FileRecorder) obj;
+		if (folder == null) {
+			if (other.folder != null)
+				return false;
+		} else if (!folder.equals(other.folder))
+			return false;
+		return true;
 	}
 
 	@Override
@@ -49,6 +67,10 @@ public class FileRecorder implements Recorder {
 		String diagramFilename = prefix+vpc.getVpcId()+".dot";
 		Path target = Paths.get(folder.toString(), diagramFilename);
 		logger.info(">>>>> Saving to " + target.toAbsolutePath());
+		if (!Files.exists(folder)) {
+			logger.warn("Target folder is missing, creating " + folder);
+			Files.createDirectory(folder);
+		}
 		fw = new FileWriter(target.toFile());	
 	}
 

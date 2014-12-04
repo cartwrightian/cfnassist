@@ -48,4 +48,19 @@ public class DeleteAction extends SharedAction {
 		guardForNoArtifacts(artifacts);
 	}
 
+	@Override
+	public boolean usesProject() {
+		return true;
+	}
+
+	@Override
+	public boolean usesComment() {
+		return false;
+	}
+
+	@Override
+	public boolean usesSNS() {
+		return true;
+	}
+
 }

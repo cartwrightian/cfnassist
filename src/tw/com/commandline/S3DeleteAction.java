@@ -43,4 +43,19 @@ public class S3DeleteAction extends SharedAction {
 		super.guardForSNSNotSet(projectAndEnv);
 	}
 
+	@Override
+	public boolean usesProject() {
+		return true;
+	}
+
+	@Override
+	public boolean usesComment() {
+		return false;
+	}
+
+	@Override
+	public boolean usesSNS() {
+		return true;
+	}
+
 }

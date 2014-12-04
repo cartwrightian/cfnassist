@@ -111,7 +111,9 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		FacadeFactory factory = new FacadeFactory();
 		factory.setRegion(region);
 		factory.setProject(cfnProject);
-		factory.setSNSMonitoring(projectAndEnv.useSNS());
+		if (snsMonitoring) {
+			factory.setSNSMonitoring();
+		}
 		
 		try {
 			for(ActionElement element : actionElements) {

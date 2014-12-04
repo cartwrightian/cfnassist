@@ -119,6 +119,14 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
+	public void testInvokeDiagramGenViaCLI() {
+		String[] create = CLIArgBuilder.createDiagrams("./diagrams");
+		Main main = new Main(create);
+		int status = main.parse();
+		assertEquals(0, status);
+	}
+	
+	@Test
 	public void testDeleteViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
 		String buildNumber = "0915";
 		
@@ -127,7 +135,7 @@ public class TestCommandLineStackOperations {
 		int createResult = main.parse();
 		assertEquals(0,createResult);
 		
-		String[] deleteArgs = CLIArgBuilder.deleteSimpleStackWithBuildNumber(testName, buildNumber);
+		String[] deleteArgs = CLIArgBuilder.deleteSimpleStackWithBuildNumber(buildNumber);
 		main = new Main(deleteArgs);
 		int deleteResult = main.parse();
 		assertEquals(0,deleteResult);
@@ -142,7 +150,7 @@ public class TestCommandLineStackOperations {
 		int createResult = main.parse();
 		assertEquals(0,createResult);
 		
-		String[] deleteArgs = CLIArgBuilder.deleteSimpleStack(testName);
+		String[] deleteArgs = CLIArgBuilder.deleteSimpleStack();
 		main = new Main(deleteArgs);
 		int deleteResult = main.parse();
 		assertEquals(0,deleteResult);
@@ -166,7 +174,7 @@ public class TestCommandLineStackOperations {
 		Main main = new Main(createIns);
 		main.parse();
 				
-		String[] args = CLIArgBuilder.updateELB(typeTag, buildNumber, testName);
+		String[] args = CLIArgBuilder.updateELB(typeTag, buildNumber);
 		main = new Main(args);
 		int result = main.parse();
 		
@@ -230,6 +238,7 @@ public class TestCommandLineStackOperations {
 		invokeForDirAndThenRollback(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER);
 	}
 
+
 	private void invokeForDirAndThenRollback(ProjectAndEnv projAndEnv,
 			String sns, String orderedScriptsFolder) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, "0");
@@ -239,7 +248,7 @@ public class TestCommandLineStackOperations {
 		int result = main.parse();
 		assertEquals("deploy failed",0,result);
 		
-		String[] rollbackDeploy = CLIArgBuilder.rollbackFromDir(orderedScriptsFolder, sns, testName);
+		String[] rollbackDeploy = CLIArgBuilder.rollbackFromDir(orderedScriptsFolder, sns);
 		main = new Main(rollbackDeploy);
 		result = main.parse();
 		

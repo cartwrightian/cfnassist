@@ -43,4 +43,19 @@ public class FileAction extends SharedAction {
 		guardForArtifactAndRequiredParams(projectAndEnv, artifacts);
 	}
 
+	@Override
+	public boolean usesProject() {
+		return true;
+	}
+
+	@Override
+	public boolean usesComment() {
+		return true;
+	}
+
+	@Override
+	public boolean usesSNS() {
+		return true;
+	}
+
 }

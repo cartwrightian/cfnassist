@@ -81,19 +81,17 @@ public class Main {
 			}
 			logger.info("Invoking for " + projectAndEnv);
 			
-			//String argumentForAction = commandLine.getOptionValue(action.getArgName());
-			String[] argumentForAction = commandLine.getOptionValues(action.getArgName());
+			String[] argsForAction = commandLine.getOptionValues(action.getArgName());
 			Collection<Parameter> artifacts = flags.getUploadParams();
-			action.validate(projectAndEnv, flags.getAdditionalParameters(), artifacts, argumentForAction);
+			action.validate(projectAndEnv, flags.getAdditionalParameters(), artifacts, argsForAction);
 			
 			factory.setRegion(awsRegion);
-			factory.setProject(flags.getProject());
-			factory.setCommentTag(flags.getComment());	
-			factory.setSNSMonitoring(flags.getSns());
+			setFactoryOptionsForAction(factory, action);
+
 			Collection<Parameter> additionalParams = flags.getAdditionalParameters();
 			
 			if (act) {				
-				action.invoke(factory, projectAndEnv, additionalParams, artifacts, argumentForAction);
+				action.invoke(factory, projectAndEnv, additionalParams, artifacts, argsForAction);
 			} else {
 				logger.info("Not invoking");
 			}
@@ -113,6 +111,20 @@ public class Main {
 		}
 		logger.debug("CommandLine ok");
 		return 0;
+	}
+
+	private void setFactoryOptionsForAction(FacadeFactory factory, CommandLineAction action) {
+		// TODO move some validation checking to here
+		if (action.usesProject()) {
+			factory.setProject(flags.getProject());
+		}   
+		if (action.usesComment() && flags.haveComment()) {
+			factory.setCommentTag(flags.getComment());	
+		} 
+		if (action.usesSNS() && flags.haveSnsEnable()) {
+			factory.setSNSMonitoring();
+		}
+		
 	}
 
 	private Region populateRegion(String regionName) throws MissingArgumentException {

@@ -28,4 +28,8 @@ public interface CommandLineAction {
 	void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
 			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException;
 
+	boolean usesProject();
+	boolean usesComment();
+	boolean usesSNS();
+
 }

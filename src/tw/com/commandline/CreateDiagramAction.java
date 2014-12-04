@@ -1,61 +1,58 @@
 package tw.com.commandline;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 
-import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
 import tw.com.exceptions.TooManyELBException;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.pictures.DiagramCreator;
+import tw.com.pictures.dot.FileRecorder;
+import tw.com.pictures.dot.Recorder;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
-public class TidyOldStacksAction extends SharedAction {
+public class CreateDiagramAction extends SharedAction {
 	
 	@SuppressWarnings("static-access")
-	public TidyOldStacksAction() {
-		option = OptionBuilder.withArgName("tidyOldStacks").hasArgs(2).
-				withDescription("Delete stacks matching given template no longer associated to the LB via an instance."+ 
-								"Pass template filename and type tag").
-				create("tidyOldStacks");
-	}
-	
-	@Override
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... args) throws InvalidParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException, MissingArgumentException,
-			TooManyELBException {
-		AwsFacade facade = factory.createFacade();
-		File file = new File(args[0]);
-		facade.tidyNonLBAssocStacks(file, projectAndEnv, args[1]);
+	public CreateDiagramAction() {
+		option = OptionBuilder.withArgName("diagrams").hasArg().withDescription("Create diagrams for VPCs in given folder").create("diagrams");
 	}
 
 	@Override
-	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... args)
-			throws CommandLineException {
-		if (args.length!=2) {
-			throw new CommandLineException("Missing arguments for command");
-		}
-		if ((args[0]==null) || (args[1]==null)) {
-			throw new CommandLineException("Missing arguments for command");
-		}
-		super.guardForNoBuildNumber(projectAndEnv);
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
+			String... argument) throws InvalidParameterException,
+			FileNotFoundException, IOException, WrongNumberOfStacksException,
+			InterruptedException, CfnAssistException, MissingArgumentException,
+			TooManyELBException {
+		DiagramCreator diagramCreator = factory.createDiagramCreator();
+		Path folder = Paths.get(argument[0]);
+		Recorder recorder = new FileRecorder(folder);
+		diagramCreator.createDiagrams(recorder);
+	}
+
+	@Override
+	public void validate(ProjectAndEnv projectAndEnv,
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
+			String... argumentForAction) throws CommandLineException {
+		guardForNoArtifacts(artifacts);
+		guardForNoBuildNumber(projectAndEnv);
+		guardForSNSNotSet(projectAndEnv);
 	}
 
 	@Override
 	public boolean usesProject() {
-		return true;
+		return false;
 	}
 
 	@Override
@@ -65,7 +62,7 @@ public class TidyOldStacksAction extends SharedAction {
 
 	@Override
 	public boolean usesSNS() {
-		return true;
+		return false;
 	}
 
 }

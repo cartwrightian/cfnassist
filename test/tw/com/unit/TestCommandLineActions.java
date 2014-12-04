@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -17,9 +18,7 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -39,6 +38,9 @@ import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
+import tw.com.pictures.DiagramCreator;
+import tw.com.pictures.dot.FileRecorder;
+import tw.com.pictures.dot.Recorder;
 import tw.com.providers.ArtifactUploader;
 
 @RunWith(EasyMockRunner.class)
@@ -47,13 +49,13 @@ public class TestCommandLineActions extends EasyMockSupport {
 	private AwsFacade facade;
 	private FacadeFactory facadeFactory;
 	private ArtifactUploader artifactUploader;
+	private DiagramCreator diagramCreator;
 
 	private ProjectAndEnv projectAndEnv;
 	private StackNameAndId stackNameAndId;
 	Collection<Parameter> params;
 	
-	@Rule public TestName test = new TestName();
-	String testName = "";
+	String comment = "theComment";
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -61,6 +63,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		facadeFactory = createMock(FacadeFactory.class);
 		facade = createMock(AwsFacade.class);
 		artifactUploader = createMock(ArtifactUploader.class);
+		diagramCreator = createMock(DiagramCreator.class);
 		
 		params = new LinkedList<Parameter>();
 		stackNameAndId = new StackNameAndId("someName", "someId");
@@ -114,87 +117,97 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void shouldCreateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
+		facadeFactory.setCommentTag(comment);
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
-		validate(CLIArgBuilder.createSimpleStack(testName));
+		validate(CLIArgBuilder.createSimpleStack(comment));
 	}
 	
 	@Test
 	public void shouldUpdateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
+		facadeFactory.setCommentTag(comment);
 		File file = new File(FilesForTesting.SUBNET_STACK_DELTA);		
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
-		validate(CLIArgBuilder.updateSimpleStack(testName,""));
+		validate(CLIArgBuilder.updateSimpleStack(comment,""));
 	}
 	
 	@Test
 	public void shouldUpdateStackSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(true);
+		setFactoryExpectations();
+		facadeFactory.setCommentTag(comment);
+		facadeFactory.setSNSMonitoring();
 		File file = new File(FilesForTesting.SUBNET_STACK_DELTA);		
 		projectAndEnv.setUseSNS();
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
-		validate(CLIArgBuilder.updateSimpleStack(testName,"-sns"));
+		validate(CLIArgBuilder.updateSimpleStack(comment,"-sns"));
 	}
 	
 	@Test
 	public void shouldCreateStackWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
+		facadeFactory.setCommentTag(comment);
+
 		File file = new File(FilesForTesting.SUBNET_WITH_PARAM);	
 		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
-		validate(CLIArgBuilder.createSubnetStackWithParams(testName));
+		validate(CLIArgBuilder.createSubnetStackWithParams(comment));
 	}
 	
 	@Test
 	public void shouldCreateStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
+		facadeFactory.setCommentTag(comment);
 
 		ArrayList<StackNameAndId> stacks = new ArrayList<StackNameAndId>();
 		EasyMock.expect(facade.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, params)).andReturn(stacks);
 			
-		validate(CLIArgBuilder.deployFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "", testName));
+		validate(CLIArgBuilder.deployFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "", comment));
 	}
 	
 	@Test
 	public void shouldCreateStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(true);
+		setFactoryExpectations();
+		facadeFactory.setSNSMonitoring();
+		facadeFactory.setCommentTag(comment);
 
 		ArrayList<StackNameAndId> stacks = new ArrayList<StackNameAndId>();
 		projectAndEnv.setUseSNS();
 		EasyMock.expect(facade.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, params)).andReturn(stacks);
 			
-		validate(CLIArgBuilder.deployFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns", testName));
+		validate(CLIArgBuilder.deployFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns", comment));
 	}
 	
 	@Test
 	public void shouldRollbackStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
 
 		ArrayList<String> stacks = new ArrayList<String>();
 		EasyMock.expect(facade.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(stacks);
 			
-		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "", testName));
+		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
 	}
 	
 	@Test
 	public void shouldRollbackStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(true);
+		setFactoryExpectations();
+		facadeFactory.setSNSMonitoring();
 
 		ArrayList<String> stacks = new ArrayList<String>();
 		projectAndEnv.setUseSNS();
 		EasyMock.expect(facade.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(stacks);
 			
-		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns", testName));
+		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns"));
 	}
 	
 	@Test
 	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
 		String buildNumber = "0042";
 		String typeTag = "web";
 		
@@ -202,28 +215,31 @@ public class TestCommandLineActions extends EasyMockSupport {
 		projectAndEnv.addBuildNumber(buildNumber);
 		EasyMock.expect(facade.updateELBToInstancesMatchingBuild(projectAndEnv, typeTag)).andReturn(instances);
 			
-		validate(CLIArgBuilder.updateELB(typeTag, buildNumber, testName));
+		validate(CLIArgBuilder.updateELB(typeTag, buildNumber));
 	}
 	
 	@Test
 	public void shouldTidyOldInstances() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
 		
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
 		facade.tidyNonLBAssocStacks(file, projectAndEnv, "typeTag");
 				
-		validate(CLIArgBuilder.tidyNonLBAssociatedStacks(testName));
+		validate(CLIArgBuilder.tidyNonLBAssociatedStacks());
 	}
 	
 	
 	@Test
 	public void shouldCreateStackWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
-		setFactoryExpectations(true);
+		setFactoryExpectations();
+		facadeFactory.setSNSMonitoring();
+		facadeFactory.setCommentTag(comment);
+
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
 		projectAndEnv.setUseSNS();
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
-		validate(CLIArgBuilder.createSimpleStackWithSNS(testName));
+		validate(CLIArgBuilder.createSimpleStackWithSNS(comment));
 	}
 	
 	@Test
@@ -234,7 +250,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String stackId = "theStackId";
 		String env = "theEnv";
 		
-		setFactoryExpectations(false);
+		setFactoryExpectations();
 			
 		List<StackEntry> stackEntries = new LinkedList<StackEntry>();
 		Stack stack = new Stack().withStackName(stackName).withStackId(stackId).withStackStatus(StackStatus.CREATE_COMPLETE);
@@ -254,33 +270,34 @@ public class TestCommandLineActions extends EasyMockSupport {
 
 	@Test
 	public void shouldCreateStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {
-		setFactoryExpectations(false);
+		setFactoryExpectations();
+		facadeFactory.setCommentTag(comment);
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
 		projectAndEnv.addBuildNumber("0915");
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
-		validate(CLIArgBuilder.createSimpleStackWithBuildNumber(testName, "0915"));
+		validate(CLIArgBuilder.createSimpleStackWithBuildNumber(comment, "0915"));
 	}
 	
 	@Test
 	public void shouldDeleteStack() throws MissingArgumentException, CfnAssistException, InterruptedException
 	{
-		setFactoryExpectations(false);
+		setFactoryExpectations();
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
 		facade.deleteStackFrom(file, projectAndEnv);
 			
-		validate(CLIArgBuilder.deleteSimpleStack(testName));
+		validate(CLIArgBuilder.deleteSimpleStack());
 	}
 	
 	@Test
 	public void shouldDeleteStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException
 	{
-		setFactoryExpectations(false);
+		setFactoryExpectations();
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
 		projectAndEnv.addBuildNumber("0915");
 		facade.deleteStackFrom(file, projectAndEnv);
 			
-		validate(CLIArgBuilder.deleteSimpleStackWithBuildNumber(testName, "0915"));
+		validate(CLIArgBuilder.deleteSimpleStackWithBuildNumber("0915"));
 	}
 	
 	@Test
@@ -297,7 +314,10 @@ public class TestCommandLineActions extends EasyMockSupport {
 		uploaded.add(uploadA);
 		uploaded.add(uploadB);
 		
-		setFactoryExpectations(true);
+		setFactoryExpectations();
+		facadeFactory.setSNSMonitoring();
+		facadeFactory.setCommentTag(comment);
+
 		projectAndEnv.addBuildNumber(buildNumber);
 		EasyMock.expect(facadeFactory.createArtifactUploader(projectAndEnv)).andReturn(artifactUploader);
 		EasyMock.expect(artifactUploader.uploadArtifacts(arts)).andReturn(uploaded);
@@ -308,7 +328,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		File file = new File(FilesForTesting.SUBNET_WITH_S3_PARAM);
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);;
 		
-		validate(CLIArgBuilder.createSubnetStackWithArtifactUpload(buildNumber, testName));
+		validate(CLIArgBuilder.createSubnetStackWithArtifactUpload(buildNumber, comment));
 	}
 	
 	@Test
@@ -319,10 +339,8 @@ public class TestCommandLineActions extends EasyMockSupport {
 		arts.add(new Parameter().withParameterKey("art2").withParameterValue(FilesForTesting.SUBNET_STACK));
 		List<Parameter> uploaded = new LinkedList<Parameter>();
 		
-		facadeFactory.setCommentTag(testName);
 		facadeFactory.setRegion(EnvironmentSetupForTests.getRegion());
 		facadeFactory.setProject(EnvironmentSetupForTests.PROJECT);
-		facadeFactory.setSNSMonitoring(false);
 		
 		projectAndEnv.addBuildNumber(buildNumber);
 		EasyMock.expect(facadeFactory.createArtifactUploader(projectAndEnv)).andReturn(artifactUploader);
@@ -340,10 +358,8 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String filenameB = "fileB";
 		arts.add(new Parameter().withParameterKey("art2").withParameterValue(filenameB));
 		
-		facadeFactory.setCommentTag(testName);
 		facadeFactory.setRegion(EnvironmentSetupForTests.getRegion());
 		facadeFactory.setProject(EnvironmentSetupForTests.PROJECT);
-		facadeFactory.setSNSMonitoring(false);
 		
 		projectAndEnv.addBuildNumber(buildNumber);
 		EasyMock.expect(facadeFactory.createArtifactUploader(projectAndEnv)).andReturn(artifactUploader);
@@ -351,6 +367,18 @@ public class TestCommandLineActions extends EasyMockSupport {
 		artifactUploader.delete(filenameB);
 		
 		validate(CLIArgBuilder.deleteArtifacts(buildNumber, filenameA, filenameB));
+	}
+	
+	@Test
+	public void shouldRequestCreationOfDiagrams() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+			
+		Recorder recorder = new FileRecorder(Paths.get("./diagrams"));
+		EasyMock.expect(facadeFactory.createDiagramCreator()).andReturn(diagramCreator);
+		facadeFactory.setRegion(EnvironmentSetupForTests.getRegion());
+		diagramCreator.createDiagrams(recorder);
+		
+		String folder = "./diagrams";
+		validate(CLIArgBuilder.createDiagrams(folder));
 	}
 	
 	@Test
@@ -502,13 +530,11 @@ public class TestCommandLineActions extends EasyMockSupport {
 		assertEquals(0,result);
 	}
 
-	private void setFactoryExpectations(boolean sns)
+	private void setFactoryExpectations()
 			throws MissingArgumentException, CfnAssistException,
 			InterruptedException {
-		facadeFactory.setCommentTag(testName);
 		facadeFactory.setRegion(EnvironmentSetupForTests.getRegion());
 		facadeFactory.setProject(EnvironmentSetupForTests.PROJECT);
-		facadeFactory.setSNSMonitoring(sns);
 		EasyMock.expect(facadeFactory.createFacade()).andReturn(facade);
 	}
 	
@@ -516,8 +542,8 @@ public class TestCommandLineActions extends EasyMockSupport {
 		CfnAssistException, InterruptedException {
 		facadeFactory.setRegion(EnvironmentSetupForTests.getRegion());
 		facadeFactory.setProject(EnvironmentSetupForTests.PROJECT);
-		facadeFactory.setSNSMonitoring(false);
-		facadeFactory.setCommentTag("");
+		//facadeFactory.setSNSMonitoring(false);
+		//facadeFactory.setCommentTag("");
 		EasyMock.expect(facadeFactory.createFacade()).andReturn(facade);
 	}
 }

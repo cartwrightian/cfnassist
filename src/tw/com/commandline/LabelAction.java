@@ -46,4 +46,20 @@ public class LabelAction extends SharedAction {
 		guardForNoArtifacts(artifacts);
 	}
 
+	@Override
+	public boolean usesProject() {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public boolean usesComment() {
+		return false;
+	}
+
+	@Override
+	public boolean usesSNS() {
+		return false;
+	}
+
 }

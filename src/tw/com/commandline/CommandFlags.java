@@ -221,6 +221,10 @@ public class CommandFlags {
 	public boolean haveComment() {
 		return !comment.isEmpty();
 	}
+	
+	public boolean haveSnsEnable() {
+		return sns;
+	}
 
 	public Collection<Parameter> getUploadParams() {
 		return artifacts;
@@ -233,4 +237,5 @@ public class CommandFlags {
 	public boolean haveS3Bucket() {
 		return !s3bucket.isEmpty();
 	}
+
 }
