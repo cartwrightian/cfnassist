@@ -79,14 +79,24 @@ public class AmazonVPCFacade {
 	}
 
 	public static String getNameFromTags(List<Tag> tags) {
-		String name="";
-		for(Tag tag : tags) {
-			if (tag.getKey().equals("Name")) {
-				name = tag.getValue();
-				break;
-			}
+		String name = getValueFromTag(tags, "Name");
+		if (name.isEmpty()) {
+			name = getValueFromTag(tags, "aws:cloudformation:logical-id");
 		}
 		return name;
+	}
+
+	private static String getValueFromTag(List<Tag> tags, String nameTag) {
+		for(Tag tag : tags) {
+			if (tag.getKey().equals(nameTag)) {
+				return tag.getValue();
+			}
+		}
+		return "";
+	}
+	
+	public static String createLabelFromNameAndID(String id, String name) {
+		return String.format("%s [%s]", name, id);
 	}
 
 }

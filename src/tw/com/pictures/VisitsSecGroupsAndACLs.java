@@ -95,10 +95,11 @@ public class VisitsSecGroupsAndACLs {
 		logger.info("Walk security group " + secGroupIdent);
 		String groupId = secGroupIdent.getGroupId();
 		
-		String groupLabel = String.format("%s (%s)", secGroupIdent.getGroupName(), groupId);
-		subnetSecurityCluster.addNode(groupId).withLabel(groupLabel);	
-		
 		SecurityGroup group = facade.getSecurityGroupDetails(secGroupIdent);
+		
+		String name = AmazonVPCFacade.getNameFromTags(group.getTags());
+		String groupLabel = AmazonVPCFacade.createLabelFromNameAndID(groupId, name);
+		subnetSecurityCluster.addNode(groupId).withLabel(groupLabel);	
 				
 		walkGroupPermissions(subnetSecurityCluster, group, groupId, true, subnetId);
 		walkGroupPermissions(subnetSecurityCluster, group, groupId, false, subnetId);
@@ -250,11 +251,19 @@ public class VisitsSecGroupsAndACLs {
 	}
 	
 	private String createAclLabel(NetworkAcl acl, NetworkAclEntry entry, boolean inBound) {
-		return String.format("%s: %s\n%s", (inBound?"src":"dest"), entry.getCidrBlock(), acl.getNetworkAclId() );
+		String aclName = AmazonVPCFacade.getNameFromTags(acl.getTags());
+		return String.format("%s: %s\n%s", 
+				(inBound?"src":"dest"), 
+				entry.getCidrBlock(), 
+				AmazonVPCFacade.createLabelFromNameAndID(acl.getNetworkAclId(), aclName));
 	}
 
 	private String createAclNodeId(NetworkAcl acl, NetworkAclEntry entry, boolean inBound) {
-		return String.format("%s_%s_%s", (inBound?"in":"out"), acl.getNetworkAclId(), entry.getCidrBlock());
+		String aclName = AmazonVPCFacade.getNameFromTags(acl.getTags());
+		return String.format("%s_%s_%s", 
+				(inBound?"in":"out"), 
+				AmazonVPCFacade.createLabelFromNameAndID(acl.getNetworkAclId(), aclName), 
+				entry.getCidrBlock());
 	}
 
 	private String createACLRuleName(NetworkAclEntry entry) {

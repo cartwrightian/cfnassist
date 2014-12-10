@@ -62,4 +62,5 @@ public class TestPictureGeneration {
 		DiagramCreator createsDiagrams = new DiagramCreator(rdsClient, cloudRepository, elbRepository);
 		createsDiagrams.createDiagrams(recorder);
 	}
+	
 }

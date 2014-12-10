@@ -29,6 +29,18 @@ public class DiagramCreator {
 		
 		List<Vpc> vpcs = facade.getVpcs();
 		
+		legacyCreateDiagram(recorder, facade, vpcs);
+		
+		DiagramBuilder diagrams = new DiagramBuilder();
+		VPCVisitor visitor = new VPCVisitor(diagrams, facade);
+		for(Vpc vpc : vpcs) {
+			visitor.visit(vpc);
+		}
+		diagrams.render(recorder);
+	}
+
+	private void legacyCreateDiagram(Recorder recorder, AmazonVPCFacade facade,
+			List<Vpc> vpcs) throws CfnAssistException, IOException {
 		for(Vpc vpc : vpcs) {
 			DescribesVPC describesVPC = new DescribesVPC(vpc, facade, recorder);
 			describesVPC.walk();

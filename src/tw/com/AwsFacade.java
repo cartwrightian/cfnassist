@@ -510,4 +510,5 @@ public class AwsFacade {
 		logger.info(String.format("Update instances for ELB to match %s and type tag %s", projectAndEnv, typeTag));
 		return elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);	
 	}
+
 }

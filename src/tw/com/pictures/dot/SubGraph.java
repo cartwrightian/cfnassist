@@ -19,6 +19,4 @@ public class SubGraph extends NodesAndEdges implements Renders {
 		recorder.writeline("}");	
 	}
 
-	
-
 }
