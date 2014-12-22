@@ -20,17 +20,18 @@ import tw.com.exceptions.CfnAssistException;
 
 public class VPCVisitor {
 
-	private DiagramBuilder networkDiagram;
+	private DiagramBuilder diagramBuilder;
 	private AmazonVPCFacade facade;
+	private DiagramFactory factory;
 
-	public VPCVisitor(DiagramBuilder networkDiagram, AmazonVPCFacade facade) {
-		this.networkDiagram = networkDiagram;
+	public VPCVisitor(DiagramBuilder diagramBuilder, AmazonVPCFacade facade, DiagramFactory factory) {
+		this.diagramBuilder = diagramBuilder;
 		this.facade = facade;
+		this.factory = factory;
 	}
 
 	public void visit(Vpc vpc) throws CfnAssistException {	
-		DiagramFactory factory = new DiagramFactory();
-		VPCDiagramBuilder vpcDiagram = new VPCDiagramBuilder(vpc, factory);
+		VPCDiagramBuilder vpcDiagram = factory.createVPCDiagramBuilder(vpc);
 		String vpcId = vpc.getVpcId();
 		///
 		for (Subnet subnet : facade.getSubnetFors(vpcId)) {
@@ -52,7 +53,7 @@ public class VPCVisitor {
 		for(DBInstance rds : facade.getRDSFor(vpcId)) {
 			visit(vpcDiagram, rds);
 		}
-		networkDiagram.add(vpcDiagram);
+		diagramBuilder.add(vpcDiagram);
 	}
 
 	private void visit(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
@@ -86,7 +87,8 @@ public class VPCVisitor {
 	}
 
 	private void visit(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {
-		SubnetDiagramBuilder subnetDiagram = new SubnetDiagramBuilder(parent, subnet);
+		
+		SubnetDiagramBuilder subnetDiagram = factory.createSubnetDiagramBuilder(parent,subnet);
 		String subnetId = subnet.getSubnetId();
 		List<Instance> instances = facade.getInstancesFor(subnetId);
 		for(Instance instance : instances) {

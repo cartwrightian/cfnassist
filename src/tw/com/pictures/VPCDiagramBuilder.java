@@ -19,9 +19,9 @@ public class VPCDiagramBuilder {
 	private Vpc vpc;
 	private Map<String, SubnetDiagramBuilder> subnetDiagrams; // id -> diagram
 
-	public VPCDiagramBuilder(Vpc vpc, DiagramFactory factory) {
+	public VPCDiagramBuilder(Vpc vpc, Diagram diagram) {
 		this.vpc = vpc;
-		this.diagram = factory.createDiagram();
+		this.diagram = diagram;
 		addTitle(vpc);
 		subnetDiagrams = new HashMap<String, SubnetDiagramBuilder>();
 	}

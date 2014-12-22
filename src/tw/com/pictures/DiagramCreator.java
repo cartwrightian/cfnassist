@@ -32,7 +32,8 @@ public class DiagramCreator {
 		legacyCreateDiagram(recorder, facade, vpcs);
 		
 		DiagramBuilder diagrams = new DiagramBuilder();
-		VPCVisitor visitor = new VPCVisitor(diagrams, facade);
+		DiagramFactory diagramFactory = new DiagramFactory();
+		VPCVisitor visitor = new VPCVisitor(diagrams, facade, diagramFactory);
 		for(Vpc vpc : vpcs) {
 			visitor.visit(vpc);
 		}
