@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.Route;
 import com.amazonaws.services.ec2.model.RouteTable;
+import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
@@ -41,11 +42,15 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldCreateSubDiagramForClusters() throws CfnAssistException {
+		Subnet subnet = new Subnet().
+				withSubnetId("subnetId").
+				withTags(new Tag().withKey("Name").withValue("subnetName")).
+				withCidrBlock("cidrBlock");
 		
-		EasyMock.expect(diagram.createDiagramCluster("theId", "theLabel")).andReturn(childDiagram);
+		EasyMock.expect(diagram.createDiagramCluster("subnetId", "subnetName [subnetId]\n(cidrBlock)")).andReturn(childDiagram);
 		
 		replayAll();
-		ChildDiagram result = builder.createDiagramCluster("theId", "theLabel");
+		ChildDiagram result = builder.createDiagramForSubnet(subnet);
 		verifyAll();
 		assertSame(childDiagram,result);
 	}

@@ -9,6 +9,7 @@ import tw.com.pictures.dot.Recorder;
 import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.Route;
 import com.amazonaws.services.ec2.model.RouteTable;
+import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
@@ -45,8 +46,10 @@ public class VPCDiagramBuilder {
 		recorder.end();
 	}
 
-	public ChildDiagram createDiagramCluster(String id, String label) throws CfnAssistException {
-		return diagram.createDiagramCluster(id, label);
+	public ChildDiagram createDiagramForSubnet(Subnet subnet) throws CfnAssistException {
+		String subnetName = AmazonVPCFacade.getNameFromTags(subnet.getTags());
+		String label = SubnetDiagramBuilder.formSubnetLabel(subnet, subnetName);
+		return diagram.createDiagramCluster(subnet.getSubnetId(), label);
 	}
 
 	public void addRouteTable(RouteTable routeTable, String subnetId) throws CfnAssistException {

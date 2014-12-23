@@ -33,8 +33,7 @@ public class TestDiagramFactory extends EasyMockSupport {
 	public void shouldAddSubnetDiagrm() throws CfnAssistException {
 		
 		Subnet subnet = new Subnet().withSubnetId("subnetId").withCidrBlock("cidrBlock");
-		String label ="subnetId [subnetId]\n(cidrBlock)";
-		EasyMock.expect(parentDiagramBuilder.createDiagramCluster("subnetId", label)).andReturn(childDiagram);
+		EasyMock.expect(parentDiagramBuilder.createDiagramForSubnet(subnet)).andReturn(childDiagram);
 		
 		replayAll();
 		factory.createSubnetDiagramBuilder(parentDiagramBuilder, subnet);

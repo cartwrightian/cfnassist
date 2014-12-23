@@ -13,13 +13,8 @@ public class DiagramFactory {
 		return new VPCDiagramBuilder(vpc, diagram);
 	}
 
-	public SubnetDiagramBuilder createSubnetDiagramBuilder(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {
-		String subnetName = AmazonVPCFacade.getNameFromTags(subnet.getTags());
-		String subnetLabel = SubnetDiagramBuilder.formSubnetLabel(subnet, subnetName);
-		
-		String subnetId = subnet.getSubnetId();
-		ChildDiagram diagram = parent.createDiagramCluster(subnetId, subnetLabel);
-		
+	public SubnetDiagramBuilder createSubnetDiagramBuilder(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {	
+		ChildDiagram diagram = parent.createDiagramForSubnet(subnet);
 		return new SubnetDiagramBuilder(diagram, parent, subnet);
 	}
 
