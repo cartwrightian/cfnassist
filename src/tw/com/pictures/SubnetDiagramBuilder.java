@@ -8,21 +8,17 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.IpPermission;
+import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 
-public class SubnetDiagramBuilder {
+public class SubnetDiagramBuilder implements HasDiagramId {
 	private Map<String, String> instanceNames = new HashMap<String,String>(); // id -> name
-	private ChildDiagram  diagram;
-	private String subnetId;
+	private ChildDiagram diagram;
 
-	public SubnetDiagramBuilder(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {
+	public SubnetDiagramBuilder(ChildDiagram diagram, VPCDiagramBuilder parent, Subnet subnet) {
 		instanceNames = new HashMap<String, String>();
-		String subnetName = AmazonVPCFacade.getNameFromTags(subnet.getTags());
-		String subnetLabel = formSubnetLabel(subnet, subnetName);
-		
-		subnetId = subnet.getSubnetId();
-		diagram = parent.createDiagramCluster(subnetId, subnetLabel);
+		this.diagram = diagram;
 	}
 
 	public void add(Instance instance) throws CfnAssistException {
@@ -84,12 +80,19 @@ public class SubnetDiagramBuilder {
 		return String.format("%s [%s]\n(%s)", name, subnet.getSubnetId(), subnet.getCidrBlock());
 	}
 
-	public void addRouteTable(String routeTableId, String name) throws CfnAssistException {
+	public void addRouteTable(RouteTable routeTable) throws CfnAssistException {
+		String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
+		String routeTableId = routeTable.getRouteTableId();
 		String label = AmazonVPCFacade.createLabelFromNameAndID(routeTableId, name);
 		diagram.addRouteTable(routeTableId, label);
 	}
 
-	public String getId() {
+	public ChildDiagram getDiagram() {
+		return diagram;
+	}
+
+	@Override
+	public String getIdAsString() {
 		return diagram.getId();
 	}
 

@@ -19,9 +19,9 @@ public interface Diagram {
 
 	void addELB(String unqiueId, String label) throws CfnAssistException;
 
-	void associateWithCluster(String unqiueId, String clusterId, SubnetDiagramBuilder subnetDiagramBuilder);
+	void associateWithSubDiagram(String unqiueId, String clusterId, HasDiagramId childDiagram);
 	
-	void addConnectionFromCluster(String unqiueId, String subnetId, SubnetDiagramBuilder subnetDiagramBuilder, String label);
+	void addConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String edgeLabel);
 
 	void addDBInstance(String rdsId, String label) throws CfnAssistException;
 

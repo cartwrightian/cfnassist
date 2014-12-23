@@ -62,7 +62,7 @@ public class VPCVisitor {
 
 		if (dbSubnetGroup!=null) {
 			for(com.amazonaws.services.rds.model.Subnet subnet : dbSubnetGroup.getSubnets()) {
-				vpcDiagram.associateRDSToSubnet(rds, subnet.getSubnetIdentifier());
+				vpcDiagram.associateDBWithSubnet(rds, subnet.getSubnetIdentifier());
 			}
 		}
 	}

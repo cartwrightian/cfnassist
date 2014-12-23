@@ -3,7 +3,7 @@ package tw.com.pictures.dot;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.ChildDiagram;
 import tw.com.pictures.Diagram;
-import tw.com.pictures.SubnetDiagramBuilder;
+import tw.com.pictures.HasDiagramId;
 
 public class GraphFacade implements Diagram {
 	public static final int SUBNET_TITLE_FONT_SIZE = 12;
@@ -54,14 +54,14 @@ public class GraphFacade implements Diagram {
 	
 
 	@Override
-	public void addConnectionFromCluster(String uniqueId, String subnetId,
-			SubnetDiagramBuilder subnetDiagramBuilder, String label) {
-		graph.addEdge(subnetId, uniqueId).beginsAt(subnetDiagramBuilder.getId()).withLabel(label);		
+	public void addConnectionFromSubDiagram(String end, String begin,
+			HasDiagramId childDigram, String edgeLabel) {
+		graph.addEdge(begin, end).beginsAt(childDigram.getIdAsString()).withLabel(edgeLabel);		
 	}
 
 	@Override
-	public void associateWithCluster(String uniqueId, String subnetId, SubnetDiagramBuilder subnetDiagramBuilder) {
-		graph.addEdge(uniqueId, subnetId).withDot().endsAt(subnetDiagramBuilder.getId());		
+	public void associateWithSubDiagram(String being, String end, HasDiagramId childDiagram) {
+		graph.addEdge(being, end).withDot().endsAt(childDiagram.getIdAsString());		
 	}
 
 	@Override

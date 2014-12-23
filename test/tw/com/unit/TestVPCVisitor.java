@@ -78,7 +78,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagram.associateELBToInstance(elb, instanceId);
 		vpcDiagram.associateELBToSubnet(elb, subnetId);
 		vpcDiagram.addDBInstance(dbInstance);
-		vpcDiagram.associateRDSToSubnet(dbInstance, subnetId);
+		vpcDiagram.associateDBWithSubnet(dbInstance, subnetId);
 		diagramBuilder.add(vpcDiagram);
 		
 		replayAll();

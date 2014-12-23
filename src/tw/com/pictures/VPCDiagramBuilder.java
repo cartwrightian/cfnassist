@@ -17,13 +17,12 @@ public class VPCDiagramBuilder {
 
 	private Diagram diagram;
 	private Vpc vpc;
-	private Map<String, SubnetDiagramBuilder> subnetDiagrams; // id -> diagram
+	private Map<String, SubnetDiagramBuilder> subnetDiagramBuilders; // id -> diagram
 
 	public VPCDiagramBuilder(Vpc vpc, Diagram diagram) {
 		this.vpc = vpc;
 		this.diagram = diagram;
-		addTitle(vpc);
-		subnetDiagrams = new HashMap<String, SubnetDiagramBuilder>();
+		subnetDiagramBuilders = new HashMap<String, SubnetDiagramBuilder>();
 	}
 
 	private void addTitle(Vpc vpc) {
@@ -36,10 +35,11 @@ public class VPCDiagramBuilder {
 	}
 
 	public void add(String unique, SubnetDiagramBuilder subnetDiagram) {
-		subnetDiagrams.put(unique, subnetDiagram);
+		subnetDiagramBuilders.put(unique, subnetDiagram);
 	}
 
 	public void render(Recorder recorder) throws IOException {
+		addTitle(vpc);
 		recorder.beginFor(vpc, "network_diagram");	
 		diagram.render(recorder);
 		recorder.end();
@@ -50,12 +50,13 @@ public class VPCDiagramBuilder {
 	}
 
 	public void addRouteTable(RouteTable routeTable, String subnetId) throws CfnAssistException {
-		String routeTableId = routeTable.getRouteTableId();
-		String name= AmazonVPCFacade.getNameFromTags(routeTable.getTags());
 		if (subnetId!=null) {
-			SubnetDiagramBuilder subnetDiagram = subnetDiagrams.get(subnetId);
-			subnetDiagram.addRouteTable(routeTableId, name);
+			SubnetDiagramBuilder subnetDiagram = subnetDiagramBuilders.get(subnetId);
+			subnetDiagram.addRouteTable(routeTable);
 		} else {
+			String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
+			String routeTableId = routeTable.getRouteTableId();
+
 			String label = AmazonVPCFacade.createLabelFromNameAndID(routeTableId, name);
 			diagram.addRouteTable(routeTableId, label);
 		}
@@ -83,7 +84,7 @@ public class VPCDiagramBuilder {
 
 	public void associateELBToSubnet(LoadBalancerDescription elb,
 			String subnetId) {
-		diagram.associateWithCluster(elb.getDNSName(), subnetId, subnetDiagrams.get(subnetId));		
+		diagram.associateWithSubDiagram(elb.getDNSName(), subnetId, subnetDiagramBuilders.get(subnetId));		
 	}
 
 	public void addDBInstance(DBInstance rds) throws CfnAssistException {
@@ -92,8 +93,8 @@ public class VPCDiagramBuilder {
 		diagram.addDBInstance(rdsId, label);
 	}
 
-	public void associateRDSToSubnet(DBInstance rds, String subnetId) {
-		diagram.associateWithCluster(rds.getDBInstanceIdentifier(), subnetId, subnetDiagrams.get(subnetId));	
+	public void associateDBWithSubnet(DBInstance rds, String subnetId) {
+		diagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 
 	public void addRoute(String subnetId, Route route) {
@@ -103,9 +104,9 @@ public class VPCDiagramBuilder {
 			cidr = "no cidr";
 		}
 		if (!destination.equals("local")) {
-			diagram.addConnectionFromCluster(destination, subnetId, subnetDiagrams.get(subnetId), cidr);
+			diagram.addConnectionFromSubDiagram(destination, subnetId, subnetDiagramBuilders.get(subnetId), cidr);
 		} else {
-			diagram.associateWithCluster(cidr, subnetId, subnetDiagrams.get(subnetId));
+			diagram.associateWithSubDiagram(cidr, subnetId, subnetDiagramBuilders.get(subnetId));
 		}
 		
 	}
