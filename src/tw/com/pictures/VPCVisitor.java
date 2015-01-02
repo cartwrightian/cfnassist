@@ -90,13 +90,14 @@ public class VPCVisitor {
 
 		for(NetworkAclAssociation assoc : acl.getAssociations()) {
 			String subnetId = assoc.getSubnetId();
+			String networkAclId = acl.getNetworkAclId();
 			vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
 			
 			for(NetworkAclEntry entry : acl.getEntries()) {
 				if (entry.getEgress()) {
-					vpcDiagramBuilder.addOutboundRoute(acl.getNetworkAclId(), entry, subnetId);
+					vpcDiagramBuilder.addOutboundRoute(networkAclId, entry, subnetId);
 				} else {
-					// TODO
+					vpcDiagramBuilder.addInboundRoute(networkAclId, entry, subnetId);
 				}
 			}			
 		}	

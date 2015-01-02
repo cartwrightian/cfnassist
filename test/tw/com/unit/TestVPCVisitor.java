@@ -65,14 +65,22 @@ public class TestVPCVisitor extends EasyMockSupport {
 		LoadBalancerDescription elb = new LoadBalancerDescription();
 		DBInstance dbInstance = new DBInstance();
 		NetworkAclAssociation aclAssoc = new NetworkAclAssociation().withSubnetId(subnetId);
-		PortRange outboundPortRange = new PortRange().withFrom(1024).withTo(2048);
+		PortRange portRange = new PortRange().withFrom(1024).withTo(2048);
 		NetworkAclEntry outboundEntry = new NetworkAclEntry().
 				withEgress(true).
 				withCidrBlock("cidrBlockOut").
-				withPortRange(outboundPortRange).
+				withPortRange(portRange).
 				withRuleAction("allow").
 				withProtocol("tcpip");
-		NetworkAcl acl = new NetworkAcl().withAssociations(aclAssoc).withEntries(outboundEntry).withNetworkAclId("aclId");
+		NetworkAclEntry inboundEntry = new NetworkAclEntry().
+				withEgress(false).
+				withCidrBlock("cidrBlockOut").
+				withPortRange(portRange).
+				withRuleAction("allow").
+				withProtocol("tcpip");
+		NetworkAcl acl = new NetworkAcl().withAssociations(aclAssoc).
+				withEntries(outboundEntry, inboundEntry).
+				withNetworkAclId("aclId");
 		
 		vpcBuilder.add(subnet);
 		vpcBuilder.add(instance);	
@@ -99,6 +107,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagramBuilder.addAcl(acl);
 		vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
 		vpcDiagramBuilder.addOutboundRoute("aclId",outboundEntry, subnetId);
+		vpcDiagramBuilder.addInboundRoute("aclId", inboundEntry, subnetId);
 		diagramBuilder.add(vpcDiagramBuilder);
 		
 		replayAll();

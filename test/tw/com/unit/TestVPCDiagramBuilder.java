@@ -263,15 +263,38 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		SubnetDiagramBuilder subnetDiagramBuilder = EasyMock.createMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
-		NetworkAclEntry outboundEntry = createAclEntry(portRange, "cidrBlock");
+		NetworkAclEntry outboundEntry = createAclEntry(portRange, "cidrBlock", true, 42);
 		
-		securityDiagram.addCidr("cidrBlock");
-		securityDiagram.addPortRange("aclId_42_cidrBlock", 1023, 1128);
-		securityDiagram.addConnectionFromSubDiagram("aclId_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
-		securityDiagram.addConnectionBetween("aclId_42_cidrBlock", "cidrBlock");
+		securityDiagram.addCidr("out_cidrBlock_aclId","cidrBlock");
+		securityDiagram.addPortRange("aclId_out_42_cidrBlock", 1023, 1128);
+		securityDiagram.addConnectionFromSubDiagram("aclId_out_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
+		securityDiagram.addConnectionBetween("aclId_out_42_cidrBlock", "out_cidrBlock_aclId");
 		
 		replayAll();
 		builder.addOutboundRoute("aclId", outboundEntry, "subnetId");
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAddOutboundAclEntryDeuplicateCIDR() throws CfnAssistException {
+		SubnetDiagramBuilder subnetDiagramBuilder = EasyMock.createMock(SubnetDiagramBuilder.class);
+		builder.add("subnetId", subnetDiagramBuilder);
+		
+		NetworkAclEntry entryA = createAclEntry(portRange, "cidrBlock", true, 42);
+		NetworkAclEntry entryB = createAclEntry(portRange, "cidrBlock", true, 42);
+		
+		securityDiagram.addCidr("out_cidrBlock_aclId","cidrBlock");
+		securityDiagram.addPortRange("aclId_out_42_cidrBlock", 1023, 1128);
+		securityDiagram.addConnectionFromSubDiagram("aclId_out_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
+		securityDiagram.addConnectionBetween("aclId_out_42_cidrBlock", "out_cidrBlock_aclId");
+		//
+		securityDiagram.addCidr("out_cidrBlock_aclId","cidrBlock");
+		securityDiagram.addPortRange("aclId_out_42_cidrBlock", 1023, 1128);
+		securityDiagram.addConnectionFromSubDiagram("aclId_out_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
+		
+		replayAll();
+		builder.addOutboundRoute("aclId", entryA, "subnetId");
+		builder.addOutboundRoute("aclId", entryB, "subnetId");
 		verifyAll();
 	}
 	
@@ -280,10 +303,10 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		SubnetDiagramBuilder subnetDiagramBuilder = EasyMock.createMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
-		NetworkAclEntry outboundEntry = createAclEntry(portRange, "0.0.0.0/0");
+		NetworkAclEntry outboundEntry = createAclEntry(portRange, "0.0.0.0/0", true, 42);
 		
-		securityDiagram.addPortRange("aclId_42_any", 1023, 1128);
-		securityDiagram.addConnectionFromSubDiagram("aclId_42_any", "subnetId", subnetDiagramBuilder, "any");
+		securityDiagram.addPortRange("aclId_out_42_any", 1023, 1128);
+		securityDiagram.addConnectionFromSubDiagram("aclId_out_42_any", "subnetId", subnetDiagramBuilder, "any");
 		
 		replayAll();
 		builder.addOutboundRoute("aclId", outboundEntry, "subnetId");
@@ -295,26 +318,67 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		SubnetDiagramBuilder subnetDiagramBuilder = EasyMock.createMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
-		NetworkAclEntry outboundEntry = createAclEntry(null, "cidrBlock");
+		NetworkAclEntry entry = createAclEntry(null, "cidrBlock", true, 42);
 		
-		securityDiagram.addCidr("cidrBlock");
-		securityDiagram.addPortRange("aclId_42_cidrBlock", 0, 0);
-		securityDiagram.addConnectionFromSubDiagram("aclId_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
-		securityDiagram.addConnectionBetween("aclId_42_cidrBlock", "cidrBlock");
+		securityDiagram.addCidr("out_cidrBlock_aclId","cidrBlock");
+		securityDiagram.addPortRange("aclId_out_42_cidrBlock", 0, 0);
+		securityDiagram.addConnectionFromSubDiagram("aclId_out_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
+		securityDiagram.addConnectionBetween("aclId_out_42_cidrBlock", "out_cidrBlock_aclId");
 		
 		replayAll();
-		builder.addOutboundRoute("aclId", outboundEntry, "subnetId");
+		builder.addOutboundRoute("aclId", entry, "subnetId");
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAddInboundAclEntry() throws CfnAssistException {
+		SubnetDiagramBuilder subnetDiagramBuilder = EasyMock.createMock(SubnetDiagramBuilder.class);
+		builder.add("subnetId", subnetDiagramBuilder);
+		
+		NetworkAclEntry entry = createAclEntry(portRange, "cidrBlock", false, 42);
+		
+		securityDiagram.addCidr("in_cidrBlock_aclId", "cidrBlock");
+		securityDiagram.addPortRange("aclId_in_42_cidrBlock", 1023, 1128);
+		securityDiagram.addConnectionToSubDiagram("aclId_in_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
+		securityDiagram.addConnectionBetween("in_cidrBlock_aclId","aclId_in_42_cidrBlock");
+		
+		replayAll();
+		builder.addInboundRoute("aclId", entry, "subnetId");
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAddInboundAclEntryDuplicateCIDR() throws CfnAssistException {
+		SubnetDiagramBuilder subnetDiagramBuilder = EasyMock.createMock(SubnetDiagramBuilder.class);
+		builder.add("subnetId", subnetDiagramBuilder);
+		
+		// Rule Numbers same since scenario is caused by subnets sharing same ACL
+		NetworkAclEntry entryA = createAclEntry(portRange, "cidrBlock", false, 42);
+		NetworkAclEntry entryB = createAclEntry(portRange, "cidrBlock", false, 42); 
+		
+		securityDiagram.addCidr("in_cidrBlock_aclId", "cidrBlock");
+		securityDiagram.addPortRange("aclId_in_42_cidrBlock", 1023, 1128);
+		securityDiagram.addConnectionToSubDiagram("aclId_in_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
+		securityDiagram.addConnectionBetween("in_cidrBlock_aclId","aclId_in_42_cidrBlock");
+		//
+		securityDiagram.addCidr("in_cidrBlock_aclId", "cidrBlock"); // TODO should go??
+		securityDiagram.addPortRange("aclId_in_42_cidrBlock", 1023, 1128);
+		securityDiagram.addConnectionToSubDiagram("aclId_in_42_cidrBlock", "subnetId", subnetDiagramBuilder, "cidrBlock");
+		
+		replayAll();
+		builder.addInboundRoute("aclId", entryA, "subnetId");
+		builder.addInboundRoute("aclId", entryB, "subnetId");
 		verifyAll();
 	}
 
-	private NetworkAclEntry createAclEntry(PortRange thePortRange, String cidrBlock) {
+	private NetworkAclEntry createAclEntry(PortRange thePortRange, String cidrBlock, Boolean outbound, Integer ruleNumber) {
 		NetworkAclEntry outboundEntry = new NetworkAclEntry().
 				withCidrBlock(cidrBlock).
-				withEgress(true).
+				withEgress(outbound).
 				withPortRange(thePortRange).
 				withProtocol("proto").
 				withRuleAction(RuleAction.Allow).
-				withRuleNumber(42);
+				withRuleNumber(ruleNumber);
 		return outboundEntry;
 	}
 	

@@ -58,6 +58,11 @@ public class GraphFacade implements Diagram {
 			HasDiagramId childDigram, String edgeLabel) {
 		graph.addEdge(start, target).beginsAt(childDigram.getIdAsString()).withLabel(edgeLabel);		
 	}
+	
+	@Override
+	public void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label) {
+		graph.addEdge(start, end).endsAt(childDigram.getIdAsString()).withLabel(label);
+	}
 
 	@Override
 	public void associateWithSubDiagram(String begin, String end, HasDiagramId childDiagram) {
@@ -71,14 +76,14 @@ public class GraphFacade implements Diagram {
 
 	@Override
 	public void addACL(String uniqueId, String label) throws CfnAssistException {
-		graph.addNode(uniqueId).withLabel(label);		
+		graph.addNode(uniqueId).withLabel(label).withShape(Shape.Box);		
 	}
 
 	@Override
 	public void addPortRange(String uniqueId, int i, int j) throws CfnAssistException {
 		String label = "notset";
 		if (i==0 && j==0) {
-			label = "any";
+			label = "all";
 		} else if (i==j) {
 			label = String.format("%03d", i);
 		} else {
@@ -88,7 +93,8 @@ public class GraphFacade implements Diagram {
 	}
 
 	@Override
-	public void addCidr(String cidrBlock) throws CfnAssistException {
-		graph.addNode(cidrBlock).withShape(Shape.Diamond);	
+	public void addCidr(String uniqueId, String label) throws CfnAssistException {
+		graph.addNode(uniqueId).withLabel(label).withShape(Shape.Diamond);	
 	}
+
 }

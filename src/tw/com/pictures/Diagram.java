@@ -21,7 +21,9 @@ public interface Diagram {
 
 	void associateWithSubDiagram(String unqiueId, String clusterId, HasDiagramId childDiagram);
 	
-	void addConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String edgeLabel);
+	void addConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String label);
+	
+	void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label);
 
 	void addDBInstance(String rdsId, String label) throws CfnAssistException;
 
@@ -29,6 +31,7 @@ public interface Diagram {
 
 	void addPortRange(String string, int to, int from) throws CfnAssistException;
 
-	void addCidr(String cidrBlock) throws CfnAssistException;
+	void addCidr(String uniqueId, String label) throws CfnAssistException;
+
 
 }

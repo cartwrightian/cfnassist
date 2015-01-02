@@ -2,7 +2,9 @@ package tw.com.pictures;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
@@ -27,12 +29,14 @@ public class VPCDiagramBuilder {
 
 	private Vpc vpc;
 	private Map<String, SubnetDiagramBuilder> subnetDiagramBuilders; // id -> diagram
+	private Set<String> connections;
 
 	public VPCDiagramBuilder(Vpc vpc, Diagram networkDiagram, Diagram securityDiagram) {
 		this.vpc = vpc;
 		this.networkDiagram = networkDiagram;
 		this.securityDiagram = securityDiagram;
 		subnetDiagramBuilders = new HashMap<String, SubnetDiagramBuilder>();
+		connections = new HashSet<>();
 	}
 
 	private void addTitle(Vpc vpc, Diagram diagram) {
@@ -157,27 +161,80 @@ public class VPCDiagramBuilder {
 	}
 
 	public void addOutboundRoute(String aclId, NetworkAclEntry outboundEntry, String subnetId) throws CfnAssistException {
-		// item for address range
-		String cidrBlock = outboundEntry.getCidrBlock();
+		String cidrBlock = addCidr(outboundEntry,"out", aclId);
+		String portRangeUniqueId = addPortRange(aclId, outboundEntry, cidrBlock, "out");
+		
+		//  associate subnet with port range and port range with cidr
+		securityDiagram.addConnectionFromSubDiagram(portRangeUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), cidrBlock);
+		if (!cidrBlock.equals(CIDR_ANY)) {
+			String cidrUniqueId = createCidrUniqueId("out", aclId, cidrBlock);
+			uniquelyAddConnection(portRangeUniqueId, cidrUniqueId);
+		}
+	}
+
+
+	public void addInboundRoute(String aclId, NetworkAclEntry outboundEntry, String subnetId) throws CfnAssistException {
+		String cidrBlock = addCidr(outboundEntry,"in", aclId);
+		String portRangeUniqueId = addPortRange(aclId, outboundEntry, cidrBlock, "in");
+		
+		//  associate subnet with port range and port range with cidr
+		securityDiagram.addConnectionToSubDiagram(portRangeUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), cidrBlock);
+		if (!cidrBlock.equals(CIDR_ANY)) {
+			String cidrUniqueId = createCidrUniqueId("in", aclId, cidrBlock);
+			uniquelyAddConnection(cidrUniqueId, portRangeUniqueId);
+		}
+	}
+
+	private void uniquelyAddConnection(String idA, String idB) {
+		if (!hasConnection(idA, idB)) {
+			addConnection(idA, idB);
+			securityDiagram.addConnectionBetween(idA, idB);
+		}
+	}
+	
+	private void addConnection(String uniqueIdA, String uniqueIdB) {
+		String id  = formIdFrom(uniqueIdA, uniqueIdB);
+		connections.add(id);
+	}
+
+	private String formIdFrom(String uniqueIdA, String uniqueIdB) {
+		return String.format("%s__%s",uniqueIdA, uniqueIdB);
+	}
+
+	private boolean hasConnection(String uniqueIdA, String uniqueIdB) {
+		String id  = formIdFrom(uniqueIdA, uniqueIdB);
+		return connections.contains(id);
+	}
+
+	private String addCidr(NetworkAclEntry entry, String direction, String aclId)
+			throws CfnAssistException {
+		String cidrBlock = entry.getCidrBlock();
+
 		if (cidrBlock.equals("0.0.0.0/0")) {
 			cidrBlock=CIDR_ANY;
-		} else {
-			securityDiagram.addCidr(cidrBlock);
+		} 
+		String uniqueId = createCidrUniqueId(direction, aclId, cidrBlock);
+		if (!cidrBlock.equals(CIDR_ANY)) {
+			securityDiagram.addCidr(uniqueId, cidrBlock);
 		}
-		// item for port range
-		String uniqueId = String.format("%s_%d_%s", aclId, outboundEntry.getRuleNumber(), cidrBlock);
+		return cidrBlock;
+	}
+
+	private String createCidrUniqueId(String direction, String aclId,
+			String cidrBlock) {
+		String uniqueId = String.format("%s_%s_%s", direction, cidrBlock, aclId);
+		return uniqueId;
+	}
+
+	private String addPortRange(String aclId, NetworkAclEntry outboundEntry, String cidrBlock, String dir) throws CfnAssistException {
+		String uniqueId = String.format("%s_%s_%d_%s", aclId, dir, outboundEntry.getRuleNumber(), cidrBlock);
 		PortRange portRange = outboundEntry.getPortRange();
 		if (portRange==null) {
 			securityDiagram.addPortRange(uniqueId, 0, 0); 
 		} else {
 			securityDiagram.addPortRange(uniqueId, portRange.getFrom(), portRange.getTo());
 		}
-		
-		//  associate subnet with port range and port range with cidr
-		securityDiagram.addConnectionFromSubDiagram(uniqueId, subnetId, subnetDiagramBuilders.get(subnetId), cidrBlock);
-		if (!cidrBlock.equals(CIDR_ANY)) {
-			securityDiagram.addConnectionBetween(uniqueId, cidrBlock);
-		}
+		return uniqueId;
 	}
 
 }
