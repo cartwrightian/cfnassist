@@ -1,5 +1,7 @@
 package tw.com.unit;
 
+import static org.junit.Assert.*;
+
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -8,8 +10,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import tw.com.exceptions.CfnAssistException;
-import tw.com.pictures.ChildDiagram;
 import tw.com.pictures.DiagramFactory;
+import tw.com.pictures.NetworkChildDiagram;
+import tw.com.pictures.SubnetDiagramBuilder;
 import tw.com.pictures.VPCDiagramBuilder;
 
 import com.amazonaws.services.ec2.model.Subnet;
@@ -19,12 +22,14 @@ public class TestDiagramFactory extends EasyMockSupport {
 	
 	private DiagramFactory factory;
 	private VPCDiagramBuilder parentDiagramBuilder;
-	private ChildDiagram childDiagram;
+	private NetworkChildDiagram childNetworkDiagram;
+	private SecurityChildDiagram childSecurityDiagram;
 	
 	@Before
 	public void beforeEachTestRuns() {
 		parentDiagramBuilder = createStrictMock(VPCDiagramBuilder.class);
-		childDiagram = createStrictMock(ChildDiagram.class);
+		childNetworkDiagram = createStrictMock(NetworkChildDiagram.class);
+		childSecurityDiagram = createStrictMock(SecurityChildDiagram.class);
 		
 		factory = new DiagramFactory();
 	}
@@ -33,11 +38,14 @@ public class TestDiagramFactory extends EasyMockSupport {
 	public void shouldAddSubnetDiagrm() throws CfnAssistException {
 		
 		Subnet subnet = new Subnet().withSubnetId("subnetId").withCidrBlock("cidrBlock");
-		EasyMock.expect(parentDiagramBuilder.createDiagramForSubnet(subnet)).andReturn(childDiagram);
+		EasyMock.expect(parentDiagramBuilder.createNetworkDiagramForSubnet(subnet)).andReturn(childNetworkDiagram);
+		EasyMock.expect(parentDiagramBuilder.createSecurityDiagramForSubnet(subnet)).andReturn(childSecurityDiagram);
 		
 		replayAll();
-		factory.createSubnetDiagramBuilder(parentDiagramBuilder, subnet);
-		verifyAll();		
+		SubnetDiagramBuilder result = factory.createSubnetDiagramBuilder(parentDiagramBuilder, subnet);
+		verifyAll();	
+		
+		assertSame(childNetworkDiagram, result.getNetworkDiagram());
 	}
 
 }

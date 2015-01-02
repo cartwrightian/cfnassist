@@ -17,7 +17,7 @@ public class SubnetDiagrams {
 		String subnetLabel = formSubnetLabel(subnet, subnetName);
 		String subnetId = subnet.getSubnetId();	
 		
-		ChildDiagram childDiagram = parentDiagram.createDiagramCluster(subnetId, subnetLabel);		
+		ChildDiagram childDiagram = parentDiagram.createSubDiagram(subnetId, subnetLabel);		
 		childDiagrams.put(subnetId,childDiagram);
 		
 		return childDiagram;

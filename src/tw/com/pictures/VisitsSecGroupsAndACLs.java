@@ -24,6 +24,7 @@ import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
 
+//TODO OBSOLETE
 public class VisitsSecGroupsAndACLs {
 	private static final Logger logger = LoggerFactory.getLogger(VisitsSecGroupsAndACLs.class);
 	

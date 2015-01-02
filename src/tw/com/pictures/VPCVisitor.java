@@ -6,6 +6,9 @@ import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.GroupIdentifier;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.IpPermission;
+import com.amazonaws.services.ec2.model.NetworkAcl;
+import com.amazonaws.services.ec2.model.NetworkAclAssociation;
+import com.amazonaws.services.ec2.model.NetworkAclEntry;
 import com.amazonaws.services.ec2.model.Route;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.RouteTableAssociation;
@@ -53,9 +56,14 @@ public class VPCVisitor {
 		for(DBInstance rds : facade.getRDSFor(vpcId)) {
 			visit(vpcDiagram, rds);
 		}
+		//
+		for(NetworkAcl acl : facade.getACLs(vpcId)) {
+			visit(vpcDiagram, acl);
+		}
 		diagramBuilder.add(vpcDiagram);
 	}
 
+	
 	private void visit(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
 		vpcDiagram.addDBInstance(rds);
 		DBSubnetGroup dbSubnetGroup = rds.getDBSubnetGroup();
@@ -67,14 +75,31 @@ public class VPCVisitor {
 		}
 	}
 
-	private void visit(VPCDiagramBuilder vpcDiagram, LoadBalancerDescription elb) throws CfnAssistException {
-		vpcDiagram.addELB(elb);
+	private void visit(VPCDiagramBuilder vpcDiagramBuilder, LoadBalancerDescription elb) throws CfnAssistException {
+		vpcDiagramBuilder.addELB(elb);
 		for(com.amazonaws.services.elasticloadbalancing.model.Instance instance : elb.getInstances()) {
-			vpcDiagram.associateELBToInstance(elb, instance.getInstanceId());
+			vpcDiagramBuilder.associateELBToInstance(elb, instance.getInstanceId());
 		}
 		for(String subnetId : elb.getSubnets()) {
-			vpcDiagram.associateELBToSubnet(elb, subnetId);
+			vpcDiagramBuilder.associateELBToSubnet(elb, subnetId);
 		}
+	}
+	
+	private void visit(VPCDiagramBuilder vpcDiagramBuilder, NetworkAcl acl) throws CfnAssistException {
+		vpcDiagramBuilder.addAcl(acl);
+
+		for(NetworkAclAssociation assoc : acl.getAssociations()) {
+			String subnetId = assoc.getSubnetId();
+			vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
+			
+			for(NetworkAclEntry entry : acl.getEntries()) {
+				if (entry.getEgress()) {
+					vpcDiagramBuilder.addOutboundRoute(acl.getNetworkAclId(), entry, subnetId);
+				} else {
+					// TODO
+				}
+			}			
+		}	
 	}
 
 	private void visit(VPCDiagramBuilder vpcDiagram, Address eip) throws CfnAssistException {
@@ -87,8 +112,8 @@ public class VPCVisitor {
 	}
 
 	private void visit(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {
+		SubnetDiagramBuilder subnetDiagram = factory.createSubnetDiagramBuilder(parent, subnet);
 		
-		SubnetDiagramBuilder subnetDiagram = factory.createSubnetDiagramBuilder(parent,subnet);
 		String subnetId = subnet.getSubnetId();
 		List<Instance> instances = facade.getInstancesFor(subnetId);
 		for(Instance instance : instances) {

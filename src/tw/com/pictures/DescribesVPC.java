@@ -11,6 +11,7 @@ import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
 
+// TODO OBSOLETE
 public class DescribesVPC {
 	private static final Logger logger = LoggerFactory.getLogger(DescribesVPC.class);
 	

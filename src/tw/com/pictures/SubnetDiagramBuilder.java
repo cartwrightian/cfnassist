@@ -6,6 +6,8 @@ import java.util.Map;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
+import tw.com.unit.SecurityChildDiagram;
+
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.RouteTable;
@@ -14,17 +16,20 @@ import com.amazonaws.services.ec2.model.Subnet;
 
 public class SubnetDiagramBuilder implements HasDiagramId {
 	private Map<String, String> instanceNames = new HashMap<String,String>(); // id -> name
-	private ChildDiagram diagram;
+	private NetworkChildDiagram networkDiagram;
+	private SecurityChildDiagram securityDiagram;
 
-	public SubnetDiagramBuilder(ChildDiagram diagram, VPCDiagramBuilder parent, Subnet subnet) {
+	public SubnetDiagramBuilder(NetworkChildDiagram networkChildDiagram, SecurityChildDiagram securityDiagram, Subnet subnet) {
 		instanceNames = new HashMap<String, String>();
-		this.diagram = diagram;
+		this.networkDiagram = networkChildDiagram;
+		this.securityDiagram = securityDiagram;
 	}
 
 	public void add(Instance instance) throws CfnAssistException {
 		String instanceId = instance.getInstanceId();
 		String label = createInstanceLabel(instance);
-		diagram.addInstance(instanceId, label);
+		networkDiagram.addInstance(instanceId, label);
+		securityDiagram.addInstance(instanceId, label);
 	}
 	
 	public String createInstanceLabel(Instance instance) {
@@ -69,7 +74,7 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 	}
 
 	public void render(Recorder recorder) {
-		diagram.render(recorder);
+		networkDiagram.render(recorder);
 	}
 	
 	public static String formSubnetLabel(Subnet subnet, String tagName) {
@@ -84,16 +89,16 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 		String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
 		String routeTableId = routeTable.getRouteTableId();
 		String label = AmazonVPCFacade.createLabelFromNameAndID(routeTableId, name);
-		diagram.addRouteTable(routeTableId, label);
+		networkDiagram.addRouteTable(routeTableId, label);
 	}
 
-	public ChildDiagram getDiagram() {
-		return diagram;
+	public ChildDiagram getNetworkDiagram() {
+		return networkDiagram;
 	}
 
 	@Override
 	public String getIdAsString() {
-		return diagram.getId();
+		return networkDiagram.getId();
 	}
 
 }

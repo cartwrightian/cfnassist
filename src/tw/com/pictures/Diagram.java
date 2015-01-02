@@ -5,7 +5,7 @@ import tw.com.pictures.dot.Recorder;
 
 public interface Diagram {
 
-	ChildDiagram createDiagramCluster(String uniqueId, String label) throws CfnAssistException;
+	ChildDiagram createSubDiagram(String uniqueId, String label) throws CfnAssistException;
 
 	void addTitle(String title);
 
@@ -15,14 +15,20 @@ public interface Diagram {
 
 	void addConnectionBetween(String uniqueIdA, String uniqueIdB);
 
-	void addEIP(String unqiueId, String label) throws CfnAssistException;
+	void addPublicIPAddress(String unqiueId, String label) throws CfnAssistException;
 
-	void addELB(String unqiueId, String label) throws CfnAssistException;
+	void addLoadBalancer(String unqiueId, String label) throws CfnAssistException;
 
 	void associateWithSubDiagram(String unqiueId, String clusterId, HasDiagramId childDiagram);
 	
 	void addConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String edgeLabel);
 
 	void addDBInstance(String rdsId, String label) throws CfnAssistException;
+
+	void addACL(String uniqueId, String label) throws CfnAssistException;
+
+	void addPortRange(String string, int to, int from) throws CfnAssistException;
+
+	void addCidr(String cidrBlock) throws CfnAssistException;
 
 }

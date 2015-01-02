@@ -9,6 +9,7 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 
+//TODO OBSOLETE
 public class VisitsSubnetsAndInstances {
 	public static final int SUBNET_TITLE_FONT_SIZE = 12;
 	private AmazonVPCFacade facade;

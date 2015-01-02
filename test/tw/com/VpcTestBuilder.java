@@ -1,4 +1,4 @@
-package tw.com.unit;
+package tw.com;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -11,6 +11,7 @@ import tw.com.pictures.AmazonVPCFacade;
 
 import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -27,6 +28,7 @@ public class VpcTestBuilder {
 	private List<DBInstance> databases;
 	private List<Instance> instances;
 	private String vpcId;
+	private List<NetworkAcl> acls;
 	
 	public VpcTestBuilder(String vpcId) {
 		this.vpcId = vpcId;
@@ -37,6 +39,7 @@ public class VpcTestBuilder {
 		eips = new LinkedList<Address>();
 		loadBalancers = new LinkedList<LoadBalancerDescription>();
 		databases = new LinkedList<DBInstance>();
+		acls = new LinkedList<>();
 	}
 
 	public void add(Subnet subnet) {
@@ -84,6 +87,11 @@ public class VpcTestBuilder {
 		dBSubnetGroup.setSubnets(rdsSubnets);
 		dbInstance.withDBSubnetGroup(dBSubnetGroup);
 	}
+	
+
+	public void add(NetworkAcl acl) {
+		acls.add(acl);	
+	}
 
 	public Vpc setFacadeExpectations(AmazonVPCFacade awsFacade, String subnetId) throws CfnAssistException {
 		EasyMock.expect(awsFacade.getSubnetFors(vpcId)).andReturn(subnets);
@@ -92,7 +100,9 @@ public class VpcTestBuilder {
 		EasyMock.expect(awsFacade.getEIPFor(vpcId)).andReturn(eips);
 		EasyMock.expect(awsFacade.getLBFor(vpcId)).andReturn(loadBalancers);
 		EasyMock.expect(awsFacade.getRDSFor(vpcId)).andReturn(databases);
+		EasyMock.expect(awsFacade.getACLs(vpcId)).andReturn(acls);
 		return vpc;	
 	}
+
 
 }

@@ -15,7 +15,7 @@ public class GraphFacade implements Diagram {
 	}
 	
 	@Override
-	public ChildDiagram createDiagramCluster(String uniqueId, String label) throws CfnAssistException {
+	public ChildDiagram createSubDiagram(String uniqueId, String label) throws CfnAssistException {
 		SubGraph cluster = graph.createDiagramCluster(uniqueId, label, SUBNET_TITLE_FONT_SIZE);
 		cluster.addNode(uniqueId).makeInvisible();
 		ChildDiagram child = new SubGraphFacade(cluster);
@@ -43,25 +43,25 @@ public class GraphFacade implements Diagram {
 	}
 
 	@Override
-	public void addEIP(String address, String label) throws CfnAssistException {
-		graph.addNode(address).withShape(Shape.Diamond).withLabel(label);	
+	public void addPublicIPAddress(String uniqueId, String label) throws CfnAssistException {
+		graph.addNode(uniqueId).withShape(Shape.Diamond).withLabel(label);	
 	}
 
 	@Override
-	public void addELB(String dnsName, String label) throws CfnAssistException {
-		graph.addNode(dnsName).withShape(Shape.Octogon).withLabel(label);	
+	public void addLoadBalancer(String uniqueId, String label) throws CfnAssistException {
+		graph.addNode(uniqueId).withShape(Shape.Octogon).withLabel(label);	
 	}
 	
 
 	@Override
-	public void addConnectionFromSubDiagram(String end, String begin,
+	public void addConnectionFromSubDiagram(String target, String start,
 			HasDiagramId childDigram, String edgeLabel) {
-		graph.addEdge(begin, end).beginsAt(childDigram.getIdAsString()).withLabel(edgeLabel);		
+		graph.addEdge(start, target).beginsAt(childDigram.getIdAsString()).withLabel(edgeLabel);		
 	}
 
 	@Override
-	public void associateWithSubDiagram(String being, String end, HasDiagramId childDiagram) {
-		graph.addEdge(being, end).withDot().endsAt(childDiagram.getIdAsString());		
+	public void associateWithSubDiagram(String begin, String end, HasDiagramId childDiagram) {
+		graph.addEdge(begin, end).withDot().endsAt(childDiagram.getIdAsString());		
 	}
 
 	@Override
@@ -69,5 +69,26 @@ public class GraphFacade implements Diagram {
 		graph.addNode(uniqueId).withShape(Shape.Octogon).withLabel(label);	
 	}
 
+	@Override
+	public void addACL(String uniqueId, String label) throws CfnAssistException {
+		graph.addNode(uniqueId).withLabel(label);		
+	}
 
+	@Override
+	public void addPortRange(String uniqueId, int i, int j) throws CfnAssistException {
+		String label = "notset";
+		if (i==0 && j==0) {
+			label = "any";
+		} else if (i==j) {
+			label = String.format("%03d", i);
+		} else {
+			label = String.format("%03d-%03d", i,j);
+		}
+		graph.addNode(uniqueId).withLabel(label);
+	}
+
+	@Override
+	public void addCidr(String cidrBlock) throws CfnAssistException {
+		graph.addNode(cidrBlock).withShape(Shape.Diamond);	
+	}
 }

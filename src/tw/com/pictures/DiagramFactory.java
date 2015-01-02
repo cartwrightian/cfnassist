@@ -5,17 +5,20 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.GraphFacade;
+import tw.com.unit.SecurityChildDiagram;
 
 public class DiagramFactory {
 
 	public VPCDiagramBuilder createVPCDiagramBuilder(Vpc vpc) {
-		GraphFacade diagram = new GraphFacade();
-		return new VPCDiagramBuilder(vpc, diagram);
+		GraphFacade networkDiagram = new GraphFacade();
+		GraphFacade securityDiagram = new GraphFacade();
+		return new VPCDiagramBuilder(vpc, networkDiagram, securityDiagram);
 	}
 
-	public SubnetDiagramBuilder createSubnetDiagramBuilder(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {	
-		ChildDiagram diagram = parent.createDiagramForSubnet(subnet);
-		return new SubnetDiagramBuilder(diagram, parent, subnet);
+	public SubnetDiagramBuilder createSubnetDiagramBuilder(VPCDiagramBuilder parentBuilder, Subnet subnet) throws CfnAssistException {	
+		NetworkChildDiagram diagram = parentBuilder.createNetworkDiagramForSubnet(subnet);
+		SecurityChildDiagram securityDiagram = parentBuilder.createSecurityDiagramForSubnet(subnet);
+		return new SubnetDiagramBuilder(diagram, securityDiagram, subnet);
 	}
 
 }

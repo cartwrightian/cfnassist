@@ -9,6 +9,10 @@ import org.junit.runner.RunWith;
 
 import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.NetworkAcl;
+import com.amazonaws.services.ec2.model.NetworkAclAssociation;
+import com.amazonaws.services.ec2.model.NetworkAclEntry;
+import com.amazonaws.services.ec2.model.PortRange;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.RouteTableAssociation;
 import com.amazonaws.services.ec2.model.Subnet;
@@ -16,6 +20,7 @@ import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 
+import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
 import tw.com.pictures.DiagramBuilder;
@@ -32,59 +37,74 @@ public class TestVPCVisitor extends EasyMockSupport {
 	private AmazonVPCFacade awsFacade;
 	private String vpcId = "theVpcId";
 	private VpcTestBuilder vpcBuilder;
+	private VPCDiagramBuilder vpcDiagramBuilder;
+	private SubnetDiagramBuilder subnetDiagramBuilder;
 
 	@Before
 	public void beforeEveryTestRuns() {
 		awsFacade = createStrictMock(AmazonVPCFacade.class);
-		diagramBuilder = createStrictMock(DiagramBuilder.class);
-		diagramFactory = createStrictMock(DiagramFactory.class);
 		
+		diagramFactory = createStrictMock(DiagramFactory.class);
+		diagramBuilder = createStrictMock(DiagramBuilder.class);
+		vpcDiagramBuilder = createStrictMock(VPCDiagramBuilder.class);
+		subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
+
 		vpcBuilder = new VpcTestBuilder(vpcId);	
 	}
 	
 	@Test
-	public void shouldWalkVPCAndAddItems() throws CfnAssistException {
+	public void shouldWalkVPCAndAddItemsForDiagram() throws CfnAssistException {
 		
 		Subnet subnet = new Subnet().withSubnetId("subnetIdA").withCidrBlock("cidrBlockA");
 		String subnetId = subnet.getSubnetId();
 		Instance instance = new Instance().withInstanceId("instanceId");
 		String instanceId = instance.getInstanceId();
-
-		vpcBuilder.add(subnet);
-		vpcBuilder.add(instance);
 		RouteTableAssociation association = new RouteTableAssociation().withRouteTableAssociationId("assocId").withSubnetId(subnetId);
 		RouteTable routeTable = new RouteTable().withRouteTableId("routeTableId").withAssociations(association);
-		vpcBuilder.add(routeTable);
 		Address eip = new Address().withAllocationId("eipAllocId").withInstanceId(instanceId).withPublicIp("publicIP");	
-		vpcBuilder.add(eip);
 		LoadBalancerDescription elb = new LoadBalancerDescription();
-		vpcBuilder.addAndAssociate(elb);
 		DBInstance dbInstance = new DBInstance();
-		vpcBuilder.addAndAssociate(dbInstance);
+		NetworkAclAssociation aclAssoc = new NetworkAclAssociation().withSubnetId(subnetId);
+		PortRange outboundPortRange = new PortRange().withFrom(1024).withTo(2048);
+		NetworkAclEntry outboundEntry = new NetworkAclEntry().
+				withEgress(true).
+				withCidrBlock("cidrBlockOut").
+				withPortRange(outboundPortRange).
+				withRuleAction("allow").
+				withProtocol("tcpip");
+		NetworkAcl acl = new NetworkAcl().withAssociations(aclAssoc).withEntries(outboundEntry).withNetworkAclId("aclId");
 		
-		VPCDiagramBuilder vpcDiagram = createStrictMock(VPCDiagramBuilder.class);
-		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
+		vpcBuilder.add(subnet);
+		vpcBuilder.add(instance);	
+		vpcBuilder.add(routeTable);
+		vpcBuilder.add(eip);
+		vpcBuilder.addAndAssociate(elb);
+		vpcBuilder.addAndAssociate(dbInstance);
+		vpcBuilder.add(acl);
 
 		Vpc vpc = vpcBuilder.setFacadeExpectations(awsFacade, subnetId);
 		
-		EasyMock.expect(diagramFactory.createVPCDiagramBuilder(vpc)).andReturn(vpcDiagram);
-		EasyMock.expect(diagramFactory.createSubnetDiagramBuilder(vpcDiagram, subnet)).andReturn(subnetDiagramBuilder);
+		EasyMock.expect(diagramFactory.createVPCDiagramBuilder(vpc)).andReturn(vpcDiagramBuilder);
+		EasyMock.expect(diagramFactory.createSubnetDiagramBuilder(vpcDiagramBuilder, subnet)).andReturn(subnetDiagramBuilder);
 		subnetDiagramBuilder.add(instance);
-		vpcDiagram.add(subnetId, subnetDiagramBuilder);
-		vpcDiagram.addRouteTable(routeTable, subnetId);
-		vpcDiagram.addEIP(eip);
-		vpcDiagram.linkEIPToInstance(eip.getPublicIp(), instanceId);
-		vpcDiagram.addELB(elb);
-		vpcDiagram.associateELBToInstance(elb, instanceId);
-		vpcDiagram.associateELBToSubnet(elb, subnetId);
-		vpcDiagram.addDBInstance(dbInstance);
-		vpcDiagram.associateDBWithSubnet(dbInstance, subnetId);
-		diagramBuilder.add(vpcDiagram);
+		vpcDiagramBuilder.add(subnetId, subnetDiagramBuilder);
+		vpcDiagramBuilder.addRouteTable(routeTable, subnetId);
+		vpcDiagramBuilder.addEIP(eip);
+		vpcDiagramBuilder.linkEIPToInstance(eip.getPublicIp(), instanceId);
+		vpcDiagramBuilder.addELB(elb);
+		vpcDiagramBuilder.associateELBToInstance(elb, instanceId);
+		vpcDiagramBuilder.associateELBToSubnet(elb, subnetId);
+		vpcDiagramBuilder.addDBInstance(dbInstance);
+		vpcDiagramBuilder.associateDBWithSubnet(dbInstance, subnetId);
+		vpcDiagramBuilder.addAcl(acl);
+		vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
+		vpcDiagramBuilder.addOutboundRoute("aclId",outboundEntry, subnetId);
+		diagramBuilder.add(vpcDiagramBuilder);
 		
 		replayAll();
 		VPCVisitor visitor = new VPCVisitor(diagramBuilder, awsFacade, diagramFactory);
 		visitor.visit(vpc);
 		verifyAll();
 	}
-
+	
 }
