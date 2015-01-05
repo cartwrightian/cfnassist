@@ -58,9 +58,14 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 		return name;
 	}
 
-	public void add(SecurityGroup group) {
-		// TODO Auto-generated method stub
-		
+	public void addSecurityGroup(SecurityGroup group) throws CfnAssistException {
+		String groupId = group.getGroupId();
+		String name = AmazonVPCFacade.getNameFromTags(group.getTags());
+		if (name.isEmpty()) {
+			name = group.getGroupName();
+		}
+		String label = AmazonVPCFacade.createLabelFromNameAndID(groupId, name);
+		securityDiagram.addSecurityGroup(groupId, label);
 	}
 
 	public void addOutboundPerms(List<IpPermission> ipPermissions) {

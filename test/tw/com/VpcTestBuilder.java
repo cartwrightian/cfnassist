@@ -13,7 +13,9 @@ import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.RouteTable;
+import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
@@ -92,17 +94,25 @@ public class VpcTestBuilder {
 	public void add(NetworkAcl acl) {
 		acls.add(acl);	
 	}
-
-	public Vpc setFacadeExpectations(AmazonVPCFacade awsFacade, String subnetId) throws CfnAssistException {
-		EasyMock.expect(awsFacade.getSubnetFors(vpcId)).andReturn(subnets);
-		EasyMock.expect(awsFacade.getInstancesFor(subnetId)).andReturn(instances);
-		EasyMock.expect(awsFacade.getRouteTablesFor(vpcId)).andReturn(routeTables);
-		EasyMock.expect(awsFacade.getEIPFor(vpcId)).andReturn(eips);
-		EasyMock.expect(awsFacade.getLBFor(vpcId)).andReturn(loadBalancers);
-		EasyMock.expect(awsFacade.getRDSFor(vpcId)).andReturn(databases);
-		EasyMock.expect(awsFacade.getACLs(vpcId)).andReturn(acls);
-		return vpc;	
+	
+	public void add(SecurityGroup securityGroup) {
+		// TODO Auto-generated method stub	
 	}
 
+	public Vpc setFacadeExpectations(AmazonVPCFacade awsFacade, String subnetId) throws CfnAssistException {
+		EasyMock.expect(awsFacade.getSubnetFors(vpcId)).andStubReturn(subnets);
+		EasyMock.expect(awsFacade.getInstancesFor(subnetId)).andStubReturn(instances);
+		EasyMock.expect(awsFacade.getRouteTablesFor(vpcId)).andReturn(routeTables);
+		EasyMock.expect(awsFacade.getEIPFor(vpcId)).andReturn(eips);
+		EasyMock.expect(awsFacade.getLBsFor(vpcId)).andReturn(loadBalancers);
+		EasyMock.expect(awsFacade.getRDSFor(vpcId)).andReturn(databases);
+		EasyMock.expect(awsFacade.getACLs(vpcId)).andReturn(acls);
+		EasyMock.expect(awsFacade.getLBsFor(vpcId)).andReturn(loadBalancers);
+		return vpc;	
+	}
+	
+	public static Tag CreateNameTag(String routeTableName) {
+		return new Tag().withKey("Name").withValue(routeTableName);
+	}
 
 }

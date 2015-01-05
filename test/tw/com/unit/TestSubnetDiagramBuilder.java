@@ -8,9 +8,11 @@ import org.junit.runner.RunWith;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.RouteTable;
+import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 
+import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.NetworkChildDiagram;
 import tw.com.pictures.SubnetDiagramBuilder;
@@ -60,16 +62,18 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 		verifyAll();
 	}
 	
-	// todo
-	
-//	@Test
-//	public void shouldAddSomething() {
-//		SecurityGroup group = new SecurityGroup().withGroupId("groupdId");
-//		
-//		replayAll();
-//		subnetDiagramBuilder.add(group);
-//		verifyAll();
-//		
-//	}
+	@Test
+	public void shouldAddSecurityGroupToDiagram() throws CfnAssistException {
+		SecurityGroup group = new SecurityGroup().
+				withGroupId("groupId").
+				withGroupName("fullGroupName").
+				withTags(VpcTestBuilder.CreateNameTag("name"));
+		
+		securityDiagram.addSecurityGroup("groupId","name [groupId]");
+		
+		replayAll();
+		subnetDiagramBuilder.addSecurityGroup(group);
+		verifyAll();	
+	}
 
 }

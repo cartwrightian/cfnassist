@@ -11,6 +11,8 @@ public interface ChildDiagram {
 
 	void addRouteTable(String routeTableId, String label) throws CfnAssistException;
 
+	void addSecurityGroup(String string, String label) throws CfnAssistException;
+	
 	String getId();
 
 }

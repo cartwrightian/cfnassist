@@ -66,7 +66,7 @@ public class AmazonVPCFacade {
 		return cloudRepository.getRouteTablesForVPC(vpcId);	
 	}
 	
-	public List<LoadBalancerDescription> getLBFor(String vpcId) {
+	public List<LoadBalancerDescription> getLBsFor(String vpcId) {
 		return elbClient.findELBForVPC(vpcId);
 	}
 	

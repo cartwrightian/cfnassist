@@ -24,14 +24,15 @@ public interface Diagram {
 	void addConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String label);
 	
 	void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label);
+	
+	void addBlockedConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String label);
+	
+	void addBlockedConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label);
 
 	void addDBInstance(String rdsId, String label) throws CfnAssistException;
 
 	void addACL(String uniqueId, String label) throws CfnAssistException;
 
-	void addPortRange(String string, int to, int from) throws CfnAssistException;
-
 	void addCidr(String uniqueId, String label) throws CfnAssistException;
-
 
 }

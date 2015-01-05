@@ -15,6 +15,7 @@ import com.amazonaws.services.ec2.model.NetworkAclEntry;
 import com.amazonaws.services.ec2.model.PortRange;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.RouteTableAssociation;
+import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
@@ -39,6 +40,22 @@ public class TestVPCVisitor extends EasyMockSupport {
 	private VpcTestBuilder vpcBuilder;
 	private VPCDiagramBuilder vpcDiagramBuilder;
 	private SubnetDiagramBuilder subnetDiagramBuilder;
+	
+	private Subnet subnet;
+	private Instance instance;
+	private RouteTable routeTable;
+	private RouteTableAssociation association;
+	private Address eip;
+	private LoadBalancerDescription elb;
+	private DBInstance dbInstance;
+	private NetworkAclAssociation aclAssoc;
+	private PortRange portRange;
+	private NetworkAclEntry outboundEntry;
+	private NetworkAclEntry inboundEntry;
+	private NetworkAcl acl;
+	private SecurityGroup securityGroup;
+	private String subnetId;
+	private String instanceId;
 
 	@Before
 	public void beforeEveryTestRuns() {
@@ -55,32 +72,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 	@Test
 	public void shouldWalkVPCAndAddItemsForDiagram() throws CfnAssistException {
 		
-		Subnet subnet = new Subnet().withSubnetId("subnetIdA").withCidrBlock("cidrBlockA");
-		String subnetId = subnet.getSubnetId();
-		Instance instance = new Instance().withInstanceId("instanceId");
-		String instanceId = instance.getInstanceId();
-		RouteTableAssociation association = new RouteTableAssociation().withRouteTableAssociationId("assocId").withSubnetId(subnetId);
-		RouteTable routeTable = new RouteTable().withRouteTableId("routeTableId").withAssociations(association);
-		Address eip = new Address().withAllocationId("eipAllocId").withInstanceId(instanceId).withPublicIp("publicIP");	
-		LoadBalancerDescription elb = new LoadBalancerDescription();
-		DBInstance dbInstance = new DBInstance();
-		NetworkAclAssociation aclAssoc = new NetworkAclAssociation().withSubnetId(subnetId);
-		PortRange portRange = new PortRange().withFrom(1024).withTo(2048);
-		NetworkAclEntry outboundEntry = new NetworkAclEntry().
-				withEgress(true).
-				withCidrBlock("cidrBlockOut").
-				withPortRange(portRange).
-				withRuleAction("allow").
-				withProtocol("tcpip");
-		NetworkAclEntry inboundEntry = new NetworkAclEntry().
-				withEgress(false).
-				withCidrBlock("cidrBlockOut").
-				withPortRange(portRange).
-				withRuleAction("allow").
-				withProtocol("tcpip");
-		NetworkAcl acl = new NetworkAcl().withAssociations(aclAssoc).
-				withEntries(outboundEntry, inboundEntry).
-				withNetworkAclId("aclId");
+		createVPC();
 		
 		vpcBuilder.add(subnet);
 		vpcBuilder.add(instance);	
@@ -89,6 +81,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcBuilder.addAndAssociate(elb);
 		vpcBuilder.addAndAssociate(dbInstance);
 		vpcBuilder.add(acl);
+		vpcBuilder.add(securityGroup);
 
 		Vpc vpc = vpcBuilder.setFacadeExpectations(awsFacade, subnetId);
 		
@@ -114,6 +107,49 @@ public class TestVPCVisitor extends EasyMockSupport {
 		VPCVisitor visitor = new VPCVisitor(diagramBuilder, awsFacade, diagramFactory);
 		visitor.visit(vpc);
 		verifyAll();
+	}
+
+	private void createVPC() {
+		subnet = new Subnet().
+				withSubnetId("subnetIdA").
+				withCidrBlock("cidrBlockA");
+		subnetId = subnet.getSubnetId();
+		instance = new Instance().
+				withInstanceId("instanceId");
+		instanceId = instance.getInstanceId();
+		association = new RouteTableAssociation().
+				withRouteTableAssociationId("assocId").
+				withSubnetId(subnetId);
+		routeTable = new RouteTable().
+				withRouteTableId("routeTableId").
+				withAssociations(association);
+		eip = new Address().
+				withAllocationId("eipAllocId").
+				withInstanceId(instanceId).
+				withPublicIp("publicIP");	
+		elb = new LoadBalancerDescription();
+		dbInstance = new DBInstance();
+		aclAssoc = new NetworkAclAssociation().
+				withSubnetId(subnetId);
+		portRange = new PortRange().
+				withFrom(1024).
+				withTo(2048);
+		outboundEntry = new NetworkAclEntry().
+				withEgress(true).
+				withCidrBlock("cidrBlockOut").
+				withPortRange(portRange).
+				withRuleAction("allow").
+				withProtocol("tcpip");
+		inboundEntry = new NetworkAclEntry().
+				withEgress(false).
+				withCidrBlock("cidrBlockOut").
+				withPortRange(portRange).
+				withRuleAction("allow").
+				withProtocol("tcpip");
+		acl = new NetworkAcl().withAssociations(aclAssoc).
+				withEntries(outboundEntry, inboundEntry).
+				withNetworkAclId("aclId");
+		securityGroup = new SecurityGroup().withGroupId("groupId").withGroupName("groupName");
 	}
 	
 }

@@ -8,4 +8,5 @@ public class SecurityChildDiagram extends TemplatedChildDiagram<ChildDiagram> {
 		super(contained);
 	}
 
+
 }

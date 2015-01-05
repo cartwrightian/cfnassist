@@ -49,7 +49,7 @@ public class VPCVisitor {
 			visit(vpcDiagram, eip);
 		}
 		// 
-		for(LoadBalancerDescription elb : facade.getLBFor(vpcId)) {
+		for(LoadBalancerDescription elb : facade.getLBsFor(vpcId)) {
 			visit(vpcDiagram, elb);
 		}
 		//
@@ -60,10 +60,34 @@ public class VPCVisitor {
 		for(NetworkAcl acl : facade.getACLs(vpcId)) {
 			visit(vpcDiagram, acl);
 		}
+		//
+		for (Subnet subnet : facade.getSubnetFors(vpcId)) {
+			visitInstancesForSecGroups(vpcDiagram, subnet);
+		}
+		for(LoadBalancerDescription elb : facade.getLBsFor(vpcId)) {
+			visitELBFOrSecGroups(vpcDiagram, elb);
+		}
 		diagramBuilder.add(vpcDiagram);
 	}
 
+	private void visitInstancesForSecGroups(VPCDiagramBuilder vpcDiagram, Subnet subnet) throws CfnAssistException {
+		for(Instance instance : facade.getInstancesFor(subnet.getSubnetId())) {
+			for(GroupIdentifier groupId : instance.getSecurityGroups()) {
+				SecurityGroup group = facade.getSecurityGroupDetails(groupId);
+				vpcDiagram.addSecurityGroup(group, subnet.getSubnetId(), instance.getInstanceId());
+			}
+		}		
+	}
 	
+	private void visitELBFOrSecGroups(VPCDiagramBuilder vpcDiagram, LoadBalancerDescription elb) throws CfnAssistException {
+		// TODO
+		//for (String groupId : elb.getSecurityGroups()) {
+		//	SecurityGroup group = facade.getSecurityGroupDetailsById(groupId);
+			//vpcDiagram.addSecurityGroup(group, elb);
+			//group.get
+		//}	
+	}
+
 	private void visit(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
 		vpcDiagram.addDBInstance(rds);
 		DBSubnetGroup dbSubnetGroup = rds.getDBSubnetGroup();
@@ -145,7 +169,7 @@ public class VPCVisitor {
 	private void visit(SubnetDiagramBuilder subnetDiagram, List<GroupIdentifier> securityGroups) throws CfnAssistException {
 		for(GroupIdentifier groupdId : securityGroups) {
 			SecurityGroup group = facade.getSecurityGroupDetails(groupdId);
-			subnetDiagram.add(group);
+			subnetDiagram.addSecurityGroup(group);
 			visit(subnetDiagram, group.getIpPermissions(), false);
 			visit(subnetDiagram, group.getIpPermissionsEgress(), true);
 		}		

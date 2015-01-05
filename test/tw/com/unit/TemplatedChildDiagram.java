@@ -38,4 +38,9 @@ public class TemplatedChildDiagram<T extends ChildDiagram> implements ChildDiagr
 		return contained.getId();
 	}
 
+	@Override
+	public void addSecurityGroup(String id, String label) throws CfnAssistException {
+		contained.addSecurityGroup(id, label);	
+	}
+
 }

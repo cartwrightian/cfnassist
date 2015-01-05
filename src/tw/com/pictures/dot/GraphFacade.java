@@ -53,15 +53,44 @@ public class GraphFacade implements Diagram {
 	}
 	
 
-	@Override
-	public void addConnectionFromSubDiagram(String target, String start,
-			HasDiagramId childDigram, String edgeLabel) {
-		graph.addEdge(start, target).beginsAt(childDigram.getIdAsString()).withLabel(edgeLabel);		
+	private void addConnectionFromSubDiagram(String target, String start,
+			HasDiagramId childDigram, String edgeLabel, boolean blocked) {
+		Edge edge = graph.addEdge(start, target).beginsAt(childDigram.getIdAsString()).withLabel(edgeLabel);	
+		if (blocked) {
+			edge.withBox();
+		}
+	}
+	
+	private void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label, boolean blocked) {
+		Edge edge = graph.addEdge(start, end).endsAt(childDigram.getIdAsString()).withLabel(label);
+		if (blocked) {
+			edge.withBox();
+		}
 	}
 	
 	@Override
-	public void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label) {
-		graph.addEdge(start, end).endsAt(childDigram.getIdAsString()).withLabel(label);
+	public void addConnectionFromSubDiagram(String start, String end,
+			HasDiagramId childDigram, String label) {
+		addConnectionFromSubDiagram(start, end, childDigram, label, false);	
+	}
+
+	@Override
+	public void addConnectionToSubDiagram(String start, String end,
+			HasDiagramId childDigram, String label) {
+		addConnectionToSubDiagram(start, end, childDigram, label, false);	
+	}
+	
+	@Override
+	public void addBlockedConnectionFromSubDiagram(String start, String end,
+			HasDiagramId childDigram, String label) {
+		addConnectionFromSubDiagram(start, end, childDigram, label, true);	
+	}
+
+	@Override
+	public void addBlockedConnectionToSubDiagram(String start, String end,
+			HasDiagramId childDigram, String label) {
+		addConnectionToSubDiagram(start, end, childDigram, label, true);
+		
 	}
 
 	@Override
@@ -80,21 +109,9 @@ public class GraphFacade implements Diagram {
 	}
 
 	@Override
-	public void addPortRange(String uniqueId, int i, int j) throws CfnAssistException {
-		String label = "notset";
-		if (i==0 && j==0) {
-			label = "all";
-		} else if (i==j) {
-			label = String.format("%03d", i);
-		} else {
-			label = String.format("%03d-%03d", i,j);
-		}
-		graph.addNode(uniqueId).withLabel(label);
-	}
-
-	@Override
 	public void addCidr(String uniqueId, String label) throws CfnAssistException {
 		graph.addNode(uniqueId).withLabel(label).withShape(Shape.Diamond);	
 	}
+
 
 }

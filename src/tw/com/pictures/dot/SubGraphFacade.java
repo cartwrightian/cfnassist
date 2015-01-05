@@ -31,4 +31,9 @@ public class SubGraphFacade implements ChildDiagram {
 		return graph.getId();
 	}
 
+	@Override
+	public void addSecurityGroup(String id, String label) throws CfnAssistException {
+		graph.addNode(id).withLabel(label).withShape(Shape.Box);		
+	}
+
 }

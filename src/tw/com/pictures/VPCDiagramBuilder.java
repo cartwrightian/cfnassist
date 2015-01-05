@@ -2,10 +2,7 @@ package tw.com.pictures;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 import tw.com.unit.SecurityChildDiagram;
@@ -16,6 +13,8 @@ import com.amazonaws.services.ec2.model.NetworkAclEntry;
 import com.amazonaws.services.ec2.model.PortRange;
 import com.amazonaws.services.ec2.model.Route;
 import com.amazonaws.services.ec2.model.RouteTable;
+import com.amazonaws.services.ec2.model.RuleAction;
+import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
@@ -29,14 +28,12 @@ public class VPCDiagramBuilder {
 
 	private Vpc vpc;
 	private Map<String, SubnetDiagramBuilder> subnetDiagramBuilders; // id -> diagram
-	private Set<String> connections;
 
 	public VPCDiagramBuilder(Vpc vpc, Diagram networkDiagram, Diagram securityDiagram) {
 		this.vpc = vpc;
 		this.networkDiagram = networkDiagram;
 		this.securityDiagram = securityDiagram;
 		subnetDiagramBuilders = new HashMap<String, SubnetDiagramBuilder>();
-		connections = new HashSet<>();
 	}
 
 	private void addTitle(Vpc vpc, Diagram diagram) {
@@ -103,6 +100,7 @@ public class VPCDiagramBuilder {
 		String label = elb.getLoadBalancerName();
 		String id = elb.getDNSName();
 		networkDiagram.addLoadBalancer(id, label);
+		securityDiagram.addLoadBalancer(id, label);
 	}
 
 	public void associateELBToInstance(LoadBalancerDescription elb,
@@ -132,6 +130,11 @@ public class VPCDiagramBuilder {
 	public void associateDBWithSubnet(DBInstance rds, String subnetId) {
 		networkDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
+	
+	public void addSecurityGroup(SecurityGroup group, String subnetId, String instanceId) throws CfnAssistException {
+		subnetDiagramBuilders.get(subnetId).addSecurityGroup(group);
+	}
+
 
 	// this is relying on the ID being the same on both diagrams (network & security)
 	public void addRoute(String subnetId, Route route) {
@@ -160,80 +163,65 @@ public class VPCDiagramBuilder {
 		securityDiagram.associateWithSubDiagram(acl.getNetworkAclId(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 
-	public void addOutboundRoute(String aclId, NetworkAclEntry outboundEntry, String subnetId) throws CfnAssistException {
-		String cidrBlock = addCidr(outboundEntry,"out", aclId);
-		String portRangeUniqueId = addPortRange(aclId, outboundEntry, cidrBlock, "out");
-		
-		//  associate subnet with port range and port range with cidr
-		securityDiagram.addConnectionFromSubDiagram(portRangeUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), cidrBlock);
-		if (!cidrBlock.equals(CIDR_ANY)) {
-			String cidrUniqueId = createCidrUniqueId("out", aclId, cidrBlock);
-			uniquelyAddConnection(portRangeUniqueId, cidrUniqueId);
-		}
-	}
-
-
-	public void addInboundRoute(String aclId, NetworkAclEntry outboundEntry, String subnetId) throws CfnAssistException {
-		String cidrBlock = addCidr(outboundEntry,"in", aclId);
-		String portRangeUniqueId = addPortRange(aclId, outboundEntry, cidrBlock, "in");
-		
-		//  associate subnet with port range and port range with cidr
-		securityDiagram.addConnectionToSubDiagram(portRangeUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), cidrBlock);
-		if (!cidrBlock.equals(CIDR_ANY)) {
-			String cidrUniqueId = createCidrUniqueId("in", aclId, cidrBlock);
-			uniquelyAddConnection(cidrUniqueId, portRangeUniqueId);
-		}
-	}
-
-	private void uniquelyAddConnection(String idA, String idB) {
-		if (!hasConnection(idA, idB)) {
-			addConnection(idA, idB);
-			securityDiagram.addConnectionBetween(idA, idB);
+	public void addOutboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException {
+		String cidrUniqueId = createCidrUniqueId("out", aclId, entry);
+		String labelForEdge = labelFromEntry(entry);
+		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
+		if (entry.getRuleAction().equals(RuleAction.Allow.toString())) {
+			securityDiagram.addConnectionFromSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
+		} else {
+			securityDiagram.addBlockedConnectionFromSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
 		}
 	}
 	
-	private void addConnection(String uniqueIdA, String uniqueIdB) {
-		String id  = formIdFrom(uniqueIdA, uniqueIdB);
-		connections.add(id);
-	}
-
-	private String formIdFrom(String uniqueIdA, String uniqueIdB) {
-		return String.format("%s__%s",uniqueIdA, uniqueIdB);
-	}
-
-	private boolean hasConnection(String uniqueIdA, String uniqueIdB) {
-		String id  = formIdFrom(uniqueIdA, uniqueIdB);
-		return connections.contains(id);
-	}
-
-	private String addCidr(NetworkAclEntry entry, String direction, String aclId)
-			throws CfnAssistException {
-		String cidrBlock = entry.getCidrBlock();
-
-		if (cidrBlock.equals("0.0.0.0/0")) {
-			cidrBlock=CIDR_ANY;
-		} 
-		String uniqueId = createCidrUniqueId(direction, aclId, cidrBlock);
-		if (!cidrBlock.equals(CIDR_ANY)) {
-			securityDiagram.addCidr(uniqueId, cidrBlock);
+	public void addInboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException {
+		String cidrUniqueId = createCidrUniqueId("in", aclId, entry);
+		String labelForEdge = labelFromEntry(entry);
+		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
+		//  associate subnet with port range and port range with cidr
+		if (entry.getRuleAction().equals(RuleAction.Allow.toString())) {
+			securityDiagram.addConnectionToSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
+		} else {
+			securityDiagram.addBlockedConnectionToSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
 		}
+	}
+	
+	private String labelFromEntry(NetworkAclEntry entry) {
+		String proto = getProtoFrom(entry);	
+		String range = getRangeFrom(entry);
+	
+		return String.format("%s:[%s]\n(rule:%s)",proto, range, entry.getRuleNumber());
+	}
+
+	private String getRangeFrom(NetworkAclEntry entry) {
+		PortRange portRange = entry.getPortRange();
+		if (portRange==null) {
+			return("all");
+		} 
+		return String.format("%s-%s", portRange.getFrom(), portRange.getTo());
+	}
+
+	private String getProtoFrom(NetworkAclEntry entry) {
+		Integer protoNum = Integer.parseInt(entry.getProtocol());
+		switch(protoNum) {
+			case -1: return "all";
+			case 1: return "icmp";
+			case 6: return "tcp";
+			case 17: return "udp";
+		}
+		return protoNum.toString();		
+	}
+
+	private String getLabelFromCidr(NetworkAclEntry entry) {
+		String cidrBlock = entry.getCidrBlock();
+		if (cidrBlock.equals("0.0.0.0/0")) {
+			return CIDR_ANY;
+		} 
 		return cidrBlock;
 	}
 
-	private String createCidrUniqueId(String direction, String aclId,
-			String cidrBlock) {
-		String uniqueId = String.format("%s_%s_%s", direction, cidrBlock, aclId);
-		return uniqueId;
-	}
-
-	private String addPortRange(String aclId, NetworkAclEntry outboundEntry, String cidrBlock, String dir) throws CfnAssistException {
-		String uniqueId = String.format("%s_%s_%d_%s", aclId, dir, outboundEntry.getRuleNumber(), cidrBlock);
-		PortRange portRange = outboundEntry.getPortRange();
-		if (portRange==null) {
-			securityDiagram.addPortRange(uniqueId, 0, 0); 
-		} else {
-			securityDiagram.addPortRange(uniqueId, portRange.getFrom(), portRange.getTo());
-		}
+	private String createCidrUniqueId(String direction, String aclId, NetworkAclEntry entry) {
+		String uniqueId = String.format("%s_%s_%s", direction, entry.getCidrBlock(), aclId);
 		return uniqueId;
 	}
 
