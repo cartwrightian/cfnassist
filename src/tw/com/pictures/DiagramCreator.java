@@ -28,9 +28,7 @@ public class DiagramCreator {
 		AmazonVPCFacade facade = new AmazonVPCFacade(cloudRepository, elbRepository, rdsClient);
 		
 		List<Vpc> vpcs = facade.getVpcs();
-		
-		legacyCreateDiagram(recorder, facade, vpcs);
-		
+				
 		DiagramBuilder diagrams = new DiagramBuilder();
 		DiagramFactory diagramFactory = new DiagramFactory();
 		VPCVisitor visitor = new VPCVisitor(diagrams, facade, diagramFactory);
@@ -40,12 +38,5 @@ public class DiagramCreator {
 		diagrams.render(recorder);
 	}
 
-	private void legacyCreateDiagram(Recorder recorder, AmazonVPCFacade facade,
-			List<Vpc> vpcs) throws CfnAssistException, IOException {
-		for(Vpc vpc : vpcs) {
-			DescribesVPC describesVPC = new DescribesVPC(vpc, facade, recorder);
-			describesVPC.walk();
-			describesVPC.recordToFile();
-		}
-	}
+
 }
