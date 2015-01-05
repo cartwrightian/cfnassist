@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import javax.management.InvalidApplicationException;
+
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
 
@@ -29,7 +31,7 @@ public class RollbackElement implements ActionElement {
 		this.target = target;
 	}
 	
-	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException, InvalidApplicationException {
 		String absolutePath = target.getAbsolutePath();
 		
 		if (!target.isDirectory()) {

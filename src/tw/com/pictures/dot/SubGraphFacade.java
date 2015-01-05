@@ -1,5 +1,7 @@
 package tw.com.pictures.dot;
 
+import javax.management.InvalidApplicationException;
+
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.ChildDiagram;
 
@@ -12,7 +14,7 @@ public class SubGraphFacade implements ChildDiagram {
 	}
 
 	@Override
-	public void addInstance(String instanceId, String label) throws CfnAssistException {
+	public void addInstance(String instanceId, String label) throws CfnAssistException, InvalidApplicationException {
 		graph.addNode(instanceId).withShape(Shape.Box).withLabel(label);
 	}
 
@@ -32,7 +34,7 @@ public class SubGraphFacade implements ChildDiagram {
 	}
 
 	@Override
-	public void addSecurityGroup(String id, String label) throws CfnAssistException {
+	public void addSecurityGroup(String id, String label) throws CfnAssistException, InvalidApplicationException {
 		graph.addNode(id).withLabel(label).withShape(Shape.Box);		
 	}
 

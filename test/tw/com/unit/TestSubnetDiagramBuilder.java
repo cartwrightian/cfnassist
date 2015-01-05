@@ -1,5 +1,7 @@
 package tw.com.unit;
 
+import javax.management.InvalidApplicationException;
+
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -35,7 +37,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldAddInstanceToDiagram() throws CfnAssistException {
+	public void shouldAddInstanceToDiagram() throws CfnAssistException, InvalidApplicationException {
 		Instance instance = new Instance().
 				withInstanceId("instacneId").
 				withPrivateIpAddress("privateIp").
@@ -63,7 +65,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddSecurityGroupToDiagram() throws CfnAssistException {
+	public void shouldAddSecurityGroupToDiagram() throws CfnAssistException, InvalidApplicationException {
 		SecurityGroup group = new SecurityGroup().
 				withGroupId("groupId").
 				withGroupName("fullGroupName").

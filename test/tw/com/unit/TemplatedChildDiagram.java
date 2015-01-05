@@ -1,5 +1,7 @@
 package tw.com.unit;
 
+import javax.management.InvalidApplicationException;
+
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.ChildDiagram;
 import tw.com.pictures.dot.Recorder;
@@ -18,7 +20,7 @@ public class TemplatedChildDiagram<T extends ChildDiagram> implements ChildDiagr
 
 	@Override
 	public void addInstance(String instanceId, String label)
-			throws CfnAssistException {
+			throws CfnAssistException, InvalidApplicationException {
 		contained.addInstance(instanceId, label);
 	}
 
@@ -39,7 +41,7 @@ public class TemplatedChildDiagram<T extends ChildDiagram> implements ChildDiagr
 	}
 
 	@Override
-	public void addSecurityGroup(String id, String label) throws CfnAssistException {
+	public void addSecurityGroup(String id, String label) throws CfnAssistException, InvalidApplicationException {
 		contained.addSecurityGroup(id, label);	
 	}
 

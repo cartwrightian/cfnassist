@@ -4,6 +4,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import javax.management.InvalidApplicationException;
+
 import org.apache.commons.cli.MissingArgumentException;
 
 import tw.com.FacadeFactory;
@@ -20,6 +22,6 @@ public interface ActionElement {
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws FileNotFoundException, IOException,
 			InvalidParameterException, InterruptedException,
-			CfnAssistException, CommandLineException, MissingArgumentException;
+			CfnAssistException, CommandLineException, MissingArgumentException, InvalidApplicationException;
 
 }

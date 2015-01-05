@@ -1,5 +1,7 @@
 package tw.com.unit;
 
+import javax.management.InvalidApplicationException;
+
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -70,7 +72,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldWalkVPCAndAddItemsForDiagram() throws CfnAssistException {
+	public void shouldWalkVPCAndAddItemsForDiagram() throws CfnAssistException, InvalidApplicationException {
 		
 		createVPC();
 		

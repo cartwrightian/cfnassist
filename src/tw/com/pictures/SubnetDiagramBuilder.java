@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.InvalidApplicationException;
+
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 import tw.com.unit.SecurityChildDiagram;
@@ -25,7 +27,7 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 		this.securityDiagram = securityDiagram;
 	}
 
-	public void add(Instance instance) throws CfnAssistException {
+	public void add(Instance instance) throws CfnAssistException, InvalidApplicationException {
 		String instanceId = instance.getInstanceId();
 		String label = createInstanceLabel(instance);
 		networkDiagram.addInstance(instanceId, label);
@@ -58,7 +60,7 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 		return name;
 	}
 
-	public void addSecurityGroup(SecurityGroup group) throws CfnAssistException {
+	public void addSecurityGroup(SecurityGroup group) throws CfnAssistException, InvalidApplicationException {
 		String groupId = group.getGroupId();
 		String name = AmazonVPCFacade.getNameFromTags(group.getTags());
 		if (name.isEmpty()) {

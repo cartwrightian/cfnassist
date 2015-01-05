@@ -2,7 +2,12 @@ package tw.com.pictures;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import javax.management.InvalidApplicationException;
+
+import tw.com.AwsFacade;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 import tw.com.unit.SecurityChildDiagram;
@@ -16,6 +21,7 @@ import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.RuleAction;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
@@ -38,9 +44,18 @@ public class VPCDiagramBuilder {
 
 	private void addTitle(Vpc vpc, Diagram diagram) {
 		String title = vpc.getVpcId();
-		String name = AmazonVPCFacade.getNameFromTags(vpc.getTags());
+		List<Tag> tags = vpc.getTags();
+		String name = AmazonVPCFacade.getNameFromTags(tags);
 		if (!name.isEmpty()) {
 			title = title + String.format(" (%s)", name);
+		}
+		String project = AmazonVPCFacade.getValueFromTag(tags, AwsFacade.PROJECT_TAG);
+		if (!project.isEmpty()) {
+			title = title + String.format(" PROJECT=%s", project);
+		}
+		String env = AmazonVPCFacade.getValueFromTag(tags, AwsFacade.ENVIRONMENT_TAG);
+		if (!env.isEmpty()) {
+			title = title + String.format(" ENV=%s", env);
 		}
 		diagram.addTitle(title);
 	}
@@ -87,7 +102,7 @@ public class VPCDiagramBuilder {
 		}
 	}
 
-	public void addEIP(Address eip) throws CfnAssistException {
+	public void addEIP(Address eip) throws CfnAssistException, InvalidApplicationException {
 		String label = AmazonVPCFacade.createLabelFromNameAndID(eip.getAllocationId() ,eip.getPublicIp());
 		networkDiagram.addPublicIPAddress(eip.getPublicIp(), label);	
 	}
@@ -96,7 +111,7 @@ public class VPCDiagramBuilder {
 		networkDiagram.addConnectionBetween(publicIp, instanceId);			
 	}
 
-	public void addELB(LoadBalancerDescription elb) throws CfnAssistException {
+	public void addELB(LoadBalancerDescription elb) throws CfnAssistException, InvalidApplicationException {
 		String label = elb.getLoadBalancerName();
 		String id = elb.getDNSName();
 		networkDiagram.addLoadBalancer(id, label);
@@ -110,16 +125,18 @@ public class VPCDiagramBuilder {
 
 	public void associateELBToSubnet(LoadBalancerDescription elb,
 			String subnetId) {
-		networkDiagram.associateWithSubDiagram(elb.getDNSName(), subnetId, subnetDiagramBuilders.get(subnetId));		
+		networkDiagram.associateWithSubDiagram(elb.getDNSName(), subnetId, subnetDiagramBuilders.get(subnetId));
+		securityDiagram.associateWithSubDiagram(elb.getDNSName(), subnetId, subnetDiagramBuilders.get(subnetId));
 	}
 
-	public void addDBInstance(DBInstance rds) throws CfnAssistException {
+	public void addDBInstance(DBInstance rds) throws CfnAssistException, InvalidApplicationException {
 		String rdsId = rds.getDBInstanceIdentifier();
 		String label = AmazonVPCFacade.createLabelFromNameAndID(rdsId, rds.getDBName());
 		networkDiagram.addDBInstance(rdsId, label);
+		securityDiagram.addDBInstance(rdsId, label);
 	}
 	
-	public void addAcl(NetworkAcl acl) throws CfnAssistException {
+	public void addAcl(NetworkAcl acl) throws CfnAssistException, InvalidApplicationException {
 		String aclId = acl.getNetworkAclId();
 		String name = AmazonVPCFacade.getNameFromTags(acl.getTags());
 		String label = AmazonVPCFacade.createLabelFromNameAndID(aclId,name);
@@ -131,7 +148,7 @@ public class VPCDiagramBuilder {
 		networkDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 	
-	public void addSecurityGroup(SecurityGroup group, String subnetId, String instanceId) throws CfnAssistException {
+	public void addSecurityGroup(SecurityGroup group, String subnetId, String instanceId) throws CfnAssistException, InvalidApplicationException {
 		subnetDiagramBuilders.get(subnetId).addSecurityGroup(group);
 	}
 
@@ -163,7 +180,7 @@ public class VPCDiagramBuilder {
 		securityDiagram.associateWithSubDiagram(acl.getNetworkAclId(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 
-	public void addOutboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException {
+	public void addOutboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
 		String cidrUniqueId = createCidrUniqueId("out", aclId, entry);
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
@@ -174,7 +191,7 @@ public class VPCDiagramBuilder {
 		}
 	}
 	
-	public void addInboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException {
+	public void addInboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
 		String cidrUniqueId = createCidrUniqueId("in", aclId, entry);
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
@@ -197,7 +214,10 @@ public class VPCDiagramBuilder {
 		PortRange portRange = entry.getPortRange();
 		if (portRange==null) {
 			return("all");
-		} 
+		}
+		if (portRange.getFrom().toString().equals(portRange.getTo().toString())) {
+			return String.format("%s", portRange.getFrom());
+		}
 		return String.format("%s-%s", portRange.getFrom(), portRange.getTo());
 	}
 

@@ -4,6 +4,8 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
+import javax.management.InvalidApplicationException;
+
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -103,7 +105,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddEIP() throws CfnAssistException {
+	public void shouldAddEIP() throws CfnAssistException, InvalidApplicationException {
 		Address eip = new Address().withPublicIp("publicIP").withAllocationId("allocId");
 		networkDiagram.addPublicIPAddress("publicIP", "publicIP [allocId]");
 
@@ -113,9 +115,10 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddDB() throws CfnAssistException {
+	public void shouldAddDB() throws CfnAssistException, InvalidApplicationException {
 		DBInstance rds = new DBInstance().withDBName("dbName").withDBInstanceIdentifier("instanceID");
 		networkDiagram.addDBInstance("instanceID", "dbName [instanceID]");
+		securityDiagram.addDBInstance("instanceID", "dbName [instanceID]");
 
 		replayAll();
 		builder.addDBInstance(rds);
@@ -137,7 +140,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddELB() throws CfnAssistException {
+	public void shouldAddELB() throws CfnAssistException, InvalidApplicationException {
 		LoadBalancerDescription elb = new LoadBalancerDescription().withDNSName("dnsName").withLoadBalancerName("lbName");
 		networkDiagram.addLoadBalancer("dnsName", "lbName");
 		securityDiagram.addLoadBalancer("dnsName", "lbName");
@@ -155,6 +158,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		builder.add("subnetId", subnetDiagramBuilder);
 		
 		networkDiagram.associateWithSubDiagram("dnsName", "subnetId", subnetDiagramBuilder);
+		securityDiagram.associateWithSubDiagram("dnsName", "subnetId", subnetDiagramBuilder);
 		
 		replayAll();
 		builder.associateELBToSubnet(elb, "subnetId");
@@ -240,7 +244,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddACLs() throws CfnAssistException {
+	public void shouldAddACLs() throws CfnAssistException, InvalidApplicationException {
 		NetworkAcl acl = new NetworkAcl().withNetworkAclId("networkAclId").
 				withTags(VpcTestBuilder.CreateNameTag("ACL"));
 		securityDiagram.addACL("networkAclId","ACL [networkAclId]");
@@ -266,7 +270,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryAllowed() throws CfnAssistException {
+	public void shouldAddOutboundAclEntryAllowed() throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
@@ -282,7 +286,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryAllCidrAllowed() throws CfnAssistException {
+	public void shouldAddOutboundAclEntryAllCidrAllowed() throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
@@ -298,7 +302,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryAllCidrBlocked() throws CfnAssistException {
+	public void shouldAddOutboundAclEntryAllCidrBlocked() throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
@@ -314,7 +318,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryNoPortRangeAllowed() throws CfnAssistException {
+	public void shouldAddOutboundAclEntryNoPortRangeAllowed() throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
@@ -330,7 +334,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddInboundAclEntryAllowed() throws CfnAssistException {
+	public void shouldAddInboundAclEntryAllowed() throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
@@ -346,7 +350,23 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddInboundAclEntryBlocked() throws CfnAssistException {
+	public void shouldAddInboundAclEntryAllowedSameSinglePort() throws CfnAssistException, InvalidApplicationException {
+		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
+		builder.add("subnetId", subnetDiagramBuilder);
+		
+		NetworkAclEntry entry = createAclEntry(new PortRange().withFrom(80).withTo(80), "cidrBlock", false, 42, RuleAction.Allow);
+		
+		securityDiagram.addCidr("in_cidrBlock_aclId", "cidrBlock");
+		securityDiagram.addConnectionToSubDiagram("in_cidrBlock_aclId", "subnetId", subnetDiagramBuilder, 
+				"tcp:[80]\n(rule:42)");
+		
+		replayAll();
+		builder.addInboundRoute("aclId", entry, "subnetId");
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAddInboundAclEntryBlocked() throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 		
@@ -362,7 +382,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 		
 	@Test
-	public void shouldAddSecurityGroup() throws CfnAssistException {
+	public void shouldAddSecurityGroup() throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		builder.add("subnetId", subnetDiagramBuilder);
 

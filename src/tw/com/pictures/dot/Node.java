@@ -1,5 +1,7 @@
 package tw.com.pictures.dot;
 
+import javax.management.InvalidApplicationException;
+
 
 public class Node extends HasAttributes {
 
@@ -29,7 +31,7 @@ public class Node extends HasAttributes {
 		writer.writeline(";");	
 	}
 
-	public Node withShape(Shape shape) {
+	public Node withShape(Shape shape) throws InvalidApplicationException {
 		addShape(shape);		
 		return this;
 	}

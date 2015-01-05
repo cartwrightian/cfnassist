@@ -4,6 +4,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
+import javax.management.InvalidApplicationException;
+
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Option;
 
@@ -23,7 +25,7 @@ public interface CommandLineAction {
 	String getArgName();
 
 	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
-			Collection<Parameter> artifacts, String... argument) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CfnAssistException, MissingArgumentException, TooManyELBException;
+			Collection<Parameter> artifacts, String... argument) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CfnAssistException, MissingArgumentException, TooManyELBException, InvalidApplicationException;
 
 	void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
 			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException;

@@ -1,5 +1,7 @@
 package tw.com.pictures;
 
+import javax.management.InvalidApplicationException;
+
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 
@@ -15,9 +17,9 @@ public interface Diagram {
 
 	void addConnectionBetween(String uniqueIdA, String uniqueIdB);
 
-	void addPublicIPAddress(String unqiueId, String label) throws CfnAssistException;
+	void addPublicIPAddress(String unqiueId, String label) throws CfnAssistException, InvalidApplicationException;
 
-	void addLoadBalancer(String unqiueId, String label) throws CfnAssistException;
+	void addLoadBalancer(String unqiueId, String label) throws CfnAssistException, InvalidApplicationException;
 
 	void associateWithSubDiagram(String unqiueId, String clusterId, HasDiagramId childDiagram);
 	
@@ -29,10 +31,10 @@ public interface Diagram {
 	
 	void addBlockedConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label);
 
-	void addDBInstance(String rdsId, String label) throws CfnAssistException;
+	void addDBInstance(String rdsId, String label) throws CfnAssistException, InvalidApplicationException;
 
-	void addACL(String uniqueId, String label) throws CfnAssistException;
+	void addACL(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException;
 
-	void addCidr(String uniqueId, String label) throws CfnAssistException;
+	void addCidr(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException;
 
 }

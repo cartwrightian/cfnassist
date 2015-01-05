@@ -13,6 +13,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.management.InvalidApplicationException;
+
 import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -370,7 +372,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRequestCreationOfDiagrams() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+	public void shouldRequestCreationOfDiagrams() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException, InvalidApplicationException {
 			
 		Recorder recorder = new FileRecorder(Paths.get("./diagrams"));
 		EasyMock.expect(facadeFactory.createDiagramCreator()).andReturn(diagramCreator);

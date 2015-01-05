@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import javax.management.InvalidApplicationException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,7 +58,7 @@ public class TestPictureGeneration {
 	}
 
 	@Test
-	public void shouldGenerateDiagram() throws IOException, CfnAssistException {
+	public void shouldGenerateDiagram() throws IOException, CfnAssistException, InvalidApplicationException {
 		Path folder = Paths.get(".").toAbsolutePath();
 		Recorder recorder = new FileRecorder(folder);
 		DiagramCreator createsDiagrams = new DiagramCreator(rdsClient, cloudRepository, elbRepository);

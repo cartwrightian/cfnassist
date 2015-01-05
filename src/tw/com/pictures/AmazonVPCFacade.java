@@ -86,9 +86,9 @@ public class AmazonVPCFacade {
 		return name;
 	}
 
-	private static String getValueFromTag(List<Tag> tags, String nameTag) {
+	public static String getValueFromTag(List<Tag> tags, String nameOfTag) {
 		for(Tag tag : tags) {
-			if (tag.getKey().equals(nameTag)) {
+			if (tag.getKey().equals(nameOfTag)) {
 				return tag.getValue();
 			}
 		}

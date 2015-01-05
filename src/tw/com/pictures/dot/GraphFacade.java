@@ -1,5 +1,7 @@
 package tw.com.pictures.dot;
 
+import javax.management.InvalidApplicationException;
+
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.ChildDiagram;
 import tw.com.pictures.Diagram;
@@ -43,13 +45,13 @@ public class GraphFacade implements Diagram {
 	}
 
 	@Override
-	public void addPublicIPAddress(String uniqueId, String label) throws CfnAssistException {
+	public void addPublicIPAddress(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException {
 		graph.addNode(uniqueId).withShape(Shape.Diamond).withLabel(label);	
 	}
 
 	@Override
-	public void addLoadBalancer(String uniqueId, String label) throws CfnAssistException {
-		graph.addNode(uniqueId).withShape(Shape.Octogon).withLabel(label);	
+	public void addLoadBalancer(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException {
+		graph.addNode(uniqueId).withShape(Shape.InvHouse).withLabel(label);	
 	}
 	
 
@@ -95,21 +97,21 @@ public class GraphFacade implements Diagram {
 
 	@Override
 	public void associateWithSubDiagram(String begin, String end, HasDiagramId childDiagram) {
-		graph.addEdge(begin, end).withDot().endsAt(childDiagram.getIdAsString());		
+		graph.addEdge(begin, end).withDot().endsAt(childDiagram.getIdAsString()).withDottedLine();		
 	}
 
 	@Override
-	public void addDBInstance(String uniqueId, String label) throws CfnAssistException {
+	public void addDBInstance(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException {
 		graph.addNode(uniqueId).withShape(Shape.Octogon).withLabel(label);	
 	}
 
 	@Override
-	public void addACL(String uniqueId, String label) throws CfnAssistException {
+	public void addACL(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException {
 		graph.addNode(uniqueId).withLabel(label).withShape(Shape.Box);		
 	}
 
 	@Override
-	public void addCidr(String uniqueId, String label) throws CfnAssistException {
+	public void addCidr(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException {
 		graph.addNode(uniqueId).withLabel(label).withShape(Shape.Diamond);	
 	}
 

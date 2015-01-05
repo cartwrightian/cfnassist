@@ -3,6 +3,8 @@ package tw.com.pictures.dot;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.management.InvalidApplicationException;
+
 public class HasAttributes {
 
 	private List<String> attributes = new LinkedList<String>();
@@ -42,7 +44,7 @@ public class HasAttributes {
 		attributes.add("dir=none");	
 	}
 	
-	protected void addShape(Shape shape) {
+	protected void addShape(Shape shape) throws InvalidApplicationException {
 		switch (shape) {
 		case Box:
 			attributes.add("shape=box");
@@ -62,8 +64,11 @@ public class HasAttributes {
 		case Msquare:
 			attributes.add("shape=Msquare");
 			break;
-		default:
+		case InvHouse:
+			attributes.add("shape=invhouse");
 			break;
+		default:
+			throw new InvalidApplicationException("Unknown shape: " + shape.toString());
 		}
 	}
 	

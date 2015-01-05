@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
+import javax.management.InvalidApplicationException;
+
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 
@@ -34,7 +36,7 @@ public class CreateDiagramAction extends SharedAction {
 			String... argument) throws InvalidParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, CfnAssistException, MissingArgumentException,
-			TooManyELBException {
+			TooManyELBException, InvalidApplicationException {
 		DiagramCreator diagramCreator = factory.createDiagramCreator();
 		Path folder = Paths.get(argument[0]);
 		Recorder recorder = new FileRecorder(folder);
