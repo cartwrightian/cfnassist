@@ -176,7 +176,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddLocalRoute() throws CfnAssistException {
+	public void shouldAddLocalRoute() throws CfnAssistException, InvalidApplicationException {
 		Route route = new Route().withGatewayId("local").withDestinationCidrBlock("cidr");
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
@@ -190,7 +190,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddLocalRouteNoCIDR() throws CfnAssistException {
+	public void shouldAddLocalRouteNoCIDR() throws CfnAssistException, InvalidApplicationException {
 		Route route = new Route().withGatewayId("local");
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
@@ -204,7 +204,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddNonLocalRoute() throws CfnAssistException {
+	public void shouldAddNonLocalRoute() throws CfnAssistException, InvalidApplicationException {
 		Route route = new Route().withGatewayId("gatewayId").withDestinationCidrBlock("cidr");
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
@@ -343,6 +343,22 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		securityDiagram.addCidr("in_cidrBlock_aclId", "cidrBlock");
 		securityDiagram.addConnectionToSubDiagram("in_cidrBlock_aclId", "subnetId", subnetDiagramBuilder, 
 				"tcp:[1023-1128]\n(rule:42)");
+		
+		replayAll();
+		builder.addInboundRoute("aclId", entry, "subnetId");
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAddInboundAclEntryAllowedDefaultRule() throws CfnAssistException, InvalidApplicationException {
+		SubnetDiagramBuilder subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
+		builder.add("subnetId", subnetDiagramBuilder);
+		
+		NetworkAclEntry entry = createAclEntry(portRange, "cidrBlock", false, 32767, RuleAction.Allow);
+		
+		securityDiagram.addCidr("in_cidrBlock_aclId", "cidrBlock");
+		securityDiagram.addConnectionToSubDiagram("in_cidrBlock_aclId", "subnetId", subnetDiagramBuilder, 
+				"tcp:[1023-1128]\n(rule:default)");
 		
 		replayAll();
 		builder.addInboundRoute("aclId", entry, "subnetId");

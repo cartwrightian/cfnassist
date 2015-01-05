@@ -44,6 +44,17 @@ public class HasAttributes {
 		attributes.add("dir=none");	
 	}
 	
+
+	protected void withColour(Colour col) throws InvalidApplicationException {
+		switch(col) {
+		case Red:
+			attributes.add("color=red");
+			break;
+		default:
+			throw new InvalidApplicationException("Unknown colour: " + col.toString());
+		}
+	}
+	
 	protected void addShape(Shape shape) throws InvalidApplicationException {
 		switch (shape) {
 		case Box:

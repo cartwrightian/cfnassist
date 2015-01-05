@@ -154,7 +154,7 @@ public class VPCDiagramBuilder {
 
 
 	// this is relying on the ID being the same on both diagrams (network & security)
-	public void addRoute(String subnetId, Route route) {
+	public void addRoute(String subnetId, Route route) throws InvalidApplicationException {
 		String destination = getDestination(route);
 		String cidr = route.getDestinationCidrBlock();
 		if (cidr==null) {
@@ -207,7 +207,15 @@ public class VPCDiagramBuilder {
 		String proto = getProtoFrom(entry);	
 		String range = getRangeFrom(entry);
 	
-		return String.format("%s:[%s]\n(rule:%s)",proto, range, entry.getRuleNumber());
+		return String.format("%s:[%s]\n(rule:%s)",proto, range, getRuleName(entry));
+	}
+
+	private String getRuleName(NetworkAclEntry entry) {
+		Integer number = entry.getRuleNumber();
+		if (number==32767) {
+			return "default";
+		}
+		return number.toString();
 	}
 
 	private String getRangeFrom(NetworkAclEntry entry) {

@@ -149,7 +149,7 @@ public class VPCVisitor {
 		parent.add(subnetId, subnetDiagram);	
 	}
 	
-	private void visit(VPCDiagramBuilder vpcDiagram, RouteTable routeTable) throws CfnAssistException {
+	private void visit(VPCDiagramBuilder vpcDiagram, RouteTable routeTable) throws CfnAssistException, InvalidApplicationException {
 		List<Route> routes = routeTable.getRoutes();
 		List<RouteTableAssociation> usersOfTable = routeTable.getAssociations();
 		for (RouteTableAssociation usedBy : usersOfTable) {

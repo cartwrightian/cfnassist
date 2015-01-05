@@ -23,13 +23,13 @@ public interface Diagram {
 
 	void associateWithSubDiagram(String unqiueId, String clusterId, HasDiagramId childDiagram);
 	
-	void addConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String label);
+	void addConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String label) throws InvalidApplicationException;
 	
-	void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label);
+	void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label) throws InvalidApplicationException;
 	
-	void addBlockedConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String label);
+	void addBlockedConnectionFromSubDiagram(String start, String end, HasDiagramId childDigram, String label) throws InvalidApplicationException;
 	
-	void addBlockedConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label);
+	void addBlockedConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label) throws InvalidApplicationException;
 
 	void addDBInstance(String rdsId, String label) throws CfnAssistException, InvalidApplicationException;
 

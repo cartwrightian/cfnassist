@@ -56,41 +56,41 @@ public class GraphFacade implements Diagram {
 	
 
 	private void addConnectionFromSubDiagram(String target, String start,
-			HasDiagramId childDigram, String edgeLabel, boolean blocked) {
+			HasDiagramId childDigram, String edgeLabel, boolean blocked) throws InvalidApplicationException {
 		Edge edge = graph.addEdge(start, target).beginsAt(childDigram.getIdAsString()).withLabel(edgeLabel);	
 		if (blocked) {
-			edge.withBox();
+			edge.withBox().withColour(Colour.Red);
 		}
 	}
 	
-	private void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label, boolean blocked) {
+	private void addConnectionToSubDiagram(String start, String end, HasDiagramId childDigram, String label, boolean blocked) throws InvalidApplicationException {
 		Edge edge = graph.addEdge(start, end).endsAt(childDigram.getIdAsString()).withLabel(label);
 		if (blocked) {
-			edge.withBox();
+			edge.withBox().withColour(Colour.Red);
 		}
 	}
 	
 	@Override
 	public void addConnectionFromSubDiagram(String start, String end,
-			HasDiagramId childDigram, String label) {
+			HasDiagramId childDigram, String label) throws InvalidApplicationException {
 		addConnectionFromSubDiagram(start, end, childDigram, label, false);	
 	}
 
 	@Override
 	public void addConnectionToSubDiagram(String start, String end,
-			HasDiagramId childDigram, String label) {
+			HasDiagramId childDigram, String label) throws InvalidApplicationException {
 		addConnectionToSubDiagram(start, end, childDigram, label, false);	
 	}
 	
 	@Override
 	public void addBlockedConnectionFromSubDiagram(String start, String end,
-			HasDiagramId childDigram, String label) {
+			HasDiagramId childDigram, String label) throws InvalidApplicationException {
 		addConnectionFromSubDiagram(start, end, childDigram, label, true);	
 	}
 
 	@Override
 	public void addBlockedConnectionToSubDiagram(String start, String end,
-			HasDiagramId childDigram, String label) {
+			HasDiagramId childDigram, String label) throws InvalidApplicationException {
 		addConnectionToSubDiagram(start, end, childDigram, label, true);
 		
 	}
