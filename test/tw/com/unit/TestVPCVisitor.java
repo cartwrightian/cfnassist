@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 
 import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.NetworkAclAssociation;
 import com.amazonaws.services.ec2.model.NetworkAclEntry;
@@ -58,6 +59,8 @@ public class TestVPCVisitor extends EasyMockSupport {
 	private SecurityGroup securityGroup;
 	private String subnetId;
 	private String instanceId;
+	private IpPermission ipPermsInbound;
+	private IpPermission ipPermsOutbound;
 
 	@Before
 	public void beforeEveryTestRuns() {
@@ -101,10 +104,12 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagramBuilder.associateDBWithSubnet(dbInstance, subnetId);
 		vpcDiagramBuilder.addAcl(acl);
 		vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
-		vpcDiagramBuilder.addOutboundRoute("aclId",outboundEntry, subnetId);
-		vpcDiagramBuilder.addInboundRoute("aclId", inboundEntry, subnetId);
+		vpcDiagramBuilder.addACLOutbound("aclId",outboundEntry, subnetId);
+		vpcDiagramBuilder.addACLInbound("aclId", inboundEntry, subnetId);
 		vpcDiagramBuilder.addSecurityGroup(securityGroup, subnetId);
 		vpcDiagramBuilder.associateInstanceWithSecGroup(instanceId, securityGroup);
+		vpcDiagramBuilder.addSecGroupInboundPerms("secGroupId",ipPermsInbound, subnetId);
+		vpcDiagramBuilder.addSecGroupOutboundPerms("secGroupId",ipPermsOutbound, subnetId);
 		diagramBuilder.add(vpcDiagramBuilder);
 		
 		replayAll();
@@ -153,7 +158,13 @@ public class TestVPCVisitor extends EasyMockSupport {
 		acl = new NetworkAcl().withAssociations(aclAssoc).
 				withEntries(outboundEntry, inboundEntry).
 				withNetworkAclId("aclId");
-		securityGroup = new SecurityGroup().withGroupId("groupId").withGroupName("groupName");
+		ipPermsInbound = new IpPermission().withFromPort(80);
+		ipPermsOutbound = new IpPermission().withFromPort(600);
+		securityGroup = new SecurityGroup().
+				withGroupId("secGroupId").
+				withGroupName("secGroupName").
+				withIpPermissions(ipPermsInbound).
+				withIpPermissionsEgress(ipPermsOutbound);
 	}
 	
 }

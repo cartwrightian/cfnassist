@@ -102,10 +102,26 @@ public class VPCVisitor {
 				SecurityGroup group = facade.getSecurityGroupDetailsById(groupId.getGroupId());
 				vpcDiagramBuilder.addSecurityGroup(group, subnetId);
 				vpcDiagramBuilder.associateInstanceWithSecGroup(instance.getInstanceId(), group);
+				visitInboundSecGroupPerms(vpcDiagramBuilder, group, subnetId);
+				visitOutboundSecGroupPerms(vpcDiagramBuilder, group, subnetId);
 			}
 		}		
 	}
 	
+	private void visitOutboundSecGroupPerms(
+			VPCDiagramBuilder vpcDiagramBuilder, SecurityGroup group,
+			String subnetId) throws CfnAssistException {
+		for(IpPermission perm : group.getIpPermissionsEgress()) {
+			vpcDiagramBuilder.addSecGroupOutboundPerms(group.getGroupId(), perm, subnetId);
+		}	
+	}
+
+	private void visitInboundSecGroupPerms(VPCDiagramBuilder vpcDiagramBuilder, SecurityGroup group, String subnetId) throws CfnAssistException {
+		for(IpPermission perm : group.getIpPermissions()) {
+			vpcDiagramBuilder.addSecGroupInboundPerms(group.getGroupId(), perm, subnetId);
+		}	
+	}
+
 	private void visitNetworkAcl(VPCDiagramBuilder vpcDiagramBuilder, NetworkAcl acl) throws CfnAssistException, InvalidApplicationException {
 		vpcDiagramBuilder.addAcl(acl);
 
@@ -116,9 +132,9 @@ public class VPCVisitor {
 			
 			for(NetworkAclEntry entry : acl.getEntries()) {
 				if (entry.getEgress()) {
-					vpcDiagramBuilder.addOutboundRoute(networkAclId, entry, subnetId);
+					vpcDiagramBuilder.addACLOutbound(networkAclId, entry, subnetId);
 				} else {
-					vpcDiagramBuilder.addInboundRoute(networkAclId, entry, subnetId);
+					vpcDiagramBuilder.addACLInbound(networkAclId, entry, subnetId);
 				}
 			}			
 		}	

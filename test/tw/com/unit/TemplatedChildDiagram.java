@@ -45,4 +45,14 @@ public class TemplatedChildDiagram<T extends ChildDiagram> implements ChildDiagr
 		contained.addSecurityGroup(id, label);	
 	}
 
+	@Override
+	public void addPortRange(String uniqueId, String label) throws CfnAssistException {
+		contained.addPortRange(uniqueId, label);	
+	}
+
+	@Override
+	public void connectWithLabel(String uniqueAId, String uniqueBId, String label) {
+		contained.connectWithLabel(uniqueAId, uniqueBId, label);	
+	}
+
 }

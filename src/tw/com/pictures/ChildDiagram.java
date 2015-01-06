@@ -7,13 +7,17 @@ import tw.com.pictures.dot.Recorder;
 
 public interface ChildDiagram {
 
-	void addInstance(String instanceId, String label) throws CfnAssistException, InvalidApplicationException;
+	void addInstance(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException;
 
 	void render(Recorder recorder);
 
-	void addRouteTable(String routeTableId, String label) throws CfnAssistException;
+	void addRouteTable(String uniqueId, String label) throws CfnAssistException;
 
-	void addSecurityGroup(String string, String label) throws CfnAssistException, InvalidApplicationException;
+	void addSecurityGroup(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException;
+	
+	void addPortRange(String uniqueId, String label) throws CfnAssistException;
+	
+	public void connectWithLabel(String uniqueAId, String uniqueBId, String label);
 	
 	String getId();
 

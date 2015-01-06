@@ -38,4 +38,15 @@ public class SubGraphFacade implements ChildDiagram {
 		graph.addNode(id).withLabel(label).withShape(Shape.Box);		
 	}
 
+	@Override
+	public void addPortRange(String uniqueId, String label) throws CfnAssistException {
+		graph.addNode(uniqueId).withLabel(label);
+		
+	}
+
+	@Override
+	public void connectWithLabel(String uniqueAId, String uniqueBId, String label) {
+		graph.addEdge(uniqueAId, uniqueBId).withLabel(label);	
+	}
+
 }

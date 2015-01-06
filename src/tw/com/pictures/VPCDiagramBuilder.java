@@ -13,6 +13,7 @@ import tw.com.pictures.dot.Recorder;
 import tw.com.unit.SecurityChildDiagram;
 
 import com.amazonaws.services.ec2.model.Address;
+import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.NetworkAclEntry;
 import com.amazonaws.services.ec2.model.PortRange;
@@ -153,6 +154,16 @@ public class VPCDiagramBuilder {
 		subnetDiagramBuilders.get(subnetId).addSecurityGroup(group);
 	}
 	
+
+	public void addSecGroupInboundPerms(String groupId, IpPermission ipPermsInbound, String subnetId) throws CfnAssistException {
+		subnetDiagramBuilders.get(subnetId).addSecGroupInboundPerms(groupId, ipPermsInbound);		
+	}
+	
+
+	public void addSecGroupOutboundPerms(String groupId ,IpPermission ipPermsOutbound, String subnetId) throws CfnAssistException {
+		subnetDiagramBuilders.get(subnetId).addSecGroupOutboundPerms(groupId, ipPermsOutbound);		
+	}
+	
 	public void associateInstanceWithSecGroup(String instanceId, SecurityGroup securityGroup) {
 		securityDiagram.associate(instanceId, securityGroup.getGroupId());		
 	}
@@ -184,7 +195,7 @@ public class VPCDiagramBuilder {
 		securityDiagram.associateWithSubDiagram(acl.getNetworkAclId(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 
-	public void addOutboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
+	public void addACLOutbound(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
 		String cidrUniqueId = createCidrUniqueId("out", aclId, entry);
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
@@ -195,7 +206,7 @@ public class VPCDiagramBuilder {
 		}
 	}
 	
-	public void addInboundRoute(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
+	public void addACLInbound(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
 		String cidrUniqueId = createCidrUniqueId("in", aclId, entry);
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
