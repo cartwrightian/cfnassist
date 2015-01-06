@@ -10,6 +10,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
 
 import com.amazonaws.services.ec2.model.Address;
+import com.amazonaws.services.ec2.model.GroupIdentifier;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.RouteTable;
@@ -31,6 +32,7 @@ public class VpcTestBuilder {
 	private List<Instance> instances;
 	private String vpcId;
 	private List<NetworkAcl> acls;
+	private List<SecurityGroup> securityGroups;
 	
 	public VpcTestBuilder(String vpcId) {
 		this.vpcId = vpcId;
@@ -42,6 +44,7 @@ public class VpcTestBuilder {
 		loadBalancers = new LinkedList<LoadBalancerDescription>();
 		databases = new LinkedList<DBInstance>();
 		acls = new LinkedList<>();
+		securityGroups = new LinkedList<>();
 	}
 
 	public void add(Subnet subnet) {
@@ -95,8 +98,12 @@ public class VpcTestBuilder {
 		acls.add(acl);	
 	}
 	
-	public void add(SecurityGroup securityGroup) {
-		// TODO Auto-generated method stub	
+	public void addAndAssociate(SecurityGroup securityGroup) {
+		securityGroups.add(securityGroup);
+		GroupIdentifier groupId = new GroupIdentifier().withGroupId(securityGroup.getGroupId()).withGroupName(securityGroup.getGroupName());
+		for(Instance i : instances) {
+			i.withSecurityGroups(groupId);
+		}
 	}
 
 	public Vpc setFacadeExpectations(AmazonVPCFacade awsFacade, String subnetId) throws CfnAssistException {
@@ -108,6 +115,8 @@ public class VpcTestBuilder {
 		EasyMock.expect(awsFacade.getRDSFor(vpcId)).andReturn(databases);
 		EasyMock.expect(awsFacade.getACLs(vpcId)).andReturn(acls);
 		EasyMock.expect(awsFacade.getLBsFor(vpcId)).andReturn(loadBalancers);
+		SecurityGroup securityGroup = securityGroups.get(0); // TODO more than one
+		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(securityGroup.getGroupId())).andReturn(securityGroup);
 		return vpc;	
 	}
 	

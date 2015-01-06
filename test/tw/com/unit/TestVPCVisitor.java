@@ -83,7 +83,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcBuilder.addAndAssociate(elb);
 		vpcBuilder.addAndAssociate(dbInstance);
 		vpcBuilder.add(acl);
-		vpcBuilder.add(securityGroup);
+		vpcBuilder.addAndAssociate(securityGroup);
 
 		Vpc vpc = vpcBuilder.setFacadeExpectations(awsFacade, subnetId);
 		
@@ -103,6 +103,8 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
 		vpcDiagramBuilder.addOutboundRoute("aclId",outboundEntry, subnetId);
 		vpcDiagramBuilder.addInboundRoute("aclId", inboundEntry, subnetId);
+		vpcDiagramBuilder.addSecurityGroup(securityGroup, subnetId);
+		vpcDiagramBuilder.associateInstanceWithSecGroup(instanceId, securityGroup);
 		diagramBuilder.add(vpcDiagramBuilder);
 		
 		replayAll();

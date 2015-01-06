@@ -99,4 +99,8 @@ public class AmazonVPCFacade {
 		return String.format("%s [%s]", name, id);
 	}
 
+	public List<SecurityGroup> getSecurityGroupsFor(String vpcId) {
+		return cloudRepository.getSecurityGroupsFor(vpcId);
+	}
+
 }

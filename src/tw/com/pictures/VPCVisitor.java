@@ -40,57 +40,41 @@ public class VPCVisitor {
 		String vpcId = vpc.getVpcId();
 		///
 		for (Subnet subnet : facade.getSubnetFors(vpcId)) {
-			visit(vpcDiagram, subnet);
+			visitSubnet(vpcDiagram, subnet);
 		}
 		///
 		for(RouteTable table : facade.getRouteTablesFor(vpcId)) {
-			visit(vpcDiagram, table);
+			visitRouteTable(vpcDiagram, table);
 		}
 		//
 		for(Address eip : facade.getEIPFor(vpcId)) {
-			visit(vpcDiagram, eip);
+			visitEIP(vpcDiagram, eip);
 		}
 		// 
 		for(LoadBalancerDescription elb : facade.getLBsFor(vpcId)) {
-			visit(vpcDiagram, elb);
+			visitELB(vpcDiagram, elb);
 		}
 		//
 		for(DBInstance rds : facade.getRDSFor(vpcId)) {
-			visit(vpcDiagram, rds);
+			visitRDS(vpcDiagram, rds);
 		}
 		//
 		for(NetworkAcl acl : facade.getACLs(vpcId)) {
-			visit(vpcDiagram, acl);
+			visitNetworkAcl(vpcDiagram, acl);
+		}
+		//
+		for(LoadBalancerDescription elb : facade.getLBsFor(vpcId)) {
+			//visitELBFOrSecGroups(vpcDiagram, elb);
 		}
 		//
 		for (Subnet subnet : facade.getSubnetFors(vpcId)) {
-			visitInstancesForSecGroups(vpcDiagram, subnet);
+			visitSubnetForInstancesAndSecGroups(vpcDiagram, subnet);
 		}
-		for(LoadBalancerDescription elb : facade.getLBsFor(vpcId)) {
-			visitELBFOrSecGroups(vpcDiagram, elb);
-		}
+		
 		diagramBuilder.add(vpcDiagram);
 	}
 
-	private void visitInstancesForSecGroups(VPCDiagramBuilder vpcDiagram, Subnet subnet) throws CfnAssistException, InvalidApplicationException {
-		for(Instance instance : facade.getInstancesFor(subnet.getSubnetId())) {
-			for(GroupIdentifier groupId : instance.getSecurityGroups()) {
-				SecurityGroup group = facade.getSecurityGroupDetails(groupId);
-				vpcDiagram.addSecurityGroup(group, subnet.getSubnetId(), instance.getInstanceId());
-			}
-		}		
-	}
-	
-	private void visitELBFOrSecGroups(VPCDiagramBuilder vpcDiagram, LoadBalancerDescription elb) throws CfnAssistException {
-		// TODO
-		//for (String groupId : elb.getSecurityGroups()) {
-		//	SecurityGroup group = facade.getSecurityGroupDetailsById(groupId);
-			//vpcDiagram.addSecurityGroup(group, elb);
-			//group.get
-		//}	
-	}
-
-	private void visit(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException, InvalidApplicationException {
+	private void visitRDS(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException, InvalidApplicationException {
 		vpcDiagram.addDBInstance(rds);
 		DBSubnetGroup dbSubnetGroup = rds.getDBSubnetGroup();
 
@@ -101,7 +85,7 @@ public class VPCVisitor {
 		}
 	}
 
-	private void visit(VPCDiagramBuilder vpcDiagramBuilder, LoadBalancerDescription elb) throws CfnAssistException, InvalidApplicationException {
+	private void visitELB(VPCDiagramBuilder vpcDiagramBuilder, LoadBalancerDescription elb) throws CfnAssistException, InvalidApplicationException {
 		vpcDiagramBuilder.addELB(elb);
 		for(com.amazonaws.services.elasticloadbalancing.model.Instance instance : elb.getInstances()) {
 			vpcDiagramBuilder.associateELBToInstance(elb, instance.getInstanceId());
@@ -111,7 +95,18 @@ public class VPCVisitor {
 		}
 	}
 	
-	private void visit(VPCDiagramBuilder vpcDiagramBuilder, NetworkAcl acl) throws CfnAssistException, InvalidApplicationException {
+	private void visitSubnetForInstancesAndSecGroups(VPCDiagramBuilder vpcDiagramBuilder, Subnet subnet) throws CfnAssistException, InvalidApplicationException {
+		String subnetId = subnet.getSubnetId();
+		for(Instance instance : facade.getInstancesFor(subnetId)) {
+			for(GroupIdentifier groupId : instance.getSecurityGroups()) {
+				SecurityGroup group = facade.getSecurityGroupDetailsById(groupId.getGroupId());
+				vpcDiagramBuilder.addSecurityGroup(group, subnetId);
+				vpcDiagramBuilder.associateInstanceWithSecGroup(instance.getInstanceId(), group);
+			}
+		}		
+	}
+	
+	private void visitNetworkAcl(VPCDiagramBuilder vpcDiagramBuilder, NetworkAcl acl) throws CfnAssistException, InvalidApplicationException {
 		vpcDiagramBuilder.addAcl(acl);
 
 		for(NetworkAclAssociation assoc : acl.getAssociations()) {
@@ -129,7 +124,7 @@ public class VPCVisitor {
 		}	
 	}
 
-	private void visit(VPCDiagramBuilder vpcDiagram, Address eip) throws CfnAssistException, InvalidApplicationException {
+	private void visitEIP(VPCDiagramBuilder vpcDiagram, Address eip) throws CfnAssistException, InvalidApplicationException {
 		vpcDiagram.addEIP(eip);
 
 		String instanceId = eip.getInstanceId();
@@ -138,7 +133,7 @@ public class VPCVisitor {
 		}	
 	}
 
-	private void visit(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException, InvalidApplicationException {
+	private void visitSubnet(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException, InvalidApplicationException {
 		SubnetDiagramBuilder subnetDiagram = factory.createSubnetDiagramBuilder(parent, subnet);
 		
 		String subnetId = subnet.getSubnetId();
@@ -149,7 +144,7 @@ public class VPCVisitor {
 		parent.add(subnetId, subnetDiagram);	
 	}
 	
-	private void visit(VPCDiagramBuilder vpcDiagram, RouteTable routeTable) throws CfnAssistException, InvalidApplicationException {
+	private void visitRouteTable(VPCDiagramBuilder vpcDiagram, RouteTable routeTable) throws CfnAssistException, InvalidApplicationException {
 		List<Route> routes = routeTable.getRoutes();
 		List<RouteTableAssociation> usersOfTable = routeTable.getAssociations();
 		for (RouteTableAssociation usedBy : usersOfTable) {
@@ -165,24 +160,6 @@ public class VPCVisitor {
 
 	private void visit(SubnetDiagramBuilder subnetDiagram, Instance instance) throws CfnAssistException, InvalidApplicationException {
 		subnetDiagram.add(instance);
-		visit(subnetDiagram, instance.getSecurityGroups());
-	}
-
-	private void visit(SubnetDiagramBuilder subnetDiagram, List<GroupIdentifier> securityGroups) throws CfnAssistException, InvalidApplicationException {
-		for(GroupIdentifier groupdId : securityGroups) {
-			SecurityGroup group = facade.getSecurityGroupDetails(groupdId);
-			subnetDiagram.addSecurityGroup(group);
-			visit(subnetDiagram, group.getIpPermissions(), false);
-			visit(subnetDiagram, group.getIpPermissionsEgress(), true);
-		}		
-	}
-
-	private void visit(SubnetDiagramBuilder subnetDiagram, List<IpPermission> ipPermissions, boolean outbound) {
-		if (outbound) {
-			subnetDiagram.addOutboundPerms(ipPermissions);
-		} else {
-			subnetDiagram.addInboundPerms(ipPermissions);
-		}
 	}
 
 }

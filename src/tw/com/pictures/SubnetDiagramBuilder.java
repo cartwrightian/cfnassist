@@ -1,7 +1,6 @@
 package tw.com.pictures;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.management.InvalidApplicationException;
@@ -11,7 +10,6 @@ import tw.com.pictures.dot.Recorder;
 import tw.com.unit.SecurityChildDiagram;
 
 import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
@@ -70,15 +68,15 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 		securityDiagram.addSecurityGroup(groupId, label);
 	}
 
-	public void addOutboundPerms(List<IpPermission> ipPermissions) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void addInboundPerms(List<IpPermission> ipPermissions) {
-		// TODO Auto-generated method stub
-		
-	}
+//	public void addOutboundPerms(List<IpPermission> ipPermissions) {
+//		// TODO Auto-generated method stub
+//		
+//	}
+//
+//	public void addInboundPerms(List<IpPermission> ipPermissions) {
+//		// TODO Auto-generated method stub
+//		
+//	}
 
 	public void render(Recorder recorder) {
 		networkDiagram.render(recorder);

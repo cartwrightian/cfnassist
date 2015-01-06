@@ -43,6 +43,11 @@ public class GraphFacade implements Diagram {
 	public void addConnectionBetween(String uniqueIdA, String uniqueIdB) {
 		graph.addEdge(uniqueIdA, uniqueIdB);
 	}
+	
+	@Override
+	public void associate(String uniqueIdA, String uniqueIdB) {
+		graph.addEdge(uniqueIdA, uniqueIdB).withDottedLine().withDot();	
+	}
 
 	@Override
 	public void addPublicIPAddress(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException {
@@ -114,6 +119,7 @@ public class GraphFacade implements Diagram {
 	public void addCidr(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException {
 		graph.addNode(uniqueId).withLabel(label).withShape(Shape.Diamond);	
 	}
+
 
 
 }

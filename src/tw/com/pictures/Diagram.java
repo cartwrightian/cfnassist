@@ -37,4 +37,6 @@ public interface Diagram {
 
 	void addCidr(String uniqueId, String label) throws CfnAssistException, InvalidApplicationException;
 
+	void associate(String uniqueIdA, String uniqueIdB);
+
 }

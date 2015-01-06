@@ -133,6 +133,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		builder.add("subnetId", subnetDiagramBuilder);
 		
 		networkDiagram.associateWithSubDiagram("instanceID", "subnetId", subnetDiagramBuilder);
+		securityDiagram.associateWithSubDiagram("instanceID", "subnetId", subnetDiagramBuilder);
 	
 		replayAll();
 		builder.associateDBWithSubnet(rds, "subnetId");
@@ -407,7 +408,18 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		subnetDiagramBuilder.addSecurityGroup(group);
 		
 		replayAll();
-		builder.addSecurityGroup(group, "subnetId", "instanceId");
+		builder.addSecurityGroup(group, "subnetId");
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAssociateSecurityGroupAndInstance() throws CfnAssistException, InvalidApplicationException {
+		SecurityGroup group = new SecurityGroup().withGroupId("groupId");
+		
+		securityDiagram.addConnectionBetween("instanceId", "groupId");
+		
+		replayAll();
+		builder.associateInstanceWithSecGroup("instanceId", group);
 		verifyAll();
 	}
 

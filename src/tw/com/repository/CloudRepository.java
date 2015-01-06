@@ -94,6 +94,17 @@ public class CloudRepository {
 		}
 		throw new CfnAssistException(String.format("Failed to find SecurityGroup with id '%s'", groupId));
 	}
+	
+	public List<SecurityGroup> getSecurityGroupsFor(String vpcId) {
+		loadGroups();
+		List<SecurityGroup> groups = new LinkedList<>();
+		for(SecurityGroup group : groupsCache) {
+			if (group.getVpcId().equals(vpcId)) {
+				groups.add(group);
+			}
+		}
+		return groups;
+	}
 
 	public Instance getInstanceById(String instanceId) throws CfnAssistException {
 		loadInstances();

@@ -146,12 +146,16 @@ public class VPCDiagramBuilder {
 	// this is relying on the ID being the same on both diagrams (network & security)
 	public void associateDBWithSubnet(DBInstance rds, String subnetId) {
 		networkDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
+		securityDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 	
-	public void addSecurityGroup(SecurityGroup group, String subnetId, String instanceId) throws CfnAssistException, InvalidApplicationException {
+	public void addSecurityGroup(SecurityGroup group, String subnetId) throws CfnAssistException, InvalidApplicationException {
 		subnetDiagramBuilders.get(subnetId).addSecurityGroup(group);
 	}
-
+	
+	public void associateInstanceWithSecGroup(String instanceId, SecurityGroup securityGroup) {
+		securityDiagram.associate(instanceId, securityGroup.getGroupId());		
+	}
 
 	// this is relying on the ID being the same on both diagrams (network & security)
 	public void addRoute(String subnetId, Route route) throws InvalidApplicationException {
