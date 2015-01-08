@@ -59,6 +59,9 @@ public class VpcTestBuilder {
 	private SecurityGroup dbSecurityGroup;
 	private IpPermission ipDbPermsInbound;
 	private IpPermission ipDbPermsOutbound;
+	private IpPermission ipElbPermsInbound;
+	private IpPermission ipElbPermsOutbound;
+	private SecurityGroup elbSecurityGroup;
 	
 	public VpcTestBuilder(String vpcId) {
 		this.vpcId = vpcId;
@@ -98,9 +101,19 @@ public class VpcTestBuilder {
 				withAllocationId("eipAllocId").
 				withInstanceId(instanceId).
 				withPublicIp("publicIP");	
+		
+		ipElbPermsInbound = new IpPermission().withFromPort(20).withToPort(29).withIpProtocol("tcp").withIpRanges("ipRanges");
+		ipElbPermsOutbound = new IpPermission().withFromPort(200).withToPort(300).withIpProtocol("tcp").withIpRanges("ipRanges");
+		elbSecurityGroup = new SecurityGroup().
+				withGroupId("secElbGroupId").
+				withGroupName("secElbGroupName").
+				withIpPermissions(ipElbPermsInbound).
+				withIpPermissionsEgress(ipElbPermsOutbound);
+		
 		elb = new LoadBalancerDescription().
 				withLoadBalancerName("loadBalancerName").
-				withDNSName("lbDNSName");
+				withDNSName("lbDNSName").
+				withSecurityGroups(elbSecurityGroup.getGroupId());
 		dbInstance = new DBInstance().
 				withDBInstanceIdentifier("dbInstanceId").
 				withDBName("dbName");
@@ -230,10 +243,10 @@ public class VpcTestBuilder {
 		EasyMock.expect(awsFacade.getRouteTablesFor(vpcId)).andReturn(routeTables);
 		EasyMock.expect(awsFacade.getEIPFor(vpcId)).andReturn(eips);
 		EasyMock.expect(awsFacade.getLBsFor(vpcId)).andReturn(loadBalancers);
+		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(elbSecurityGroup.getGroupId())).andReturn(elbSecurityGroup);
 		EasyMock.expect(awsFacade.getRDSFor(vpcId)).andReturn(databases);
 		EasyMock.expect(awsFacade.getSecurityGroupDetailsByName(dbSecurityGroup.getGroupName())).andReturn(dbSecurityGroup);
 		EasyMock.expect(awsFacade.getACLs(vpcId)).andReturn(acls);
-		EasyMock.expect(awsFacade.getLBsFor(vpcId)).andReturn(loadBalancers);
 		SecurityGroup instanceSecurityGroup = securityGroups.get(0); // TODO more than one
 		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(instanceSecurityGroup.getGroupId())).andReturn(instanceSecurityGroup);
 		return vpc;	
@@ -319,6 +332,18 @@ public class VpcTestBuilder {
 
 	public Subnet getDbSubnet() {
 		return dbSubnet;
+	}
+
+	public SecurityGroup getElbSecurityGroup() {
+		return elbSecurityGroup;
+	}
+
+	public IpPermission getElbIpPermsInbound() {
+		return ipElbPermsInbound;
+	}
+
+	public IpPermission getElbIpPermsOutbound() {
+		return ipElbPermsOutbound;
 	}
 
 }

@@ -78,6 +78,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		SecurityGroup dbSecurityGroup = vpcBuilder.getDBSecurityGroup();
 		IpPermission dbIpPermsInbound = vpcBuilder.getDbIpPermsInbound();
 		IpPermission dbIpPermsOutbound = vpcBuilder.getDbIpPermsOutbound();
+		SecurityGroup elbSecurityGroup = vpcBuilder.getElbSecurityGroup();
 		
 		EasyMock.expect(diagramFactory.createVPCDiagramBuilder(vpc)).andReturn(vpcDiagramBuilder);
 		EasyMock.expect(diagramFactory.createSubnetDiagramBuilder(vpcDiagramBuilder, instanceSubnet)).andReturn(subnetDiagramBuilder);
@@ -95,6 +96,10 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagramBuilder.associateELBToInstance(elb, instanceId);
 		vpcDiagramBuilder.associateELBToSubnet(elb, instanceSubnetId);
 		vpcDiagramBuilder.associateELBToSubnet(elb, dbSubnetId);
+		vpcDiagramBuilder.addSecurityGroup(elbSecurityGroup);
+		vpcDiagramBuilder.associateInstanceWithSecGroup(elb.getDNSName(), elbSecurityGroup);
+		vpcDiagramBuilder.addSecGroupInboundPerms("secElbGroupId", vpcBuilder.getElbIpPermsInbound());
+		vpcDiagramBuilder.addSecGroupOutboundPerms("secElbGroupId", vpcBuilder.getElbIpPermsOutbound());
 		// db
 		vpcDiagramBuilder.addDBInstance(dbInstance);
 		vpcDiagramBuilder.associateDBWithSubnet(dbInstance, dbSubnetId);

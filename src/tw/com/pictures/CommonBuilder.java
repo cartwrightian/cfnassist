@@ -44,6 +44,12 @@ public class CommonBuilder {
 	private String createRange(IpPermission perms) {
 		Integer to = perms.getToPort();
 		Integer from = perms.getFromPort();
+		if (to==null) {
+			if (from==null) {
+				return "all";
+			}
+			return from.toString();
+		}
 		if (to.equals(from)) {
 			if (to.equals(-1)) {
 				return "all";
@@ -59,18 +65,30 @@ public class CommonBuilder {
 	
 	private String createLabel(IpPermission perms) {
 		List<String> ipRanges = perms.getIpRanges();
-		if (ipRanges.isEmpty()) {
-			return String.format("[%s]", perms.getIpProtocol());
+		String ipProtocol = perms.getIpProtocol();
+		if (ipProtocol.equals("-1")) {
+			ipProtocol = "all";
 		}
 		
+		if (ipRanges.isEmpty()) {
+			return String.format("[%s]", ipProtocol);
+		}
+		
+		return String.format("(%s)\n[%s]", ipRangesIntoTextList(ipRanges) ,ipProtocol);
+	}
+
+	private String ipRangesIntoTextList(List<String> ipRanges) {
 		StringBuilder rangesPart = new StringBuilder();
 		for (String range : ipRanges) {
 			if (rangesPart.length()!=0) {
 				rangesPart.append(",\n");
 			}
+			if (range.equals("0.0.0.0/0")) {
+				range = "all";
+			}
 			rangesPart.append(range);
 		}
-		return String.format("(%s)\n[%s]", rangesPart.toString(),perms.getIpProtocol());
+		return rangesPart.toString();
 	}
 	
 	private boolean haveAddedPerm(String uniqueId) {

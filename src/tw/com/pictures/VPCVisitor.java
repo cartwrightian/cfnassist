@@ -67,10 +67,6 @@ public class VPCVisitor {
 			visitNetworkAcl(vpcDiagram, acl);
 		}
 		//
-		for(LoadBalancerDescription elb : facade.getLBsFor(vpcId)) {
-			//visitELBFOrSecGroups(vpcDiagram, elb);
-		}
-		//
 		for (Subnet subnet : facade.getSubnetFors(vpcId)) {
 			visitSubnetForInstancesAndSecGroups(vpcDiagram, subnet);
 		}
@@ -94,24 +90,25 @@ public class VPCVisitor {
 	}
 
 	private void addDBSecurityGroupsToDiagram(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
+		String dbInstanceIdentifier = rds.getDBInstanceIdentifier();
 		for(DBSecurityGroupMembership secGroupMember : rds.getDBSecurityGroups()) {
 			String groupName = secGroupMember.getDBSecurityGroupName();
 			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsByName(groupName);
 			logger.debug("visit rds secgroup " + dbSecGroup.getGroupId());
-			addSecGroupToDiagram(vpcDiagram, rds, dbSecGroup);
+			addSecGroupToDiagram(vpcDiagram, dbInstanceIdentifier, dbSecGroup);
 		}
 		//
 		for(VpcSecurityGroupMembership secGroupMember : rds.getVpcSecurityGroups()) {
 			String groupId = secGroupMember.getVpcSecurityGroupId();
 			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsById(groupId);
 			logger.debug("visit rds vpc secgroup " + dbSecGroup.getGroupId());
-			addSecGroupToDiagram(vpcDiagram, rds, dbSecGroup);
+			addSecGroupToDiagram(vpcDiagram, dbInstanceIdentifier, dbSecGroup);
 		}
 	}
 
-	private void addSecGroupToDiagram(VPCDiagramBuilder vpcDiagram, DBInstance rds, SecurityGroup dbSecGroup) throws CfnAssistException {
+	private void addSecGroupToDiagram(VPCDiagramBuilder vpcDiagram, String instanceId, SecurityGroup dbSecGroup) throws CfnAssistException {
 		vpcDiagram.addSecurityGroup(dbSecGroup);
-		vpcDiagram.associateInstanceWithSecGroup(rds.getDBInstanceIdentifier(), dbSecGroup);
+		vpcDiagram.associateInstanceWithSecGroup(instanceId, dbSecGroup);
 		String groupId = dbSecGroup.getGroupId();
 		for(IpPermission perm : dbSecGroup.getIpPermissions()) {
 			vpcDiagram.addSecGroupInboundPerms(groupId, perm);
@@ -130,6 +127,10 @@ public class VPCVisitor {
 		}
 		for(String subnetId : elb.getSubnets()) {
 			vpcDiagramBuilder.associateELBToSubnet(elb, subnetId);
+		}
+		for(String groupId : elb.getSecurityGroups()) {
+			SecurityGroup group = facade.getSecurityGroupDetailsById(groupId);
+			addSecGroupToDiagram(vpcDiagramBuilder, elb.getDNSName(), group);
 		}
 	}
 	
