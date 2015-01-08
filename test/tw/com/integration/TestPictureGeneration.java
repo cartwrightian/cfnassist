@@ -57,7 +57,7 @@ public class TestPictureGeneration {
 	}
 
 	@Test
-	public void shouldGenerateDiagram() throws IOException, CfnAssistException {
+	public void shouldGenerateDiagramFromCurrentAccountVPCs() throws IOException, CfnAssistException {
 		Path folder = Paths.get(".").toAbsolutePath();
 		Recorder recorder = new FileRecorder(folder);
 		

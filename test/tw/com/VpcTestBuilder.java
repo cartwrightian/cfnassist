@@ -84,7 +84,9 @@ public class VpcTestBuilder {
 				withCidrBlock("cidrBlockDB");
 		subnetId = insSubnet.getSubnetId();
 		instance = new Instance().
-				withInstanceId("instanceId");
+				withInstanceId("instanceId").
+				withTags(CreateNameTag("instanceName")).
+				withPrivateIpAddress("privateIp");
 		String instanceId = instance.getInstanceId();
 		association = new RouteTableAssociation().
 				withRouteTableAssociationId("assocId").
@@ -100,7 +102,8 @@ public class VpcTestBuilder {
 				withLoadBalancerName("loadBalancerName").
 				withDNSName("lbDNSName");
 		dbInstance = new DBInstance().
-				withDBInstanceIdentifier("dbInstanceId");
+				withDBInstanceIdentifier("dbInstanceId").
+				withDBName("dbName");
 		aclAssoc = new NetworkAclAssociation().
 				withSubnetId(subnetId);
 		portRange = new PortRange().
@@ -115,7 +118,7 @@ public class VpcTestBuilder {
 				withRuleNumber(42);
 		inboundEntry = new NetworkAclEntry().
 				withEgress(false).
-				withCidrBlock("cidrBlockOut").
+				withCidrBlock("cidrBlockIn").
 				withPortRange(portRange).
 				withRuleAction("allow").
 				withProtocol("6").
@@ -123,16 +126,16 @@ public class VpcTestBuilder {
 		acl = new NetworkAcl().withAssociations(aclAssoc).
 				withEntries(outboundEntry, inboundEntry).
 				withNetworkAclId("aclId");
-		ipPermsInbound = new IpPermission().withFromPort(80).withToPort(89);
-		ipPermsOutbound = new IpPermission().withFromPort(600).withToPort(700);
+		ipPermsInbound = new IpPermission().withFromPort(80).withToPort(89).withIpProtocol("tcp").withIpRanges("ipRanges");
+		ipPermsOutbound = new IpPermission().withFromPort(600).withToPort(700).withIpProtocol("tcp").withIpRanges("ipRanges");
 		instSecurityGroup = new SecurityGroup().
 				withGroupId("secGroupId").
 				withGroupName("secGroupName").
 				withIpPermissions(ipPermsInbound).
 				withIpPermissionsEgress(ipPermsOutbound);
 		
-		ipDbPermsInbound = new IpPermission().withFromPort(90).withToPort(99);
-		ipDbPermsOutbound = new IpPermission().withFromPort(700).withToPort(800);
+		ipDbPermsInbound = new IpPermission().withFromPort(90).withToPort(99).withIpProtocol("tcp").withIpRanges("ipRanges");
+		ipDbPermsOutbound = new IpPermission().withFromPort(700).withToPort(800).withIpProtocol("tcp").withIpRanges("ipRanges");
 		dbSecurityGroup = new SecurityGroup().
 				withGroupId("secDbGroupId").
 				withGroupName("secDbGroupName").
@@ -242,8 +245,8 @@ public class VpcTestBuilder {
 		EasyMock.expect(awsFacade.getVpcs()).andReturn(vpcs);	
 	}
 	
-	public static Tag CreateNameTag(String routeTableName) {
-		return new Tag().withKey("Name").withValue(routeTableName);
+	public static Tag CreateNameTag(String name) {
+		return new Tag().withKey("Name").withValue(name);
 	}
 
 	public Subnet getSubnet() {
