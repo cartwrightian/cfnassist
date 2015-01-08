@@ -102,5 +102,13 @@ public class AmazonVPCFacade {
 	public List<SecurityGroup> getSecurityGroupsFor(String vpcId) {
 		return cloudRepository.getSecurityGroupsFor(vpcId);
 	}
+	
+	public static String labelForSecGroup(SecurityGroup group) {
+		String name = getNameFromTags(group.getTags());
+		if (name.isEmpty()) {
+			name = group.getGroupName();
+		}
+		return createLabelFromNameAndID(group.getGroupId(), name);
+	}
 
 }

@@ -2,7 +2,8 @@ package tw.com.pictures;
 
 import java.util.List;
 
-import javax.management.InvalidApplicationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.GroupIdentifier;
@@ -19,11 +20,14 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
+import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
+import com.amazonaws.services.rds.model.VpcSecurityGroupMembership;
 
 import tw.com.exceptions.CfnAssistException;
 
 public class VPCVisitor {
+	private static final Logger logger = LoggerFactory.getLogger(VPCVisitor.class);
 
 	private DiagramBuilder diagramBuilder;
 	private AmazonVPCFacade facade;
@@ -35,7 +39,7 @@ public class VPCVisitor {
 		this.factory = factory;
 	}
 
-	public void visit(Vpc vpc) throws CfnAssistException, InvalidApplicationException {	
+	public void visit(Vpc vpc) throws CfnAssistException {	
 		VPCDiagramBuilder vpcDiagram = factory.createVPCDiagramBuilder(vpc);
 		String vpcId = vpc.getVpcId();
 		///
@@ -74,18 +78,52 @@ public class VPCVisitor {
 		diagramBuilder.add(vpcDiagram);
 	}
 
-	private void visitRDS(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException, InvalidApplicationException {
+	private void visitRDS(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
+		logger.debug("visit rds " + rds.getDBInstanceIdentifier());
 		vpcDiagram.addDBInstance(rds);
 		DBSubnetGroup dbSubnetGroup = rds.getDBSubnetGroup();
 
 		if (dbSubnetGroup!=null) {
 			for(com.amazonaws.services.rds.model.Subnet subnet : dbSubnetGroup.getSubnets()) {
-				vpcDiagram.associateDBWithSubnet(rds, subnet.getSubnetIdentifier());
+				String subnetId = subnet.getSubnetIdentifier();
+				logger.debug("visit rds subnet " + subnetId);
+				vpcDiagram.associateDBWithSubnet(rds, subnetId);
 			}
+		}	
+		addDBSecurityGroupsToDiagram(vpcDiagram, rds);
+	}
+
+	private void addDBSecurityGroupsToDiagram(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
+		for(DBSecurityGroupMembership secGroupMember : rds.getDBSecurityGroups()) {
+			String groupName = secGroupMember.getDBSecurityGroupName();
+			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsByName(groupName);
+			logger.debug("visit rds secgroup " + dbSecGroup.getGroupId());
+			addSecGroupToDiagram(vpcDiagram, rds, dbSecGroup);
+		}
+		//
+		for(VpcSecurityGroupMembership secGroupMember : rds.getVpcSecurityGroups()) {
+			String groupId = secGroupMember.getVpcSecurityGroupId();
+			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsById(groupId);
+			logger.debug("visit rds vpc secgroup " + dbSecGroup.getGroupId());
+			addSecGroupToDiagram(vpcDiagram, rds, dbSecGroup);
 		}
 	}
 
-	private void visitELB(VPCDiagramBuilder vpcDiagramBuilder, LoadBalancerDescription elb) throws CfnAssistException, InvalidApplicationException {
+	private void addSecGroupToDiagram(VPCDiagramBuilder vpcDiagram, DBInstance rds, SecurityGroup dbSecGroup) throws CfnAssistException {
+		vpcDiagram.addSecurityGroup(dbSecGroup);
+		vpcDiagram.associateInstanceWithSecGroup(rds.getDBInstanceIdentifier(), dbSecGroup);
+		String groupId = dbSecGroup.getGroupId();
+		for(IpPermission perm : dbSecGroup.getIpPermissions()) {
+			vpcDiagram.addSecGroupInboundPerms(groupId, perm);
+		}
+		for(IpPermission perm : dbSecGroup.getIpPermissionsEgress()) {
+			vpcDiagram.addSecGroupOutboundPerms(groupId, perm);
+		}
+	}
+
+	private void visitELB(VPCDiagramBuilder vpcDiagramBuilder, LoadBalancerDescription elb) throws CfnAssistException {
+		logger.debug("visit elb " + elb.getLoadBalancerName()); 
+
 		vpcDiagramBuilder.addELB(elb);
 		for(com.amazonaws.services.elasticloadbalancing.model.Instance instance : elb.getInstances()) {
 			vpcDiagramBuilder.associateELBToInstance(elb, instance.getInstanceId());
@@ -95,10 +133,13 @@ public class VPCVisitor {
 		}
 	}
 	
-	private void visitSubnetForInstancesAndSecGroups(VPCDiagramBuilder vpcDiagramBuilder, Subnet subnet) throws CfnAssistException, InvalidApplicationException {
+	private void visitSubnetForInstancesAndSecGroups(VPCDiagramBuilder vpcDiagramBuilder, Subnet subnet) throws CfnAssistException {
 		String subnetId = subnet.getSubnetId();
+		logger.debug("visit subnet (for sec groups) " + subnetId); 
 		for(Instance instance : facade.getInstancesFor(subnetId)) {
 			for(GroupIdentifier groupId : instance.getSecurityGroups()) {
+				logger.debug("visit securitygroup " + groupId.getGroupId() + " for instance " + instance.getInstanceId());
+
 				SecurityGroup group = facade.getSecurityGroupDetailsById(groupId.getGroupId());
 				vpcDiagramBuilder.addSecurityGroup(group, subnetId);
 				vpcDiagramBuilder.associateInstanceWithSecGroup(instance.getInstanceId(), group);
@@ -108,9 +149,7 @@ public class VPCVisitor {
 		}		
 	}
 	
-	private void visitOutboundSecGroupPerms(
-			VPCDiagramBuilder vpcDiagramBuilder, SecurityGroup group,
-			String subnetId) throws CfnAssistException {
+	private void visitOutboundSecGroupPerms(VPCDiagramBuilder vpcDiagramBuilder, SecurityGroup group, String subnetId) throws CfnAssistException {
 		for(IpPermission perm : group.getIpPermissionsEgress()) {
 			vpcDiagramBuilder.addSecGroupOutboundPerms(group.getGroupId(), perm, subnetId);
 		}	
@@ -122,12 +161,13 @@ public class VPCVisitor {
 		}	
 	}
 
-	private void visitNetworkAcl(VPCDiagramBuilder vpcDiagramBuilder, NetworkAcl acl) throws CfnAssistException, InvalidApplicationException {
+	private void visitNetworkAcl(VPCDiagramBuilder vpcDiagramBuilder, NetworkAcl acl) throws CfnAssistException {
 		vpcDiagramBuilder.addAcl(acl);
+		String networkAclId = acl.getNetworkAclId();
+		logger.debug("visit acl " + networkAclId);
 
 		for(NetworkAclAssociation assoc : acl.getAssociations()) {
 			String subnetId = assoc.getSubnetId();
-			String networkAclId = acl.getNetworkAclId();
 			vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
 			
 			for(NetworkAclEntry entry : acl.getEntries()) {
@@ -140,7 +180,9 @@ public class VPCVisitor {
 		}	
 	}
 
-	private void visitEIP(VPCDiagramBuilder vpcDiagram, Address eip) throws CfnAssistException, InvalidApplicationException {
+	private void visitEIP(VPCDiagramBuilder vpcDiagram, Address eip) throws CfnAssistException {
+		logger.debug("visit eip " + eip.getAllocationId());
+
 		vpcDiagram.addEIP(eip);
 
 		String instanceId = eip.getInstanceId();
@@ -149,10 +191,12 @@ public class VPCVisitor {
 		}	
 	}
 
-	private void visitSubnet(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException, InvalidApplicationException {
+	private void visitSubnet(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagram = factory.createSubnetDiagramBuilder(parent, subnet);
 		
 		String subnetId = subnet.getSubnetId();
+		logger.debug("visit subnet " + subnetId);
+
 		List<Instance> instances = facade.getInstancesFor(subnetId);
 		for(Instance instance : instances) {
 			visit(subnetDiagram, instance);
@@ -160,7 +204,8 @@ public class VPCVisitor {
 		parent.add(subnetId, subnetDiagram);	
 	}
 	
-	private void visitRouteTable(VPCDiagramBuilder vpcDiagram, RouteTable routeTable) throws CfnAssistException, InvalidApplicationException {
+	private void visitRouteTable(VPCDiagramBuilder vpcDiagram, RouteTable routeTable) throws CfnAssistException {
+		logger.debug("visit routetable " + routeTable.getRouteTableId());
 		List<Route> routes = routeTable.getRoutes();
 		List<RouteTableAssociation> usersOfTable = routeTable.getAssociations();
 		for (RouteTableAssociation usedBy : usersOfTable) {
@@ -174,7 +219,8 @@ public class VPCVisitor {
 		}
  	}
 
-	private void visit(SubnetDiagramBuilder subnetDiagram, Instance instance) throws CfnAssistException, InvalidApplicationException {
+	private void visit(SubnetDiagramBuilder subnetDiagram, Instance instance) throws CfnAssistException {
+		logger.debug("visit instance " + instance.getInstanceId());
 		subnetDiagram.add(instance);
 	}
 

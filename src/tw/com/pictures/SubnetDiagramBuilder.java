@@ -1,13 +1,7 @@
 package tw.com.pictures;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import javax.management.InvalidApplicationException;
-
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 import tw.com.unit.SecurityChildDiagram;
@@ -18,24 +12,22 @@ import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 
-public class SubnetDiagramBuilder implements HasDiagramId {
+public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId  {
 	private Map<String, String> instanceNames = new HashMap<String,String>(); // id -> name
-	private NetworkChildDiagram networkDiagram;
-	private SecurityChildDiagram securityDiagram;
-	private Set<String> addedIpPerms;
+	private NetworkChildDiagram networkChildDiagram;
+	private SecurityChildDiagram securityChildDiagram;
 
 	public SubnetDiagramBuilder(NetworkChildDiagram networkChildDiagram, SecurityChildDiagram securityDiagram, Subnet subnet) {
 		instanceNames = new HashMap<String, String>();
-		this.networkDiagram = networkChildDiagram;
-		this.securityDiagram = securityDiagram;
-		addedIpPerms = new HashSet<>();
+		this.networkChildDiagram = networkChildDiagram;
+		this.securityChildDiagram = securityDiagram;
 	}
 
-	public void add(Instance instance) throws CfnAssistException, InvalidApplicationException {
+	public void add(Instance instance) throws CfnAssistException {
 		String instanceId = instance.getInstanceId();
 		String label = createInstanceLabel(instance);
-		networkDiagram.addInstance(instanceId, label);
-		securityDiagram.addInstance(instanceId, label);
+		networkChildDiagram.addInstance(instanceId, label);
+		securityChildDiagram.addInstance(instanceId, label);
 	}
 	
 	public String createInstanceLabel(Instance instance) {
@@ -64,28 +56,14 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 		return name;
 	}
 
-	public void addSecurityGroup(SecurityGroup group) throws CfnAssistException, InvalidApplicationException {
+	public void addSecurityGroup(SecurityGroup group) throws CfnAssistException {
 		String groupId = group.getGroupId();
-		String name = AmazonVPCFacade.getNameFromTags(group.getTags());
-		if (name.isEmpty()) {
-			name = group.getGroupName();
-		}
-		String label = AmazonVPCFacade.createLabelFromNameAndID(groupId, name);
-		securityDiagram.addSecurityGroup(groupId, label);
+		String label = AmazonVPCFacade.labelForSecGroup(group);
+		securityChildDiagram.addSecurityGroup(groupId, label);
 	}
 
-//	public void addOutboundPerms(List<IpPermission> ipPermissions) {
-//		// TODO Auto-generated method stub
-//		
-//	}
-//
-//	public void addInboundPerms(List<IpPermission> ipPermissions) {
-//		// TODO Auto-generated method stub
-//		
-//	}
-
 	public void render(Recorder recorder) {
-		networkDiagram.render(recorder);
+		networkChildDiagram.render(recorder);
 	}
 	
 	public static String formSubnetLabel(Subnet subnet, String tagName) {
@@ -100,78 +78,24 @@ public class SubnetDiagramBuilder implements HasDiagramId {
 		String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
 		String routeTableId = routeTable.getRouteTableId();
 		String label = AmazonVPCFacade.createLabelFromNameAndID(routeTableId, name);
-		networkDiagram.addRouteTable(routeTableId, label);
+		networkChildDiagram.addRouteTable(routeTableId, label);
 	}
 
 	public ChildDiagram getNetworkDiagram() {
-		return networkDiagram;
+		return networkChildDiagram;
 	}
 
 	@Override
 	public String getIdAsString() {
-		return networkDiagram.getId();
+		return networkChildDiagram.getId();
 	}
 
 	public void addSecGroupInboundPerms(String groupId, IpPermission perms) throws CfnAssistException {
-		String range =createRange(perms);
-		String uniqueId = createUniqueId(groupId, perms, range, "in");
-		if (haveAddedPerm(uniqueId)) {
-			return;
-		}
-		
-		addedIpPerms.add(uniqueId);
-		String label = createLabel(perms);
-		securityDiagram.addPortRange(uniqueId, range);	
-		securityDiagram.connectWithLabel(uniqueId, groupId, label);
-	}
-
-	private String createRange(IpPermission perms) {
-		Integer to = perms.getToPort();
-		Integer from = perms.getFromPort();
-		if (to.equals(from)) {
-			if (to.equals(-1)) {
-				return "all";
-			}
-			return to.toString();
-		}
-		return String.format("%s-%s",from, to);
+		addSecGroupInboundPerms(securityChildDiagram, groupId, perms);		
 	}
 
 	public void addSecGroupOutboundPerms(String groupId, IpPermission perms) throws CfnAssistException {
-		String range =createRange(perms);
-		String uniqueId = createUniqueId(groupId, perms, range, "out");
-		if (haveAddedPerm(uniqueId)) {
-			return;
-		}
-		
-		addedIpPerms.add(uniqueId);
-		String label = createLabel(perms);
-		securityDiagram.addPortRange(uniqueId, range);	
-		securityDiagram.connectWithLabel(groupId, uniqueId, label);
-	}
-
-	private boolean haveAddedPerm(String uniqueId) {
-		return addedIpPerms.contains(uniqueId);
-	}
-
-	private String createLabel(IpPermission perms) {
-		List<String> ipRanges = perms.getIpRanges();
-		if (ipRanges.isEmpty()) {
-			return String.format("[%s]", perms.getIpProtocol());
-		}
-		
-		StringBuilder rangesPart = new StringBuilder();
-		for (String range : ipRanges) {
-			if (rangesPart.length()!=0) {
-				rangesPart.append(",\n");
-			}
-			rangesPart.append(range);
-		}
-		return String.format("(%s)\n[%s]", rangesPart.toString(),perms.getIpProtocol());
-	}
-
-	private String createUniqueId(String groupId, IpPermission perms, String range, String dir) {
-		return String.format("%s_%s_%s_%s", groupId, perms.getIpProtocol(), range, dir);
+		addSecGroupOutboundPerms(securityChildDiagram, groupId, perms);		
 	}
 
 }

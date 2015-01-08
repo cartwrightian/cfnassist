@@ -4,8 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
-import javax.management.InvalidApplicationException;
-
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Option;
 
@@ -15,8 +13,6 @@ import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.TooManyELBException;
-import tw.com.exceptions.WrongNumberOfStacksException;
 
 public interface CommandLineAction {
 	
@@ -25,7 +21,8 @@ public interface CommandLineAction {
 	String getArgName();
 
 	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
-			Collection<Parameter> artifacts, String... argument) throws InvalidParameterException, FileNotFoundException, IOException, WrongNumberOfStacksException, InterruptedException, CfnAssistException, MissingArgumentException, TooManyELBException, InvalidApplicationException;
+			Collection<Parameter> artifacts, String... argument) throws InvalidParameterException, FileNotFoundException, 
+			IOException, InterruptedException, CfnAssistException, MissingArgumentException;
 
 	void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
 			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException;

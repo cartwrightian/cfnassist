@@ -6,8 +6,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
-import javax.management.InvalidApplicationException;
-
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 
@@ -15,8 +13,6 @@ import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.TooManyELBException;
-import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
@@ -34,9 +30,8 @@ public class CreateDiagramAction extends SharedAction {
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argument) throws InvalidParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException, MissingArgumentException,
-			TooManyELBException, InvalidApplicationException {
+			FileNotFoundException, IOException,
+			InterruptedException, CfnAssistException, MissingArgumentException {
 		DiagramCreator diagramCreator = factory.createDiagramCreator();
 		Path folder = Paths.get(argument[0]);
 		Recorder recorder = new FileRecorder(folder);

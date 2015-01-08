@@ -4,8 +4,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
-import javax.management.InvalidApplicationException;
-
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -101,7 +99,7 @@ public class Main {
 		catch (CfnAssistException exception) {
 			logger.error("CommandLine fail due to cfn assit problem: ", exception);
 			return -1;
-		} catch (MissingArgumentException | IOException | InvalidParameterException | InterruptedException | InvalidApplicationException e) {
+		} catch (MissingArgumentException | IOException | InvalidParameterException | InterruptedException e) {
 			logger.error("Processing failed: ", e);
 			return -1;
 		} catch (CommandLineException e) {

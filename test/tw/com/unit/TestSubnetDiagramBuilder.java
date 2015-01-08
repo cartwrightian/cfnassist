@@ -1,7 +1,5 @@
 package tw.com.unit;
 
-import javax.management.InvalidApplicationException;
-
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -38,7 +36,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldAddInstanceToDiagram() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddInstanceToDiagram() throws CfnAssistException {
 		Instance instance = new Instance().
 				withInstanceId("instacneId").
 				withPrivateIpAddress("privateIp").
@@ -66,7 +64,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddSecurityGroupToDiagram() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddSecurityGroupToDiagram() throws CfnAssistException {
 		SecurityGroup group = setupSecurityGroup();
 		
 		securityDiagram.addSecurityGroup("groupId","name [groupId]");
@@ -77,7 +75,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddSecurityGroupInboundPermsDiagram() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddSecurityGroupInboundPermsDiagram() throws CfnAssistException {
 		SecurityGroup group = setupSecurityGroup();
 		IpPermission ipPerms = setupIpPerms();
 		group.withIpPermissions(ipPerms);
@@ -91,7 +89,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddSecurityGroupInboundPermsDiagramDedup() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddSecurityGroupInboundPermsDiagramDedup() throws CfnAssistException {
 		SecurityGroup group = setupSecurityGroup();
 		IpPermission ipPerms = setupIpPerms();
 		group.withIpPermissions(ipPerms);
@@ -134,7 +132,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 		verifyAll();	
 	}
 	
-	private SecurityGroup setupSecurityGroup() {
+	public static SecurityGroup setupSecurityGroup() {
 		SecurityGroup group = new SecurityGroup().
 				withGroupId("groupId").
 				withGroupName("fullGroupName").
@@ -142,7 +140,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 		return group;
 	}
 	
-	private IpPermission setupIpPerms() {
+	public static IpPermission setupIpPerms() {
 		IpPermission ipPerms = new IpPermission().
 				withFromPort(80).
 				withToPort(100).

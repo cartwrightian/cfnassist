@@ -4,8 +4,6 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 
-import javax.management.InvalidApplicationException;
-
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -106,7 +104,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddEIP() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddEIP() throws CfnAssistException {
 		Address eip = new Address().withPublicIp("publicIP").withAllocationId("allocId");
 		networkDiagram.addPublicIPAddress("publicIP", "publicIP [allocId]");
 
@@ -116,7 +114,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddDB() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddDB() throws CfnAssistException {
 		DBInstance rds = new DBInstance().withDBName("dbName").withDBInstanceIdentifier("instanceID");
 		networkDiagram.addDBInstance("instanceID", "dbName [instanceID]");
 		securityDiagram.addDBInstance("instanceID", "dbName [instanceID]");
@@ -141,7 +139,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddELB() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddELB() throws CfnAssistException {
 		LoadBalancerDescription elb = new LoadBalancerDescription().withDNSName("dnsName").withLoadBalancerName("lbName");
 		networkDiagram.addLoadBalancer("dnsName", "lbName");
 		securityDiagram.addLoadBalancer("dnsName", "lbName");
@@ -176,7 +174,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddLocalRoute() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddLocalRoute() throws CfnAssistException {
 		Route route = new Route().withGatewayId("local").withDestinationCidrBlock("cidr");
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
@@ -189,7 +187,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddLocalRouteNoCIDR() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddLocalRouteNoCIDR() throws CfnAssistException {
 		Route route = new Route().withGatewayId("local");
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
@@ -202,7 +200,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddNonLocalRoute() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddNonLocalRoute() throws CfnAssistException {
 		Route route = new Route().withGatewayId("gatewayId").withDestinationCidrBlock("cidr");
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
@@ -240,7 +238,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddACLs() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddACLs() throws CfnAssistException {
 		NetworkAcl acl = new NetworkAcl().withNetworkAclId("networkAclId").
 				withTags(VpcTestBuilder.CreateNameTag("ACL"));
 		securityDiagram.addACL("networkAclId","ACL [networkAclId]");
@@ -265,7 +263,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryAllowed() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddOutboundAclEntryAllowed() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry outboundEntry = createAclEntry(portRange, "cidrBlock", true, 42, RuleAction.Allow);
@@ -280,7 +278,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryAllCidrAllowed() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddOutboundAclEntryAllCidrAllowed() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry outboundEntry = createAclEntry(portRange, "0.0.0.0/0", true, 42, RuleAction.Allow);
@@ -295,7 +293,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryAllCidrBlocked() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddOutboundAclEntryAllCidrBlocked() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry outboundEntry = createAclEntry(portRange, "0.0.0.0/0", true, 42, RuleAction.Deny);
@@ -310,7 +308,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddOutboundAclEntryNoPortRangeAllowed() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddOutboundAclEntryNoPortRangeAllowed() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry entry = createAclEntry(null, "cidrBlock", true, 42, RuleAction.Allow);
@@ -324,10 +322,8 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		verifyAll();
 	}
 
-	
-	
 	@Test
-	public void shouldAddInboundAclEntryAllowed() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddInboundAclEntryAllowed() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry entry = createAclEntry(portRange, "cidrBlock", false, 42, RuleAction.Allow);
@@ -342,7 +338,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddInboundAclEntryAllowedDefaultRule() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddInboundAclEntryAllowedDefaultRule() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry entry = createAclEntry(portRange, "cidrBlock", false, 32767, RuleAction.Allow);
@@ -357,7 +353,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddInboundAclEntryAllowedSameSinglePort() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddInboundAclEntryAllowedSameSinglePort() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry entry = createAclEntry(new PortRange().withFrom(80).withTo(80), "cidrBlock", false, 42, RuleAction.Allow);
@@ -372,7 +368,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddInboundAclEntryBlocked() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddInboundAclEntryBlocked() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
 		NetworkAclEntry entry = createAclEntry(portRange, "cidrBlock", false, 42, RuleAction.Deny);
@@ -387,7 +383,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 		
 	@Test
-	public void shouldAddSecurityGroup() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddSecurityGroupWithinSubnet() throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 
 		SecurityGroup group = new SecurityGroup().withGroupId("groupId");
@@ -400,7 +396,19 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAssociateSecurityGroupAndInstance() throws CfnAssistException, InvalidApplicationException {
+	public void shouldAddSecurityGroup() throws CfnAssistException {
+
+		SecurityGroup group = new SecurityGroup().withGroupId("groupId").withGroupName("name");
+		
+		securityDiagram.addSecurityGroup("groupId","name [groupId]");
+		
+		replayAll();
+		builder.addSecurityGroup(group);
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAssociateSecurityGroupAndInstance() throws CfnAssistException {
 		SecurityGroup group = new SecurityGroup().withGroupId("groupId");
 		
 		securityDiagram.associate("instanceId", "groupId");
@@ -411,7 +419,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDisplaySecurityGroupDetailsInbound() throws CfnAssistException {
+	public void shouldDisplaySecurityGroupDetailsInboundWithSubnet() throws CfnAssistException {
 		IpPermission perms = new IpPermission().withFromPort(80);
 
 		SubnetDiagramBuilder subnetDiaBuilder = setupSubnetDiagramBuidler();
@@ -423,7 +431,21 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDisplaySecurityGroupDetailsOutbound() throws CfnAssistException {
+	public void shouldDisplaySecurityGroupDetailsInbound() throws CfnAssistException {
+		SecurityGroup group = TestSubnetDiagramBuilder.setupSecurityGroup();
+		IpPermission ipPerms = TestSubnetDiagramBuilder.setupIpPerms();
+		group.withIpPermissions(ipPerms);
+		
+		securityDiagram.addPortRange("groupId_tcp_80-100_in", "80-100");
+		securityDiagram.connectWithLabel("groupId_tcp_80-100_in", "groupId", "(ipRanges)\n[tcp]");
+		
+		replayAll();
+		builder.addSecGroupInboundPerms("groupId", ipPerms);
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldDisplaySecurityGroupDetailsOutboundWithSubnet() throws CfnAssistException {
 		IpPermission perms = new IpPermission().withFromPort(80);
 
 		SubnetDiagramBuilder subnetDiaBuilder = setupSubnetDiagramBuidler();
@@ -435,13 +457,28 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddRDSSecurityGroupDetails() {	
-		fail("todo");
+	public void shouldDisplaySecurityGroupDetailsOutbound() throws CfnAssistException {
+		SecurityGroup group = TestSubnetDiagramBuilder.setupSecurityGroup();
+		IpPermission ipPerms = TestSubnetDiagramBuilder.setupIpPerms();
+		group.withIpPermissionsEgress(ipPerms);
+		
+		securityDiagram.addPortRange("groupId_tcp_80-100_out", "80-100");
+		securityDiagram.connectWithLabel("groupId", "groupId_tcp_80-100_out", "(ipRanges)\n[tcp]");
+		
+		replayAll();
+		builder.addSecGroupOutboundPerms("groupId", ipPerms);
+		verifyAll();
 	}
 	
 	@Test
-	public void shouldAddELBSecurityGroupDetails() {	
-		fail("todo");
+	public void shouldSecGroup() throws CfnAssistException {
+		SecurityGroup secGroup = new SecurityGroup().withGroupId("groupId").withGroupName("groupName");
+		
+		securityDiagram.addSecurityGroup("groupId", "groupName [groupId]");
+		
+		replayAll();
+		builder.addSecurityGroup(secGroup);
+		verifyAll();
 	}
 
 	private NetworkAclEntry createAclEntry(PortRange thePortRange, String cidrBlock, Boolean outbound, Integer ruleNumber, 

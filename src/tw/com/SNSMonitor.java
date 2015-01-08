@@ -24,7 +24,7 @@ import tw.com.repository.CheckStackExists;
 
 public class SNSMonitor extends StackMonitor  {
 	private static final Logger logger = LoggerFactory.getLogger(SNSMonitor.class);
-	private static final int LIMIT = 50;
+	private static final int LIMIT = 50; // total delay = LIMIT * SNSEventSource.QUEUE_READ_TIMEOUT_SECS
 	private static final String STACK_RESOURCE_TYPE = "AWS::CloudFormation::Stack";
 	
 	private List<String> deleteAborts = Arrays.asList(DELETE_ABORTS);
@@ -86,6 +86,7 @@ public class SNSMonitor extends StackMonitor  {
 				logger.info("No messages received within timeout, increment try counter");
 				retryCount++;
 			} else {
+				retryCount = 0; // reset retries
 				processNotificationsWithPendingDeletions(pending, notifications, setsDeltaIndex);
 				notifications.clear();	
 			}	
@@ -129,6 +130,7 @@ public class SNSMonitor extends StackMonitor  {
 				logger.info("No notifications received within timeout, increment try counter");
 				retryCount++;
 			} else {
+				retryCount = 0;
 				String status = processNotification(stackId, requiredStatus, aborts,notifications);	
 				if (!status.isEmpty()) {
 					return status;

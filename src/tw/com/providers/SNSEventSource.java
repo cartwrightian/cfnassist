@@ -127,7 +127,7 @@ public class SNSEventSource implements NotificationProvider {
 
 		List<Message> messages = result.getMessages();
 		logger.info(String.format("Received %s messages", messages.size()));
-;
+
 		for(Message msg : messages) {
 			logger.debug(msg.toString());
 			JsonNode messageNode;

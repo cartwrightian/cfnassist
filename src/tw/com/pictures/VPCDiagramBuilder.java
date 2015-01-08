@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.management.InvalidApplicationException;
-
 import tw.com.AwsFacade;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
@@ -27,7 +25,7 @@ import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 
-public class VPCDiagramBuilder {
+public class VPCDiagramBuilder extends CommonBuilder {
 
 	private static final String CIDR_ANY = "any";
 	private Diagram networkDiagram;
@@ -103,7 +101,7 @@ public class VPCDiagramBuilder {
 		}
 	}
 
-	public void addEIP(Address eip) throws CfnAssistException, InvalidApplicationException {
+	public void addEIP(Address eip) throws CfnAssistException {
 		String label = AmazonVPCFacade.createLabelFromNameAndID(eip.getAllocationId() ,eip.getPublicIp());
 		networkDiagram.addPublicIPAddress(eip.getPublicIp(), label);	
 	}
@@ -112,7 +110,7 @@ public class VPCDiagramBuilder {
 		networkDiagram.addConnectionBetween(publicIp, instanceId);			
 	}
 
-	public void addELB(LoadBalancerDescription elb) throws CfnAssistException, InvalidApplicationException {
+	public void addELB(LoadBalancerDescription elb) throws CfnAssistException {
 		String label = elb.getLoadBalancerName();
 		String id = elb.getDNSName();
 		networkDiagram.addLoadBalancer(id, label);
@@ -130,14 +128,14 @@ public class VPCDiagramBuilder {
 		securityDiagram.associateWithSubDiagram(elb.getDNSName(), subnetId, subnetDiagramBuilders.get(subnetId));
 	}
 
-	public void addDBInstance(DBInstance rds) throws CfnAssistException, InvalidApplicationException {
+	public void addDBInstance(DBInstance rds) throws CfnAssistException {
 		String rdsId = rds.getDBInstanceIdentifier();
 		String label = AmazonVPCFacade.createLabelFromNameAndID(rdsId, rds.getDBName());
 		networkDiagram.addDBInstance(rdsId, label);
 		securityDiagram.addDBInstance(rdsId, label);
 	}
 	
-	public void addAcl(NetworkAcl acl) throws CfnAssistException, InvalidApplicationException {
+	public void addAcl(NetworkAcl acl) throws CfnAssistException {
 		String aclId = acl.getNetworkAclId();
 		String name = AmazonVPCFacade.getNameFromTags(acl.getTags());
 		String label = AmazonVPCFacade.createLabelFromNameAndID(aclId,name);
@@ -150,18 +148,30 @@ public class VPCDiagramBuilder {
 		securityDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 	
-	public void addSecurityGroup(SecurityGroup group, String subnetId) throws CfnAssistException, InvalidApplicationException {
+	public void addSecurityGroup(SecurityGroup group, String subnetId) throws CfnAssistException {
 		subnetDiagramBuilders.get(subnetId).addSecurityGroup(group);
 	}
 	
-
 	public void addSecGroupInboundPerms(String groupId, IpPermission ipPermsInbound, String subnetId) throws CfnAssistException {
 		subnetDiagramBuilders.get(subnetId).addSecGroupInboundPerms(groupId, ipPermsInbound);		
 	}
 	
-
 	public void addSecGroupOutboundPerms(String groupId ,IpPermission ipPermsOutbound, String subnetId) throws CfnAssistException {
 		subnetDiagramBuilders.get(subnetId).addSecGroupOutboundPerms(groupId, ipPermsOutbound);		
+	}
+	
+	public void addSecurityGroup(SecurityGroup dbSecurityGroup) throws CfnAssistException {
+		String groupId = dbSecurityGroup.getGroupId();
+		String label = AmazonVPCFacade.labelForSecGroup(dbSecurityGroup);
+		securityDiagram.addSecurityGroup(groupId, label);	
+	}
+	
+	public void addSecGroupInboundPerms(String groupId, IpPermission dbIpPermsInbound) throws CfnAssistException {
+		addSecGroupInboundPerms(securityDiagram, groupId, dbIpPermsInbound);
+	}
+
+	public void addSecGroupOutboundPerms(String groupId, IpPermission dbIpPermsOutbound) throws CfnAssistException {
+		addSecGroupOutboundPerms(securityDiagram, groupId, dbIpPermsOutbound);
 	}
 	
 	public void associateInstanceWithSecGroup(String instanceId, SecurityGroup securityGroup) {
@@ -169,7 +179,7 @@ public class VPCDiagramBuilder {
 	}
 
 	// this is relying on the ID being the same on both diagrams (network & security)
-	public void addRoute(String subnetId, Route route) throws InvalidApplicationException {
+	public void addRoute(String subnetId, Route route) throws CfnAssistException {
 		String destination = getDestination(route);
 		String cidr = route.getDestinationCidrBlock();
 		if (cidr==null) {
@@ -195,7 +205,7 @@ public class VPCDiagramBuilder {
 		securityDiagram.associateWithSubDiagram(acl.getNetworkAclId(), subnetId, subnetDiagramBuilders.get(subnetId));	
 	}
 
-	public void addACLOutbound(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
+	public void addACLOutbound(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException {
 		String cidrUniqueId = createCidrUniqueId("out", aclId, entry);
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
@@ -206,7 +216,7 @@ public class VPCDiagramBuilder {
 		}
 	}
 	
-	public void addACLInbound(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException, InvalidApplicationException {
+	public void addACLInbound(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException {
 		String cidrUniqueId = createCidrUniqueId("in", aclId, entry);
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));

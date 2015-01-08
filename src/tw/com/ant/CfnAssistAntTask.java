@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.management.InvalidApplicationException;
-
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
 import com.amazonaws.regions.Region;
@@ -125,8 +123,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 				InvalidParameterException | 
 				InterruptedException | 
 				CfnAssistException | 
-				CommandLineException |
-				InvalidApplicationException innerException) {
+				CommandLineException innerException) {
 			throw new BuildException(innerException);
 		}
 	}

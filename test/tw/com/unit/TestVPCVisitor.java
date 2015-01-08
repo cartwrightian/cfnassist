@@ -1,7 +1,5 @@
 package tw.com.unit;
 
-import javax.management.InvalidApplicationException;
-
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -13,11 +11,8 @@ import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.NetworkAclAssociation;
 import com.amazonaws.services.ec2.model.NetworkAclEntry;
-import com.amazonaws.services.ec2.model.PortRange;
 import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.RouteTableAssociation;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -43,24 +38,6 @@ public class TestVPCVisitor extends EasyMockSupport {
 	private VpcTestBuilder vpcBuilder;
 	private VPCDiagramBuilder vpcDiagramBuilder;
 	private SubnetDiagramBuilder subnetDiagramBuilder;
-	
-	private Subnet subnet;
-	private Instance instance;
-	private RouteTable routeTable;
-	private RouteTableAssociation association;
-	private Address eip;
-	private LoadBalancerDescription elb;
-	private DBInstance dbInstance;
-	private NetworkAclAssociation aclAssoc;
-	private PortRange portRange;
-	private NetworkAclEntry outboundEntry;
-	private NetworkAclEntry inboundEntry;
-	private NetworkAcl acl;
-	private SecurityGroup securityGroup;
-	private String subnetId;
-	private String instanceId;
-	private IpPermission ipPermsInbound;
-	private IpPermission ipPermsOutbound;
 
 	@Before
 	public void beforeEveryTestRuns() {
@@ -75,41 +52,59 @@ public class TestVPCVisitor extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldWalkVPCAndAddItemsForDiagram() throws CfnAssistException, InvalidApplicationException {
-		
-		createVPC();
-		
-		vpcBuilder.add(subnet);
-		vpcBuilder.add(instance);	
-		vpcBuilder.add(routeTable);
-		vpcBuilder.add(eip);
-		vpcBuilder.addAndAssociate(elb);
-		vpcBuilder.addAndAssociate(dbInstance);
-		vpcBuilder.add(acl);
-		vpcBuilder.addAndAssociate(securityGroup);
+	public void shouldWalkVPCAndAddItemsForDiagram() throws CfnAssistException {	
 
-		Vpc vpc = vpcBuilder.setFacadeExpectations(awsFacade, subnetId);
+		Vpc vpc = vpcBuilder.setFacadeExpectations(awsFacade);
+		
+		String instanceSubnetId = vpcBuilder.getSubnetId();
+		Subnet instanceSubnet = vpcBuilder.getSubnet();
+		String dbSubnetId = vpcBuilder.getDbSubnetId();
+
+		Address eip = vpcBuilder.getEip();
+		LoadBalancerDescription elb = vpcBuilder.getElb();
+		DBInstance dbInstance = vpcBuilder.getDbInstance();
+		Instance instance = vpcBuilder.getInstance();
+		String instanceId = instance.getInstanceId();
+		RouteTable routeTable = vpcBuilder.getRouteTable();
+		NetworkAcl acl = vpcBuilder.getAcl();
+		NetworkAclEntry outboundEntry = vpcBuilder.getOutboundEntry();
+		NetworkAclEntry inboundEntry = vpcBuilder.getInboundEntry();
+		SecurityGroup instanceSecurityGroup = vpcBuilder.getInstanceSecurityGroup();
+		IpPermission instanceIpPermsInbound = vpcBuilder.getInstanceIpPermsInbound();
+		IpPermission instanceIpPermsOutbound = vpcBuilder.getInstanceIpPermsOutbound();
+		SecurityGroup dbSecurityGroup = vpcBuilder.getDBSecurityGroup();
+		IpPermission dbIpPermsInbound = vpcBuilder.getDbIpPermsInbound();
+		IpPermission dbIpPermsOutbound = vpcBuilder.getDbIpPermsOutbound();
 		
 		EasyMock.expect(diagramFactory.createVPCDiagramBuilder(vpc)).andReturn(vpcDiagramBuilder);
-		EasyMock.expect(diagramFactory.createSubnetDiagramBuilder(vpcDiagramBuilder, subnet)).andReturn(subnetDiagramBuilder);
+		EasyMock.expect(diagramFactory.createSubnetDiagramBuilder(vpcDiagramBuilder, instanceSubnet)).andReturn(subnetDiagramBuilder);
 		subnetDiagramBuilder.add(instance);
-		vpcDiagramBuilder.add(subnetId, subnetDiagramBuilder);
-		vpcDiagramBuilder.addRouteTable(routeTable, subnetId);
+		vpcDiagramBuilder.add(instanceSubnetId, subnetDiagramBuilder);
+		vpcDiagramBuilder.addRouteTable(routeTable, instanceSubnetId);
+		// eip
 		vpcDiagramBuilder.addEIP(eip);
 		vpcDiagramBuilder.linkEIPToInstance(eip.getPublicIp(), instanceId);
+		// elb
 		vpcDiagramBuilder.addELB(elb);
 		vpcDiagramBuilder.associateELBToInstance(elb, instanceId);
-		vpcDiagramBuilder.associateELBToSubnet(elb, subnetId);
+		vpcDiagramBuilder.associateELBToSubnet(elb, instanceSubnetId);
+		// db
 		vpcDiagramBuilder.addDBInstance(dbInstance);
-		vpcDiagramBuilder.associateDBWithSubnet(dbInstance, subnetId);
+		vpcDiagramBuilder.associateDBWithSubnet(dbInstance, dbSubnetId);
+		vpcDiagramBuilder.addSecurityGroup(dbSecurityGroup);
+		vpcDiagramBuilder.associateInstanceWithSecGroup(dbInstance.getDBInstanceIdentifier(), dbSecurityGroup);
+		vpcDiagramBuilder.addSecGroupInboundPerms("secDbGroupId",dbIpPermsInbound);
+		vpcDiagramBuilder.addSecGroupOutboundPerms("secDbGroupId",dbIpPermsOutbound);
+		// acl
 		vpcDiagramBuilder.addAcl(acl);
-		vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
-		vpcDiagramBuilder.addACLOutbound("aclId",outboundEntry, subnetId);
-		vpcDiagramBuilder.addACLInbound("aclId", inboundEntry, subnetId);
-		vpcDiagramBuilder.addSecurityGroup(securityGroup, subnetId);
-		vpcDiagramBuilder.associateInstanceWithSecGroup(instanceId, securityGroup);
-		vpcDiagramBuilder.addSecGroupInboundPerms("secGroupId",ipPermsInbound, subnetId);
-		vpcDiagramBuilder.addSecGroupOutboundPerms("secGroupId",ipPermsOutbound, subnetId);
+		vpcDiagramBuilder.associateAclWithSubnet(acl, instanceSubnetId);
+		vpcDiagramBuilder.addACLOutbound("aclId",outboundEntry, instanceSubnetId);
+		vpcDiagramBuilder.addACLInbound("aclId", inboundEntry, instanceSubnetId);
+		// sec group
+		vpcDiagramBuilder.addSecurityGroup(instanceSecurityGroup, instanceSubnetId);
+		vpcDiagramBuilder.associateInstanceWithSecGroup(instanceId, instanceSecurityGroup);
+		vpcDiagramBuilder.addSecGroupInboundPerms("secGroupId",instanceIpPermsInbound, instanceSubnetId);
+		vpcDiagramBuilder.addSecGroupOutboundPerms("secGroupId",instanceIpPermsOutbound, instanceSubnetId);
 		diagramBuilder.add(vpcDiagramBuilder);
 		
 		replayAll();
@@ -118,53 +113,6 @@ public class TestVPCVisitor extends EasyMockSupport {
 		verifyAll();
 	}
 
-	private void createVPC() {
-		subnet = new Subnet().
-				withSubnetId("subnetIdA").
-				withCidrBlock("cidrBlockA");
-		subnetId = subnet.getSubnetId();
-		instance = new Instance().
-				withInstanceId("instanceId");
-		instanceId = instance.getInstanceId();
-		association = new RouteTableAssociation().
-				withRouteTableAssociationId("assocId").
-				withSubnetId(subnetId);
-		routeTable = new RouteTable().
-				withRouteTableId("routeTableId").
-				withAssociations(association);
-		eip = new Address().
-				withAllocationId("eipAllocId").
-				withInstanceId(instanceId).
-				withPublicIp("publicIP");	
-		elb = new LoadBalancerDescription();
-		dbInstance = new DBInstance();
-		aclAssoc = new NetworkAclAssociation().
-				withSubnetId(subnetId);
-		portRange = new PortRange().
-				withFrom(1024).
-				withTo(2048);
-		outboundEntry = new NetworkAclEntry().
-				withEgress(true).
-				withCidrBlock("cidrBlockOut").
-				withPortRange(portRange).
-				withRuleAction("allow").
-				withProtocol("tcpip");
-		inboundEntry = new NetworkAclEntry().
-				withEgress(false).
-				withCidrBlock("cidrBlockOut").
-				withPortRange(portRange).
-				withRuleAction("allow").
-				withProtocol("tcpip");
-		acl = new NetworkAcl().withAssociations(aclAssoc).
-				withEntries(outboundEntry, inboundEntry).
-				withNetworkAclId("aclId");
-		ipPermsInbound = new IpPermission().withFromPort(80);
-		ipPermsOutbound = new IpPermission().withFromPort(600);
-		securityGroup = new SecurityGroup().
-				withGroupId("secGroupId").
-				withGroupName("secGroupName").
-				withIpPermissions(ipPermsInbound).
-				withIpPermissionsEgress(ipPermsOutbound);
-	}
+	
 	
 }

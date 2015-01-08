@@ -1,7 +1,6 @@
 package tw.com.pictures.dot;
 
-import javax.management.InvalidApplicationException;
-
+import tw.com.exceptions.CfnAssistException;
 
 public class Node extends HasAttributes {
 
@@ -31,7 +30,7 @@ public class Node extends HasAttributes {
 		writer.writeline(";");	
 	}
 
-	public Node withShape(Shape shape) throws InvalidApplicationException {
+	public Node withShape(Shape shape) throws CfnAssistException {
 		addShape(shape);		
 		return this;
 	}

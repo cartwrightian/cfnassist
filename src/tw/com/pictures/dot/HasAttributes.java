@@ -3,7 +3,7 @@ package tw.com.pictures.dot;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.management.InvalidApplicationException;
+import tw.com.exceptions.CfnAssistException;
 
 public class HasAttributes {
 
@@ -45,17 +45,17 @@ public class HasAttributes {
 	}
 	
 
-	protected void withColour(Colour col) throws InvalidApplicationException {
+	protected void withColour(Colour col) throws CfnAssistException {
 		switch(col) {
 		case Red:
 			attributes.add("color=red");
 			break;
 		default:
-			throw new InvalidApplicationException("Unknown colour: " + col.toString());
+			throw new CfnAssistException("Unknown colour: " + col.toString());
 		}
 	}
 	
-	protected void addShape(Shape shape) throws InvalidApplicationException {
+	protected void addShape(Shape shape) throws CfnAssistException {
 		switch (shape) {
 		case Box:
 			attributes.add("shape=box");
@@ -79,7 +79,7 @@ public class HasAttributes {
 			attributes.add("shape=invhouse");
 			break;
 		default:
-			throw new InvalidApplicationException("Unknown shape: " + shape.toString());
+			throw new CfnAssistException("Unknown shape: " + shape.toString());
 		}
 	}
 	
