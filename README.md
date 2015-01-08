@@ -5,12 +5,12 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 
 Current Release
 ---------------
-[Download Currnet Release version 1.0.61](https://cfnassist-release.s3-eu-west-1.amazonaws.com/61/cfnassit-1.0.61.zip)
+[Download Currnet Release version 1.0.80](https://cfnassist-release.s3-eu-west-1.amazonaws.com/80/cfnassit-1.0.80.zip)
 
 Old Releases
 ------------
+[Version 1.0.61](https://cfnassist-release.s3-eu-west-1.amazonaws.com/61/cfnassit-1.0.61.zip)
 [Version 1.0.36](https://cfnassist-release.s3-eu-west-1.amazonaws.com/36/cfnassit-1.0.36.zip)
-[Version 1.0.33](https://cfnassist-release.s3-eu-west-1.amazonaws.com/33/cfnassit-1.0.33.zip)
 
 Build Status
 ------------
@@ -32,7 +32,6 @@ an ELB based on build numbers
 Usage
 -----
 The tool provides a command line interface and ant tasks. Examples of the CLI use below, see `exampleAntTasks.xml` for ant task usage. 
-
 Warning
 -------
 Creating AWS resources can mean you might be liable for charges. Please check the AWS documentation.
@@ -54,7 +53,7 @@ Documentation TODOs
 CLI HowTo
 ---------
 
-The example CLIs below assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set to your project, that `cfn\_assist.sh` 
+The example CLIs below assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set to your project, that `cfn\_assist` 
 is on the PATH and the **EC2\_REGION** environmental variable is set to the appropriate AWS region.
 
 1.Create a VPC and initialise with a Project and Environment
@@ -78,7 +77,7 @@ result:
 
 Now use cfnassit to init the vpc with the tags it uses to id vpc's and track changes.
 
-`cfnassist.sh -env Dev -init vpc-926e8bf7`
+`cfnassist -env Dev -init vpc-926e8bf7`
 
 Replace `vpc-926e8bf7` with the ID of your VPC.
 
@@ -105,7 +104,7 @@ Live instances etc should probably be created during the CI build especially if 
 
 After each script succeeds the VPC **CFN\_ASSIST\_DELTA** tag is updated, this way the tool only tries to create the required stacks for each VPC. The tool will also take care of deleting an existing stack if it is in the rollback complete state.
 
-`cfnassist.sh -env Dev -dir ./infrastructure`
+`cfnassist -env Dev -dir ./infrastructure`
 
 My infrastructure dir looks like this:
 >-rw-r--r--  1 icartwri  staff  1748 13 Jan 15:30 001subnets.json    
@@ -166,7 +165,7 @@ being *recreated*.
 This will rollback all delta's by deleting the stacks for a VPC in the correct order and updating the DELTA tag on the VPC as it goes! 
 You may want to do this while getting things bedded in initially or when you want to check you can fully recreate an environment.
 
-`cfnassist.sh -env Dev -rollback ./infrastructure`
+`cfnassist -env Dev -rollback ./infrastructure`
 
 4.Built-in parameters and Mappings
 ----------------------------------
@@ -208,14 +207,14 @@ but sometimes it is more flexible to create them seperately.
 
 For example RDS instances might be a resource you create but don't want to create/delete on each build.
 
-`cfnassist.sh -env Dev -file ./rdsInstance.json`
+`cfnassist -env Dev -file ./rdsInstance.json`
 
 6.Create instances with build numbers
 -------------------------------------
 
 This is probably the more normal way to create instances, for example if you are using the Phoenix Server pattern.
 
-`cfnassist.sh -env Dev -file ./rdsInstance.json -build 876`
+`cfnassist -env Dev -file ./rdsInstance.json -build 876`
 
 This will create a stack, with the stack and the instances tagged additionally with **CFN_ASSIST_BUILD_NUMBER**, 
 the stack name will also include the build number.
@@ -226,14 +225,14 @@ the stack name will also include the build number.
 
 You can list out the stacks cfnassit is managing for a particular project/env using
 
-`cfnassist.sh -env Dev -ls` 
+`cfnassist -env Dev -ls` 
 
 8.Pass parameters into the cloud formation scripts
 --------------------------------------------------
 
 You can declare the parameters exactly as you would for cloud formation. You can then pass values into them using the `parameters` argument.
 
-`cfnassist.sh -env Dev -file ./rdsInstance.json -build 876 -parameters "testA=123;testB=123"`
+`cfnassist -env Dev -file ./rdsInstance.json -build 876 -parameters "testA=123;testB=123"`
 
 *Note: You'll need to escape the ; character as appropriate for your shell/cli*
 
@@ -251,17 +250,19 @@ You need to set this *type tag* on the instances yourself, for example including
 
 Now you can switch over the ELB using
 
-`cfnassist.sh -env Dev -build 876 -elbUpdate web`
+`cfnassist -env Dev -build 876 -elbUpdate web`
 
 This will find all the instances created in cloud formation stacks for the project/env *and* that have the 
 appropriate **CFN_ASSIST_TYPE** tag. 
-It then finds the ELB for the VPC for the project and environment, addes the instances to the ELB and *removes* any instances not 
-matching the build number.
+
+Next cfnassist finds the ELB for the VPC for the project and environment, addes the instances it found above to the ELB and 
+*removes* any instances not matching the build number from the ELB.
 
 You can 'rollback' the ELB to point at the previous instances by giving their build number, so you may not want to immediately delete 
 previous instances until sure all is ok with the new ones.
 
-*Restriction: The tool currently only supports one ELB per VPC*
+If more than one ELB is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you give above,
+if it is the tool will use that ELB, otherwise an error will be thrown. 
 
 10.Reset the delta tag on a VPC
 ------------------------------
@@ -270,7 +271,7 @@ previous instances until sure all is ok with the new ones.
 
 This will reset the delta index tag on the corresponding VPC back to 0.
 
-`cfnassist.sh -env Dev -reset`
+`cfnassist -env Dev -reset`
 
 *If you have cloud formation stacks associated with the VPC you will not be able to manage them using cfnassit if you do this.*
 
@@ -289,10 +290,8 @@ If you specify `-sns` on the commandline then cfnassit will
 3. Create a policy meaning that SNS can publish the notifications to the queue. (and again, only if requied)
 4. Finally it will subscribe the Queue to the SNS notifications.
 
-If you try to update/delete a stack using the SNS option when the stack was not originally created with the 
-flag set this will fail. 
-As the cloud formation API now allows a stack to have the sns topic updated this restriction should soon be 
-removed.
+If you try to delete a stack using the SNS option when the stack was not originally created with the 
+flag set this will fail, however stack updates will work as expected.
 
 12.Upload files or folders to S3 and inject corresponding URLs into templates
 -----------------------------------------------------------------------------
@@ -301,7 +300,7 @@ automatically. The files will be prefixed with the build number i.e. /BUILDNUMBE
 
 The path to the file will be replaced with the URL, for example
 
-`cfnassist.sh -env Dev -file templateFile.json -artifacts "urlA=dist/release.txt;urlB=dist/deployable.tgz" -bucket bucketName MyBucket -build 1123`
+`cfnassist -env Dev -file templateFile.json -artifacts "urlA=dist/release.txt;urlB=dist/deployable.tgz" -bucket bucketName MyBucket -build 1123`
 
 This will upload the files `release.txt` and `deployable.tgz` to S3 bucket MyBucket and then populate the 
 parameters `urlA` and `urlB` with the corresponding S3 urls and pass these into `templateFile.json`. 
@@ -318,17 +317,17 @@ You can use the environmental variable *CFN_ASSIST_BUCKET* to specify the S3 buc
 ----------------------------------
 Sometimes you want to create or delete things in S3 independently of deploying templates.
 
-`cfnassist.sh -env Dev -s3create -artifacts "xzy=dist/release.txt;abc=dist/deployable.tgz" -bucket bucketName MyBucket -build 1123`
+`cfnassist -env Dev -s3create -artifacts "xzy=dist/release.txt;abc=dist/deployable.tgz" -bucket bucketName MyBucket -build 1123`
 
 Or
 
-`cfnassist.sh -env Dev -s3create -artifacts "folder=dist/subFolder" -bucket bucketName MyBucket -build 1123`
+`cfnassist -env Dev -s3create -artifacts "folder=dist/subFolder" -bucket bucketName MyBucket -build 1123`
 
 The files will be uploaded as per 12 above.
 
 To delete files you need to need to pass in the name of the files themselves.
 
-`cfnassist.sh -env Dev -s3delete -artifacts "mno=release.txt;rst=deployable.tgz -bucket bucketName MyBucket -build 1123`
+`cfnassist -env Dev -s3delete -artifacts "mno=release.txt;rst=deployable.tgz -bucket bucketName MyBucket -build 1123`
 
 **NOTE** 
 The current file path is not used, so the file dist/release.txt will end up in the bucket MyBucket with the key `1123/release.txt`
@@ -337,7 +336,7 @@ The current file path is not used, so the file dist/release.txt will end up in t
 -----------------
 You can delete a stack created with cfnassit using the following command:
 
-`cfnassist.sh -env Dev -build 1223 -delete ./templateFile.json`
+`cfnassist -env Dev -build 1223 -delete ./templateFile.json`
 
 This will delete the stack that was created from the templateFile.json file with the build number 1223.
 
@@ -371,3 +370,28 @@ You can pick up a input parameter value from an environmental variable using the
 This example will try and find a environmental variable called 'nameOfEnvVar' and inject it's value into the template using a 
 parameter of the same name i.e. 'nameOfEnvVar'
 
+17.Tidy up old stacks
+---------------------
+**USE WITH CARE - This deletes instances**
+
+You can automatically delete stacks created from the same template (i.e. created with different build numbers) if those stacks
+are no longer associated with an ELB.
+
+`cfnassist -env Dev -tidyOldStacks ./templateFile.json typeTag`
+
+Ihis will locate the ELB for the project/env using the tag **CFN_ASSIST_TYPE** to choose one if multiple are present, in this case
+the tage would need to be set to `typeTag`.
+Next all stacks created from the template `templateFile.json` are located and their instances scanned. 
+If the stack has no instances associated with the ELB then it will be deleted.
+
+18.Generate VPC diagrams
+
+This will attempt to generate diagrams for your vpc, they are in the [GraphViz](http://www.graphviz.org/) format. 
+Two diagrams will be generated for each VPC, one for the network configuration and one for the security.
+
+**Work in progess - please give feedback via github issues**
+
+`cfnassist -diagram targetFolder`
+
+> targetFolder/network_diagramvpc-56698c33.dot
+> targetFolder/security_diagramvpc-56698c33.dot
