@@ -16,6 +16,7 @@ import com.amazonaws.services.rds.AmazonRDSClient;
 
 import tw.com.EnvironmentSetupForTests;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.pictures.AmazonVPCFacade;
 import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
@@ -59,7 +60,9 @@ public class TestPictureGeneration {
 	public void shouldGenerateDiagram() throws IOException, CfnAssistException {
 		Path folder = Paths.get(".").toAbsolutePath();
 		Recorder recorder = new FileRecorder(folder);
-		DiagramCreator createsDiagrams = new DiagramCreator(rdsClient, cloudRepository, elbRepository);
+		
+		AmazonVPCFacade awsFacade = new AmazonVPCFacade(cloudRepository, elbRepository, rdsClient);
+		DiagramCreator createsDiagrams = new DiagramCreator(awsFacade);
 		createsDiagrams.createDiagrams(recorder);
 	}
 	

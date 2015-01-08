@@ -28,7 +28,6 @@ import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
 
 public class VpcTestBuilder {
-	private Vpc vpc;
 	private List<Subnet> subnets;
 	private List<RouteTable> routeTables;
 	private List<Address> eips;
@@ -39,6 +38,7 @@ public class VpcTestBuilder {
 	private List<NetworkAcl> acls;
 	private List<SecurityGroup> securityGroups;
 	//
+	private Vpc vpc;
 	private Subnet insSubnet;
 	private String subnetId;
 	private Subnet dbSubnet;
@@ -60,7 +60,22 @@ public class VpcTestBuilder {
 	private IpPermission ipDbPermsInbound;
 	private IpPermission ipDbPermsOutbound;
 	
+	public VpcTestBuilder(String vpcId) {
+		this.vpcId = vpcId;
+		subnets = new LinkedList<Subnet>();
+		instances = new LinkedList<Instance>();
+		routeTables = new LinkedList<RouteTable>();
+		eips = new LinkedList<Address>();
+		loadBalancers = new LinkedList<LoadBalancerDescription>();
+		databases = new LinkedList<DBInstance>();
+		acls = new LinkedList<>();
+		securityGroups = new LinkedList<>();
+		//
+		createVPC();
+	}
+	
 	private void createVPC() {
+		vpc = new Vpc().withVpcId(vpcId);
 		insSubnet = new Subnet().
 				withSubnetId("subnetIdA").
 				withCidrBlock("cidrBlockA");
@@ -81,7 +96,9 @@ public class VpcTestBuilder {
 				withAllocationId("eipAllocId").
 				withInstanceId(instanceId).
 				withPublicIp("publicIP");	
-		elb = new LoadBalancerDescription();
+		elb = new LoadBalancerDescription().
+				withLoadBalancerName("loadBalancerName").
+				withDNSName("lbDNSName");
 		dbInstance = new DBInstance().
 				withDBInstanceIdentifier("dbInstanceId");
 		aclAssoc = new NetworkAclAssociation().
@@ -94,26 +111,28 @@ public class VpcTestBuilder {
 				withCidrBlock("cidrBlockOut").
 				withPortRange(portRange).
 				withRuleAction("allow").
-				withProtocol("tcpip");
+				withProtocol("6").
+				withRuleNumber(42);
 		inboundEntry = new NetworkAclEntry().
 				withEgress(false).
 				withCidrBlock("cidrBlockOut").
 				withPortRange(portRange).
 				withRuleAction("allow").
-				withProtocol("tcpip");
+				withProtocol("6").
+				withRuleNumber(43);
 		acl = new NetworkAcl().withAssociations(aclAssoc).
 				withEntries(outboundEntry, inboundEntry).
 				withNetworkAclId("aclId");
-		ipPermsInbound = new IpPermission().withFromPort(80);
-		ipPermsOutbound = new IpPermission().withFromPort(600);
+		ipPermsInbound = new IpPermission().withFromPort(80).withToPort(89);
+		ipPermsOutbound = new IpPermission().withFromPort(600).withToPort(700);
 		instSecurityGroup = new SecurityGroup().
 				withGroupId("secGroupId").
 				withGroupName("secGroupName").
 				withIpPermissions(ipPermsInbound).
 				withIpPermissionsEgress(ipPermsOutbound);
 		
-		ipDbPermsInbound = new IpPermission().withFromPort(90);
-		ipDbPermsOutbound = new IpPermission().withFromPort(700);
+		ipDbPermsInbound = new IpPermission().withFromPort(90).withToPort(99);
+		ipDbPermsOutbound = new IpPermission().withFromPort(700).withToPort(800);
 		dbSecurityGroup = new SecurityGroup().
 				withGroupId("secDbGroupId").
 				withGroupName("secDbGroupName").
@@ -124,6 +143,7 @@ public class VpcTestBuilder {
 	
 	private void AddItemsToVpc() {
 		add(insSubnet);
+		add(dbSubnet);
 		add(instance);	
 		add(routeTable);
 		add(eip);
@@ -133,20 +153,9 @@ public class VpcTestBuilder {
 		addAndAssociateWithInstances(instSecurityGroup);
 		addAndAssociateWithDBs(dbSecurityGroup);	
 	}
-
-	public VpcTestBuilder(String vpcId) {
-		this.vpcId = vpcId;
-		this.vpc = new Vpc().withVpcId(vpcId);
-		subnets = new LinkedList<Subnet>();
-		instances = new LinkedList<Instance>();
-		routeTables = new LinkedList<RouteTable>();
-		eips = new LinkedList<Address>();
-		loadBalancers = new LinkedList<LoadBalancerDescription>();
-		databases = new LinkedList<DBInstance>();
-		acls = new LinkedList<>();
-		securityGroups = new LinkedList<>();
-		//
-		createVPC();
+	
+	public Vpc getVpc() {
+		return vpc;
 	}
 
 	private void addAndAssociateWithDBs(SecurityGroup securityGroup) {
@@ -210,9 +219,11 @@ public class VpcTestBuilder {
 		}
 	}
 
-	public Vpc setFacadeExpectations(AmazonVPCFacade awsFacade) throws CfnAssistException {
+	public Vpc setFacadeVisitExpections(AmazonVPCFacade awsFacade) throws CfnAssistException {
 		EasyMock.expect(awsFacade.getSubnetFors(vpcId)).andStubReturn(subnets);
 		EasyMock.expect(awsFacade.getInstancesFor(subnetId)).andStubReturn(instances);
+		EasyMock.expect(awsFacade.getInstancesFor(dbSubnet.getSubnetId())).andStubReturn(new LinkedList<Instance>());
+
 		EasyMock.expect(awsFacade.getRouteTablesFor(vpcId)).andReturn(routeTables);
 		EasyMock.expect(awsFacade.getEIPFor(vpcId)).andReturn(eips);
 		EasyMock.expect(awsFacade.getLBsFor(vpcId)).andReturn(loadBalancers);
@@ -223,6 +234,12 @@ public class VpcTestBuilder {
 		SecurityGroup instanceSecurityGroup = securityGroups.get(0); // TODO more than one
 		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(instanceSecurityGroup.getGroupId())).andReturn(instanceSecurityGroup);
 		return vpc;	
+	}
+	
+	public void setGetVpcsExpectations(AmazonVPCFacade awsFacade) {
+		List<Vpc> vpcs = new LinkedList<>();
+		vpcs.add(vpc);
+		EasyMock.expect(awsFacade.getVpcs()).andReturn(vpcs);	
 	}
 	
 	public static Tag CreateNameTag(String routeTableName) {
@@ -295,6 +312,10 @@ public class VpcTestBuilder {
 
 	public IpPermission getDbIpPermsOutbound() {
 		return ipDbPermsOutbound;
+	}
+
+	public Subnet getDbSubnet() {
+		return dbSubnet;
 	}
 
 }

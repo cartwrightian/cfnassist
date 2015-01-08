@@ -4,6 +4,7 @@ import org.apache.commons.cli.MissingArgumentException;
 
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.pictures.AmazonVPCFacade;
 import tw.com.pictures.DiagramCreator;
 import tw.com.providers.ArtifactUploader;
 import tw.com.providers.CloudClient;
@@ -159,7 +160,8 @@ public class FacadeFactory {
 	public DiagramCreator createDiagramCreator() {
 		init();
 		if (diagramCreator==null) {
-			diagramCreator = new DiagramCreator(datastoreClient, cloudRepository, elbRepository);
+			AmazonVPCFacade amazonVpcFacade = new AmazonVPCFacade(cloudRepository, elbRepository, datastoreClient);
+			diagramCreator = new DiagramCreator(amazonVpcFacade);
 		}
 		return diagramCreator;
 	}

@@ -38,6 +38,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 	private VpcTestBuilder vpcBuilder;
 	private VPCDiagramBuilder vpcDiagramBuilder;
 	private SubnetDiagramBuilder subnetDiagramBuilder;
+	private SubnetDiagramBuilder dbSubnetDiagramBuilder;
 
 	@Before
 	public void beforeEveryTestRuns() {
@@ -47,6 +48,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		diagramBuilder = createStrictMock(DiagramBuilder.class);
 		vpcDiagramBuilder = createStrictMock(VPCDiagramBuilder.class);
 		subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
+		dbSubnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 
 		vpcBuilder = new VpcTestBuilder(vpcId);	
 	}
@@ -54,11 +56,12 @@ public class TestVPCVisitor extends EasyMockSupport {
 	@Test
 	public void shouldWalkVPCAndAddItemsForDiagram() throws CfnAssistException {	
 
-		Vpc vpc = vpcBuilder.setFacadeExpectations(awsFacade);
+		Vpc vpc = vpcBuilder.setFacadeVisitExpections(awsFacade);
 		
 		String instanceSubnetId = vpcBuilder.getSubnetId();
 		Subnet instanceSubnet = vpcBuilder.getSubnet();
 		String dbSubnetId = vpcBuilder.getDbSubnetId();
+		Subnet dbSubnet = vpcBuilder.getDbSubnet();
 
 		Address eip = vpcBuilder.getEip();
 		LoadBalancerDescription elb = vpcBuilder.getElb();
@@ -78,8 +81,11 @@ public class TestVPCVisitor extends EasyMockSupport {
 		
 		EasyMock.expect(diagramFactory.createVPCDiagramBuilder(vpc)).andReturn(vpcDiagramBuilder);
 		EasyMock.expect(diagramFactory.createSubnetDiagramBuilder(vpcDiagramBuilder, instanceSubnet)).andReturn(subnetDiagramBuilder);
+		EasyMock.expect(diagramFactory.createSubnetDiagramBuilder(vpcDiagramBuilder, dbSubnet)).andReturn(dbSubnetDiagramBuilder);
+
 		subnetDiagramBuilder.add(instance);
 		vpcDiagramBuilder.add(instanceSubnetId, subnetDiagramBuilder);
+		vpcDiagramBuilder.add(dbSubnetId, dbSubnetDiagramBuilder);
 		vpcDiagramBuilder.addRouteTable(routeTable, instanceSubnetId);
 		// eip
 		vpcDiagramBuilder.addEIP(eip);
@@ -88,6 +94,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagramBuilder.addELB(elb);
 		vpcDiagramBuilder.associateELBToInstance(elb, instanceId);
 		vpcDiagramBuilder.associateELBToSubnet(elb, instanceSubnetId);
+		vpcDiagramBuilder.associateELBToSubnet(elb, dbSubnetId);
 		// db
 		vpcDiagramBuilder.addDBInstance(dbInstance);
 		vpcDiagramBuilder.associateDBWithSubnet(dbInstance, dbSubnetId);

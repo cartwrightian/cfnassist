@@ -143,9 +143,13 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	// this is relying on the ID being the same on both diagrams (network & security)
-	public void associateDBWithSubnet(DBInstance rds, String subnetId) {
-		networkDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
-		securityDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, subnetDiagramBuilders.get(subnetId));	
+	public void associateDBWithSubnet(DBInstance rds, String subnetId) throws CfnAssistException {
+		SubnetDiagramBuilder childDiagramBuilder = subnetDiagramBuilders.get(subnetId);
+		if (childDiagramBuilder==null) {
+			throw new CfnAssistException("Unable to find child diagram for subnet Id:" + subnetId);
+		}
+		networkDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, childDiagramBuilder);	
+		securityDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, childDiagramBuilder);	
 	}
 	
 	public void addSecurityGroup(SecurityGroup group, String subnetId) throws CfnAssistException {
