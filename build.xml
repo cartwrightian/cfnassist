@@ -12,7 +12,7 @@
         <isset property="env.SNAP_PIPELINE_COUNTER"/>
     </condition>
 	<property name="version" value="1.0" />
-	<property name="release" value="cfnassit-${version}.${buildNum}" />
+	<property name="release" value="cfnassist-${version}.${buildNum}" />
     <path id="testing_libs">   	
         <pathelement location="lib/junit4.11/junit-4.11.jar"/>
         <pathelement location="lib/junit4.11/hamcrest-core-1.3.jar"/>
@@ -129,20 +129,20 @@
 	<target name="dist">
 	        <mkdir dir="dist"/>
 	        <mkdir dir="dist/bin"/>
-	        <mkdir dir="dist/bin/lib"/>
-	    	<mkdir dir="dist/bin/conf"/>
+	        <mkdir dir="dist/lib"/>
+	    	<mkdir dir="dist/conf"/>
 	        <copy file="src/cfnassist.sh" todir="dist/bin"/>
   			<symlink link="dist/bin/cfnassist" resource="./cfnassist.sh"/>
 			<chmod file="dist/bin/cfnassist.sh" perm="700"/>
 			<chmod file="dist/bin/cfnassist" perm="700"/>
 			<!-- TODO single jar file with all libs -->
-			<jar destfile="dist/bin/cfnassist.jar">
+			<jar destfile="dist/lib/cfnassist.jar">
 			    <fileset dir="${output}"/>
 			    <manifest>
 			      <attribute name="Main-Class" value="tw.com.Main"/>
 			    </manifest>
 			</jar>
-	        <copy flatten="true" todir="dist/bin/lib">
+	        <copy flatten="true" todir="dist/lib">
 	            <path>
 					<path refid="aws_sdk_lib"/>
 		        	<path refid="logging_libs"/>
@@ -154,7 +154,7 @@
 				  <include name="**/*LICENSE.txt"/>
 				</fileset>
 			</copy>
-	    	<copy file="conf/logback.xml" todir="dist/bin/conf"/>
+	    	<copy file="conf/logback.xml" todir="dist/conf"/>
 	    	<copy file="testAntTasks.xml" tofile="dist/exampleAntTasks.xml"/>
 	    	<copy file="README.md" todir="dist"/>
 	</target>
@@ -162,7 +162,7 @@
 	<target name="cfnTask" >
 		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
 			<classpath>
-				<pathelement location="dist/bin/cfnassist.jar"/>
+				<pathelement location="dist/lib/cfnassist.jar"/>
 						<path refid="aws_sdk_lib"/>
 				    	<path refid="logging_libs"/>
 				    	<path refid="apacheCommons"/>
@@ -182,13 +182,16 @@
 	        </exec>
 	    </sequential>
 	</macrodef>
+
+	<target name="createZip">
+		<zip destfile="${release}.zip">
+			<zipfileset dir="dist/licenses" prefix="${release}/licenses" />
+			<zipfileset dir="dist/lib" prefix="${release}/lib" />
+			<zipfileset dir="dist/bin" prefix="${release}/bin" filemode="755" />
+		</zip>
+	</target>
 	
-	<target name="release" depends="dist,cfnTask">
-		<copy todir="${release}">
-			<fileset dir="dist"/>
-	    </copy>
-		<zip destfile="${release}.zip" basedir="${release}"/>
-		<delete dir="${release}"/>
+	<target name="release" depends="dist,cfnTask,createZip">
 		<git command="tag">
 			<args>
 	            <arg value = "${release}" />
