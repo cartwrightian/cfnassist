@@ -50,7 +50,7 @@ public class TestCommandLineStackOperations {
 	String testName = "";
 	
 	@Rule
-    public Timeout globalTimeout = new Timeout(180*1000);
+    public Timeout globalTimeout = new Timeout(5*60*1000);
 	
 	@Before
 	public void beforeEveryTestRun() {
