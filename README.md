@@ -5,7 +5,7 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 
 Current Release
 ---------------
-[Download Currnet Release version 1.0.80](https://cfnassist-release.s3-eu-west-1.amazonaws.com/80/cfnassit-1.0.80.zip)
+[Download Currnet Release version 1.0.82](https://cfnassist-release.s3-eu-west-1.amazonaws.com/82/cfnassist-1.0.82.zip)
 
 Old Releases
 ------------
@@ -55,6 +55,8 @@ CLI HowTo
 
 The example CLIs below assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set to your project, that `cfn\_assist` 
 is on the PATH and the **EC2\_REGION** environmental variable is set to the appropriate AWS region.
+
+>export PATH=${PATH}:somepath/cfnassit-1.0.82/bin
 
 1.Create a VPC and initialise with a Project and Environment
 -------------------------------------------------------------
@@ -385,6 +387,7 @@ Next all stacks created from the template `templateFile.json` are located and th
 If the stack has no instances associated with the ELB then it will be deleted.
 
 18.Generate VPC diagrams
+------------------------
 
 This will attempt to generate diagrams for your vpc, they are in the [GraphViz](http://www.graphviz.org/) format. 
 Two diagrams will be generated for each VPC, one for the network configuration and one for the security.
