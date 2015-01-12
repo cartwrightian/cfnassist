@@ -45,7 +45,8 @@ public class DeleteAction extends SharedAction {
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
 			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
-		guardForNoArtifacts(artifacts);
+		// caused nested deleted in ant task to fail, passing artifacts causes no harm/action so comment out for now
+		//guardForNoArtifacts(artifacts);
 	}
 
 	@Override

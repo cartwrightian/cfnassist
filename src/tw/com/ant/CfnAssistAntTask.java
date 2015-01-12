@@ -24,6 +24,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private String cfnEnv;
 	private String bucketName;
 	private boolean snsMonitoring;
+	private boolean capabilityIAM;
 	private Collection<Param> params;
 	private Collection<Param> artifactParams;
 	
@@ -58,6 +59,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	
 	public void setSns(boolean useSnsMonitoring) {
 		this.snsMonitoring = useSnsMonitoring;
+	}
+	
+	public void setCapabilityIAM(boolean capabilityIAM) {
+		this.capabilityIAM = capabilityIAM;
 	}
 	
 	// NOTE
@@ -101,6 +106,9 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		}
 		if (bucketName!=null) {
 			projectAndEnv.setS3Bucket(bucketName);
+		}
+		if (capabilityIAM) {
+			projectAndEnv.setUseCapabilityIAM();
 		}
 		Region region = RegionUtils.getRegion(awsRegion);
 

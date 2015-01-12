@@ -1,24 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project basedir="." default="test" name="cfnassist">
-    <property name="lib" value="dist/bin/lib" />
-	<property name="aws_sdk_loc" value="lib/aws-java-sdk-1.8.9.1" />
+    <property name="lib" value="dist/lib" />
+	<property name="awsVer" value="1.9.14" />
+	<property name="aws_sdk_loc" value="lib/aws-java-sdk-${awsVer}" />
     <path id="aws_sdk_lib">
-	 	<pathelement location="${aws_sdk_loc}/lib/aws-java-sdk-1.8.9.1.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjrt.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/aspectj-1.6/aspectjweaver.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/commons-codec-1.3/commons-codec-1.3.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/commons-logging-1.1.1/commons-logging-1.1.1.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/freemarker-2.3.18/freemarker-2.3.18.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/httpcomponents-client-4.2.3/httpclient-4.2.3.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/httpcomponents-client-4.2.3/httpcore-4.2.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/jackson-annotations-2.1/jackson-annotations-2.1.1.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/jackson-core-2.1/jackson-core-2.1.1.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/jackson-databind-2.1/jackson-databind-2.1.1.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/java-mail-1.4.3/mail-1.4.3.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-beans-3.0.7.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-context-3.0.7.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/spring-3.0/spring-core-3.0.7.jar"/>
-        <pathelement location="${aws_sdk_loc}/third-party/joda-time-2.2/joda-time-2.2.jar" />
+	 	<pathelement location="${aws_sdk_loc}/lib/aws-java-sdk-${awsVer}.jar"/>
+		<fileset dir="${aws_sdk_loc}/third-party/">
+			<include name="**/*.jar"/>
+		</fileset>
     </path>
 	<path id="logging_libs">
 		<pathelement location="${lib}/slf4j-api-1.7.5.jar"/>
@@ -37,7 +26,7 @@
 	<target name="cfnTask" >
 		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
 			<classpath>
-				<pathelement location="dist/bin/cfnassist.jar"/>
+				<pathelement location="${lib}/cfnassist.jar"/>
 						<path refid="aws_sdk_lib"/>
 				    	<path refid="logging_libs"/>
 				    	<path refid="apacheCommons"/>
@@ -64,6 +53,22 @@
 			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true">
 				<Templates target="src/cfnScripts/simpleStack.json"/>
 				<Delete target="src/cfnScripts/simpleStack.json"/>
+			</cfnassist>
+	</target>
+
+	<!-- create IAM stack passing IAM Capability -->
+	<!-- will fail with permission error this if successful, a tw.com.exceptions.MissingCapabilities in case of failure -->
+	<!-- need to manually delete afterward use deleteSimpleIAM below -->
+	<target name="testSimpleIAM" depends="cfnTask">
+			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true" capabilityIAM="true">
+				<Templates target="src/cfnScripts/simpleIAMStack.json"/>
+			</cfnassist>
+	</target>
+
+	<!-- see above -->
+	<target name="deleteSimpleIAM" depends="cfnTask">
+			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true" capabilityIAM="true">
+				<Delete target="src/cfnScripts/simpleIAMStack.json"/>
 			</cfnassist>
 	</target>
 	
