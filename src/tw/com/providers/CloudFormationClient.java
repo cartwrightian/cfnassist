@@ -123,7 +123,12 @@ public class CloudFormationClient {
 		monitor.addMonitoringTo(createStackRequest);
 		Collection<Tag> tags = createTagsForStack(projAndEnv, commentTag);
 		createStackRequest.setTags(tags);
-		
+
+		// currently required by AWS 1.9.13
+		List<String> capabilities = new ArrayList<>();
+		capabilities.add("CAPABILITY_IAM");
+		createStackRequest.setCapabilities(capabilities);
+
 		logger.info("Making createStack call to AWS");
 		
 		CreateStackResult result = cfnClient.createStack(createStackRequest);
