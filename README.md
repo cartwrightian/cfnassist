@@ -5,11 +5,14 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 
 Current Release
 ---------------
-[Download Currnet Release version 1.0.82](https://cfnassist-release.s3-eu-west-1.amazonaws.com/82/cfnassist-1.0.82.zip)
+[Download Currnet Release version 1.0.85](https://cfnassist-release.s3-eu-west-1.amazonaws.com/85/cfnassist-1.0.85.zip)
 
-Old Releases
-------------
+Previous Releases
+-----------------
+[Version 1.0.82](https://cfnassist-release.s3-eu-west-1.amazonaws.com/82/cfnassist-1.0.82.zip)
+
 [Version 1.0.61](https://cfnassist-release.s3-eu-west-1.amazonaws.com/61/cfnassit-1.0.61.zip)
+
 [Version 1.0.36](https://cfnassist-release.s3-eu-west-1.amazonaws.com/36/cfnassit-1.0.36.zip)
 
 Build Status
@@ -53,10 +56,10 @@ Documentation TODOs
 CLI HowTo
 ---------
 
-The example CLIs below assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set to your project, that `cfn\_assist` 
+The example CLIs below assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set to your project, that `cfnassist` 
 is on the PATH and the **EC2\_REGION** environmental variable is set to the appropriate AWS region.
 
->export PATH=${PATH}:somepath/cfnassit-1.0.82/bin
+>export PATH=${PATH}:somepath/cfnassit-1.0.85/bin
 
 1.Create a VPC and initialise with a Project and Environment
 -------------------------------------------------------------
@@ -210,6 +213,12 @@ but sometimes it is more flexible to create them seperately.
 For example RDS instances might be a resource you create but don't want to create/delete on each build.
 
 `cfnassist -env Dev -file ./rdsInstance.json`
+
+**NOTE: If you are now getting InsufficientCapabilitiesException or MissingCapabilities exceptions**
+
+Amazon made a change to the API, for some types of resources you will get the above exceptions. 
+To avoid this capabilities must be set on the create call. Use ` -capabilityIAM`  on the CLI or add `capabilityIAM="true"` to 
+the cfnassist ant task. There is an example in distribution file `exampleAntTasks.xml`.
 
 6.Create instances with build numbers
 -------------------------------------
