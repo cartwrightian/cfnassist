@@ -397,4 +397,5 @@ Two diagrams will be generated for each VPC, one for the network configuration a
 `cfnassist -diagram targetFolder`
 
 > targetFolder/network_diagramvpc-56698c33.dot
+
 > targetFolder/security_diagramvpc-56698c33.dot
