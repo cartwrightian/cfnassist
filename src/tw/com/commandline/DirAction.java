@@ -17,7 +17,7 @@ import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 public class DirAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(DirAction.class);
@@ -29,7 +29,7 @@ public class DirAction extends SharedAction {
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, 
-			String... args) throws FileNotFoundException, InvalidParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
+			String... args) throws FileNotFoundException, InvalidStackParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
 		String folderPath = args[0];
 		ArrayList<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(folderPath , projectAndEnv, cfnParams);

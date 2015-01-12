@@ -27,9 +27,8 @@ import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.DuplicateStackException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
@@ -59,7 +58,7 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void voidShouldUpdateAnExistingStackNoParams() throws IOException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, InvalidParameterException, InterruptedException {
+	public void voidShouldUpdateAnExistingStackNoParams() throws IOException, CfnAssistException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
@@ -76,7 +75,7 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void voidShouldUpdateAnExistingStackWithBuiltInParams() throws IOException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, InvalidParameterException, InterruptedException {
+	public void voidShouldUpdateAnExistingStackWithBuiltInParams() throws IOException, CfnAssistException, InterruptedException {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
@@ -98,7 +97,7 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void voidShouldUpdateAnExistingStackUserParams() throws IOException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, InvalidParameterException, InterruptedException {
+	public void voidShouldUpdateAnExistingStackUserParams() throws IOException, CfnAssistException, InterruptedException {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
@@ -119,7 +118,7 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 	}
 
 	private StackNameAndId setUpdateExpectations(String stackName, String filename, List<TemplateParameter> templateParameters, 
-			Collection<Parameter> parameters) throws InvalidParameterException, WrongNumberOfStacksException, InterruptedException, WrongStackStatus, NotReadyException, IOException {
+			Collection<Parameter> parameters) throws InvalidStackParameterException, WrongNumberOfStacksException, InterruptedException, WrongStackStatus, NotReadyException, IOException {
 		String stackId = "stackId";
 		Stack stack = new Stack().withStackId(stackId);
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);

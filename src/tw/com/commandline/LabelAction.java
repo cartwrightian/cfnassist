@@ -12,7 +12,7 @@ import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
@@ -29,7 +29,7 @@ public class LabelAction extends SharedAction {
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
 			Collection<Parameter> artifacts, String... stackname)
-			throws InvalidParameterException, FileNotFoundException,
+			throws InvalidStackParameterException, FileNotFoundException,
 			IOException, InterruptedException, CfnAssistException {
 		logger.info("Invoke label of existing stack: " + stackname);
 		

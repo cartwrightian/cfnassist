@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.providers.SNSEventSource;
 
 public class CommandFlags {
@@ -29,6 +29,7 @@ public class CommandFlags {
 	private Option buildNumberParam;
 	private Option keysValuesParam;
 	private Option snsParam;
+	private Option capIAMParam;
 	private Option commentParam;
 	private Option artifactParam;
 	private Option bucketParam;
@@ -41,6 +42,7 @@ public class CommandFlags {
 	private String region;
 	private String buildNumber;
 	private Boolean sns;
+	private Boolean capabilityIAM;
 	private String comment;
 	private String s3bucket;
 	private Collection<Parameter> cfnParams;
@@ -60,17 +62,19 @@ public class CommandFlags {
 		commandLineOptions.addOption(keysValuesParam);
 		commandLineOptions.addOption(buildNumberParam);
 		commandLineOptions.addOption(snsParam);
+		commandLineOptions.addOption(capIAMParam);
 		commandLineOptions.addOption(commentParam);
 		commandLineOptions.addOption(artifactParam);
 		commandLineOptions.addOption(bucketParam);
 	}
 	
-	public void populateFlags(CommandLine commandLine, HelpFormatter formatter) throws MissingArgumentException, InvalidParameterException {
+	public void populateFlags(CommandLine commandLine, HelpFormatter formatter) throws MissingArgumentException, InvalidStackParameterException {
 		project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG, false);	
 		env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, false);
 		region = checkForArgument(commandLine, formatter, regionParam, Main.ENV_VAR_EC2_REGION, true);
 		buildNumber = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
 		sns = checkForArgumentPresent(commandLine, formatter, snsParam);
+		capabilityIAM = checkForArgumentPresent(commandLine, formatter, capIAMParam);
 		comment = checkForArgument(commandLine, formatter, commentParam, "", false);
 		cfnParams = checkForKeyValueParameters(commandLine, formatter, keysValuesParam);
 		artifacts = checkForKeyValueParameters(commandLine, formatter, artifactParam);
@@ -104,7 +108,12 @@ public class CommandFlags {
 		snsParam = OptionBuilder.withArgName("sns").
 				withDescription(
 						String.format("Use SNS to publish updates from cloud formation, uses the topic %s"
-						,SNSEventSource.SNS_TOPIC_NAME)).create("sns");
+						,SNSEventSource.SNS_TOPIC_NAME)).
+						hasArg(false).create("sns");
+		
+		capIAMParam = OptionBuilder.withArgName("capabilityIAM").
+				withDescription("Pass capability IAM to create stack (needed if you get capability missing exceptions)").
+				hasArg(false).create("capabilityIAM");
 		
 		commentParam = OptionBuilder.withArgName("comment").hasArg().
 				withDescription("Add a comment within the tag " + AwsFacade.COMMENT_TAG).create("comment");
@@ -147,7 +156,7 @@ public class CommandFlags {
 		return "";
 	}
 	
-	private Collection<Parameter> checkForKeyValueParameters(CommandLine cmd, HelpFormatter formatter, Option commandFlag) throws InvalidParameterException {
+	private Collection<Parameter> checkForKeyValueParameters(CommandLine cmd, HelpFormatter formatter, Option commandFlag) throws InvalidStackParameterException {
 		
 		LinkedList<Parameter> results = new LinkedList<Parameter>();
 		String argName = commandFlag.getArgName();
@@ -166,7 +175,7 @@ public class CommandFlags {
 			if (parts.length!=2) {
 				String msg = "Unable to process parameters given, problem with " + keyValue;
 				logger.error(msg);
-				throw new InvalidParameterException(msg);
+				throw new InvalidStackParameterException(msg);
 			}
 			Parameter pair = new Parameter();
 			pair.setParameterKey(parts[0]);
@@ -184,7 +193,6 @@ public class CommandFlags {
 		logger.debug("Checking for arg " + argName);
 		return commandLine.hasOption(argName);
 	}
-	
 	
 	public String getProject() {
 		return project;
@@ -236,6 +244,10 @@ public class CommandFlags {
 
 	public boolean haveS3Bucket() {
 		return !s3bucket.isEmpty();
+	}
+	
+	public boolean haveCapabilityIAM() {
+		return capabilityIAM;
 	}
 
 }

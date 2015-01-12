@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
@@ -30,7 +30,7 @@ public class ParameterFactory {
 	}
 
 	public Collection<Parameter> createRequiredParameters(ProjectAndEnv projAndEnv, Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters)
-			throws InvalidParameterException, FileNotFoundException,
+			throws InvalidStackParameterException, FileNotFoundException,
 			IOException, CannotFindVpcException {
 		
 		Collection<Parameter> result  = new LinkedList<Parameter>();
@@ -70,12 +70,12 @@ public class ParameterFactory {
 		return false;
 	}
 
-	private void checkNoClashWithBuiltInParameters(Collection<Parameter> parameters) throws InvalidParameterException {
+	private void checkNoClashWithBuiltInParameters(Collection<Parameter> parameters) throws InvalidStackParameterException {
 		for(Parameter param : parameters) {
 			String parameterKey = param.getParameterKey();
 			if (reservedParameters.contains(parameterKey)) {
 				logger.error("Attempt to overide built in and autoset parameter called " + parameterKey);
-				throw new InvalidParameterException(parameterKey);
+				throw new InvalidStackParameterException(parameterKey);
 			}
 		}	
 	}

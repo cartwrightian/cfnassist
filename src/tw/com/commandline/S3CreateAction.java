@@ -10,7 +10,7 @@ import org.apache.commons.cli.OptionBuilder;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
@@ -25,7 +25,7 @@ public class S3CreateAction extends SharedAction {
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argument) throws InvalidParameterException,
+			String... argument) throws InvalidStackParameterException,
 			FileNotFoundException, IOException, WrongNumberOfStacksException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		super.uploadArtifacts(factory, projectAndEnv, artifacts, cfnParams);

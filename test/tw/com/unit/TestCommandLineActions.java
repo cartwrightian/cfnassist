@@ -37,7 +37,7 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
@@ -116,7 +116,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldCreateStackNoIAMCapabailies() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException {		
 		setFactoryExpectations();
 		facadeFactory.setCommentTag(comment);
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
@@ -126,7 +126,18 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldCreateStackWithIAMCapabailies() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException {		
+		setFactoryExpectations();
+		facadeFactory.setCommentTag(comment);
+		File file = new File(FilesForTesting.STACK_IAM_CAP);	
+		projectAndEnv.setUseCapabilityIAM();
+		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
+			
+		validate(CLIArgBuilder.createIAMStack(comment));
+	}
+	
+	@Test
+	public void shouldUpdateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		facadeFactory.setCommentTag(comment);
 		File file = new File(FilesForTesting.SUBNET_STACK_DELTA);		
@@ -136,7 +147,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStackSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldUpdateStackSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		facadeFactory.setCommentTag(comment);
 		facadeFactory.setSNSMonitoring();
@@ -148,7 +159,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStackWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldCreateStackWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		facadeFactory.setCommentTag(comment);
 
@@ -160,7 +171,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldCreateStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		facadeFactory.setCommentTag(comment);
 
@@ -171,7 +182,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldCreateStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		facadeFactory.setSNSMonitoring();
 		facadeFactory.setCommentTag(comment);
@@ -184,7 +195,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRollbackStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldRollbackStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 
 		ArrayList<String> stacks = new ArrayList<String>();
@@ -194,7 +205,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRollbackStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldRollbackStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		facadeFactory.setSNSMonitoring();
 
@@ -206,7 +217,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		String buildNumber = "0042";
 		String typeTag = "web";
@@ -219,7 +230,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldTidyOldInstances() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldTidyOldInstances() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
@@ -230,7 +241,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	
 	@Test
-	public void shouldCreateStackWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldCreateStackWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
 		facadeFactory.setSNSMonitoring();
 		facadeFactory.setCommentTag(comment);
@@ -243,7 +254,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		PrintStream origStream = System.out;
 		String stackName = "theStackName";
 		String project = "theProject";
@@ -269,7 +280,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldCreateStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {
+	public void shouldCreateStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {
 		setFactoryExpectations();
 		facadeFactory.setCommentTag(comment);
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
@@ -301,7 +312,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testUploadArtifactsAndInvokeStackCreate() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidParameterException {		
+	public void testUploadArtifactsAndInvokeStackCreate() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		String buildNumber = "9987";
 		// src files to upload
 		Collection<Parameter> arts = new LinkedList<Parameter>();

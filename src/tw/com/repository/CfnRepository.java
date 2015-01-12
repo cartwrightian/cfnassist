@@ -13,7 +13,8 @@ import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.WrongNumberOfStacksException;
@@ -300,14 +301,14 @@ public class CfnRepository implements CloudFormRepository {
 	// TODO cache updates into this class
 	@Override
 	public StackNameAndId createStack(ProjectAndEnv projAndEnv,
-			String contents, String stackName, Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws NotReadyException {
+			String contents, String stackName, Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws CfnAssistException {
 		return formationClient.createStack(projAndEnv,contents, stackName, parameters, monitor, commentTag);		
 	}
 
 	// TODO cache updates into this class
 	@Override
 	public StackNameAndId updateStack(String contents,
-			Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws InvalidParameterException, WrongNumberOfStacksException, NotReadyException {			
+			Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws InvalidStackParameterException, WrongNumberOfStacksException, NotReadyException {			
 		return formationClient.updateStack(contents, parameters, monitor, stackName);
 	}
 

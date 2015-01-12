@@ -29,12 +29,9 @@ import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
-import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.NotReadyException;
-import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.exceptions.WrongStackStatus;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
@@ -60,7 +57,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateNoParameters() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -77,7 +74,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateParametersWithOutDescriptions() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateParametersWithOutDescriptions() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -95,7 +92,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateOutputParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateOutputParameters() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -118,12 +115,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	
 	private StackNameAndId SetCreateExpectations(String stackName,
 			String contents, List<TemplateParameter> templateParameters,
-			Collection<Parameter> creationParameters) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+			Collection<Parameter> creationParameters) throws CfnAssistException, InterruptedException {
 		return SetCreateExpectations(stackName, contents, templateParameters, creationParameters,""); // no comment
 	}
 
 	@Test
-	public void shouldApplySimpleTemplateNoParametersWithComment() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateNoParametersWithComment() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -141,7 +138,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldThrowOnCreateWhenStackExistsAndNotRolledBack() throws IOException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, InvalidParameterException, InterruptedException  {
+	public void shouldThrowOnCreateWhenStackExistsAndNotRolledBack() throws IOException, CfnAssistException, InvalidStackParameterException, InterruptedException  {
 		String stackName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -167,7 +164,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldHandleCreateWhenStackInRolledBackStatus() throws IOException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, InvalidParameterException, InterruptedException  {
+	public void shouldHandleCreateWhenStackInRolledBackStatus() throws IOException, CfnAssistException, DuplicateStackException, InvalidStackParameterException, InterruptedException  {
 		String stackName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -197,7 +194,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldHandleCreateWhenStackRolledBackInProgressStatus() throws IOException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, InterruptedException, DuplicateStackException, CannotFindVpcException, InvalidParameterException {
+	public void shouldHandleCreateWhenStackRolledBackInProgressStatus() throws IOException, CfnAssistException, InterruptedException, InvalidStackParameterException {
 		String stackName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -228,7 +225,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParamsWithBuild() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParamsWithBuild() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssist0043TestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -252,7 +249,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateInputParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateInputParameters() throws FileNotFoundException,  CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -275,7 +272,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	// needs environmental variable set to testEnvVar set to testValue
 	///////
 	@Test
-	public void shouldApplySimpleTemplateEnvVarParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateEnvVarParameters() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -298,7 +295,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	// needs environmental variable set to testEnvVar set to testValue
 	///////
 	@Test
-	public void shouldApplySimpleTemplateEnvVarParametersNoEchoSet() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateEnvVarParametersNoEchoSet() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -319,7 +316,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplyAutoDiscoveryTemplateInputParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplyAutoDiscoveryTemplateInputParameters() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -350,7 +347,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplyAutoDiscoveryVPCTagParameters() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplyAutoDiscoveryVPCTagParameters() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -381,7 +378,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateInputParametersNotPassBuild() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateInputParametersNotPassBuild() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssist0056TestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -402,7 +399,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateEnvAndVpcBuiltInAndUserParams() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateEnvAndVpcBuiltInAndUserParams() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -427,7 +424,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParams() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException, IOException, InvalidParameterException, InterruptedException {
+	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParams() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -449,15 +446,14 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	
 	private StackNameAndId SetCreateExpectations(String stackName,
 			String contents, List<TemplateParameter> templateParameters,
-			Collection<Parameter> creationParameters, String comment) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+			Collection<Parameter> creationParameters, String comment) throws CfnAssistException, InterruptedException {
 		return SetCreateExpectations(stackName, contents, templateParameters, creationParameters, comment, new LinkedList<Output>());
 	}
 
 	private StackNameAndId SetCreateExpectations(String stackName, String contents,
 			List<TemplateParameter> templateParameters,
 			Collection<Parameter> creationParameters, String comment, Collection<Output> outputs)
-			throws NotReadyException, WrongNumberOfStacksException,
-			InterruptedException, WrongStackStatus {
+			throws CfnAssistException, InterruptedException {
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, "stackId");
 		Stack stack = new Stack().withStackId("stackId");
 		if (outputs.size()>0) {

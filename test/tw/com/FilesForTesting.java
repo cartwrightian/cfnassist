@@ -22,6 +22,8 @@ public class FilesForTesting {
 	public static final String ORDERED_SCRIPTS_WITH_DELTAS_FOLDER = DIR + "orderedScriptsWithDelta/";
 	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_DELTAS_FOLDER + "02createSubnet.delta.json";
 
+	public static final String STACK_IAM_CAP =DIR + "simpleIAMStack.json";
+
 	
 
 }

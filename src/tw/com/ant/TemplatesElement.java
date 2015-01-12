@@ -17,7 +17,7 @@ import tw.com.commandline.DirAction;
 import tw.com.commandline.FileAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 public class TemplatesElement implements ActionElement {
 	
@@ -34,7 +34,7 @@ public class TemplatesElement implements ActionElement {
 
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) 
-			throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException, 
+			throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException, 
 			CommandLineException, MissingArgumentException {
 		String absolutePath = target.getAbsolutePath();
 		CommandLineAction actionToInvoke = null;

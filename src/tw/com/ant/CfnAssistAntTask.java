@@ -15,7 +15,6 @@ import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
 
 public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 
@@ -119,8 +118,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 			for(ActionElement element : actionElements) {
 				element.execute(factory, projectAndEnv, cfnParameters, artifacts);
 			}
-		} catch (IOException | MissingArgumentException | 
-				InvalidParameterException | 
+		} catch (IOException | MissingArgumentException |  
 				InterruptedException | 
 				CfnAssistException | 
 				CommandLineException innerException) {

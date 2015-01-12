@@ -47,8 +47,8 @@ import tw.com.SNSMonitor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.NotReadyException;
+import tw.com.exceptions.InvalidStackParameterException;
+import tw.com.exceptions.MissingCapabilities;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.providers.CloudClient;
@@ -83,7 +83,9 @@ public class TestCloudFormationClient {
 		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
 		snsNotifProvider = new SNSEventSource(snsClient, sqsClient);
 		
-		new DeletesStacks(cfnClient).ifPresent("queryStackTest").ifPresent("createStackTest").act();
+		new DeletesStacks(cfnClient).ifPresent("queryStackTest").
+			ifPresent("createStackTest").
+			ifPresent("createIAMStackTest").act();
 	}
 	
 	@Rule public TestName test = new TestName();
@@ -110,13 +112,13 @@ public class TestCloudFormationClient {
 	}
 	
 	@Test
-	public void shouldCreateAndDeleteStack() throws IOException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+	public void shouldCreateAndDeleteSimpleStack() throws IOException, CfnAssistException, InterruptedException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SIMPLE_STACK), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters("someVpcId");
 		String stackName = "createStackTest";
 		String comment = test.getMethodName();
-		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment); // no comment
+		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment); 
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
 		deletesStacks.ifPresent(stackName);
 		
@@ -126,7 +128,7 @@ public class TestCloudFormationClient {
 		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
 		
 		DescribeStacksResult queryResult = cfnClient.describeStacks(new DescribeStacksRequest().withStackName(stackName));
-		assertEquals(1,queryResult.getStacks().size());
+		assertEquals(1, queryResult.getStacks().size());
 		Stack stack = queryResult.getStacks().get(0);
 		assertEquals(stack.getStackId(), nameAndId.getStackId());
 		
@@ -148,16 +150,48 @@ public class TestCloudFormationClient {
 			assertEquals(400, expectedException.getStatusCode());
 		}	
 	}
-
-	private Collection<Parameter> createStandardParameters(String vpcId) {
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
-		parameters.add(new Parameter().withParameterKey("env").withParameterValue("Test"));
-		parameters.add(new Parameter().withParameterKey("vpc").withParameterValue(vpcId));
-		return parameters;
+	
+	@Test
+	public void shouldThrowIfCapabilitiesNotSetCorrectly() throws IOException, CfnAssistException {
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.STACK_IAM_CAP), Charset.defaultCharset());
+		
+		Collection<Parameter> parameters = createStandardParameters("someVpcId");
+		String stackName = "createIAMStackTest";
+		String comment = test.getMethodName();
+		deletesStacks.ifPresent(stackName);
+		// should trigger capability exception
+		try {
+			formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
+			fail("Was expecting MissingCapabilities");
+		}
+		catch(MissingCapabilities expected) {
+			// expected exception
+		}	
 	}
 	
 	@Test
-	public void shouldQueryCreatedStack() throws FileNotFoundException, IOException, InvalidParameterException, CfnAssistException, InterruptedException {
+	public void shouldCreateAndDeleteSimpleStackNeedingIAMCapbility() throws IOException, CfnAssistException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.STACK_IAM_CAP), Charset.defaultCharset());
+		
+		Collection<Parameter> parameters = createStandardParameters("someVpcId");
+		String stackName = "createIAMStackTest"; 
+		String comment = test.getMethodName();
+		projAndEnv.setUseCapabilityIAM();
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
+		deletesStacks.ifPresent(stackName);
+				
+		// this  create will fail, but due to lack of user perms and not because of capabilities exception
+		try {	
+			polligMonitor.waitForCreateFinished(nameAndId);
+			fail("show have failed to create");
+		}
+		catch(WrongStackStatus expected) {
+			// expected
+		}
+	}
+
+	@Test
+	public void shouldQueryCreatedStack() throws FileNotFoundException, IOException, InvalidStackParameterException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.getVpcId();
 		String cidr = "10.0.10.0/24";
 		
@@ -166,7 +200,8 @@ public class TestCloudFormationClient {
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		parameters.add(new Parameter().withParameterKey("cidr").withParameterValue(cidr));
 		String stackName = "queryStackTest";
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, test.getMethodName());
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
+				polligMonitor, test.getMethodName());
 		deletesStacks.ifPresent(nameAndId);
 		
 		String status = polligMonitor.waitForCreateFinished(nameAndId);
@@ -197,13 +232,14 @@ public class TestCloudFormationClient {
 	}
 	
 	@Test
-	public void shouldCreateAndThenUpdateAStack() throws IOException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+	public void shouldCreateAndThenUpdateAStack() throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.getVpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, test.getMethodName());
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, 
+				test.getMethodName());
 		deletesStacks.ifPresent(stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());
@@ -230,13 +266,14 @@ public class TestCloudFormationClient {
 	}
 	
 	@Test
-	public void shouldCreateAndThenUpdateAStackAddingSNS() throws IOException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+	public void shouldCreateAndThenUpdateAStackAddingSNS() throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.getVpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, test.getMethodName());
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
+				polligMonitor, test.getMethodName());
 		deletesStacks.ifPresent(stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());
@@ -300,6 +337,14 @@ public class TestCloudFormationClient {
 		
 		return result.getSubnets().get(0);
 	}
+	
+	private Collection<Parameter> createStandardParameters(String vpcId) {
+		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		parameters.add(new Parameter().withParameterKey("env").withParameterValue("Test"));
+		parameters.add(new Parameter().withParameterKey("vpc").withParameterValue(vpcId));
+		return parameters;
+	}
+	
 
 
 }

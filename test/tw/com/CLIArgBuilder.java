@@ -32,6 +32,18 @@ public class CLIArgBuilder {
 		return args;
 	}
 	
+	public static String[] createIAMStack(String testName) {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-capabilityIAM",
+				"-file", FilesForTesting.STACK_IAM_CAP,
+				"-comment", testName
+				};
+		return args;
+	}
+	
 	public static String[] createSubnetStack(String testName) {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -222,5 +234,6 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
+
 
 }

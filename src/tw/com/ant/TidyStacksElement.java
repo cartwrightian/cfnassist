@@ -12,7 +12,7 @@ import tw.com.commandline.CommandLineException;
 import tw.com.commandline.TidyOldStacksAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
@@ -35,7 +35,7 @@ public class TidyStacksElement implements ActionElement {
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, InterruptedException,
+			InvalidStackParameterException, InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		
 		TidyOldStacksAction actionToInvoke = new TidyOldStacksAction();

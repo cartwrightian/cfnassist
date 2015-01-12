@@ -11,6 +11,8 @@ import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.MissingCapabilities;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -23,6 +25,7 @@ import com.amazonaws.services.cloudformation.model.DescribeStackResourcesRequest
 import com.amazonaws.services.cloudformation.model.DescribeStackResourcesResult;
 import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
+import com.amazonaws.services.cloudformation.model.InsufficientCapabilitiesException;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackEvent;
@@ -115,7 +118,7 @@ public class CloudFormationClient {
 	public StackNameAndId createStack(ProjectAndEnv projAndEnv,
 			String contents, String stackName,
 			Collection<Parameter> parameters, MonitorStackEvents monitor,
-			String commentTag) throws NotReadyException {
+			String commentTag) throws CfnAssistException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
@@ -124,10 +127,23 @@ public class CloudFormationClient {
 		Collection<Tag> tags = createTagsForStack(projAndEnv, commentTag);
 		createStackRequest.setTags(tags);
 		
+		if (projAndEnv.useCapabilityIAM()) {
+			logger.info("Adding CAPABILITY_IAM to create request");
+			List<String> capabilities = new ArrayList<>();
+			capabilities.add("CAPABILITY_IAM");
+			createStackRequest.setCapabilities(capabilities);
+		}
+		
 		logger.info("Making createStack call to AWS");
 		
-		CreateStackResult result = cfnClient.createStack(createStackRequest);
-		return new StackNameAndId(stackName,result.getStackId());
+		try {
+			CreateStackResult result = cfnClient.createStack(createStackRequest);
+			return new StackNameAndId(stackName, result.getStackId());
+		}
+		catch (InsufficientCapabilitiesException exception) {
+			throw new MissingCapabilities(exception.getMessage());
+		}
+		
 	}
 
 	public StackNameAndId updateStack(String contents, Collection<Parameter> parameters,

@@ -15,7 +15,7 @@ import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 public class InitAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(InitAction.class);
@@ -28,7 +28,7 @@ public class InitAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,  Collection<Parameter> unused,
-			Collection<Parameter> artifacts, String... args) throws InvalidParameterException,
+			Collection<Parameter> artifacts, String... args) throws InvalidStackParameterException,
 			FileNotFoundException, IOException, InterruptedException, CfnAssistException, MissingArgumentException {
 		String vpcId = args[0];
 		logger.info("Invoke init of tags for VPC: " + vpcId);

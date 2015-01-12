@@ -18,7 +18,7 @@ import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
@@ -46,7 +46,7 @@ public class Main {
 		commandActions.addActionsTo(commandLineOptions);
 	}
 	
-	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
+	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidStackParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
 		Main main = new Main(args);
 		int result = main.parse();
 		System.exit(result);
@@ -79,6 +79,9 @@ public class Main {
 			if (flags.haveS3Bucket()) {
 				projectAndEnv.setS3Bucket(flags.getS3Bucket());
 			}
+			if (flags.haveCapabilityIAM()) {
+				projectAndEnv.setUseCapabilityIAM();
+			}
 			logger.info("Invoking for " + projectAndEnv);
 			
 			String[] argsForAction = commandLine.getOptionValues(action.getArgName());
@@ -99,7 +102,7 @@ public class Main {
 		catch (CfnAssistException exception) {
 			logger.error("CommandLine fail due to cfn assit problem: ", exception);
 			return -1;
-		} catch (MissingArgumentException | IOException | InvalidParameterException | InterruptedException e) {
+		} catch (MissingArgumentException | IOException | InterruptedException e) {
 			logger.error("Processing failed: ", e);
 			return -1;
 		} catch (CommandLineException e) {

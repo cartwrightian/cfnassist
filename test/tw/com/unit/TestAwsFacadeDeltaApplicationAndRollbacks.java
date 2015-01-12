@@ -36,12 +36,8 @@ import tw.com.MonitorStackEvents;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
-import tw.com.exceptions.NotReadyException;
-import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.exceptions.WrongStackStatus;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.SetDeltaIndexForProjectAndEnv;
@@ -71,7 +67,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParameters() throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplySimpleTemplateNoParameters() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
 		List<File> files = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("0");
@@ -91,7 +87,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParametersOnlyNeeded() throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplySimpleTemplateNoParametersOnlyNeeded() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		List<File> files = allFiles.subList(1, 2);
 		
@@ -112,7 +108,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParametersNoneNeeded() throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplySimpleTemplateNoParametersNoneNeeded() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
@@ -125,7 +121,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldApplyNewFileAsNeeded() throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplyNewFileAsNeeded() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
 		List<File> originalFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
@@ -152,7 +148,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRollbackFilesInAFolder() throws InvalidParameterException, CfnAssistException {
+	public void shouldRollbackFilesInAFolder() throws InvalidStackParameterException, CfnAssistException {
 		String stackA = "CfnAssistTest01createSubnet";
 		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
 		String stackB = "CfnAssistTest02createAcls";
@@ -207,10 +203,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		}
 	}
 
-	private void setExpectationsForFile(Integer count, File file)
-			throws IOException, NotReadyException,
-			WrongNumberOfStacksException, InterruptedException,
-			WrongStackStatus, CannotFindVpcException {
+	private void setExpectationsForFile(Integer count, File file) throws IOException, CfnAssistException, InterruptedException {
 		String templateContents = EnvironmentSetupForTests.loadFile(file.getAbsolutePath());
 		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
 		Collection<Parameter> creationParameters = new LinkedList<Parameter>();

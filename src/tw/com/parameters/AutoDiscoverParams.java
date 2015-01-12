@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.VpcRepository;
 
@@ -35,14 +35,14 @@ public class AutoDiscoverParams extends PopulatesParameters {
 
 	@Override
 	public void addParameters(Collection<Parameter> result,
-			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws FileNotFoundException, CannotFindVpcException, IOException, InvalidParameterException {
+			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws FileNotFoundException, CannotFindVpcException, IOException, InvalidStackParameterException {
 		List<Parameter> autoPopulatedParametes = fetchAutopopulateParametersFor(templateFile, projAndEnv, declaredParameters);
 		for (Parameter autoPop : autoPopulatedParametes) {
 			result.add(autoPop);
 		}	
 	}
 	
-	private List<Parameter> fetchAutopopulateParametersFor(File file, ProjectAndEnv projectAndEnv, List<TemplateParameter> declaredParameters) throws FileNotFoundException, IOException, InvalidParameterException, CannotFindVpcException {
+	private List<Parameter> fetchAutopopulateParametersFor(File file, ProjectAndEnv projectAndEnv, List<TemplateParameter> declaredParameters) throws FileNotFoundException, IOException, InvalidStackParameterException, CannotFindVpcException {
 		logger.info(String.format("Discover and populate parameters for %s and %s", file.getAbsolutePath(), projectAndEnv));
 		List<Parameter> matches = new LinkedList<Parameter>();
 		for(TemplateParameter templateParam : declaredParameters) {
@@ -76,7 +76,7 @@ public class AutoDiscoverParams extends PopulatesParameters {
 	}
 	
 	private void populateParameter(ProjectAndEnv projectAndEnv, List<Parameter> matches, String parameterName, String parameterDescription, List<TemplateParameter> declaredParameters)
-			throws InvalidParameterException, CannotFindVpcException {
+			throws InvalidStackParameterException, CannotFindVpcException {
 		if (parameterDescription.equals(PopulatesParameters.CFN_TAG_ON_OUTPUT)) {
 			populateParameterFromVPCTag(projectAndEnv, matches, parameterName, parameterDescription, declaredParameters);
 		} else {
@@ -88,13 +88,13 @@ public class AutoDiscoverParams extends PopulatesParameters {
 	private void populateParameterFromVPCTag(ProjectAndEnv projectAndEnv,
 			List<Parameter> matches, String parameterName,
 			String parameterDescription,
-			List<TemplateParameter> declaredParameters) throws CannotFindVpcException, InvalidParameterException {
+			List<TemplateParameter> declaredParameters) throws CannotFindVpcException, InvalidStackParameterException {
 		logger.info("Attempt to find VPC matching name: " + parameterName);
 		String value = vpcRepository.getVpcTag(parameterName, projectAndEnv);
 		if (value==null) {
 			String msg = String.format("Failed to find VPC TAG to matching: %s", parameterName);
 			logger.error(msg);
-			throw new InvalidParameterException(msg);
+			throw new InvalidStackParameterException(msg);
 		}
 		addParameterTo(matches, declaredParameters, parameterName, value);		
 	}
@@ -103,14 +103,14 @@ public class AutoDiscoverParams extends PopulatesParameters {
 			List<Parameter> matches, String parameterName,
 			String parameterDescription,
 			List<TemplateParameter> declaredParameters)
-			throws InvalidParameterException {
+			throws InvalidStackParameterException {
 		String logicalId = parameterDescription.substring(PopulatesParameters.PARAM_PREFIX.length());
 		logger.info("Attempt to find physical ID for LogicalID: " + logicalId);
 		String value = cfnRepository.findPhysicalIdByLogicalId(envTag, logicalId);
 		if (value==null) {
 			String msg = String.format("Failed to find physicalID to match logicalID: %s required for parameter: %s" , logicalId, parameterName);
 			logger.error(msg);
-			throw new InvalidParameterException(msg);
+			throw new InvalidStackParameterException(msg);
 		}
 		logger.info(String.format("Found physicalID: %s matching logicalID: %s Populating this into parameter %s", value, logicalId, parameterName));
 		addParameterTo(matches, declaredParameters, parameterName, value);

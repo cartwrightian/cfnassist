@@ -35,7 +35,7 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.BadVPCDeltaIndexException;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.TooManyELBException;
@@ -251,7 +251,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDeleteNamedStacksNotAssociatedWithLB() throws WrongNumberOfStacksException, NotReadyException, WrongStackStatus, InterruptedException, InvalidParameterException, TooManyELBException {
+	public void shouldDeleteNamedStacksNotAssociatedWithLB() throws WrongNumberOfStacksException, NotReadyException, WrongStackStatus, InterruptedException, InvalidStackParameterException, TooManyELBException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		
@@ -282,7 +282,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDeleteNamedStacksNotAssociatedWithLBWhileIgnoringStacksWithNoInstances() throws WrongNumberOfStacksException, NotReadyException, WrongStackStatus, InterruptedException, InvalidParameterException, TooManyELBException {
+	public void shouldDeleteNamedStacksNotAssociatedWithLBWhileIgnoringStacksWithNoInstances() throws WrongNumberOfStacksException, NotReadyException, WrongStackStatus, InterruptedException, InvalidStackParameterException, TooManyELBException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		
@@ -344,7 +344,7 @@ public class TestAwsFacade extends EasyMockSupport {
 			aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv, parameters);	
 			fail("Should have thrown exception");
 		}
-		catch (InvalidParameterException exception) {
+		catch (InvalidStackParameterException exception) {
 			// expected
 		}
 	}

@@ -13,7 +13,7 @@ import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 public class RollbackAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(RollbackAction.class);
@@ -25,7 +25,7 @@ public class RollbackAction extends SharedAction {
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused, 
-			Collection<Parameter> artifacts, String... args) throws InvalidParameterException, CfnAssistException, MissingArgumentException, InterruptedException {
+			Collection<Parameter> artifacts, String... args) throws InvalidStackParameterException, CfnAssistException, MissingArgumentException, InterruptedException {
 		String folder = args[0];
 		logger.info("Invoking rollback for " + projectAndEnv + " and folder " + folder);
 		AwsFacade aws = factory.createFacade();

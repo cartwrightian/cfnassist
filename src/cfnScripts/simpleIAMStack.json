@@ -1,0 +1,22 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"test template for cnfassist - added to reproduce issue with aws api where IAM CAPABILITIES must be passed to create call",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		}
+		
+	},
+	"Resources":{
+		"webServerInstanceProfile" : {
+			"Type" : "AWS::IAM::InstanceProfile",
+			"Properties": {
+					"Path": "/",
+					"Roles": [ "Webserver" ]
+			}
+		}	
+	}
+}

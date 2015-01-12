@@ -15,7 +15,7 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.parameters.EnvVarParams;
 
 public class TestEnvVarParams {
@@ -34,7 +34,7 @@ public class TestEnvVarParams {
 	///////
 	
 	@Test
-	public void shouldPickUpVariableFromEnvironmentIfDeclaredInTemplate() throws FileNotFoundException, CannotFindVpcException, IOException, InvalidParameterException {
+	public void shouldPickUpVariableFromEnvironmentIfDeclaredInTemplate() throws FileNotFoundException, CannotFindVpcException, IOException, InvalidStackParameterException {
 		
 		List<Parameter> results = new LinkedList<Parameter>();
 		List<TemplateParameter> declaredParameters = new LinkedList<TemplateParameter>();
@@ -62,7 +62,7 @@ public class TestEnvVarParams {
 			envVarParams.addParameters(results , declaredParameters, projAndEnv);
 			fail("should have thrown");
 		}
-		catch(InvalidParameterException expected) {
+		catch(InvalidStackParameterException expected) {
 			// expected
 		}
 	}

@@ -12,7 +12,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 public interface CommandLineAction {
 	
@@ -21,7 +21,7 @@ public interface CommandLineAction {
 	String getArgName();
 
 	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
-			Collection<Parameter> artifacts, String... argument) throws InvalidParameterException, FileNotFoundException, 
+			Collection<Parameter> artifacts, String... argument) throws InvalidStackParameterException, FileNotFoundException, 
 			IOException, InterruptedException, CfnAssistException, MissingArgumentException;
 
 	void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,

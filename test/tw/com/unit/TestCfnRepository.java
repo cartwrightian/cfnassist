@@ -33,7 +33,8 @@ import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.WrongNumberOfStacksException;
@@ -269,7 +270,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void emptyStatusIfNoSuchStack() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidParameterException, InterruptedException {			
+	public void emptyStatusIfNoSuchStack() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidStackParameterException, InterruptedException {			
 		List<Stack> stacks = new LinkedList<Stack>();
 		stacks.add(new Stack().withStackName("ThisIsNotTheStackYouAreLookingFor"));
 			
@@ -444,7 +445,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStack() throws NotReadyException {
+	public void shouldCreateStack() throws CfnAssistException {
 		// this smells, at least until we pull cache updates down into repository
 		
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
@@ -461,7 +462,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStack() throws NotReadyException, WrongNumberOfStacksException, InvalidParameterException {
+	public void shouldUpdateStack() throws NotReadyException, WrongNumberOfStacksException, InvalidStackParameterException {
 		// this smells, at least until we pull cache updates down into repository
 		
 		Collection<Parameter> parameters = new LinkedList<Parameter>();
@@ -476,7 +477,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStackWithSNS() throws NotReadyException, WrongNumberOfStacksException, InvalidParameterException {
+	public void shouldUpdateStackWithSNS() throws NotReadyException, WrongNumberOfStacksException, InvalidStackParameterException {
 		// this smells, at least until we pull cache updates down into repository
 		SNSMonitor snsMonitor = createMock(SNSMonitor.class);
 		

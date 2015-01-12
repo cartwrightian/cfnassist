@@ -26,7 +26,7 @@ import tw.com.exceptions.BadVPCDeltaIndexException;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
@@ -97,19 +97,20 @@ public class AwsFacade {
 		return validateTemplate(contents);
 	}
 	
-	public StackNameAndId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, DuplicateStackException, IOException, InvalidParameterException, InterruptedException, CannotFindVpcException {
+	public StackNameAndId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, CfnAssistException, IOException, InterruptedException {
 		File file = new File(filename);
 		return applyTemplate(file, projAndEnv);
 	}
 	
 	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus, DuplicateStackException, CannotFindVpcException {
+			InvalidStackParameterException, InterruptedException, CfnAssistException {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
 	// TODO version that we can pass vpc into so when doing batch operations not repeatedly getting
-	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws FileNotFoundException, IOException, InvalidParameterException, InterruptedException, NotReadyException, WrongNumberOfStacksException, WrongStackStatus, DuplicateStackException, CannotFindVpcException {
+	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws 
+		FileNotFoundException, IOException, InterruptedException, CfnAssistException {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
@@ -135,7 +136,7 @@ public class AwsFacade {
 	}
 
 	private StackNameAndId updateStack(ProjectAndEnv projAndEnv,
-			Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory) throws FileNotFoundException, InvalidParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
+			Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory) throws FileNotFoundException, InvalidStackParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
 		
 		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters);
 		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
@@ -154,7 +155,7 @@ public class AwsFacade {
 		return id;		
 	}
 
-	private String findStackToUpdate(List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws InvalidParameterException {
+	private String findStackToUpdate(List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws InvalidStackParameterException {
 		for(TemplateParameter param : declaredParameters) {
 			if (param.getParameterKey().equals(PARAMETER_STACKNAME)) {
 				String defaultValue = param.getDefaultValue();
@@ -162,20 +163,18 @@ public class AwsFacade {
 					return createName(projAndEnv, defaultValue);
 				} else {
 					logger.error(String.format("Found parameter %s but no default given",PARAMETER_STACKNAME));
-					throw new InvalidParameterException(PARAMETER_STACKNAME); 
+					throw new InvalidStackParameterException(PARAMETER_STACKNAME); 
 				}
 			}
 		}
 		logger.error(String.format("Unable to find parameter %s which is required to peform a stack update", PARAMETER_STACKNAME));
-		throw new InvalidParameterException(PARAMETER_STACKNAME);
+		throw new InvalidStackParameterException(PARAMETER_STACKNAME);
 	}
 
 	private StackNameAndId createStack(File file, ProjectAndEnv projAndEnv,
 			Collection<Parameter> userParameters,
 			List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory)
-			throws WrongNumberOfStacksException, NotReadyException,
-			WrongStackStatus, InterruptedException, DuplicateStackException,
-			InvalidParameterException, FileNotFoundException, IOException, CannotFindVpcException {
+			throws CfnAssistException, InterruptedException, FileNotFoundException, IOException {
 		String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
 		
@@ -238,11 +237,11 @@ public class AwsFacade {
 		return false;
 	}
 
-	private Vpc findVpcForEnv(ProjectAndEnv projAndEnv) throws InvalidParameterException {
+	private Vpc findVpcForEnv(ProjectAndEnv projAndEnv) throws InvalidStackParameterException {
 		Vpc vpcForEnv = vpcRepository.getCopyOfVpc(projAndEnv);
 		if (vpcForEnv==null) {
 			logger.error("Unable to find VPC tagged as environment:" + projAndEnv);
-			throw new InvalidParameterException(projAndEnv.toString());
+			throw new InvalidStackParameterException(projAndEnv.toString());
 		}
 		logger.info(String.format("Found VPC %s corresponding to %s", vpcForEnv.getVpcId(), projAndEnv));
 		return vpcForEnv;
@@ -303,14 +302,14 @@ public class AwsFacade {
 	}
 
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv) throws InvalidParameterException,
+			ProjectAndEnv projAndEnv) throws InvalidStackParameterException,
 			FileNotFoundException, IOException, CfnAssistException,
 			InterruptedException {
 		return applyTemplatesFromFolder(folderPath, projAndEnv, new LinkedList<Parameter>());
 	}
 
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException {
+			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidStackParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException {
 		ArrayList<StackNameAndId> updatedStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
@@ -351,15 +350,15 @@ public class AwsFacade {
 	}
 
 	private File validFolder(String folderPath)
-			throws InvalidParameterException {
+			throws InvalidStackParameterException {
 		File folder = new File(folderPath);
 		if (!folder.isDirectory()) {
-			throw new InvalidParameterException(folderPath + " is not a directory");
+			throw new InvalidStackParameterException(folderPath + " is not a directory");
 		}
 		return folder;
 	}
 	
-	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidParameterException, CfnAssistException {
+	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidStackParameterException, CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -437,11 +436,11 @@ public class AwsFacade {
 		return cfnRepository.getStacks();
 	}
 
-	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws InvalidParameterException, TooManyELBException {
+	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws InvalidStackParameterException, TooManyELBException {
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
 		if (name.endsWith(DELTA_EXTENSTION)) {
-			throw new InvalidParameterException("Cannot invoke for .delta files");
+			throw new InvalidStackParameterException("Cannot invoke for .delta files");
 		}
 		logger.info(String.format("Checking for non-instance-associated stacks for %s and name %s. Will use %s:%s if >1 ELB",
 				projectAndEnv, name, AwsFacade.TYPE_TAG,typeTag));

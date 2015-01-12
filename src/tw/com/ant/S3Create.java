@@ -11,7 +11,7 @@ import tw.com.commandline.CommandLineException;
 import tw.com.commandline.S3CreateAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.InvalidStackParameterException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
@@ -23,7 +23,7 @@ public class S3Create implements ActionElement {
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws FileNotFoundException, IOException,
-			InvalidParameterException, InterruptedException,
+			InvalidStackParameterException, InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		
 		S3CreateAction action = new S3CreateAction();

@@ -8,7 +8,8 @@ import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.InvalidParameterException;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
@@ -38,11 +39,11 @@ public interface StackRepository {
 	public abstract Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException;
 
 	public abstract StackNameAndId updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
-			String stackName) throws InvalidParameterException,
+			String stackName) throws InvalidStackParameterException,
 			WrongNumberOfStacksException, NotReadyException;
 
 	public abstract StackNameAndId createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
-			Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws NotReadyException;
+			Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws CfnAssistException;
 
 	public abstract void deleteStack(String stackName);
 	
