@@ -403,7 +403,7 @@ Two diagrams will be generated for each VPC, one for the network configuration a
 
 **Work in progess - please give feedback via github issues**
 
-`cfnassist -diagram targetFolder`
+`cfnassist -diagrams targetFolder`
 
 > targetFolder/network_diagramvpc-56698c33.dot
 
