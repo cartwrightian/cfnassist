@@ -8,9 +8,7 @@ import org.junit.runner.RunWith;
 
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.pictures.NetworkChildDiagram;
-import tw.com.pictures.SubnetDiagramBuilder;
-import tw.com.pictures.VPCDiagramBuilder;
+import tw.com.pictures.*;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.IpPermission;
@@ -23,13 +21,13 @@ import com.amazonaws.services.ec2.model.Tag;
 public class TestSubnetDiagramBuilder extends EasyMockSupport {
 
 	private NetworkChildDiagram networkDiagram;
-	private SecurityChildDiagram securityDiagram;
+	private tw.com.pictures.SecurityChildDiagram securityDiagram;
 	private SubnetDiagramBuilder subnetDiagramBuilder;
 	
 	@Before
 	public void beforeEachTestRuns() {
 		networkDiagram = createStrictMock(NetworkChildDiagram.class);
-		securityDiagram = createStrictMock(SecurityChildDiagram.class);
+		securityDiagram = createStrictMock(tw.com.pictures.SecurityChildDiagram.class);
 		createStrictMock(VPCDiagramBuilder.class);
 		Subnet subnet = new Subnet().withSubnetId("subnetId").withCidrBlock("cidrBlock");
 		subnetDiagramBuilder = new SubnetDiagramBuilder(networkDiagram, securityDiagram, subnet);

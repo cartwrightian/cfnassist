@@ -5,7 +5,6 @@ import com.amazonaws.services.ec2.model.Vpc;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.GraphFacade;
-import tw.com.unit.SecurityChildDiagram;
 
 public class DiagramFactory {
 

@@ -10,10 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import tw.com.exceptions.CfnAssistException;
-import tw.com.pictures.DiagramFactory;
-import tw.com.pictures.NetworkChildDiagram;
-import tw.com.pictures.SubnetDiagramBuilder;
-import tw.com.pictures.VPCDiagramBuilder;
+import tw.com.pictures.*;
 
 import com.amazonaws.services.ec2.model.Subnet;
 
@@ -23,13 +20,13 @@ public class TestDiagramFactory extends EasyMockSupport {
 	private DiagramFactory factory;
 	private VPCDiagramBuilder parentDiagramBuilder;
 	private NetworkChildDiagram childNetworkDiagram;
-	private SecurityChildDiagram childSecurityDiagram;
+	private tw.com.pictures.SecurityChildDiagram childSecurityDiagram;
 	
 	@Before
 	public void beforeEachTestRuns() {
 		parentDiagramBuilder = createStrictMock(VPCDiagramBuilder.class);
 		childNetworkDiagram = createStrictMock(NetworkChildDiagram.class);
-		childSecurityDiagram = createStrictMock(SecurityChildDiagram.class);
+		childSecurityDiagram = createStrictMock(tw.com.pictures.SecurityChildDiagram.class);
 		
 		factory = new DiagramFactory();
 	}
