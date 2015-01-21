@@ -188,7 +188,7 @@ public class VPCDiagramBuilder extends CommonBuilder {
 		if (cidr==null) {
 			cidr = "no cidr";
 		}
-		if (!destination.equals("local")) {
+		if (!"local".equals(destination)) {
 			networkDiagram.addConnectionFromSubDiagram(destination, subnetId, subnetDiagramBuilders.get(subnetId), cidr);
 		} else {
 			networkDiagram.associateWithSubDiagram(cidr, subnetId, subnetDiagramBuilders.get(subnetId));
@@ -197,7 +197,9 @@ public class VPCDiagramBuilder extends CommonBuilder {
 		
 	private String getDestination(Route route) {
 		String dest = route.getGatewayId();
-		if (dest==null) {
+		if ("blackhole".equals(route.getState())){
+			dest = "blackhole";
+		} else if (dest==null) {
 			dest = route.getInstanceId();
 		}
 		return dest;
