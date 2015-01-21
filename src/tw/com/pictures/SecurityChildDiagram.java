@@ -1,6 +1,4 @@
-package tw.com.unit;
-
-import tw.com.pictures.ChildDiagram;
+package tw.com.pictures;
 
 public class SecurityChildDiagram extends TemplatedChildDiagram<ChildDiagram> {
 

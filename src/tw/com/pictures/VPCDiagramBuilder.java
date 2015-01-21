@@ -8,7 +8,6 @@ import java.util.Map;
 import tw.com.AwsFacade;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
-import tw.com.unit.SecurityChildDiagram;
 
 import com.amazonaws.services.ec2.model.Address;
 import com.amazonaws.services.ec2.model.IpPermission;

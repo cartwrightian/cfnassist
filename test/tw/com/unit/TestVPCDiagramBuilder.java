@@ -28,11 +28,7 @@ import com.amazonaws.services.rds.model.DBInstance;
 
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.pictures.ChildDiagram;
-import tw.com.pictures.Diagram;
-import tw.com.pictures.NetworkChildDiagram;
-import tw.com.pictures.SubnetDiagramBuilder;
-import tw.com.pictures.VPCDiagramBuilder;
+import tw.com.pictures.*;
 import tw.com.pictures.dot.Recorder;
 
 @RunWith(EasyMockRunner.class)
@@ -80,7 +76,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		EasyMock.expect(securityDiagram.createSubDiagram("subnetId", "subnetName [subnetId]\n(cidrBlock)")).andReturn(childDiagram);
 		
 		replayAll();
-		SecurityChildDiagram result = builder.createSecurityDiagramForSubnet(subnet);
+		tw.com.pictures.SecurityChildDiagram result = builder.createSecurityDiagramForSubnet(subnet);
 		verifyAll();
 		assertSame(childDiagram,result.getContained());
 	}

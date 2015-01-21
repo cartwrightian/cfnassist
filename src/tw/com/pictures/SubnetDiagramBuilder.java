@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
-import tw.com.unit.SecurityChildDiagram;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.IpPermission;
