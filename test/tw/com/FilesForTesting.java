@@ -1,28 +1,32 @@
 package tw.com;
 
-public class FilesForTesting {	
-	private static String DIR = "src/cfnScripts/";
-	
-	public static final String SUBNET_STACK = DIR + "subnet.json";
-	public static final String SUBNET_STACK_DELTA = DIR + "subnet.delta.json";
-	public static final String SIMPLE_STACK = DIR + "simpleStack.json";
-	public static final String ACL = DIR + "acl.json";
-	public static final String SUBNET_CIDR_PARAM = DIR + "subnetWithCIDRParam.json";
-	public static final String SUBNET_WITH_PARAM = DIR + "subnetWithParam.json";
-	public static final String SUBNET_WITH_S3_PARAM = DIR + "subnetWithS3Param.json";
-	public static final String SUBNET_STACK_WITH_VPCTAG_PARAM = DIR + "subnetWithVPCTagParam.json";
-	public static final String SUBNET_WITH_BUILD = DIR + "subnetWithBuild.json";
-	public static final String ELB = DIR + "elb.json";
-	public static final String INSTANCE = DIR + "instance.json";
-	public static final String INSTANCE_WITH_TYPE = DIR + "instanceWithTypeTag.json";
-	public static final String CAUSEROLLBACK = DIR + "causesRollBack.json";
-	public static final String ELB_AND_INSTANCE = DIR + "elbAndInstance.json";
-	
-	public static final String ORDERED_SCRIPTS_FOLDER = DIR + "orderedScripts";
-	public static final String ORDERED_SCRIPTS_WITH_DELTAS_FOLDER = DIR + "orderedScriptsWithDelta/";
-	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_DELTAS_FOLDER + "02createSubnet.delta.json";
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-	public static final String STACK_IAM_CAP =DIR + "simpleIAMStack.json";
+public class FilesForTesting {	
+	// eclipse on windows may need you to set working directory to basedir and not workspace
+	private static Path DIR = Paths.get("src","cfnScripts");
+	
+	public static final String SUBNET_STACK = DIR.resolve("subnet.json").toString();
+	public static final String SUBNET_STACK_DELTA = DIR.resolve("subnet.delta.json").toString();
+	public static final String SIMPLE_STACK = DIR.resolve("simpleStack.json").toString();
+	public static final String ACL = DIR.resolve("acl.json").toString();
+	public static final String SUBNET_CIDR_PARAM = DIR.resolve("subnetWithCIDRParam.json").toString();
+	public static final String SUBNET_WITH_PARAM = DIR.resolve("subnetWithParam.json").toString();
+	public static final String SUBNET_WITH_S3_PARAM = DIR.resolve("subnetWithS3Param.json").toString();
+	public static final String SUBNET_STACK_WITH_VPCTAG_PARAM = DIR.resolve("subnetWithVPCTagParam.json").toString();
+	public static final String SUBNET_WITH_BUILD = DIR.resolve("subnetWithBuild.json").toString();
+	public static final String ELB = DIR.resolve("elb.json").toString();
+	public static final String INSTANCE = DIR.resolve("instance.json").toString();
+	public static final String INSTANCE_WITH_TYPE = DIR.resolve("instanceWithTypeTag.json").toString();
+	public static final String CAUSEROLLBACK = DIR.resolve("causesRollBack.json").toString();
+	public static final String ELB_AND_INSTANCE = DIR.resolve("elbAndInstance.json").toString();
+	
+	public static final String ORDERED_SCRIPTS_FOLDER = DIR.resolve("orderedScripts").toString();
+	public static final Path ORDERED_SCRIPTS_WITH_DELTAS_FOLDER = DIR.resolve("orderedScriptsWithDelta");
+	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_DELTAS_FOLDER.resolve("02createSubnet.delta.json").toString();
+
+	public static final String STACK_IAM_CAP = DIR.resolve("simpleIAMStack.json").toString();
 
 	
 
