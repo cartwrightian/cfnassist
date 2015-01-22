@@ -15,11 +15,13 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 	private Map<String, String> instanceNames = new HashMap<String,String>(); // id -> name
 	private NetworkChildDiagram networkChildDiagram;
 	private SecurityChildDiagram securityChildDiagram;
+	private String id;
 
 	public SubnetDiagramBuilder(NetworkChildDiagram networkChildDiagram, SecurityChildDiagram securityDiagram, Subnet subnet) {
 		instanceNames = new HashMap<String, String>();
 		this.networkChildDiagram = networkChildDiagram;
 		this.securityChildDiagram = securityDiagram;
+		this.id = subnet.getSubnetId();
 	}
 
 	public void add(Instance instance) throws CfnAssistException {
@@ -77,7 +79,9 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 		String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
 		String routeTableId = routeTable.getRouteTableId();
 		String label = AmazonVPCFacade.createLabelFromNameAndID(routeTableId, name);
-		networkChildDiagram.addRouteTable(routeTableId, label);
+		
+		String diagramIdForTable = formRouteTableIdForDiagram(id, routeTableId);
+		networkChildDiagram.addRouteTable(diagramIdForTable, label);
 	}
 
 	public ChildDiagram getNetworkDiagram() {

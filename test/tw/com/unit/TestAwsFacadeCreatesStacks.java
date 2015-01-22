@@ -33,6 +33,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
@@ -45,6 +46,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private VpcRepository vpcRepository;
 	private MonitorStackEvents monitor;
 	private ELBRepository elbRepository;
+	private CloudRepository cloudRepository;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -52,8 +54,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		cfnRepository = createMock(CloudFormRepository.class);
 		vpcRepository = createMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
+		cloudRepository =  createStrictMock(CloudRepository.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository);
 	}
 	
 	@Test

@@ -16,6 +16,8 @@ import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.NetworkAclAssociation;
 import com.amazonaws.services.ec2.model.NetworkAclEntry;
 import com.amazonaws.services.ec2.model.PortRange;
+import com.amazonaws.services.ec2.model.Route;
+import com.amazonaws.services.ec2.model.RouteState;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.RouteTableAssociation;
 import com.amazonaws.services.ec2.model.SecurityGroup;
@@ -37,6 +39,8 @@ public class VpcTestBuilder {
 	private String vpcId;
 	private List<NetworkAcl> acls;
 	private List<SecurityGroup> securityGroups;
+	private List<Route> routes;
+
 	//
 	private Vpc vpc;
 	private Subnet insSubnet;
@@ -44,14 +48,15 @@ public class VpcTestBuilder {
 	private Subnet dbSubnet;
 	private Instance instance;
 	private RouteTable routeTable;
-	private RouteTableAssociation association;
+	private RouteTableAssociation routeTableAssociationA;
+	private RouteTableAssociation routeTableAssociationB;
 	private Address eip;
 	private LoadBalancerDescription elb;
 	private DBInstance dbInstance;
 	private NetworkAclAssociation aclAssoc;
 	private PortRange portRange;
-	private NetworkAclEntry outboundEntry;
-	private NetworkAclEntry inboundEntry;
+	private NetworkAclEntry outboundAclEntry;
+	private NetworkAclEntry inboundAclEntry;
 	private NetworkAcl acl;
 	private IpPermission ipPermsInbound;
 	private IpPermission ipPermsOutbound;
@@ -65,14 +70,15 @@ public class VpcTestBuilder {
 	
 	public VpcTestBuilder(String vpcId) {
 		this.vpcId = vpcId;
-		subnets = new LinkedList<Subnet>();
-		instances = new LinkedList<Instance>();
-		routeTables = new LinkedList<RouteTable>();
+		subnets = new LinkedList<>();
+		instances = new LinkedList<>();
+		routeTables = new LinkedList<>();
 		eips = new LinkedList<Address>();
-		loadBalancers = new LinkedList<LoadBalancerDescription>();
-		databases = new LinkedList<DBInstance>();
+		loadBalancers = new LinkedList<>();
+		databases = new LinkedList<>();
 		acls = new LinkedList<>();
 		securityGroups = new LinkedList<>();
+		routes = new LinkedList<>();
 		//
 		createVPC();
 	}
@@ -91,12 +97,19 @@ public class VpcTestBuilder {
 				withTags(CreateNameTag("instanceName")).
 				withPrivateIpAddress("privateIp");
 		String instanceId = instance.getInstanceId();
-		association = new RouteTableAssociation().
+		routeTableAssociationA = new RouteTableAssociation().
 				withRouteTableAssociationId("assocId").
 				withSubnetId(subnetId);
+		routeTableAssociationB = new RouteTableAssociation().
+				withRouteTableAssociationId("assocId").
+				withSubnetId(dbSubnet.getSubnetId());
+		add(new Route().withDestinationCidrBlock("routeADest").withGatewayId("igwId").withState(RouteState.Active));
+		add(new Route().withDestinationCidrBlock("routeBDest").withInstanceId("instanceId").withState(RouteState.Active));
+		add(new Route().withDestinationCidrBlock("routeCDest").withState(RouteState.Blackhole));
 		routeTable = new RouteTable().
 				withRouteTableId("routeTableId").
-				withAssociations(association);
+				withAssociations(routeTableAssociationA, routeTableAssociationB).
+				withRoutes(routes);
 		eip = new Address().
 				withAllocationId("eipAllocId").
 				withInstanceId(instanceId).
@@ -122,14 +135,14 @@ public class VpcTestBuilder {
 		portRange = new PortRange().
 				withFrom(1024).
 				withTo(2048);
-		outboundEntry = new NetworkAclEntry().
+		outboundAclEntry = new NetworkAclEntry().
 				withEgress(true).
 				withCidrBlock("cidrBlockOut").
 				withPortRange(portRange).
 				withRuleAction("allow").
 				withProtocol("6").
 				withRuleNumber(42);
-		inboundEntry = new NetworkAclEntry().
+		inboundAclEntry = new NetworkAclEntry().
 				withEgress(false).
 				withCidrBlock("cidrBlockIn").
 				withPortRange(portRange).
@@ -137,7 +150,7 @@ public class VpcTestBuilder {
 				withProtocol("6").
 				withRuleNumber(43);
 		acl = new NetworkAcl().withAssociations(aclAssoc).
-				withEntries(outboundEntry, inboundEntry).
+				withEntries(outboundAclEntry, inboundAclEntry).
 				withNetworkAclId("aclId");
 		ipPermsInbound = new IpPermission().withFromPort(80).withToPort(89).withIpProtocol("tcp").withIpRanges("ipRanges");
 		ipPermsOutbound = new IpPermission().withFromPort(600).withToPort(700).withIpProtocol("tcp").withIpRanges("ipRanges");
@@ -160,7 +173,7 @@ public class VpcTestBuilder {
 	private void AddItemsToVpc() {
 		add(insSubnet);
 		add(dbSubnet);
-		add(instance);	
+		add(instance);
 		add(routeTable);
 		add(eip);
 		addAndAssociate(elb);
@@ -169,7 +182,11 @@ public class VpcTestBuilder {
 		addAndAssociateWithInstances(instSecurityGroup);
 		addAndAssociateWithDBs(dbSecurityGroup);	
 	}
-	
+
+	private void add(Route route) {
+		routes.add(route);		
+	}
+
 	public Vpc getVpc() {
 		return vpc;
 	}
@@ -291,11 +308,11 @@ public class VpcTestBuilder {
 	}
 
 	public NetworkAclEntry getOutboundEntry() {
-		return outboundEntry;
+		return outboundAclEntry;
 	}
 
 	public NetworkAclEntry getInboundEntry() {
-		return inboundEntry;
+		return inboundAclEntry;
 	}
 
 	public NetworkAcl getAcl() {
@@ -344,6 +361,18 @@ public class VpcTestBuilder {
 
 	public IpPermission getElbIpPermsOutbound() {
 		return ipElbPermsOutbound;
+	}
+
+	public Route getRouteA() {
+		return routes.get(0);
+	}
+	
+	public Route getRouteB() {
+		return routes.get(1);
+	}
+	
+	public Route getRouteC() {
+		return routes.get(2);
 	}
 
 }

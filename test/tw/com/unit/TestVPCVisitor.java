@@ -87,7 +87,15 @@ public class TestVPCVisitor extends EasyMockSupport {
 		subnetDiagramBuilder.add(instance);
 		vpcDiagramBuilder.add(instanceSubnetId, subnetDiagramBuilder);
 		vpcDiagramBuilder.add(dbSubnetId, dbSubnetDiagramBuilder);
-		vpcDiagramBuilder.addRouteTable(routeTable, instanceSubnetId);
+		// route table & routes
+		vpcDiagramBuilder.addAsssociatedRouteTable(routeTable, instanceSubnetId);
+		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), instanceSubnetId, vpcBuilder.getRouteA());
+		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), instanceSubnetId, vpcBuilder.getRouteB());
+		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), instanceSubnetId, vpcBuilder.getRouteC());
+		vpcDiagramBuilder.addAsssociatedRouteTable(routeTable, dbSubnetId);
+		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), dbSubnetId, vpcBuilder.getRouteA());
+		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), dbSubnetId, vpcBuilder.getRouteB());
+		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), dbSubnetId, vpcBuilder.getRouteC());
 		// eip
 		vpcDiagramBuilder.addEIP(eip);
 		vpcDiagramBuilder.linkEIPToInstance(eip.getPublicIp(), instanceId);

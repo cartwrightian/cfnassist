@@ -210,13 +210,14 @@ public class VPCVisitor {
 		List<Route> routes = routeTable.getRoutes();
 		List<RouteTableAssociation> usersOfTable = routeTable.getAssociations();
 		for (RouteTableAssociation usedBy : usersOfTable) {
-			String subnetId = usedBy.getSubnetId();
+			String subnetId = usedBy.getSubnetId(); // can subnet ever be null in an association?
+			
 			if (subnetId!=null) {
-				vpcDiagram.addRouteTable(routeTable, subnetId); // possible duplication if route table reuse?
+				vpcDiagram.addAsssociatedRouteTable(routeTable, subnetId); // possible duplication if route table reused?
 				for (Route route : routes) {
-					vpcDiagram.addRoute(subnetId, route);
+					vpcDiagram.addRoute(routeTable.getRouteTableId(), subnetId, route);
 				}
-			}
+			} 
 		}
  	}
 

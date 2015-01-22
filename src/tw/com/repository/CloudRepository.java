@@ -211,4 +211,8 @@ public class CloudRepository {
 			}
 		}
 	}
+
+	public void updateAddIpAndPortToSecGroup(String groupId, String cidr, Integer port) {
+		cloudClient.addIpToSecGroup(groupId, port, cidr);
+	}
 }

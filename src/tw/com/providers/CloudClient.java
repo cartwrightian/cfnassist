@@ -9,8 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import tw.com.exceptions.WrongNumberOfInstancesException;
 
+import com.amazonaws.event.ProgressEvent;
+import com.amazonaws.event.ProgressListener;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Address;
+import com.amazonaws.services.ec2.model.AuthorizeSecurityGroupIngressRequest;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DeleteTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeAddressesResult;
@@ -25,13 +28,14 @@ import com.amazonaws.services.ec2.model.DescribeVpcsResult;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.RevokeSecurityGroupIngressRequest;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
-public class CloudClient {
+public class CloudClient implements ProgressListener {
 	private static final Logger logger = LoggerFactory.getLogger(CloudClient.class);
 
 	private AmazonEC2Client ec2Client;
@@ -123,6 +127,35 @@ public class CloudClient {
 	public List<Address> getEIPs() {
 		DescribeAddressesResult result = ec2Client.describeAddresses();
 		return result.getAddresses();
+	}
+
+	public void addIpToSecGroup(String groupId, Integer port, String cidrIp) {
+		logger.info(String.format("Add cidr %s for port %s to %s", cidrIp, port.toString(), groupId));
+		AuthorizeSecurityGroupIngressRequest request = new AuthorizeSecurityGroupIngressRequest();
+		request.setGroupId(groupId);
+		request.setFromPort(port);
+		request.setToPort(port);
+		request.setCidrIp(cidrIp);
+		request.setGeneralProgressListener(this);
+		request.setIpProtocol("tcp");
+		ec2Client.authorizeSecurityGroupIngress(request);			
+	}
+
+	@Override
+	public void progressChanged(ProgressEvent progressEvent) {
+		logger.info(progressEvent.toString());	
+	}
+
+	public void deleteIpFromSecGroup(String groupId, Integer port, String cidr) {
+		RevokeSecurityGroupIngressRequest request = new RevokeSecurityGroupIngressRequest();
+		request.setGroupId(groupId);
+		request.setCidrIp(cidr);
+		request.setIpProtocol("tcp");
+		request.setFromPort(port);
+		request.setToPort(port);
+		request.setGeneralProgressListener(this);
+		ec2Client.revokeSecurityGroupIngress(request );
+		
 	}
 
 }

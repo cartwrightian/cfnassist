@@ -42,6 +42,7 @@ import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
 import tw.com.providers.ArtifactUploader;
+import tw.com.providers.ProvidesCurrentIp;
 
 @RunWith(EasyMockRunner.class)
 public class TestCommandLineActions extends EasyMockSupport {
@@ -56,6 +57,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	Collection<Parameter> params;
 	
 	String comment = "theComment";
+	private ProvidesCurrentIp ipProvider;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -64,6 +66,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		facade = createMock(AwsFacade.class);
 		artifactUploader = createMock(ArtifactUploader.class);
 		diagramCreator = createMock(DiagramCreator.class);
+		ipProvider = createStrictMock(ProvidesCurrentIp.class);
 		
 		params = new LinkedList<Parameter>();
 		stackNameAndId = new StackNameAndId("someName", "someId");
@@ -391,6 +394,20 @@ public class TestCommandLineActions extends EasyMockSupport {
 		validate(CLIArgBuilder.createDiagrams(folder));
 	}
 	
+	
+	@Test
+	public void testShouldWhiteListCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
+		setFactoryExpectations();
+		String type = "elbTypeTag";
+		Integer port = 8080;
+
+		EasyMock.expect(facadeFactory.getCurrentIpProvider()).andReturn(ipProvider);
+		facade.whitelistCurrentIpForPortToElb(projectAndEnv, type, ipProvider, port);
+		EasyMock.expectLastCall();
+		
+		validate(CLIArgBuilder.whitelistCurrentIP(type, port));
+	}
+	
 	@Test
 	public void shouldNotAllowSNSWithS3Create() {
 		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
@@ -552,8 +569,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		CfnAssistException, InterruptedException {
 		facadeFactory.setRegion(EnvironmentSetupForTests.getRegion());
 		facadeFactory.setProject(EnvironmentSetupForTests.PROJECT);
-		//facadeFactory.setSNSMonitoring(false);
-		//facadeFactory.setCommentTag("");
 		EasyMock.expect(facadeFactory.createFacade()).andReturn(facade);
 	}
 }

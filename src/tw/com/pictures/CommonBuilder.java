@@ -6,6 +6,7 @@ import java.util.Set;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.CommonElements;
+
 import com.amazonaws.services.ec2.model.IpPermission;
 
 public class CommonBuilder {
@@ -93,6 +94,11 @@ public class CommonBuilder {
 	
 	private boolean haveAddedPerm(String uniqueId) {
 		return addedIpPerms.contains(uniqueId);
+	}
+	
+
+	String formRouteTableIdForDiagram(String subnetId, String routeTableId) {
+		return String.format("%s_%s", subnetId, routeTableId);
 	}
 
 }

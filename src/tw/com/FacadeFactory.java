@@ -10,6 +10,7 @@ import tw.com.providers.ArtifactUploader;
 import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.providers.LoadBalancerClient;
+import tw.com.providers.ProvidesCurrentIp;
 import tw.com.providers.RDSClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
@@ -135,7 +136,7 @@ public class FacadeFactory {
 			}
 			
 			monitor.init();
-			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository);
+			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository);
 			if (comment!=null) {
 				awsFacade.setCommentTag(comment);
 			}
@@ -164,6 +165,11 @@ public class FacadeFactory {
 			diagramCreator = new DiagramCreator(amazonVpcFacade);
 		}
 		return diagramCreator;
+	}
+
+	public ProvidesCurrentIp getCurrentIpProvider() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

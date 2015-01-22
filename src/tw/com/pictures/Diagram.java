@@ -38,4 +38,6 @@ public interface Diagram extends CommonElements {
 
 	void associate(String uniqueIdA, String uniqueIdB);
 
+	void addRouteToInstance(String instanceId, String routeTableId, SubnetDiagramBuilder subnetDiagramBuilder, String cidr) throws CfnAssistException;
+
 }

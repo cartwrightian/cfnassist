@@ -186,6 +186,19 @@ public class TestCloudRepository extends EasyMockSupport {
 		assertEquals(aclId, result.get(0).getNetworkAclId());
 	}
 	
+	@Test
+	public void testShouldAddIpAndPortToASecurityGroup() {
+		String groupId = "groupId";
+		Integer port = 8081;
+		String cidr = "cidr";
+		
+		cloudClient.addIpToSecGroup(groupId , port, cidr);
+		EasyMock.expectLastCall();
+		
+		replayAll();
+		repository.updateAddIpAndPortToSecGroup(groupId, cidr, port);
+	}
+	
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {
 		Subnet matchingSubnet = new Subnet().withVpcId(vpcId).withSubnetId(subnetId);
 		

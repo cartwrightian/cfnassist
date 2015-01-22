@@ -54,7 +54,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 				withRouteTableId("routeTableId").
 				withTags(new Tag().withKey("Name").withValue("routeTableName"));;
 
-		networkDiagram.addRouteTable("routeTableId", "routeTableName [routeTableId]");
+		networkDiagram.addRouteTable("subnetId_routeTableId", "routeTableName [routeTableId]");
 		
 		replayAll();
 		subnetDiagramBuilder.addRouteTable(routeTable);

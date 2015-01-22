@@ -17,6 +17,7 @@ import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.NetworkAclEntry;
 import com.amazonaws.services.ec2.model.PortRange;
 import com.amazonaws.services.ec2.model.Route;
+import com.amazonaws.services.ec2.model.RouteState;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.RuleAction;
 import com.amazonaws.services.ec2.model.SecurityGroup;
@@ -171,40 +172,76 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddLocalRoute() throws CfnAssistException {
-		Route route = new Route().withGatewayId("local").withDestinationCidrBlock("cidr");
+		Route route = new Route().withGatewayId("local").
+				withDestinationCidrBlock("cidr").
+				withState(RouteState.Active);
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 
 		networkDiagram.associateWithSubDiagram("cidr", "subnetId", subnetDiagramBuilder);
 		
 		replayAll();
-		builder.addRoute("subnetId", route);
+		builder.addRoute("routeTableId", "subnetId", route);
 		verifyAll();
 	}
 	
 	@Test
 	public void shouldAddLocalRouteNoCIDR() throws CfnAssistException {
-		Route route = new Route().withGatewayId("local");
+		Route route = new Route().withGatewayId("local").
+				withState(RouteState.Active);
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 
 		networkDiagram.associateWithSubDiagram("no cidr", "subnetId", subnetDiagramBuilder);
 		
 		replayAll();
-		builder.addRoute("subnetId", route);
+		builder.addRoute("routeTableId","subnetId", route);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldAddNonLocalRoute() throws CfnAssistException {
-		Route route = new Route().withGatewayId("gatewayId").withDestinationCidrBlock("cidr");
+	public void shouldAddNonLocalRouteWithGateway() throws CfnAssistException {
+		Route route = new Route().withGatewayId("gatewayId").
+				withDestinationCidrBlock("cidr").
+				withState(RouteState.Active);
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 
-		networkDiagram.addConnectionFromSubDiagram("gatewayId", "subnetId", subnetDiagramBuilder, "cidr");
+		networkDiagram.addRouteToInstance("gatewayId", "subnetId_routeTableId", subnetDiagramBuilder, "cidr");
 		
 		replayAll();
-		builder.addRoute("subnetId", route);
+		builder.addRoute("routeTableId","subnetId", route);
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAddNonLocalRouteWithInstance() throws CfnAssistException {
+		Route route = new Route().
+				withInstanceId("targetInstance").
+				withDestinationCidrBlock("cidr").
+				withState(RouteState.Active);
+		
+		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
+
+		networkDiagram.addRouteToInstance("targetInstance", "subnetId_routeTableId", subnetDiagramBuilder, "cidr");
+		
+		replayAll();
+		builder.addRoute("routeTableId","subnetId", route);
+		verifyAll();
+	}
+	
+	@Test
+	public void shouldAddNonLocalRouteWithBlackhole() throws CfnAssistException {
+		Route route = new Route().
+				withDestinationCidrBlock("cidr").
+				withState(RouteState.Blackhole);
+		
+		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
+		
+		networkDiagram.addConnectionFromSubDiagram("blackhole", "subnetId", subnetDiagramBuilder, "cidr");
+		
+		replayAll();
+		builder.addRoute("routeTableId","subnetId", route);
 		verifyAll();
 	}
 	
@@ -217,7 +254,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		subnetDiagramBuilder.addRouteTable(routeTable);
 	
 		replayAll();
-		builder.addRouteTable(routeTable, "subnetId");
+		builder.addAsssociatedRouteTable(routeTable, "subnetId");
 		verifyAll();
 	}
 	
@@ -229,7 +266,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		networkDiagram.addRouteTable("rtId", "rtName [rtId]");
 	
 		replayAll();
-		builder.addRouteTable(routeTable, null);
+		builder.addAsssociatedRouteTable(routeTable, null);
 		verifyAll();
 	}
 	

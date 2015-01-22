@@ -60,6 +60,7 @@ public class Actions {
 		actions.add(new S3DeleteAction());
 		actions.add(new TidyOldStacksAction());
 		actions.add(new CreateDiagramAction());
+		actions.add(new WhitelistAction());
 	}
 
 }

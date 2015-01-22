@@ -39,6 +39,7 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.SetDeltaIndexForProjectAndEnv;
 import tw.com.repository.VpcRepository;
@@ -51,6 +52,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	private VpcRepository vpcRepository;
 	private MonitorStackEvents monitor;
 	private ELBRepository elbRepository;
+	private CloudRepository cloudRepository;
 	
 	private static final String THIRD_FILE = "03createRoutes.json";
 	
@@ -60,8 +62,9 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		cfnRepository = createMock(CloudFormRepository.class);
 		vpcRepository = createMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
+		cloudRepository =  createStrictMock(CloudRepository.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository);
 		
 		deleteFile(THIRD_FILE);
 	}

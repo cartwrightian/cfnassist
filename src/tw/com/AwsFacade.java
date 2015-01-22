@@ -39,7 +39,9 @@ import tw.com.parameters.CfnBuiltInParams;
 import tw.com.parameters.EnvVarParams;
 import tw.com.parameters.ParameterFactory;
 import tw.com.parameters.PopulatesParameters;
+import tw.com.providers.ProvidesCurrentIp;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
@@ -50,6 +52,7 @@ import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
+import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 
 public class AwsFacade {
 
@@ -70,15 +73,19 @@ public class AwsFacade {
 	private VpcRepository vpcRepository;
 	private CloudFormRepository cfnRepository;
 	private ELBRepository elbRepository;
+	private CloudRepository cloudRepository;
+
 	private MonitorStackEvents monitor;
 
 	private String commentTag="";
 
-	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, ELBRepository elbRepository) {
+
+	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, ELBRepository elbRepository, CloudRepository cloudRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
 		this.elbRepository = elbRepository;
+		this.cloudRepository = cloudRepository;
 	}
 	
 	public void setCommentTag(String commentTag) {
@@ -508,6 +515,21 @@ public class AwsFacade {
 			String typeTag) throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
 		logger.info(String.format("Update instances for ELB to match %s and type tag %s", projectAndEnv, typeTag));
 		return elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);	
+	}
+
+	public void whitelistCurrentIpForPortToElb(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {		
+		String cidr = hasCurrentIp.getCurrentIp();
+		logger.info(String.format("Request to add %s port:%s for elb on %s of type %s", cidr, port, projectAndEnv, type));
+		LoadBalancerDescription elb = elbRepository.findELBFor(projectAndEnv, type);
+		List<String> groups = elb.getSecurityGroups();
+		
+		if (groups.size()>1) {
+			throw new CfnAssistException("Found multiple security groups associated with elb " + elb.getDNSName());
+		}
+		
+		String groupId = groups.get(0);
+		logger.info("Found sec group: " + groupId);
+		cloudRepository.updateAddIpAndPortToSecGroup(groupId, cidr, port);
 	}
 
 }

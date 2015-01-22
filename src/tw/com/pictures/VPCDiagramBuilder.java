@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import tw.com.AwsFacade;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
@@ -15,6 +18,7 @@ import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.NetworkAclEntry;
 import com.amazonaws.services.ec2.model.PortRange;
 import com.amazonaws.services.ec2.model.Route;
+import com.amazonaws.services.ec2.model.RouteState;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.RuleAction;
 import com.amazonaws.services.ec2.model.SecurityGroup;
@@ -25,6 +29,10 @@ import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription
 import com.amazonaws.services.rds.model.DBInstance;
 
 public class VPCDiagramBuilder extends CommonBuilder {
+	private static final Logger logger = LoggerFactory.getLogger(VPCDiagramBuilder.class);
+
+	private static final String ROUTE_BLACKHOLE = RouteState.Blackhole.toString();
+	private static final String ROUTE_ACTIVE = RouteState.Active.toString();
 
 	private static final String CIDR_ANY = "any";
 	private Diagram networkDiagram;
@@ -87,11 +95,12 @@ public class VPCDiagramBuilder extends CommonBuilder {
 		return new SecurityChildDiagram(securityDiagram.createSubDiagram(subnet.getSubnetId(), label));
 	}
 
-	public void addRouteTable(RouteTable routeTable, String subnetId) throws CfnAssistException {
+	public void addAsssociatedRouteTable(RouteTable routeTable, String subnetId) throws CfnAssistException {
 		if (subnetId!=null) {
 			SubnetDiagramBuilder subnetDiagram = subnetDiagramBuilders.get(subnetId);
 			subnetDiagram.addRouteTable(routeTable);
 		} else {
+			// TODO needed? Caller is  guarding this case, so code currently unreachable
 			String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
 			String routeTableId = routeTable.getRouteTableId();
 
@@ -181,24 +190,39 @@ public class VPCDiagramBuilder extends CommonBuilder {
 		securityDiagram.associate(instanceId, securityGroup.getGroupId());		
 	}
 
-	// this is relying on the ID being the same on both diagrams (network & security)
-	public void addRoute(String subnetId, Route route) throws CfnAssistException {
-		String destination = getDestination(route);
+	// this is relying on the subnet ID being the same on both diagrams (network & security)
+	public void addRoute(String routeTableId, String subnetId, Route route) throws CfnAssistException {
 		String cidr = route.getDestinationCidrBlock();
 		if (cidr==null) {
 			cidr = "no cidr";
 		}
-		if (!destination.equals("local")) {
-			networkDiagram.addConnectionFromSubDiagram(destination, subnetId, subnetDiagramBuilders.get(subnetId), cidr);
+		
+		String state = route.getState();
+		if (ROUTE_ACTIVE.equals(state)) {
+			addActiveRoute(routeTableId, subnetId, route, cidr);
+		} else if (ROUTE_BLACKHOLE.equals(state)){
+			logger.warn("Route state is not active, cidr block is " + route.getDestinationCidrBlock());
+			networkDiagram.addConnectionFromSubDiagram(ROUTE_BLACKHOLE, subnetId, subnetDiagramBuilders.get(subnetId), cidr);
 		} else {
+			throw new CfnAssistException(String.format("Unexpected state for route with cidr %s, state was %s", cidr, state));
+		}
+	}
+
+	private void addActiveRoute(String routeTableId, String subnetId, Route route, String cidr) throws CfnAssistException {
+		String destination = getDestination(route);
+		if (!destination.equals("local")) { 
+			String diagramId = formRouteTableIdForDiagram(subnetId, routeTableId);
+			networkDiagram.addRouteToInstance(destination, diagramId, subnetDiagramBuilders.get(subnetId), cidr);
+		} else { 
+			// this associates the cidr block with the current subnet
 			networkDiagram.associateWithSubDiagram(cidr, subnetId, subnetDiagramBuilders.get(subnetId));
-		}		
+		}
 	}
 		
 	private String getDestination(Route route) {
 		String dest = route.getGatewayId();
 		if (dest==null) {
-			dest = route.getInstanceId();
+			dest = route.getInstanceId(); // api docs say this is a NAT instance, but could it be any instance?
 		}
 		return dest;
 	}

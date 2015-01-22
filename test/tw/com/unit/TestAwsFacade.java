@@ -42,6 +42,7 @@ import tw.com.exceptions.TooManyELBException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.repository.CloudFormRepository;
+import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
@@ -56,6 +57,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	private MonitorStackEvents monitor;
 	private String project = projectAndEnv.getProject();
 	private EnvironmentTag environmentTag = projectAndEnv.getEnvTag();
+	private CloudRepository cloudRepository;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -63,8 +65,9 @@ public class TestAwsFacade extends EasyMockSupport {
 		cfnRepository = createMock(CloudFormRepository.class);
 		vpcRepository = createMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
+		cloudRepository =  createStrictMock(CloudRepository.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository);
 	}
 	
 	@Test

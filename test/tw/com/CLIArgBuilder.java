@@ -176,6 +176,16 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
+	
+	public static String[] whitelistCurrentIP(String type, Integer port) {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-whitelist", type, port.toString()
+				};
+		return args;
+	}
 
 	public static String[] tidyNonLBAssociatedStacks() {
 		String[] args = { 
@@ -234,6 +244,7 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
+
 
 
 }

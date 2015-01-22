@@ -4,6 +4,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.ChildDiagram;
 import tw.com.pictures.Diagram;
 import tw.com.pictures.HasDiagramId;
+import tw.com.pictures.SubnetDiagramBuilder;
 
 public class GraphFacade implements Diagram {
 	public static final int SUBNET_TITLE_FONT_SIZE = 12;
@@ -58,6 +59,7 @@ public class GraphFacade implements Diagram {
 	public void addLoadBalancer(String uniqueId, String label) throws CfnAssistException {
 		graph.addNode(uniqueId).withShape(Shape.InvHouse).withLabel(label);	
 	}
+	
 	
 
 	private void addConnectionFromSubDiagram(String target, String start,
@@ -135,5 +137,11 @@ public class GraphFacade implements Diagram {
 	public void connectWithLabel(String uniqueIdA, String uniqueIdB, String label) {
 		commonElements.connectWithLabel(uniqueIdA, uniqueIdB, label);
 		
+	}
+
+	@Override
+	public void addRouteToInstance(String instanceId, String routeTableId,
+			SubnetDiagramBuilder subnetDiagramBuilder, String cidr) throws CfnAssistException {
+		addConnectionFromSubDiagram(instanceId, routeTableId, subnetDiagramBuilder, cidr);	
 	}
 }

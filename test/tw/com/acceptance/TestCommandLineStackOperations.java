@@ -158,12 +158,13 @@ public class TestCommandLineStackOperations {
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 	}
 	
+	@Ignore("work in progress")
 	@Test
-	public void testInvokeViaCommandLineDeploySwitchELBInstances() throws InterruptedException, TimeoutException {		
+	public void testInvokeViaCommandLineDeploySwitchELBInstancesAndWhitelistIP() throws InterruptedException, TimeoutException {		
 		String buildNumber = "876";
 		String typeTag = "web";
 		
-		String[] createIns = { 
+		String[] createELBAndInstance = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
@@ -171,12 +172,19 @@ public class TestCommandLineStackOperations {
 				"-file", FilesForTesting.ELB_AND_INSTANCE,
 				"-comment", testName
 				};
-		Main main = new Main(createIns);
+		Main main = new Main(createELBAndInstance);
 		main.parse();
 				
-		String[] args = CLIArgBuilder.updateELB(typeTag, buildNumber);
-		main = new Main(args);
+		String[] updateELB = CLIArgBuilder.updateELB(typeTag, buildNumber);
+		main = new Main(updateELB);
 		int result = main.parse();
+		assertEquals(0,result);
+		
+		Integer port = 8080;
+		String[] whitelist = CLIArgBuilder.whitelistCurrentIP(typeTag, port);
+		main = new Main(whitelist);
+		result = main.parse();
+		assertEquals(0, result);
 		
 		deletesStacks.ifPresent("CfnAssist876TestelbAndInstance");
 		assertEquals(0,result);

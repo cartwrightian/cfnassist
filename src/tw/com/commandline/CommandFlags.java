@@ -48,6 +48,7 @@ public class CommandFlags {
 	private Collection<Parameter> cfnParams;
 	private Collection<Parameter> artifacts;
 
+
 	public CommandFlags(String executableName, Options commandLineOptions) {
 		this.executableName = executableName;
 		this.commandLineOptions = commandLineOptions;
