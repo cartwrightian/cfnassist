@@ -2,14 +2,19 @@ package tw.com.integration;
 
 import static org.junit.Assert.*;
 
-import org.junit.Ignore;
+import java.net.InetAddress;
+
 import org.junit.Test;
+
+import tw.com.exceptions.CfnAssistException;
+import tw.com.providers.ProvidesCurrentIp;
 
 public class TestGetCurrentIpProvider {
 
-	@Ignore("Work in progress, need to find public ip service")
 	@Test
-	public void todo() {
-		fail("todo");
+	public void shouldGetCurrentIp() throws CfnAssistException {
+		ProvidesCurrentIp provider = new ProvidesCurrentIp();
+		InetAddress result = provider.getCurrentIp();
+		assertNotNull(result);
 	}
 }

@@ -1,5 +1,6 @@
 package tw.com.providers;
 
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -129,16 +130,30 @@ public class CloudClient implements ProgressListener {
 		return result.getAddresses();
 	}
 
-	public void addIpToSecGroup(String groupId, Integer port, String cidrIp) {
-		logger.info(String.format("Add cidr %s for port %s to %s", cidrIp, port.toString(), groupId));
+	public void addIpToSecGroup(String groupId, Integer port, InetAddress address) {
+		logger.info(String.format("Add address %s for port %s to group %s", address.getHostAddress(), port.toString(), groupId));
 		AuthorizeSecurityGroupIngressRequest request = new AuthorizeSecurityGroupIngressRequest();
 		request.setGroupId(groupId);
 		request.setFromPort(port);
 		request.setToPort(port);
-		request.setCidrIp(cidrIp);
+		String cidr = String.format("%s/32", address.getHostAddress());
+		request.setCidrIp(cidr);
 		request.setGeneralProgressListener(this);
 		request.setIpProtocol("tcp");
 		ec2Client.authorizeSecurityGroupIngress(request);			
+	}
+	
+	public void deleteIpFromSecGroup(String groupId, Integer port, InetAddress address) {
+		logger.info(String.format("Remove address %s for port %s on group %s", address.getHostAddress(), port.toString(), groupId));
+		RevokeSecurityGroupIngressRequest request = new RevokeSecurityGroupIngressRequest();
+		request.setGroupId(groupId);
+		String cidr = String.format("%s/32", address.getHostAddress());
+		request.setCidrIp(cidr);
+		request.setIpProtocol("tcp");
+		request.setFromPort(port);
+		request.setToPort(port);
+		request.setGeneralProgressListener(this);
+		ec2Client.revokeSecurityGroupIngress(request );	
 	}
 
 	@Override
@@ -146,16 +161,5 @@ public class CloudClient implements ProgressListener {
 		logger.info(progressEvent.toString());	
 	}
 
-	public void deleteIpFromSecGroup(String groupId, Integer port, String cidr) {
-		RevokeSecurityGroupIngressRequest request = new RevokeSecurityGroupIngressRequest();
-		request.setGroupId(groupId);
-		request.setCidrIp(cidr);
-		request.setIpProtocol("tcp");
-		request.setFromPort(port);
-		request.setToPort(port);
-		request.setGeneralProgressListener(this);
-		ec2Client.revokeSecurityGroupIngress(request );
-		
-	}
 
 }

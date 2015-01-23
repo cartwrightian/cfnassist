@@ -16,15 +16,15 @@ import tw.com.providers.ProvidesCurrentIp;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
-public class WhitelistAction extends SharedAction {
+public class BlacklistAction extends SharedAction {
 
 	@SuppressWarnings("static-access")
-	public WhitelistAction() {
+	public BlacklistAction() {
 		option = OptionBuilder.
-				withArgName("whitelist").
+				withArgName("blacklist").
 				hasArgs(2).
-				withDescription("Whitelist current ip (i.e. add to the security group) for ELB tagged with type tag for port").
-				create("whitelist");
+				withDescription("Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port").
+				create("blacklist");
 	}
 
 	@Override
@@ -38,7 +38,7 @@ public class WhitelistAction extends SharedAction {
 		ProvidesCurrentIp hasCurrentIp = factory.getCurrentIpProvider();
 		
 		Integer port = Integer.parseInt(argument[1]);
-		facade.whitelistCurrentIpForPortToElb(projectAndEnv, argument[0], hasCurrentIp, port);	
+		facade.blacklistCurrentIpForPortToElb(projectAndEnv, argument[0], hasCurrentIp, port);	
 	}
 
 	@Override

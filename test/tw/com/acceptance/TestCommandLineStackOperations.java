@@ -64,7 +64,8 @@ public class TestCommandLineStackOperations {
 			.ifPresent("CfnAssistTest01createSubnet")
 			.ifPresent("CfnAssistTest02createAcls")
 			.ifPresent("CfnAssistTestsimpleStack")
-			.ifPresent("CfnAssistTestsubnet");
+			.ifPresent("CfnAssistTestsubnet")
+			.ifPresent("CfnAssist876TestelbAndInstance");
 		deletesStacks.act();
 		testName = test.getMethodName();
 	}
@@ -158,7 +159,6 @@ public class TestCommandLineStackOperations {
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 	}
 	
-	@Ignore("work in progress")
 	@Test
 	public void testInvokeViaCommandLineDeploySwitchELBInstancesAndWhitelistIP() throws InterruptedException, TimeoutException {		
 		String buildNumber = "876";
@@ -173,18 +173,18 @@ public class TestCommandLineStackOperations {
 				"-comment", testName
 				};
 		Main main = new Main(createELBAndInstance);
-		main.parse();
-				
+		int result = main.parse();
+		assertEquals(0,result);
+		
 		String[] updateELB = CLIArgBuilder.updateELB(typeTag, buildNumber);
 		main = new Main(updateELB);
-		int result = main.parse();
+		result = main.parse();
 		assertEquals(0,result);
 		
 		Integer port = 8080;
 		String[] whitelist = CLIArgBuilder.whitelistCurrentIP(typeTag, port);
 		main = new Main(whitelist);
 		result = main.parse();
-		assertEquals(0, result);
 		
 		deletesStacks.ifPresent("CfnAssist876TestelbAndInstance");
 		assertEquals(0,result);

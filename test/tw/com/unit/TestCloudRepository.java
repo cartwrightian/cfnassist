@@ -2,6 +2,9 @@ package tw.com.unit;
 
 import static org.junit.Assert.*;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -187,16 +190,31 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldAddIpAndPortToASecurityGroup() {
+	public void testShouldAddIpAndPortToASecurityGroup() throws UnknownHostException {
 		String groupId = "groupId";
 		Integer port = 8081;
-		String cidr = "cidr";
+		InetAddress adddress = Inet4Address.getByName("192.168.0.1");
+
 		
-		cloudClient.addIpToSecGroup(groupId , port, cidr);
+		cloudClient.addIpToSecGroup(groupId , port, adddress);
 		EasyMock.expectLastCall();
 		
 		replayAll();
-		repository.updateAddIpAndPortToSecGroup(groupId, cidr, port);
+		repository.updateAddIpAndPortToSecGroup(groupId, adddress, port);
+	}
+	
+	@Test
+	public void testShouldRemoveIpAndPortFromASecurityGroup() throws UnknownHostException {
+		String groupId = "groupId";
+		Integer port = 8081;
+		InetAddress adddress = Inet4Address.getByName("192.168.0.2");
+
+		
+		cloudClient.deleteIpFromSecGroup(groupId , port, adddress);
+		EasyMock.expectLastCall();
+		
+		replayAll();
+		repository.updateRemoveIpAndPortFromSecGroup(groupId, adddress, port);
 	}
 	
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {

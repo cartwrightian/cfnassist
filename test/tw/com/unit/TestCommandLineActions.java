@@ -409,6 +409,19 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
+	public void testShouldBlackListCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
+		setFactoryExpectations();
+		String type = "elbTypeTag";
+		Integer port = 8080;
+
+		EasyMock.expect(facadeFactory.getCurrentIpProvider()).andReturn(ipProvider);
+		facade.blacklistCurrentIpForPortToElb(projectAndEnv, type, ipProvider, port);
+		EasyMock.expectLastCall();
+		
+		validate(CLIArgBuilder.blacklistCurrentIP(type, port));
+	}
+	
+	@Test
 	public void shouldNotAllowSNSWithS3Create() {
 		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		

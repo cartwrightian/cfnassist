@@ -1,5 +1,6 @@
 package tw.com.repository;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -212,7 +213,11 @@ public class CloudRepository {
 		}
 	}
 
-	public void updateAddIpAndPortToSecGroup(String groupId, String cidr, Integer port) {
-		cloudClient.addIpToSecGroup(groupId, port, cidr);
+	public void updateAddIpAndPortToSecGroup(String groupId, InetAddress address, Integer port) {
+		cloudClient.addIpToSecGroup(groupId, port, address);
+	}
+
+	public void updateRemoveIpAndPortFromSecGroup(String groupId, InetAddress address, Integer port) {
+		cloudClient.deleteIpFromSecGroup(groupId, port, address);	
 	}
 }

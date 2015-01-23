@@ -2,6 +2,9 @@ package tw.com.integration;
 
 import static org.junit.Assert.*;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 
 import org.junit.AfterClass;
@@ -69,10 +72,11 @@ public class TestManageSecGroups {
 	}
 
 	@Test
-	public void testShouldAddAndDeleteAnIpToASecurityGroup() {
+	public void testShouldAddAndDeleteAnIpToASecurityGroup() throws UnknownHostException {
 		Integer port = 8080;
+		InetAddress adddress = Inet4Address.getByName("192.168.0.1");
 		String cidr = "192.168.0.1/32";
-		client.addIpToSecGroup(groupId, port , cidr);
+		client.addIpToSecGroup(groupId, port , adddress);
 		
 		DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest().withGroupIds(groupId);
 		DescribeSecurityGroupsResult result = ec2Client.describeSecurityGroups(request);
@@ -90,7 +94,7 @@ public class TestManageSecGroups {
 		assertEquals(1, ipPermission.getIpRanges().size());
 		assertEquals(cidr, ipPermission.getIpRanges().get(0));
 		
-		client.deleteIpFromSecGroup(groupId, port, cidr);
+		client.deleteIpFromSecGroup(groupId, port, adddress);
 		
 		result = ec2Client.describeSecurityGroups(request);
 		securityGroups = result.getSecurityGroups();

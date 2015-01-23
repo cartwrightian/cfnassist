@@ -1,5 +1,9 @@
 package tw.com.unit;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -46,7 +50,7 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testAddsIpAndPortToELBSecGroup() throws CfnAssistException {
+	public void testAddsIpAndPortToELBSecGroup() throws CfnAssistException, UnknownHostException {
 		String type = "elbTypeTag";
 		
 		LoadBalancerDescription elbDescription = new LoadBalancerDescription().
@@ -54,16 +58,38 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 				withDNSName("dNSName").withSecurityGroups("elbSecGroupId");
 		
 		Integer port = 8080;
-		String cidr = "192.168.0.1/32";
+		InetAddress address = Inet4Address.getByName("192.168.0.1");
 		
 		EasyMock.expect(elbRepository.findELBFor(projectAndEnv, type)).andReturn(elbDescription);
-		cloudRepository.updateAddIpAndPortToSecGroup("elbSecGroupId", cidr, port);
+		cloudRepository.updateAddIpAndPortToSecGroup("elbSecGroupId", address, port);
 		EasyMock.expectLastCall();
-		EasyMock.expect(providesCurrentIp.getCurrentIp()).andReturn(cidr);
+		EasyMock.expect(providesCurrentIp.getCurrentIp()).andReturn(address);
 		
 		replayAll();
 		aws.whitelistCurrentIpForPortToElb(projectAndEnv, type, providesCurrentIp, port);
 		verifyAll();
 		
+	}
+	
+	@Test
+	public void testRemovesIpAndPortToELBSecGroup() throws CfnAssistException, UnknownHostException {
+		String type = "elbTypeTag";
+		
+		LoadBalancerDescription elbDescription = new LoadBalancerDescription().
+				withLoadBalancerName("elbName").
+				withDNSName("dNSName").
+				withSecurityGroups("elbSecGroupId");
+		
+		Integer port = 8090;
+		InetAddress address = Inet4Address.getByName("192.168.0.2");
+		
+		EasyMock.expect(elbRepository.findELBFor(projectAndEnv, type)).andReturn(elbDescription);
+		cloudRepository.updateRemoveIpAndPortFromSecGroup("elbSecGroupId", address, port);
+		EasyMock.expectLastCall();
+		EasyMock.expect(providesCurrentIp.getCurrentIp()).andReturn(address);
+		
+		replayAll();
+		aws.blacklistCurrentIpForPortToElb(projectAndEnv, type, providesCurrentIp, port);
+		verifyAll();		
 	}
 }

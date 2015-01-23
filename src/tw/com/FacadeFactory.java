@@ -168,8 +168,7 @@ public class FacadeFactory {
 	}
 
 	public ProvidesCurrentIp getCurrentIpProvider() {
-		// TODO Auto-generated method stub
-		return null;
+		return new ProvidesCurrentIp();
 	}
 
 }

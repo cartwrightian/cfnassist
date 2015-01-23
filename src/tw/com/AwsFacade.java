@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -518,8 +519,23 @@ public class AwsFacade {
 	}
 
 	public void whitelistCurrentIpForPortToElb(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {		
-		String cidr = hasCurrentIp.getCurrentIp();
-		logger.info(String.format("Request to add %s port:%s for elb on %s of type %s", cidr, port, projectAndEnv, type));
+		InetAddress address = hasCurrentIp.getCurrentIp();
+		logger.info(String.format("Request to add %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
+		String groupId = getSecGroupIdForELB(projectAndEnv, type);
+		logger.info("Found sec group: " + groupId);
+		cloudRepository.updateAddIpAndPortToSecGroup(groupId, address, port);
+	}
+
+	public void blacklistCurrentIpForPortToElb(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {
+		InetAddress address = hasCurrentIp.getCurrentIp();
+		logger.info(String.format("Request to remove %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
+		String groupId = getSecGroupIdForELB(projectAndEnv, type);
+		logger.info("Found sec group: " + groupId);
+		cloudRepository.updateRemoveIpAndPortFromSecGroup(groupId, address, port);
+	}
+	
+	private String getSecGroupIdForELB(ProjectAndEnv projectAndEnv, String type)
+			throws TooManyELBException, CfnAssistException {
 		LoadBalancerDescription elb = elbRepository.findELBFor(projectAndEnv, type);
 		List<String> groups = elb.getSecurityGroups();
 		
@@ -528,8 +544,7 @@ public class AwsFacade {
 		}
 		
 		String groupId = groups.get(0);
-		logger.info("Found sec group: " + groupId);
-		cloudRepository.updateAddIpAndPortToSecGroup(groupId, cidr, port);
+		return groupId;
 	}
 
 }

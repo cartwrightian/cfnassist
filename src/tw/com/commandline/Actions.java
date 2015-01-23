@@ -61,6 +61,7 @@ public class Actions {
 		actions.add(new TidyOldStacksAction());
 		actions.add(new CreateDiagramAction());
 		actions.add(new WhitelistAction());
+		actions.add(new BlacklistAction());
 	}
 
 }
