@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
+import tw.com.entity.Cidr;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 
@@ -192,24 +193,35 @@ public class VPCDiagramBuilder extends CommonBuilder {
 
 	// this is relying on the subnet ID being the same on both diagrams (network & security)
 	public void addRoute(String routeTableId, String subnetId, Route route) throws CfnAssistException {
-		String cidr = route.getDestinationCidrBlock();
-		if (cidr==null) {
-			cidr = "no cidr";
-		}
+		String string = route.getDestinationCidrBlock();
+		Cidr subnet = parseCidr(string);
 		
 		String state = route.getState();
 		if (ROUTE_ACTIVE.equals(state)) {
-			addActiveRoute(routeTableId, subnetId, route, cidr);
+			addActiveRoute(routeTableId, subnetId, route, subnet);
 		} else if (ROUTE_BLACKHOLE.equals(state)){
 			logger.warn("Route state is not active, cidr block is " + route.getDestinationCidrBlock());
-			networkDiagram.addConnectionFromSubDiagram(ROUTE_BLACKHOLE, subnetId, subnetDiagramBuilders.get(subnetId), cidr);
+			networkDiagram.addConnectionFromSubDiagram(ROUTE_BLACKHOLE, subnetId, subnetDiagramBuilders.get(subnetId), string);
 		} else {
-			throw new CfnAssistException(String.format("Unexpected state for route with cidr %s, state was %s", cidr, state));
+			throw new CfnAssistException(String.format("Unexpected state for route with cidr %s, state was %s", string, state));
 		}
 	}
 
-	private void addActiveRoute(String routeTableId, String subnetId, Route route, String cidr) throws CfnAssistException {
+	private Cidr parseCidr(String string) {
+		if (string==null) {
+			return null;
+		}
+		try {
+			return Cidr.parse(string);
+		} catch (CfnAssistException e) {
+			return null;
+		}
+	}
+
+	private void addActiveRoute(String routeTableId, String subnetId, Route route, Cidr subnet) throws CfnAssistException {
 		String destination = getDestination(route);
+		String cidr = subnetAsCidrString(subnet);
+		
 		if (!destination.equals("local")) { 
 			String diagramId = formRouteTableIdForDiagram(subnetId, routeTableId);
 			networkDiagram.addRouteToInstance(destination, diagramId, subnetDiagramBuilders.get(subnetId), cidr);
@@ -217,6 +229,15 @@ public class VPCDiagramBuilder extends CommonBuilder {
 			// this associates the cidr block with the current subnet
 			networkDiagram.associateWithSubDiagram(cidr, subnetId, subnetDiagramBuilders.get(subnetId));
 		}
+	}
+
+	private String subnetAsCidrString(Cidr subnet) {
+		String result = "no cidr";
+		if (subnet!=null) {
+			result = subnet.toString();
+		}
+		
+		return result;
 	}
 		
 	private String getDestination(Route route) {

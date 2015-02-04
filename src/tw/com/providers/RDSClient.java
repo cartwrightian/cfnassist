@@ -15,7 +15,6 @@ public class RDSClient {
 		this.rdsClient = rdsClient;
 	}
 
-	// TODO
 	public List<DBInstance> getDBInstancesForVpc(String vpcId) {	
 		DescribeDBInstancesResult result = rdsClient.describeDBInstances();
 		List<DBInstance> dbInstances = result.getDBInstances();

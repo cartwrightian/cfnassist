@@ -48,6 +48,7 @@
 	<path id="apacheCommons">
 		<pathelement location="lib/commons-io-2.4/commons-io-2.4.jar"/>
 		<pathelement location="lib/commons-cli-1.2/commons-cli-1.2.jar"/>
+		<pathelement location="lib/commons-net-3.3/commons-net-3.3.jar"/>
 	</path>
 	<path id="ant_libs">
 		<pathelement location="lib/apache-ant-1.9.3/lib/ant.jar"/>

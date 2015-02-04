@@ -87,10 +87,10 @@ public class VpcTestBuilder {
 		vpc = new Vpc().withVpcId(vpcId);
 		insSubnet = new Subnet().
 				withSubnetId("subnetIdA").
-				withCidrBlock("cidrBlockA");
+				withCidrBlock("10.1.0.0/16");
 		dbSubnet = new Subnet().
 				withSubnetId("subnetIdDB").
-				withCidrBlock("cidrBlockDB");
+				withCidrBlock("10.2.0.0/16");
 		subnetId = insSubnet.getSubnetId();
 		instance = new Instance().
 				withInstanceId("instanceId").
@@ -103,9 +103,9 @@ public class VpcTestBuilder {
 		routeTableAssociationB = new RouteTableAssociation().
 				withRouteTableAssociationId("assocId").
 				withSubnetId(dbSubnet.getSubnetId());
-		add(new Route().withDestinationCidrBlock("routeADest").withGatewayId("igwId").withState(RouteState.Active));
-		add(new Route().withDestinationCidrBlock("routeBDest").withInstanceId("instanceId").withState(RouteState.Active));
-		add(new Route().withDestinationCidrBlock("routeCDest").withState(RouteState.Blackhole));
+		add(new Route().withDestinationCidrBlock("10.1.0.11/32").withGatewayId("igwId").withState(RouteState.Active));
+		add(new Route().withDestinationCidrBlock("10.1.0.12/32").withInstanceId("instanceId").withState(RouteState.Active));
+		add(new Route().withDestinationCidrBlock("10.1.0.13/32").withState(RouteState.Blackhole));
 		routeTable = new RouteTable().
 				withRouteTableId("routeTableId").
 				withAssociations(routeTableAssociationA, routeTableAssociationB).

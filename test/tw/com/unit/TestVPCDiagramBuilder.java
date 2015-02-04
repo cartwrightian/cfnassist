@@ -173,12 +173,12 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	@Test
 	public void shouldAddLocalRoute() throws CfnAssistException {
 		Route route = new Route().withGatewayId("local").
-				withDestinationCidrBlock("cidr").
+				withDestinationCidrBlock("192.168.0.22/32").
 				withState(RouteState.Active);
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 
-		networkDiagram.associateWithSubDiagram("cidr", "subnetId", subnetDiagramBuilder);
+		networkDiagram.associateWithSubDiagram("192.168.0.22/32", "subnetId", subnetDiagramBuilder);
 		
 		replayAll();
 		builder.addRoute("routeTableId", "subnetId", route);
@@ -186,7 +186,23 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldAddLocalRouteNoCIDR() throws CfnAssistException {
+	public void shouldAddDefaultRoute() throws CfnAssistException {
+		Route route = new Route().withGatewayId("local").
+				withDestinationCidrBlock("0.0.0.0/0").
+				withState(RouteState.Active);
+		
+		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
+
+		networkDiagram.associateWithSubDiagram("0.0.0.0/0", "subnetId", subnetDiagramBuilder);
+		
+		replayAll();
+		builder.addRoute("routeTableId", "subnetId", route);
+		verifyAll();
+	}
+	
+	// TODO is this a real possability?
+	@Test
+	public void shouldAddRouteCidrMissing() throws CfnAssistException {
 		Route route = new Route().withGatewayId("local").
 				withState(RouteState.Active);
 		
@@ -195,19 +211,20 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		networkDiagram.associateWithSubDiagram("no cidr", "subnetId", subnetDiagramBuilder);
 		
 		replayAll();
-		builder.addRoute("routeTableId","subnetId", route);
+		builder.addRoute("routeTableId", "subnetId", route);
 		verifyAll();
 	}
+
 	
 	@Test
 	public void shouldAddNonLocalRouteWithGateway() throws CfnAssistException {
 		Route route = new Route().withGatewayId("gatewayId").
-				withDestinationCidrBlock("cidr").
+				withDestinationCidrBlock("192.168.0.22/32").
 				withState(RouteState.Active);
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 
-		networkDiagram.addRouteToInstance("gatewayId", "subnetId_routeTableId", subnetDiagramBuilder, "cidr");
+		networkDiagram.addRouteToInstance("gatewayId", "subnetId_routeTableId", subnetDiagramBuilder, "192.168.0.22/32");
 		
 		replayAll();
 		builder.addRoute("routeTableId","subnetId", route);
@@ -218,12 +235,12 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	public void shouldAddNonLocalRouteWithInstance() throws CfnAssistException {
 		Route route = new Route().
 				withInstanceId("targetInstance").
-				withDestinationCidrBlock("cidr").
+				withDestinationCidrBlock("192.168.0.22/32").
 				withState(RouteState.Active);
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 
-		networkDiagram.addRouteToInstance("targetInstance", "subnetId_routeTableId", subnetDiagramBuilder, "cidr");
+		networkDiagram.addRouteToInstance("targetInstance", "subnetId_routeTableId", subnetDiagramBuilder, "192.168.0.22/32");
 		
 		replayAll();
 		builder.addRoute("routeTableId","subnetId", route);
@@ -233,12 +250,12 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	@Test
 	public void shouldAddNonLocalRouteWithBlackhole() throws CfnAssistException {
 		Route route = new Route().
-				withDestinationCidrBlock("cidr").
+				withDestinationCidrBlock("192.168.0.22/32").
 				withState(RouteState.Blackhole);
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
-		networkDiagram.addConnectionFromSubDiagram("blackhole", "subnetId", subnetDiagramBuilder, "cidr");
+		networkDiagram.addConnectionFromSubDiagram("blackhole", "subnetId", subnetDiagramBuilder, "192.168.0.22/32");
 		
 		replayAll();
 		builder.addRoute("routeTableId","subnetId", route);

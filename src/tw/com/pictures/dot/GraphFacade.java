@@ -140,8 +140,7 @@ public class GraphFacade implements Diagram {
 	}
 
 	@Override
-	public void addRouteToInstance(String instanceId, String routeTableId,
-			SubnetDiagramBuilder subnetDiagramBuilder, String cidr) throws CfnAssistException {
+	public void addRouteToInstance(String instanceId, String routeTableId, SubnetDiagramBuilder subnetDiagramBuilder, String cidr) throws CfnAssistException {
 		addConnectionFromSubDiagram(instanceId, routeTableId, subnetDiagramBuilder, cidr);	
 	}
 }

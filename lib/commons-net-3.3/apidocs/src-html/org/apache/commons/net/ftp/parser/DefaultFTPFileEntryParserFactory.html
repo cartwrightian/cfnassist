@@ -1,0 +1,357 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Licensed to the Apache Software Foundation (ASF) under one or more<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * contributor license agreements.  See the NOTICE file distributed with<a name="line.3"></a>
+<span class="sourceLineNo">004</span> * this work for additional information regarding copyright ownership.<a name="line.4"></a>
+<span class="sourceLineNo">005</span> * The ASF licenses this file to You under the Apache License, Version 2.0<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * (the "License"); you may not use this file except in compliance with<a name="line.6"></a>
+<span class="sourceLineNo">007</span> * the License.  You may obtain a copy of the License at<a name="line.7"></a>
+<span class="sourceLineNo">008</span> *<a name="line.8"></a>
+<span class="sourceLineNo">009</span> *      http://www.apache.org/licenses/LICENSE-2.0<a name="line.9"></a>
+<span class="sourceLineNo">010</span> *<a name="line.10"></a>
+<span class="sourceLineNo">011</span> * Unless required by applicable law or agreed to in writing, software<a name="line.11"></a>
+<span class="sourceLineNo">012</span> * distributed under the License is distributed on an "AS IS" BASIS,<a name="line.12"></a>
+<span class="sourceLineNo">013</span> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.<a name="line.13"></a>
+<span class="sourceLineNo">014</span> * See the License for the specific language governing permissions and<a name="line.14"></a>
+<span class="sourceLineNo">015</span> * limitations under the License.<a name="line.15"></a>
+<span class="sourceLineNo">016</span> */<a name="line.16"></a>
+<span class="sourceLineNo">017</span><a name="line.17"></a>
+<span class="sourceLineNo">018</span>package org.apache.commons.net.ftp.parser;<a name="line.18"></a>
+<span class="sourceLineNo">019</span><a name="line.19"></a>
+<span class="sourceLineNo">020</span>import java.util.regex.Pattern;<a name="line.20"></a>
+<span class="sourceLineNo">021</span><a name="line.21"></a>
+<span class="sourceLineNo">022</span>import org.apache.commons.net.ftp.Configurable;<a name="line.22"></a>
+<span class="sourceLineNo">023</span>import org.apache.commons.net.ftp.FTPClientConfig;<a name="line.23"></a>
+<span class="sourceLineNo">024</span>import org.apache.commons.net.ftp.FTPFileEntryParser;<a name="line.24"></a>
+<span class="sourceLineNo">025</span><a name="line.25"></a>
+<span class="sourceLineNo">026</span><a name="line.26"></a>
+<span class="sourceLineNo">027</span>/**<a name="line.27"></a>
+<span class="sourceLineNo">028</span> * This is the default implementation of the<a name="line.28"></a>
+<span class="sourceLineNo">029</span> * FTPFileEntryParserFactory interface.  This is the<a name="line.29"></a>
+<span class="sourceLineNo">030</span> * implementation that will be used by<a name="line.30"></a>
+<span class="sourceLineNo">031</span> * org.apache.commons.net.ftp.FTPClient.listFiles()<a name="line.31"></a>
+<span class="sourceLineNo">032</span> * if no other implementation has been specified.<a name="line.32"></a>
+<span class="sourceLineNo">033</span> *<a name="line.33"></a>
+<span class="sourceLineNo">034</span> * @see org.apache.commons.net.ftp.FTPClient#listFiles<a name="line.34"></a>
+<span class="sourceLineNo">035</span> * @see org.apache.commons.net.ftp.FTPClient#setParserFactory<a name="line.35"></a>
+<span class="sourceLineNo">036</span> */<a name="line.36"></a>
+<span class="sourceLineNo">037</span>public class DefaultFTPFileEntryParserFactory<a name="line.37"></a>
+<span class="sourceLineNo">038</span>    implements FTPFileEntryParserFactory<a name="line.38"></a>
+<span class="sourceLineNo">039</span>{<a name="line.39"></a>
+<span class="sourceLineNo">040</span><a name="line.40"></a>
+<span class="sourceLineNo">041</span>    // Match a plain Java Identifier<a name="line.41"></a>
+<span class="sourceLineNo">042</span>    private static final String JAVA_IDENTIFIER = "\\p{javaJavaIdentifierStart}(\\p{javaJavaIdentifierPart})*";<a name="line.42"></a>
+<span class="sourceLineNo">043</span>    // Match a qualified name, e.g. a.b.c.Name - but don't allow the default package as that would allow "VMS"/"UNIX" etc.<a name="line.43"></a>
+<span class="sourceLineNo">044</span>    private static final String JAVA_QUALIFIED_NAME  = "("+JAVA_IDENTIFIER+"\\.)+"+JAVA_IDENTIFIER;<a name="line.44"></a>
+<span class="sourceLineNo">045</span>    // Create the pattern, as it will be reused many times<a name="line.45"></a>
+<span class="sourceLineNo">046</span>    private static final Pattern JAVA_QUALIFIED_NAME_PATTERN = Pattern.compile(JAVA_QUALIFIED_NAME);<a name="line.46"></a>
+<span class="sourceLineNo">047</span><a name="line.47"></a>
+<span class="sourceLineNo">048</span>    /**<a name="line.48"></a>
+<span class="sourceLineNo">049</span>     * This default implementation of the FTPFileEntryParserFactory<a name="line.49"></a>
+<span class="sourceLineNo">050</span>     * interface works according to the following logic:<a name="line.50"></a>
+<span class="sourceLineNo">051</span>     * First it attempts to interpret the supplied key as a fully<a name="line.51"></a>
+<span class="sourceLineNo">052</span>     * qualified classname (default package is not allowed) of a class implementing the<a name="line.52"></a>
+<span class="sourceLineNo">053</span>     * FTPFileEntryParser interface.  If that succeeds, a parser<a name="line.53"></a>
+<span class="sourceLineNo">054</span>     * object of this class is instantiated and is returned;<a name="line.54"></a>
+<span class="sourceLineNo">055</span>     * otherwise it attempts to interpret the key as an identirier<a name="line.55"></a>
+<span class="sourceLineNo">056</span>     * commonly used by the FTP SYST command to identify systems.<a name="line.56"></a>
+<span class="sourceLineNo">057</span>     * &lt;p/&gt;<a name="line.57"></a>
+<span class="sourceLineNo">058</span>     * If &lt;code&gt;key&lt;/code&gt; is not recognized as a fully qualified<a name="line.58"></a>
+<span class="sourceLineNo">059</span>     * classname known to the system, this method will then attempt<a name="line.59"></a>
+<span class="sourceLineNo">060</span>     * to see whether it &lt;b&gt;contains&lt;/b&gt; a string identifying one of<a name="line.60"></a>
+<span class="sourceLineNo">061</span>     * the known parsers.  This comparison is &lt;b&gt;case-insensitive&lt;/b&gt;.<a name="line.61"></a>
+<span class="sourceLineNo">062</span>     * The intent here is where possible, to select as keys strings<a name="line.62"></a>
+<span class="sourceLineNo">063</span>     * which are returned by the SYST command on the systems which<a name="line.63"></a>
+<span class="sourceLineNo">064</span>     * the corresponding parser successfully parses.  This enables<a name="line.64"></a>
+<span class="sourceLineNo">065</span>     * this factory to be used in the auto-detection system.<a name="line.65"></a>
+<span class="sourceLineNo">066</span>     * &lt;p/&gt;<a name="line.66"></a>
+<span class="sourceLineNo">067</span>     *<a name="line.67"></a>
+<span class="sourceLineNo">068</span>     * @param key    should be a fully qualified classname corresponding to<a name="line.68"></a>
+<span class="sourceLineNo">069</span>     *               a class implementing the FTPFileEntryParser interface&lt;br/&gt;<a name="line.69"></a>
+<span class="sourceLineNo">070</span>     *               OR&lt;br/&gt;<a name="line.70"></a>
+<span class="sourceLineNo">071</span>     *               a string containing (case-insensitively) one of the<a name="line.71"></a>
+<span class="sourceLineNo">072</span>     *               following keywords:<a name="line.72"></a>
+<span class="sourceLineNo">073</span>     *               &lt;ul&gt;<a name="line.73"></a>
+<span class="sourceLineNo">074</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_UNIX UNIX}&lt;/li&gt;<a name="line.74"></a>
+<span class="sourceLineNo">075</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_NT WINDOWS}&lt;/li&gt;<a name="line.75"></a>
+<span class="sourceLineNo">076</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_OS2 OS/2}&lt;/li&gt;<a name="line.76"></a>
+<span class="sourceLineNo">077</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_OS400 OS/400}&lt;/li&gt;<a name="line.77"></a>
+<span class="sourceLineNo">078</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_AS400 AS/400}&lt;/li&gt;<a name="line.78"></a>
+<span class="sourceLineNo">079</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_VMS VMS}&lt;/li&gt;<a name="line.79"></a>
+<span class="sourceLineNo">080</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_MVS MVS}&lt;/li&gt;<a name="line.80"></a>
+<span class="sourceLineNo">081</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_NETWARE NETWARE}&lt;/li&gt;<a name="line.81"></a>
+<span class="sourceLineNo">082</span>     *               &lt;li&gt;{@link FTPClientConfig#SYST_L8 TYPE:L8}&lt;/li&gt;<a name="line.82"></a>
+<span class="sourceLineNo">083</span>     *               &lt;/ul&gt;<a name="line.83"></a>
+<span class="sourceLineNo">084</span>     * @return the FTPFileEntryParser corresponding to the supplied key.<a name="line.84"></a>
+<span class="sourceLineNo">085</span>     * @throws ParserInitializationException thrown if for any reason the factory cannot resolve<a name="line.85"></a>
+<span class="sourceLineNo">086</span>     *                   the supplied key into an FTPFileEntryParser.<a name="line.86"></a>
+<span class="sourceLineNo">087</span>     * @see FTPFileEntryParser<a name="line.87"></a>
+<span class="sourceLineNo">088</span>     */<a name="line.88"></a>
+<span class="sourceLineNo">089</span>//    @Override<a name="line.89"></a>
+<span class="sourceLineNo">090</span>    public FTPFileEntryParser createFileEntryParser(String key)<a name="line.90"></a>
+<span class="sourceLineNo">091</span>    {<a name="line.91"></a>
+<span class="sourceLineNo">092</span>        if (key == null) {<a name="line.92"></a>
+<span class="sourceLineNo">093</span>            throw new ParserInitializationException("Parser key cannot be null");<a name="line.93"></a>
+<span class="sourceLineNo">094</span>        }<a name="line.94"></a>
+<span class="sourceLineNo">095</span>        return createFileEntryParser(key, null);<a name="line.95"></a>
+<span class="sourceLineNo">096</span>    }<a name="line.96"></a>
+<span class="sourceLineNo">097</span><a name="line.97"></a>
+<span class="sourceLineNo">098</span>    // Common method to process both key and config parameters.<a name="line.98"></a>
+<span class="sourceLineNo">099</span>    private FTPFileEntryParser createFileEntryParser(String key, FTPClientConfig config) {<a name="line.99"></a>
+<span class="sourceLineNo">100</span>        FTPFileEntryParser parser = null;<a name="line.100"></a>
+<span class="sourceLineNo">101</span><a name="line.101"></a>
+<span class="sourceLineNo">102</span>        // Is the key a possible class name?<a name="line.102"></a>
+<span class="sourceLineNo">103</span>        if (JAVA_QUALIFIED_NAME_PATTERN.matcher(key).matches()) {<a name="line.103"></a>
+<span class="sourceLineNo">104</span>            try<a name="line.104"></a>
+<span class="sourceLineNo">105</span>            {<a name="line.105"></a>
+<span class="sourceLineNo">106</span>                Class&lt;?&gt; parserClass = Class.forName(key);<a name="line.106"></a>
+<span class="sourceLineNo">107</span>                try {<a name="line.107"></a>
+<span class="sourceLineNo">108</span>                    parser = (FTPFileEntryParser) parserClass.newInstance();<a name="line.108"></a>
+<span class="sourceLineNo">109</span>                } catch (ClassCastException e) {<a name="line.109"></a>
+<span class="sourceLineNo">110</span>                    throw new ParserInitializationException(parserClass.getName()<a name="line.110"></a>
+<span class="sourceLineNo">111</span>                        + " does not implement the interface "<a name="line.111"></a>
+<span class="sourceLineNo">112</span>                        + "org.apache.commons.net.ftp.FTPFileEntryParser.", e);<a name="line.112"></a>
+<span class="sourceLineNo">113</span>                } catch (Exception e) {<a name="line.113"></a>
+<span class="sourceLineNo">114</span>                    throw new ParserInitializationException("Error initializing parser", e);<a name="line.114"></a>
+<span class="sourceLineNo">115</span>                } catch (ExceptionInInitializerError e) {<a name="line.115"></a>
+<span class="sourceLineNo">116</span>                    throw new ParserInitializationException("Error initializing parser", e);<a name="line.116"></a>
+<span class="sourceLineNo">117</span>                }<a name="line.117"></a>
+<span class="sourceLineNo">118</span>            } catch (ClassNotFoundException e) {<a name="line.118"></a>
+<span class="sourceLineNo">119</span>                // OK, assume it is an alias<a name="line.119"></a>
+<span class="sourceLineNo">120</span>            }<a name="line.120"></a>
+<span class="sourceLineNo">121</span>        }<a name="line.121"></a>
+<span class="sourceLineNo">122</span><a name="line.122"></a>
+<span class="sourceLineNo">123</span>        if (parser == null) { // Now try for aliases<a name="line.123"></a>
+<span class="sourceLineNo">124</span>            String ukey = key.toUpperCase(java.util.Locale.ENGLISH);<a name="line.124"></a>
+<span class="sourceLineNo">125</span>            if (ukey.indexOf(FTPClientConfig.SYST_UNIX) &gt;= 0)<a name="line.125"></a>
+<span class="sourceLineNo">126</span>            {<a name="line.126"></a>
+<span class="sourceLineNo">127</span>                parser = new UnixFTPEntryParser(config);<a name="line.127"></a>
+<span class="sourceLineNo">128</span>            }<a name="line.128"></a>
+<span class="sourceLineNo">129</span>            else if (ukey.indexOf(FTPClientConfig.SYST_VMS) &gt;= 0)<a name="line.129"></a>
+<span class="sourceLineNo">130</span>            {<a name="line.130"></a>
+<span class="sourceLineNo">131</span>                parser = new VMSVersioningFTPEntryParser(config);<a name="line.131"></a>
+<span class="sourceLineNo">132</span>            }<a name="line.132"></a>
+<span class="sourceLineNo">133</span>            else if (ukey.indexOf(FTPClientConfig.SYST_NT) &gt;= 0)<a name="line.133"></a>
+<span class="sourceLineNo">134</span>            {<a name="line.134"></a>
+<span class="sourceLineNo">135</span>                parser = createNTFTPEntryParser(config);<a name="line.135"></a>
+<span class="sourceLineNo">136</span>            }<a name="line.136"></a>
+<span class="sourceLineNo">137</span>            else if (ukey.indexOf(FTPClientConfig.SYST_OS2) &gt;= 0)<a name="line.137"></a>
+<span class="sourceLineNo">138</span>            {<a name="line.138"></a>
+<span class="sourceLineNo">139</span>                parser = new OS2FTPEntryParser(config);<a name="line.139"></a>
+<span class="sourceLineNo">140</span>            }<a name="line.140"></a>
+<span class="sourceLineNo">141</span>            else if (ukey.indexOf(FTPClientConfig.SYST_OS400) &gt;= 0 ||<a name="line.141"></a>
+<span class="sourceLineNo">142</span>                    ukey.indexOf(FTPClientConfig.SYST_AS400) &gt;= 0)<a name="line.142"></a>
+<span class="sourceLineNo">143</span>            {<a name="line.143"></a>
+<span class="sourceLineNo">144</span>                parser = createOS400FTPEntryParser(config);<a name="line.144"></a>
+<span class="sourceLineNo">145</span>            }<a name="line.145"></a>
+<span class="sourceLineNo">146</span>            else if (ukey.indexOf(FTPClientConfig.SYST_MVS) &gt;= 0)<a name="line.146"></a>
+<span class="sourceLineNo">147</span>            {<a name="line.147"></a>
+<span class="sourceLineNo">148</span>                parser = new MVSFTPEntryParser(); // Does not currently support config parameter<a name="line.148"></a>
+<span class="sourceLineNo">149</span>            }<a name="line.149"></a>
+<span class="sourceLineNo">150</span>            else if (ukey.indexOf(FTPClientConfig.SYST_NETWARE) &gt;= 0)<a name="line.150"></a>
+<span class="sourceLineNo">151</span>            {<a name="line.151"></a>
+<span class="sourceLineNo">152</span>                parser = new NetwareFTPEntryParser(config);<a name="line.152"></a>
+<span class="sourceLineNo">153</span>            }<a name="line.153"></a>
+<span class="sourceLineNo">154</span>            else if (ukey.indexOf(FTPClientConfig.SYST_MACOS_PETER) &gt;= 0)<a name="line.154"></a>
+<span class="sourceLineNo">155</span>            {<a name="line.155"></a>
+<span class="sourceLineNo">156</span>                parser = new MacOsPeterFTPEntryParser(config);<a name="line.156"></a>
+<span class="sourceLineNo">157</span>            }<a name="line.157"></a>
+<span class="sourceLineNo">158</span>            else if (ukey.indexOf(FTPClientConfig.SYST_L8) &gt;= 0)<a name="line.158"></a>
+<span class="sourceLineNo">159</span>            {<a name="line.159"></a>
+<span class="sourceLineNo">160</span>                // L8 normally means Unix, but move it to the end for some L8 systems that aren't.<a name="line.160"></a>
+<span class="sourceLineNo">161</span>                // This check should be last!<a name="line.161"></a>
+<span class="sourceLineNo">162</span>                parser = new UnixFTPEntryParser(config);<a name="line.162"></a>
+<span class="sourceLineNo">163</span>            }<a name="line.163"></a>
+<span class="sourceLineNo">164</span>            else<a name="line.164"></a>
+<span class="sourceLineNo">165</span>            {<a name="line.165"></a>
+<span class="sourceLineNo">166</span>                throw new ParserInitializationException("Unknown parser type: " + key);<a name="line.166"></a>
+<span class="sourceLineNo">167</span>            }<a name="line.167"></a>
+<span class="sourceLineNo">168</span>        }<a name="line.168"></a>
+<span class="sourceLineNo">169</span><a name="line.169"></a>
+<span class="sourceLineNo">170</span>        if (parser instanceof Configurable) {<a name="line.170"></a>
+<span class="sourceLineNo">171</span>            ((Configurable)parser).configure(config);<a name="line.171"></a>
+<span class="sourceLineNo">172</span>        }<a name="line.172"></a>
+<span class="sourceLineNo">173</span>        return parser;<a name="line.173"></a>
+<span class="sourceLineNo">174</span>    }<a name="line.174"></a>
+<span class="sourceLineNo">175</span><a name="line.175"></a>
+<span class="sourceLineNo">176</span>    /**<a name="line.176"></a>
+<span class="sourceLineNo">177</span>     * &lt;p&gt;Implementation extracts a key from the supplied<a name="line.177"></a>
+<span class="sourceLineNo">178</span>     * {@link  FTPClientConfig FTPClientConfig}<a name="line.178"></a>
+<span class="sourceLineNo">179</span>     * parameter and creates an object implementing the<a name="line.179"></a>
+<span class="sourceLineNo">180</span>     * interface FTPFileEntryParser and uses the supplied configuration<a name="line.180"></a>
+<span class="sourceLineNo">181</span>     * to configure it.<a name="line.181"></a>
+<span class="sourceLineNo">182</span>     * &lt;/p&gt;&lt;p&gt;<a name="line.182"></a>
+<span class="sourceLineNo">183</span>     * Note that this method will generally not be called in scenarios<a name="line.183"></a>
+<span class="sourceLineNo">184</span>     * that call for autodetection of parser type but rather, for situations<a name="line.184"></a>
+<span class="sourceLineNo">185</span>     * where the user knows that the server uses a non-default configuration<a name="line.185"></a>
+<span class="sourceLineNo">186</span>     * and knows what that configuration is.<a name="line.186"></a>
+<span class="sourceLineNo">187</span>     * &lt;/p&gt;<a name="line.187"></a>
+<span class="sourceLineNo">188</span>     * @param config  A {@link  FTPClientConfig FTPClientConfig}<a name="line.188"></a>
+<span class="sourceLineNo">189</span>     * used to configure the parser created<a name="line.189"></a>
+<span class="sourceLineNo">190</span>     *<a name="line.190"></a>
+<span class="sourceLineNo">191</span>     * @return the @link  FTPFileEntryParser FTPFileEntryParser} so created.<a name="line.191"></a>
+<span class="sourceLineNo">192</span>     * @exception ParserInitializationException<a name="line.192"></a>
+<span class="sourceLineNo">193</span>     *                   Thrown on any exception in instantiation<a name="line.193"></a>
+<span class="sourceLineNo">194</span>     * @throws NullPointerException if {@code config} is {@code null}<a name="line.194"></a>
+<span class="sourceLineNo">195</span>     * @since 1.4<a name="line.195"></a>
+<span class="sourceLineNo">196</span>     */<a name="line.196"></a>
+<span class="sourceLineNo">197</span>//    @Override<a name="line.197"></a>
+<span class="sourceLineNo">198</span>    public FTPFileEntryParser createFileEntryParser(FTPClientConfig config)<a name="line.198"></a>
+<span class="sourceLineNo">199</span>    throws ParserInitializationException<a name="line.199"></a>
+<span class="sourceLineNo">200</span>    {<a name="line.200"></a>
+<span class="sourceLineNo">201</span>        String key = config.getServerSystemKey();<a name="line.201"></a>
+<span class="sourceLineNo">202</span>        return createFileEntryParser(key, config);<a name="line.202"></a>
+<span class="sourceLineNo">203</span>    }<a name="line.203"></a>
+<span class="sourceLineNo">204</span><a name="line.204"></a>
+<span class="sourceLineNo">205</span><a name="line.205"></a>
+<span class="sourceLineNo">206</span>    public FTPFileEntryParser createUnixFTPEntryParser()<a name="line.206"></a>
+<span class="sourceLineNo">207</span>    {<a name="line.207"></a>
+<span class="sourceLineNo">208</span>        return new UnixFTPEntryParser();<a name="line.208"></a>
+<span class="sourceLineNo">209</span>    }<a name="line.209"></a>
+<span class="sourceLineNo">210</span><a name="line.210"></a>
+<span class="sourceLineNo">211</span>    public FTPFileEntryParser createVMSVersioningFTPEntryParser()<a name="line.211"></a>
+<span class="sourceLineNo">212</span>    {<a name="line.212"></a>
+<span class="sourceLineNo">213</span>        return new VMSVersioningFTPEntryParser();<a name="line.213"></a>
+<span class="sourceLineNo">214</span>    }<a name="line.214"></a>
+<span class="sourceLineNo">215</span><a name="line.215"></a>
+<span class="sourceLineNo">216</span>    public FTPFileEntryParser createNetwareFTPEntryParser() {<a name="line.216"></a>
+<span class="sourceLineNo">217</span>        return new NetwareFTPEntryParser();<a name="line.217"></a>
+<span class="sourceLineNo">218</span>    }<a name="line.218"></a>
+<span class="sourceLineNo">219</span><a name="line.219"></a>
+<span class="sourceLineNo">220</span>    public FTPFileEntryParser createNTFTPEntryParser()<a name="line.220"></a>
+<span class="sourceLineNo">221</span>    {<a name="line.221"></a>
+<span class="sourceLineNo">222</span>        return createNTFTPEntryParser(null);<a name="line.222"></a>
+<span class="sourceLineNo">223</span>    }<a name="line.223"></a>
+<span class="sourceLineNo">224</span><a name="line.224"></a>
+<span class="sourceLineNo">225</span>    /**<a name="line.225"></a>
+<span class="sourceLineNo">226</span>     * Creates an NT FTP parser: if the config exists, and the system key equals<a name="line.226"></a>
+<span class="sourceLineNo">227</span>     * {@link FTPClientConfig.SYST_NT} then a plain {@link NTFTPEntryParser} is used,<a name="line.227"></a>
+<span class="sourceLineNo">228</span>     * otherwise a composite of {@link NTFTPEntryParser} and {@link UnixFTPEntryParser} is used.<a name="line.228"></a>
+<span class="sourceLineNo">229</span>     * @param config the config to use, may be {@code null}<a name="line.229"></a>
+<span class="sourceLineNo">230</span>     * @return the parser<a name="line.230"></a>
+<span class="sourceLineNo">231</span>     */<a name="line.231"></a>
+<span class="sourceLineNo">232</span>    private FTPFileEntryParser createNTFTPEntryParser(FTPClientConfig config)<a name="line.232"></a>
+<span class="sourceLineNo">233</span>    {<a name="line.233"></a>
+<span class="sourceLineNo">234</span>        if (config != null &amp;&amp; FTPClientConfig.SYST_NT.equals(<a name="line.234"></a>
+<span class="sourceLineNo">235</span>                config.getServerSystemKey()))<a name="line.235"></a>
+<span class="sourceLineNo">236</span>        {<a name="line.236"></a>
+<span class="sourceLineNo">237</span>            return new NTFTPEntryParser(config);<a name="line.237"></a>
+<span class="sourceLineNo">238</span>        } else {<a name="line.238"></a>
+<span class="sourceLineNo">239</span>            return new CompositeFileEntryParser(new FTPFileEntryParser[]<a name="line.239"></a>
+<span class="sourceLineNo">240</span>                   {<a name="line.240"></a>
+<span class="sourceLineNo">241</span>                       new NTFTPEntryParser(config),<a name="line.241"></a>
+<span class="sourceLineNo">242</span>                       new UnixFTPEntryParser(config)<a name="line.242"></a>
+<span class="sourceLineNo">243</span>                   });<a name="line.243"></a>
+<span class="sourceLineNo">244</span>        }<a name="line.244"></a>
+<span class="sourceLineNo">245</span>    }<a name="line.245"></a>
+<span class="sourceLineNo">246</span><a name="line.246"></a>
+<span class="sourceLineNo">247</span>     public FTPFileEntryParser createOS2FTPEntryParser()<a name="line.247"></a>
+<span class="sourceLineNo">248</span>    {<a name="line.248"></a>
+<span class="sourceLineNo">249</span>        return new OS2FTPEntryParser();<a name="line.249"></a>
+<span class="sourceLineNo">250</span>    }<a name="line.250"></a>
+<span class="sourceLineNo">251</span><a name="line.251"></a>
+<span class="sourceLineNo">252</span>    public FTPFileEntryParser createOS400FTPEntryParser()<a name="line.252"></a>
+<span class="sourceLineNo">253</span>    {<a name="line.253"></a>
+<span class="sourceLineNo">254</span>        return createOS400FTPEntryParser(null);<a name="line.254"></a>
+<span class="sourceLineNo">255</span>    }<a name="line.255"></a>
+<span class="sourceLineNo">256</span><a name="line.256"></a>
+<span class="sourceLineNo">257</span>    /**<a name="line.257"></a>
+<span class="sourceLineNo">258</span>     * Creates an OS400 FTP parser: if the config exists, and the system key equals<a name="line.258"></a>
+<span class="sourceLineNo">259</span>     * {@link FTPClientConfig.SYST_OS400} then a plain {@link OS400FTPEntryParser} is used,<a name="line.259"></a>
+<span class="sourceLineNo">260</span>     * otherwise a composite of {@link OS400FTPEntryParser} and {@link UnixFTPEntryParser} is used.<a name="line.260"></a>
+<span class="sourceLineNo">261</span>     * @param config the config to use, may be {@code null}<a name="line.261"></a>
+<span class="sourceLineNo">262</span>     * @return the parser<a name="line.262"></a>
+<span class="sourceLineNo">263</span>     */<a name="line.263"></a>
+<span class="sourceLineNo">264</span>    private FTPFileEntryParser createOS400FTPEntryParser(FTPClientConfig config)<a name="line.264"></a>
+<span class="sourceLineNo">265</span>        {<a name="line.265"></a>
+<span class="sourceLineNo">266</span>        if (config != null &amp;&amp;<a name="line.266"></a>
+<span class="sourceLineNo">267</span>                FTPClientConfig.SYST_OS400.equals(config.getServerSystemKey()))<a name="line.267"></a>
+<span class="sourceLineNo">268</span>        {<a name="line.268"></a>
+<span class="sourceLineNo">269</span>            return new OS400FTPEntryParser(config);<a name="line.269"></a>
+<span class="sourceLineNo">270</span>        } else {<a name="line.270"></a>
+<span class="sourceLineNo">271</span>            return new CompositeFileEntryParser(new FTPFileEntryParser[]<a name="line.271"></a>
+<span class="sourceLineNo">272</span>                {<a name="line.272"></a>
+<span class="sourceLineNo">273</span>                    new OS400FTPEntryParser(config),<a name="line.273"></a>
+<span class="sourceLineNo">274</span>                    new UnixFTPEntryParser(config)<a name="line.274"></a>
+<span class="sourceLineNo">275</span>                });<a name="line.275"></a>
+<span class="sourceLineNo">276</span>        }<a name="line.276"></a>
+<span class="sourceLineNo">277</span>    }<a name="line.277"></a>
+<span class="sourceLineNo">278</span><a name="line.278"></a>
+<span class="sourceLineNo">279</span>    public FTPFileEntryParser createMVSEntryParser()<a name="line.279"></a>
+<span class="sourceLineNo">280</span>    {<a name="line.280"></a>
+<span class="sourceLineNo">281</span>        return new MVSFTPEntryParser();<a name="line.281"></a>
+<span class="sourceLineNo">282</span>    }<a name="line.282"></a>
+<span class="sourceLineNo">283</span><a name="line.283"></a>
+<span class="sourceLineNo">284</span>}<a name="line.284"></a>
+<span class="sourceLineNo">285</span><a name="line.285"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>
