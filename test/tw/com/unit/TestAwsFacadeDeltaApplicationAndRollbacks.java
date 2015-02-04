@@ -1,6 +1,7 @@
 package tw.com.unit;
 
 import static org.junit.Assert.*;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -36,6 +37,7 @@ import tw.com.MonitorStackEvents;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
+import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.repository.CloudFormRepository;
@@ -60,7 +62,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	public void beforeEachTestRuns() throws IOException {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
-		vpcRepository = createMock(VpcRepository.class);
+		vpcRepository = createStrictMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		
@@ -186,7 +188,109 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		assertTrue(result.contains(stackA));
 		assertTrue(result.contains(stackB));
 	}
+	
+	@Test
+	public void shouldRollbackFilesInAFolderWithDeltas() throws InvalidStackParameterException, CfnAssistException {
+		String stackA = "CfnAssistTest01createSubnet";
+		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
+		
+		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
 
+		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
+		
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackA)).andReturn(stackANameAndId);
+		cfnRepository.deleteStack(stackA);
+		EasyMock.expectLastCall();
+		EasyMock.expect(vpcRepository.getSetsDeltaIndexFor(projectAndEnv)).andReturn(setDeltaIndexForProjectAndEnv);
+		
+		DeletionsPending pending = new DeletionsPending();
+		pending.add(1, stackANameAndId);
+	
+		List<String> deletedStacks = new LinkedList<String>();
+		deletedStacks.add(stackA);
+		
+		EasyMock.expect(monitor.waitForDeleteFinished(pending, setDeltaIndexForProjectAndEnv)).andReturn(deletedStacks);
+		
+		replayAll();
+		List<String> result = aws.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER.toString(), projectAndEnv);
+		verifyAll();
+		assertEquals(1, result.size());
+		assertTrue(result.contains(stackA));
+	}
+	
+	@Test
+	public void shouldStepBackLastChangeOnAVpc() throws CfnAssistException {
+		String stackB = "CfnAssistTest02createAcls";
+		StackNameAndId stackBNameAndId = new StackNameAndId(stackB, "id2");
+
+		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
+
+		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
+		EasyMock.expect(cfnRepository.getStackNameAndId(stackB)).andReturn(stackBNameAndId);
+		cfnRepository.deleteStack(stackB);
+		EasyMock.expectLastCall();
+		
+		EasyMock.expect(vpcRepository.getSetsDeltaIndexFor(projectAndEnv)).andReturn(setDeltaIndexForProjectAndEnv);
+		
+		DeletionsPending pending = new DeletionsPending();
+		pending.add(2, stackBNameAndId);
+	
+		List<String> deletedStacks = new LinkedList<String>();
+		deletedStacks.add(stackB);
+		
+		EasyMock.expect(monitor.waitForDeleteFinished(pending, setDeltaIndexForProjectAndEnv)).andReturn(deletedStacks);
+		
+		replayAll();
+		List<String> result = aws.stepbackLastChange(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
+		verifyAll();
+		assertEquals(1, result.size());
+		assertTrue(result.contains(stackB));
+	}
+	
+	@Test
+	public void shouldStepBackLastChangeOnAVpcWhenFileIsADelta() throws CfnAssistException {
+
+		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
+
+		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
+		EasyMock.expect(vpcRepository.getSetsDeltaIndexFor(projectAndEnv)).andReturn(setDeltaIndexForProjectAndEnv);
+		vpcRepository.setVpcIndexTag(projectAndEnv, "1");
+		EasyMock.expectLastCall();
+		
+		replayAll();
+		List<String> result = aws.stepbackLastChange(FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER.toString(), projectAndEnv);
+		verifyAll();
+		assertEquals(0, result.size());
+	}
+
+	@Test
+	public void shouldHandleStepBackWhenNotFileAvailable() throws CfnAssistException {
+
+		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("3"); // higher than file available
+		
+		replayAll();
+		List<String> result = aws.stepbackLastChange(FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER.toString(), projectAndEnv);
+		verifyAll();
+		assertEquals(0, result.size());
+	}
+	
+	@Test
+	public void shouldHandleRollBackWhenNotFileAvailable() throws CannotFindVpcException {
+
+		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("3"); // higher than file available
+		
+		replayAll();
+		try {
+			aws.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER.toString(), projectAndEnv);
+			fail("should have thrown");
+		}
+		catch(CfnAssistException expectedException) {
+			// no op
+		}
+		verifyAll();
+	}
+	
+	
 	private void setExpectationsForValidationPass(List<File> allFiles)
 			throws IOException {
 		for(File file : allFiles) {

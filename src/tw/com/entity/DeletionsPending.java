@@ -69,19 +69,6 @@ public class DeletionsPending implements Iterable<DeletionPending> {
 		return items.iterator();
 	}
 
-	public int remaining() {
-		return items.size();
-	}
-
-	public boolean containsStackId(String stackId) {
-		for(DeletionPending item : items) {
-			if (item.getStackId().equals(stackId)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	public void markIdAsDeleted(String stackId) {
 		for(DeletionPending item : items) {
 			StackNameAndId itemStackId = item.getStackId();

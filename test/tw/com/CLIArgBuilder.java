@@ -165,6 +165,17 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
+	
+	public static String[] stepback(String orderedScriptsFolder, String sns) {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-stepback", orderedScriptsFolder,
+				sns
+				};
+		return args;
+	}
 
 	public static String[] updateELB(String typeTag, String buildNumber) {
 		String[] args = { 
@@ -254,7 +265,5 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
-
-
 
 }

@@ -366,6 +366,51 @@ public class AwsFacade {
 		return folder;
 	}
 	
+	public List<String> stepbackLastChange(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
+		DeletionsPending pending = new DeletionsPending();
+		File folder = validFolder(folderPath);
+		List<File> files = loadFiles(folder);
+		Collections.reverse(files); // delete in reverse direction
+		
+		int highestAppliedDelta = getDeltaIndex(projAndEnv);
+		logger.info("Current delta is " + highestAppliedDelta);	
+		
+		File toDelete = findFileToStepBack(files, highestAppliedDelta);
+		if (toDelete==null) {
+			logger.warn("No suitable stack/file found to step back from");
+			return new LinkedList<String>();
+		}
+		
+		logger.info("Need to step back for file " + toDelete.getAbsolutePath());
+		int deltaIndex = extractIndexFrom(toDelete);
+		SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);	
+		String stackName = createStackName(toDelete, projAndEnv);
+
+		if (isDelta(toDelete)) {
+			logger.warn("Rolling back a stack change/delta does nothing except update delta index on VPC");
+			setsDeltaIndex.setDeltaIndex(deltaIndex-1);	
+			return new LinkedList<String>();
+		}
+		else {
+			StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
+			cfnRepository.deleteStack(stackName);
+			pending.add(deltaIndex,id);
+			return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
+		}	
+	}
+
+	private File findFileToStepBack(List<File> files, int highestAppliedDelta) {
+		File toDelete = null;
+		for(File file : files) {
+			int deltaIndex = extractIndexFrom(file);
+			if (deltaIndex==highestAppliedDelta) {
+				toDelete = file;
+				break;
+			}
+		}
+		return toDelete;
+	}
+	
 	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidStackParameterException, CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
@@ -374,6 +419,12 @@ public class AwsFacade {
 		
 		int highestAppliedDelta = getDeltaIndex(projAndEnv);
 		logger.info("Current delta is " + highestAppliedDelta);
+		
+		File fileMatchingIndex = findFileToStepBack(files,highestAppliedDelta);
+		if (fileMatchingIndex==null) {
+			throw new CfnAssistException("Cannot find file that corresponds to current index, folder was " + folderPath);
+		}
+		
 		for(File file : files) {
 			if (!isDelta(file)) {
 				int deltaIndex = extractIndexFrom(file);
@@ -550,5 +601,7 @@ public class AwsFacade {
 		String groupId = groups.get(0);
 		return groupId;
 	}
+
+
 
 }

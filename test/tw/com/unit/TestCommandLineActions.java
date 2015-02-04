@@ -207,6 +207,17 @@ public class TestCommandLineActions extends EasyMockSupport {
 		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
 	}
 	
+	
+	@Test
+	public void testShouldStepBackOneChange() throws MissingArgumentException, CfnAssistException, InterruptedException {
+		setFactoryExpectations();
+		
+		List<String> deleted = new LinkedList<>();
+		EasyMock.expect(facade.stepbackLastChange(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(deleted);
+		
+		validate(CLIArgBuilder.stepback(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
+	}
+	
 	@Test
 	public void shouldRollbackStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
@@ -419,6 +430,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		
 		validate(CLIArgBuilder.blacklistCurrentIP(type, port));
 	}
+
 	
 	@Test
 	public void shouldNotAllowSNSWithS3Create() {

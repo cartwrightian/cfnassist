@@ -245,6 +245,31 @@ public class TestCommandLineStackOperations {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
 		invokeForDirAndThenRollback(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_WITH_DELTAS_FOLDER.toString());
 	}
+	
+	@Test
+	public void testInvokeViaCommandLineAndThenStepBackWithSNS() throws CannotFindVpcException {
+		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
+		vpcRepository.setVpcIndexTag(projAndEnv, "0");
+		
+		String[] argsDeploy = CLIArgBuilder.deployFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns", testName);
+		Main main = new Main(argsDeploy);
+		int result = main.parse();
+		assertEquals("deploy failed",0,result);
+		
+		String[] stepback = CLIArgBuilder.stepback(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns");
+		
+		// step back first stack
+		main = new Main(stepback);
+		int resultA = main.parse();
+		// step back second stack
+		main = new Main(stepback);
+		int resultB = main.parse();
+		
+		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
+		
+		assertEquals("first stepback failed",0,resultA);
+		assertEquals("second stepback failed",0,resultB);
+	}
 
 
 	private void invokeForDirAndThenRollback(ProjectAndEnv projAndEnv,
@@ -262,7 +287,7 @@ public class TestCommandLineStackOperations {
 		
 		//clean up as needed
 		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
-		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
+		//cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
 		
 		// check
 		assertEquals("rollback failed",0,result);

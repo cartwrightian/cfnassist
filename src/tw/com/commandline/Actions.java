@@ -62,6 +62,7 @@ public class Actions {
 		actions.add(new CreateDiagramAction());
 		actions.add(new WhitelistAction());
 		actions.add(new BlacklistAction());
+		actions.add(new StepbackAction());
 	}
 
 }
