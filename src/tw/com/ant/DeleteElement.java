@@ -35,7 +35,7 @@ public class DeleteElement implements ActionElement {
 		String absolutePath = target.getAbsolutePath();
 		
 		if (!target.isFile()) {
-			throw new BuildException("Cannot invoke delete for a directory, use Rollback");
+			throw new BuildException("Cannot invoke delete for a directory, use Rollbackif you want to roll back all deltas in a folder");
 		}
 		
 		CommandLineAction actionToInvoke = new DeleteAction();

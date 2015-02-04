@@ -96,6 +96,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		actionElements.add(tidyStacksElement);
 	}
 	
+	public void addConfiguredDiagrams(DiagramsElement diagramsElement) {
+		actionElements.add(diagramsElement);
+	}
+	
 	public void execute() {
 		ProjectAndEnv projectAndEnv = new ProjectAndEnv(cfnProject, cfnEnv);
 		if (snsMonitoring) {
