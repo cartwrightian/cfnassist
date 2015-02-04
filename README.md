@@ -6,17 +6,17 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Currnet Release version 1.0.88](https://cfnassist-release.s3-eu-west-1.amazonaws.com/88/cfnassist-1.0.88.zip)
+[Download Currnet Release version 1.0.92](https://cfnassist-release.s3-eu-west-1.amazonaws.com/92/cfnassist-1.0.92.zip)
 
 Previous Releases
 -----------------
+[Version 1.0.88](https://cfnassist-release.s3-eu-west-1.amazonaws.com/88/cfnassist-1.0.88.zip)
+
 [Version 1.0.85](https://cfnassist-release.s3-eu-west-1.amazonaws.com/85/cfnassist-1.0.85.zip)
 
 [Version 1.0.82](https://cfnassist-release.s3-eu-west-1.amazonaws.com/82/cfnassist-1.0.82.zip)
 
 [Version 1.0.61](https://cfnassist-release.s3-eu-west-1.amazonaws.com/61/cfnassit-1.0.61.zip)
-
-[Version 1.0.36](https://cfnassist-release.s3-eu-west-1.amazonaws.com/36/cfnassit-1.0.36.zip)
 
 Build Status
 ------------
@@ -34,6 +34,8 @@ an ELB based on build numbers
 * Allows upload to S3; along with the option of passing S3 urls of new aritifacts directly into cloudformation templates
 * Use VPC Tags as input or output to templates using a simple convention in the parameter description
 * Automatically pick up values from environmental variables to use in template parameters
+* Generates diagrams of VPCs by producing [graphviz](http://www.graphviz.org/) format files
+* Manage ELB security groups by allowing you to add/remove your current IP from the current environment
 
 Usage
 -----
@@ -275,8 +277,8 @@ Next cfnassist finds the ELB for the VPC for the project and environment, addes 
 You can 'rollback' the ELB to point at the previous instances by giving their build number, so you may not want to immediately delete 
 previous instances until sure all is ok with the new ones.
 
-If more than one ELB is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you give above,
-if it is the tool will use that ELB, otherwise an error will be thrown. 
+If more than one ELB is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you 
+give above, if it is the tool will use that ELB, otherwise an error will be thrown. 
 
 10.Reset the delta tag on a VPC
 ------------------------------
@@ -411,3 +413,24 @@ Two diagrams will be generated for each VPC, one for the network configuration a
 > targetFolder/network_diagramvpc-56698c33.dot
 
 > targetFolder/security_diagramvpc-56698c33.dot
+
+
+19.Manage ELB Security Group access
+-----------------------------------
+
+This is helpful if you need to lock down access to a web site during development & testing while still allowing your current 
+location to access it. 
+
+`cfnassist -env Dev -whitelist web 80`
+
+This will update the Security Group for the Dev environment's ELB to allow access to port 80 from your current public IP.
+To revoke the access use this command (from the same location/public IP!)
+
+`cfnassist -env Dev -blacklist web 80`
+
+If need be you can use the aws console or cli tool to upadte the ELB secuity group, for example if you forget to revoke access 
+before leaving a location.
+
+If more than one ELB is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you 
+give above, if it is the tool will use that ELB, otherwise an error will be thrown. 
+
