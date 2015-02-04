@@ -167,15 +167,21 @@ As described above cfnassit will keep track of which creates and updates been ap
 and specific to the resource type involved, you need to **check the AWS documents** especially as some updates can actually result in a resource
 being *recreated*.
 
-3.Rolling it all back
----------------------
+3.Rolling changes back
+----------------------
 
 **Use with CARE!** 
 
-This will rollback all delta's by deleting the stacks for a VPC in the correct order and updating the DELTA tag on the VPC as it goes! 
+This first command will rollback all delta's by deleting the stacks for a VPC in the correct order and updating the DELTA 
+tag on the VPC as it goes! 
 You may want to do this while getting things bedded in initially or when you want to check you can fully recreate an environment.
 
 `cfnassist -env Dev -rollback ./infrastructure`
+
+Alternatively you can roll back just the last change using:
+
+`cfnassist -env Dev -stepback ./infrastructure`
+
 
 4.Built-in parameters and Mappings
 ----------------------------------
