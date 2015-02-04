@@ -100,6 +100,14 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		actionElements.add(diagramsElement);
 	}
 	
+	public void addConfiguredWhitelist(WhitelistElement whitelistElement) {
+		actionElements.add(whitelistElement);
+	}
+	
+	public void addConfiguredBlacklist(BlacklistElement blacklistElement) {
+		actionElements.add(blacklistElement);
+	}
+	
 	public void execute() {
 		ProjectAndEnv projectAndEnv = new ProjectAndEnv(cfnProject, cfnEnv);
 		if (snsMonitoring) {

@@ -537,6 +537,10 @@ public class AwsFacade {
 	private String getSecGroupIdForELB(ProjectAndEnv projectAndEnv, String type)
 			throws TooManyELBException, CfnAssistException {
 		LoadBalancerDescription elb = elbRepository.findELBFor(projectAndEnv, type);
+		if (elb==null) {
+			throw new CfnAssistException("Did not find ELB for current vpc");
+		}
+		
 		List<String> groups = elb.getSecurityGroups();
 		
 		if (groups.size()>1) {

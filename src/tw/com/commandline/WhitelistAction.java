@@ -18,12 +18,14 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 public class WhitelistAction extends SharedAction {
 
+	private static final int INDEX_OF_PORT_ARG = 1;
+
 	@SuppressWarnings("static-access")
 	public WhitelistAction() {
 		option = OptionBuilder.
 				withArgName("whitelist").
 				hasArgs(2).
-				withDescription("Whitelist current ip (i.e. add to the security group) for ELB tagged with type tag for port").
+				withDescription("Whitelist current ip (i.e. add to the security group) for ELB tagged with type tag, supply tag & port").
 				create("whitelist");
 	}
 
@@ -37,7 +39,7 @@ public class WhitelistAction extends SharedAction {
 		AwsFacade facade = factory.createFacade();
 		ProvidesCurrentIp hasCurrentIp = factory.getCurrentIpProvider();
 		
-		Integer port = Integer.parseInt(argument[1]);
+		Integer port = Integer.parseInt(argument[INDEX_OF_PORT_ARG]);
 		facade.whitelistCurrentIpForPortToElb(projectAndEnv, argument[0], hasCurrentIp, port);	
 	}
 
@@ -46,7 +48,7 @@ public class WhitelistAction extends SharedAction {
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argumentForAction) throws CommandLineException {
 		try {
-			Integer.parseInt(argumentForAction[1]); 
+			Integer.parseInt(argumentForAction[INDEX_OF_PORT_ARG]); 
 		}
 		catch (NumberFormatException exception) {
 			throw new CommandLineException(exception.getLocalizedMessage());

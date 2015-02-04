@@ -394,7 +394,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		validate(CLIArgBuilder.createDiagrams(folder));
 	}
 	
-	
 	@Test
 	public void testShouldWhiteListCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
