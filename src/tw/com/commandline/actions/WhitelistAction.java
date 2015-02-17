@@ -48,6 +48,7 @@ public class WhitelistAction extends SharedAction {
 	public void validate(ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argumentForAction) throws CommandLineException {
+		guardForProjectAndEnv(projectAndEnv);
 		try {
 			Integer.parseInt(argumentForAction[INDEX_OF_PORT_ARG]); 
 		}

@@ -46,6 +46,8 @@ public class BlacklistAction extends SharedAction {
 	public void validate(ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argumentForAction) throws CommandLineException {
+		guardForProjectAndEnv(projectAndEnv);
+
 		try {
 			Integer.parseInt(argumentForAction[1]); 
 		}

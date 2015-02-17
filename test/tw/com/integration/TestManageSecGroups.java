@@ -76,6 +76,8 @@ public class TestManageSecGroups {
 		Integer port = 8080;
 		InetAddress adddress = Inet4Address.getByName("192.168.0.1");
 		String cidr = "192.168.0.1/32";
+		
+		//add
 		client.addIpToSecGroup(groupId, port , adddress);
 		
 		DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest().withGroupIds(groupId);
@@ -94,6 +96,7 @@ public class TestManageSecGroups {
 		assertEquals(1, ipPermission.getIpRanges().size());
 		assertEquals(cidr, ipPermission.getIpRanges().get(0));
 		
+		//remove
 		client.deleteIpFromSecGroup(groupId, port, adddress);
 		
 		result = ec2Client.describeSecurityGroups(request);

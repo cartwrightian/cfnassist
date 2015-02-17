@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 
 import com.amazonaws.event.ProgressEvent;
+import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.event.ProgressListener;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Address;
@@ -27,6 +28,7 @@ import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
 import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcsResult;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RevokeSecurityGroupIngressRequest;
@@ -134,30 +136,35 @@ public class CloudClient implements ProgressListener {
 		logger.info(String.format("Add address %s for port %s to group %s", address.getHostAddress(), port.toString(), groupId));
 		AuthorizeSecurityGroupIngressRequest request = new AuthorizeSecurityGroupIngressRequest();
 		request.setGroupId(groupId);
-		request.setFromPort(port);
-		request.setToPort(port);
-		String cidr = String.format("%s/32", address.getHostAddress());
-		request.setCidrIp(cidr);
+		request.setIpPermissions(createPermissions(port, address));
+		
 		request.setGeneralProgressListener(this);
-		request.setIpProtocol("tcp");
-		ec2Client.authorizeSecurityGroupIngress(request);			
+		ec2Client.authorizeSecurityGroupIngress(request);
 	}
 	
 	public void deleteIpFromSecGroup(String groupId, Integer port, InetAddress address) {
 		logger.info(String.format("Remove address %s for port %s on group %s", address.getHostAddress(), port.toString(), groupId));
 		RevokeSecurityGroupIngressRequest request = new RevokeSecurityGroupIngressRequest();
 		request.setGroupId(groupId);
-		String cidr = String.format("%s/32", address.getHostAddress());
-		request.setCidrIp(cidr);
-		request.setIpProtocol("tcp");
-		request.setFromPort(port);
-		request.setToPort(port);
+		request.setIpPermissions(createPermissions(port, address));		
 		request.setGeneralProgressListener(this);
 		ec2Client.revokeSecurityGroupIngress(request );	
 	}
 
+	private Collection<IpPermission> createPermissions(Integer port,
+			InetAddress address) {
+		Collection<IpPermission> ipPermissions = new LinkedList<IpPermission>();
+		IpPermission permission = new IpPermission();
+		permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpRanges(String.format("%s/32", address.getHostAddress()));
+		ipPermissions.add(permission);
+		return ipPermissions;
+	}
+	
 	@Override
 	public void progressChanged(ProgressEvent progressEvent) {
+		if (progressEvent.getEventType()==ProgressEventType.CLIENT_REQUEST_FAILED_EVENT) {
+	
+		}
 		logger.info(progressEvent.toString());	
 	}
 
