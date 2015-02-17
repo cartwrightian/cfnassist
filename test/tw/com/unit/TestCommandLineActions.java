@@ -33,7 +33,9 @@ import tw.com.FacadeFactory;
 import tw.com.FilesForTesting;
 import tw.com.commandline.Main;
 import tw.com.entity.EnvironmentTag;
+import tw.com.entity.InstanceSummary;
 import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
@@ -207,7 +209,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
 	}
 	
-	
 	@Test
 	public void testShouldStepBackOneChange() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
@@ -216,6 +217,18 @@ public class TestCommandLineActions extends EasyMockSupport {
 		EasyMock.expect(facade.stepbackLastChange(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(deleted);
 		
 		validate(CLIArgBuilder.stepback(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
+	}
+	
+	@Test
+	public void testShouldListInstances() throws MissingArgumentException, CfnAssistException, InterruptedException {
+		SearchCriteria criteria = new SearchCriteria(projectAndEnv);
+
+		setFactoryExpectations();
+		
+		List<InstanceSummary> summary = new LinkedList<>();
+		EasyMock.expect(facade.listInstances(criteria)).andReturn(summary);
+		
+		validate(CLIArgBuilder.listInstances());
 	}
 	
 	@Test

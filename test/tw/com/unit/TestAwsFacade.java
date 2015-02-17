@@ -21,6 +21,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 
@@ -29,7 +30,9 @@ import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.EnvironmentTag;
+import tw.com.entity.InstanceSummary;
 import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.BadVPCDeltaIndexException;
@@ -160,6 +163,38 @@ public class TestAwsFacade extends EasyMockSupport {
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
 		assertEquals(1,results.size());
 		verifyAll();
+	}
+	
+	@Test
+	public void shouldListSummaryOfInstancesWithEnv() throws CfnAssistException {
+		String idA = "instanceIdA";
+		String idB = "instanceIdB";
+		List<Tag> tagsA = new LinkedList<>();
+		tagsA.add(EnvironmentSetupForTests.createEc2Tag("ENV", "env"));
+		List<Tag> tagsB = new LinkedList<>();
+		tagsB.add(EnvironmentSetupForTests.createEc2Tag("TAG", "value"));
+
+		com.amazonaws.services.ec2.model.Instance instanceA = new com.amazonaws.services.ec2.model.Instance().
+				withInstanceId(idA).withPrivateIpAddress("10.1.2.3").withTags(tagsA);
+		com.amazonaws.services.ec2.model.Instance instanceB = new com.amazonaws.services.ec2.model.Instance().
+				withInstanceId(idB).withPrivateIpAddress("10.8.7.6").withTags(tagsB);
+
+		List<String> instanceList = new LinkedList<>();
+		instanceList.add(idA);
+		instanceList.add(idB);
+		
+		SearchCriteria criteria = new SearchCriteria(projectAndEnv);
+		EasyMock.expect(cfnRepository.getAllInstancesFor(criteria)).andReturn(instanceList);
+		EasyMock.expect(cloudRepository.getInstanceById(idA)).andReturn(instanceA);
+		EasyMock.expect(cloudRepository.getInstanceById(idB)).andReturn(instanceB);
+		
+		replayAll();
+		List<InstanceSummary> results = aws.listInstances(criteria);
+		verifyAll();
+		
+		assertEquals(2, results.size());
+		assertTrue(results.contains(new InstanceSummary(idA, "10.1.2.3", tagsA)));
+		assertTrue(results.contains(new InstanceSummary(idB, "10.8.7.6", tagsB)));
 	}
 	
 	@Test 

@@ -8,8 +8,9 @@ import org.slf4j.LoggerFactory;
 
 import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.SearchCriteria;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.TooManyELBException;
-import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.providers.LoadBalancerClient;
 
@@ -98,14 +99,16 @@ public class ELBRepository {
 		return vpcID;
 	}
 
-	private List<Instance> addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String typeTag) throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
+	private List<Instance> addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String typeTag) throws CfnAssistException {
 		if (!projAndEnv.hasBuildNumber()) {
 			throw new MustHaveBuildNumber();
 		}
 		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);	
 		List<Instance> currentInstances = elb.getInstances();
 		String lbName = elb.getLoadBalancerName();
-		List<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(projAndEnv, typeTag);
+		
+		SearchCriteria criteria = new SearchCriteria(projAndEnv);
+		List<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(criteria, typeTag);
 		List<Instance> instancesToAdd = filterBy(currentInstances, allMatchingInstances);
 		if (allMatchingInstances.size()==0) {
 			logger.warn(String.format("No instances matched %s and type tag %s (%s)", projAndEnv, typeTag, AwsFacade.TYPE_TAG));
@@ -166,7 +169,7 @@ public class ELBRepository {
 
 	}
 
-	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String typeTag) throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
+	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String typeTag) throws CfnAssistException {
 		List<Instance> matchinginstances = addInstancesThatMatchBuildAndType(projAndEnv, typeTag); 
 		return removeInstancesNotMatching(projAndEnv, matchinginstances, typeTag);	
 	}

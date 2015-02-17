@@ -122,6 +122,17 @@ public class CLIArgBuilder {
 		return args;
 	}
 	
+
+	public static String[] listInstances() {
+		String[] args = { 
+				"-env", EnvironmentSetupForTests.ENV, 
+				"-project", EnvironmentSetupForTests.PROJECT, 
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-instances"
+				};
+		return args;
+	}
+	
 	public static String[] createDiagrams(String folder) {
 		String[] args = { 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
@@ -265,5 +276,6 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
+
 
 }

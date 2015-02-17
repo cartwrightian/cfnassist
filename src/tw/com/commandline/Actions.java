@@ -10,6 +10,23 @@ import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.commandline.actions.BlacklistAction;
+import tw.com.commandline.actions.CreateDiagramAction;
+import tw.com.commandline.actions.DeleteAction;
+import tw.com.commandline.actions.DirAction;
+import tw.com.commandline.actions.ElbAction;
+import tw.com.commandline.actions.FileAction;
+import tw.com.commandline.actions.InitAction;
+import tw.com.commandline.actions.InstancesAction;
+import tw.com.commandline.actions.ListAction;
+import tw.com.commandline.actions.ResetAction;
+import tw.com.commandline.actions.RollbackAction;
+import tw.com.commandline.actions.S3CreateAction;
+import tw.com.commandline.actions.S3DeleteAction;
+import tw.com.commandline.actions.StepbackAction;
+import tw.com.commandline.actions.TidyOldStacksAction;
+import tw.com.commandline.actions.WhitelistAction;
+
 public class Actions {
 	private static final Logger logger = LoggerFactory.getLogger(Actions.class);
 
@@ -63,6 +80,7 @@ public class Actions {
 		actions.add(new WhitelistAction());
 		actions.add(new BlacklistAction());
 		actions.add(new StepbackAction());
+		actions.add(new InstancesAction());
 	}
 
 }

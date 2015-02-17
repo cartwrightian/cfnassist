@@ -14,9 +14,10 @@ import org.junit.runner.RunWith;
 
 import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.SearchCriteria;
+import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.exceptions.TooManyELBException;
-import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.LoadBalancerClient;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.ResourceRepository;
@@ -114,7 +115,7 @@ public class TestELBRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRegisterELBs() throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {			
+	public void shouldRegisterELBs() throws CfnAssistException {			
 		Instance insA1 = new Instance().withInstanceId("instanceA1"); // initial
 		Instance insA2 = new Instance().withInstanceId("instanceA2"); // initial
 		Instance insB1 = new Instance().withInstanceId("instanceB1"); // new
@@ -158,7 +159,8 @@ public class TestELBRepository extends EasyMockSupport {
 	
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(new Vpc().withVpcId(vpcId));
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(initalLoadBalancers);
-		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(projAndEnv, "typeTag")).andReturn(instancesThatMatch);
+		SearchCriteria criteria = new SearchCriteria(projAndEnv);
+		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(criteria, "typeTag")).andReturn(instancesThatMatch);
 
 		elbClient.registerInstances(instancesToAdd, "lbName");
 		EasyMock.expectLastCall();
@@ -195,7 +197,7 @@ public class TestELBRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldThrowIfNoBuildNumberIsGiven() throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
+	public void shouldThrowIfNoBuildNumberIsGiven() throws CfnAssistException {
 		replayAll();	
 		try {
 			elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag");

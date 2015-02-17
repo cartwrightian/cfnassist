@@ -7,7 +7,7 @@ import java.util.Collection;
 import org.apache.commons.cli.MissingArgumentException;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
-import tw.com.commandline.WhitelistAction;
+import tw.com.commandline.actions.WhitelistAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;

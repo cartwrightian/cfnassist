@@ -11,7 +11,7 @@ import org.apache.tools.ant.BuildException;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
-import tw.com.commandline.DeleteAction;
+import tw.com.commandline.actions.DeleteAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;

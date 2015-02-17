@@ -223,6 +223,14 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
+	public void shouldListInstances() {
+		String[] args = CLIArgBuilder.listInstances();
+		Main main = new Main(args);
+		int result = main.parse();
+		assertEquals(0,result);
+	}
+	
+	@Test
 	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
 		invokeForDirAndThenRollback(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_FOLDER);

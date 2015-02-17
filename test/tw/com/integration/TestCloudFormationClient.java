@@ -118,7 +118,7 @@ public class TestCloudFormationClient {
 		Collection<Parameter> parameters = createStandardParameters("someVpcId");
 		String stackName = "createStackTest";
 		String comment = test.getMethodName();
-		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment); 
+		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment,-1); 
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
 		deletesStacks.ifPresent(stackName);
 		

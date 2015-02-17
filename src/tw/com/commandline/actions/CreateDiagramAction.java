@@ -1,62 +1,56 @@
-package tw.com.commandline;
+package tw.com.commandline.actions;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 
-import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
+import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.providers.ProvidesCurrentIp;
+import tw.com.pictures.DiagramCreator;
+import tw.com.pictures.dot.FileRecorder;
+import tw.com.pictures.dot.Recorder;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
-public class BlacklistAction extends SharedAction {
-
+public class CreateDiagramAction extends SharedAction {
+	
 	@SuppressWarnings("static-access")
-	public BlacklistAction() {
-		option = OptionBuilder.
-				withArgName("blacklist").
-				hasArgs(2).
-				withDescription("Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port").
-				create("blacklist");
+	public CreateDiagramAction() {
+		option = OptionBuilder.withArgName("diagrams").hasArg().withDescription("Create diagrams for VPCs in given folder").create("diagrams");
 	}
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argument) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, InterruptedException,
-			CfnAssistException, MissingArgumentException {
-		
-		AwsFacade facade = factory.createFacade();
-		ProvidesCurrentIp hasCurrentIp = factory.getCurrentIpProvider();
-		
-		Integer port = Integer.parseInt(argument[1]);
-		facade.blacklistCurrentIpForPortToElb(projectAndEnv, argument[0], hasCurrentIp, port);	
+			FileNotFoundException, IOException,
+			InterruptedException, CfnAssistException, MissingArgumentException {
+		DiagramCreator diagramCreator = factory.createDiagramCreator();
+		Path folder = Paths.get(argument[0]);
+		Recorder recorder = new FileRecorder(folder);
+		diagramCreator.createDiagrams(recorder);
 	}
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argumentForAction) throws CommandLineException {
-		try {
-			Integer.parseInt(argumentForAction[1]); 
-		}
-		catch (NumberFormatException exception) {
-			throw new CommandLineException(exception.getLocalizedMessage());
-		}
-		
+		guardForNoArtifacts(artifacts);
+		guardForNoBuildNumber(projectAndEnv);
+		guardForSNSNotSet(projectAndEnv);
 	}
-	
+
 	@Override
 	public boolean usesProject() {
-		return true;
+		return false;
 	}
 
 	@Override
@@ -68,6 +62,5 @@ public class BlacklistAction extends SharedAction {
 	public boolean usesSNS() {
 		return false;
 	}
-
 
 }

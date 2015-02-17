@@ -12,7 +12,6 @@ public class ProjectAndEnv {
 
 	public ProjectAndEnv(String project, String env) {
 		useSns = false;
-		// TODO guard clause on project and env being empty??
 		this.project = project;
 		this.env = env;
 	}
@@ -54,6 +53,10 @@ public class ProjectAndEnv {
 	public boolean hasProject() {
 		return project!=null && !project.isEmpty();
 	}
+	
+	public boolean hasEnv() {
+		return !env.isEmpty();
+	}
 
 	public boolean hasBucketName() {
 		return s3Bucket!=null && !s3Bucket.isEmpty();
@@ -62,54 +65,7 @@ public class ProjectAndEnv {
 	public boolean hasBuildNumber() {
 		return buildNumber!=null && !buildNumber.isEmpty();
 	}
-
-	public boolean hasEnv() {
-		return !env.isEmpty();
-	}
 	
-	
-
-//	@Override
-//	public int hashCode() {
-//		final int prime = 31;
-//		int result = 1;
-//		result = prime * result
-//				+ ((buildNumber == null) ? 0 : buildNumber.hashCode());
-//		result = prime * result + ((env == null) ? 0 : env.hashCode());
-//		result = prime * result + ((project == null) ? 0 : project.hashCode());
-//		result = prime * result + (useSns ? 1231 : 1237);
-//		return result;
-//	}
-//
-//	@Override
-//	public boolean equals(Object obj) {
-//		if (this == obj)
-//			return true;
-//		if (obj == null)
-//			return false;
-//		if (getClass() != obj.getClass())
-//			return false;
-//		ProjectAndEnv other = (ProjectAndEnv) obj;
-//		if (buildNumber == null) {
-//			if (other.buildNumber != null)
-//				return false;
-//		} else if (!buildNumber.equals(other.buildNumber))
-//			return false;
-//		if (env == null) {
-//			if (other.env != null)
-//				return false;
-//		} else if (!env.equals(other.env))
-//			return false;
-//		if (project == null) {
-//			if (other.project != null)
-//				return false;
-//		} else if (!project.equals(other.project))
-//			return false;
-//		if (useSns != other.useSns)
-//			return false;
-//		return true;
-//	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;

@@ -11,6 +11,7 @@ import tw.com.MonitorStackEvents;
 import tw.com.StackCache;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
@@ -41,8 +42,8 @@ public class CfnRepository implements CloudFormRepository {
 	
 	// TODO Use CloudRepository instead
 	private CloudClient cloudClient;
-
 	private StackCache stackCache;
+	
 	public CfnRepository(CloudFormationClient formationClient, CloudClient cloudClient, String project) {
 		this.formationClient = formationClient;
 		this.cloudClient = cloudClient;
@@ -54,8 +55,13 @@ public class CfnRepository implements CloudFormRepository {
 		List<StackEntry> stacks = new LinkedList<StackEntry>();
 		
 		for (StackEntry entry : stackCache.getEntries()) {
-			if (entry.getEnvTag().equals(envTag) && entry.getBuildNumber().equals(buildNumber)) {
-				stacks.add(entry);
+			if (entry.getEnvTag().equals(envTag)) {
+				if (buildNumber.isEmpty()) {
+					stacks.add(entry);
+				}
+				else if(buildNumber.equals(entry.getBuildNumber())) {
+					stacks.add(entry);
+				}
 			}
 		}
 		return stacks;
@@ -232,22 +238,19 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	@Override
-	public List<String> getAllInstancesFor(ProjectAndEnv projAndEnv) {
-		logger.info("Finding instances for " + projAndEnv);
-		String buildNumber = "";
-		if (projAndEnv.hasBuildNumber()) {
-			buildNumber = projAndEnv.getBuildNumber();
-			logger.info("Matching also on build number: " + buildNumber);
-		}
-		// fetch stacks that match proj, env and build
-		List<StackEntry> stacks = stacksMatchingEnvAndBuild(projAndEnv.getEnvTag(), buildNumber);
+	public List<String> getAllInstancesFor(SearchCriteria criteria) throws CfnAssistException {
+		logger.info("Finding instances for " + criteria);
+		
+		List<StackEntry> stacks = criteria.matches(stackCache.getEntries());
+		
 		List<String> instanceIds = new LinkedList<String>();
 		for (StackEntry entry : stacks) {
+			String stackName = entry.getStackName();
 			if (entry.isLive()) {
-				logger.info("Found stack :" + entry.getStackName());
-				instanceIds.addAll(getInstancesFor(entry.getStackName()));
+				logger.info("Found stack :" + stackName);
+				instanceIds.addAll(getInstancesFor(stackName));
 			} else {
-				logger.info("Not adding stack :" + entry.getStackName());
+				logger.info("Not adding stack :" + stackName);
 			}
 		}
 		return instanceIds;
@@ -313,9 +316,8 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	@Override
-	public List<Instance> getAllInstancesMatchingType(ProjectAndEnv projAndEnv,
-			String typeTag) throws WrongNumberOfInstancesException {
-		Collection<String> instancesIds = getAllInstancesFor(projAndEnv);
+	public List<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException {
+		Collection<String> instancesIds = getAllInstancesFor(criteria);
 		
 		List<Instance> instances = new LinkedList<Instance>();
 		for (String id : instancesIds) {
@@ -326,7 +328,7 @@ public class CfnRepository implements CloudFormRepository {
 				logger.info(String.format("Not adding instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, typeTag));
 			}	
 		}
-		logger.info(String.format("Found %s instances matching %s and type: %s", instances.size(), projAndEnv, typeTag));
+		logger.info(String.format("Found %s instances matching %s and type: %s", instances.size(), criteria, typeTag));
 		return instances;
 	}
 	

@@ -1,7 +1,5 @@
-package tw.com.commandline;
+package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Collection;
 
 import org.apache.commons.cli.MissingArgumentException;
@@ -13,34 +11,33 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
+import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 
-public class InitAction extends SharedAction {
-	private static final Logger logger = LoggerFactory.getLogger(InitAction.class);
-	
+public class StepbackAction extends SharedAction {
+	private static final Logger logger = LoggerFactory.getLogger(StepbackAction.class);
+
 	@SuppressWarnings("static-access")
-	public InitAction() {
-		option = OptionBuilder.withArgName("init").hasArg().
-					withDescription("Warning: Initialise a VPC to set up tags, provide VPC Id").create("init");
+	public StepbackAction() {
+		option = OptionBuilder.withArgName("stepback").hasArg().
+					withDescription("Warning: Remove last delta and reset index accordingly").create("stepback");
 	}
 
-	@Override
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,  Collection<Parameter> unused,
-			Collection<Parameter> artifacts, String... args) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, InterruptedException, CfnAssistException, MissingArgumentException {
-		String vpcId = args[0];
-		logger.info("Invoke init of tags for VPC: " + vpcId);
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused, 
+			Collection<Parameter> artifacts, String... args) throws InvalidStackParameterException, CfnAssistException, MissingArgumentException, InterruptedException {
+		String folder = args[0];
+		logger.info("Invoking stepback for " + projectAndEnv + " and folder " + folder);
 		AwsFacade aws = factory.createFacade();
-		aws.initEnvAndProjectForVPC(vpcId, projectAndEnv);		
+		aws.stepbackLastChange(folder, projectAndEnv);
 	}
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
 			Collection<Parameter> artifacts, String... argumentForAction)
 			throws CommandLineException {
-		guardForProjectAndEnv(projectAndEnv);	
+		guardForProjectAndEnv(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);	
 		guardForNoArtifacts(artifacts);
 	}
@@ -57,7 +54,7 @@ public class InitAction extends SharedAction {
 
 	@Override
 	public boolean usesSNS() {
-		return false;
+		return true;
 	}
 
 }

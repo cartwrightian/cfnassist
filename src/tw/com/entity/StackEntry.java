@@ -1,10 +1,14 @@
 package tw.com.entity;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
 public class StackEntry {
+	private static final Logger logger = LoggerFactory.getLogger(StackEntry.class);
 
 	private EnvironmentTag environmentTag;
 	private Stack stack;
@@ -35,8 +39,9 @@ public class StackEntry {
 		return buildNumber;
 	}
 	
-	public void setBuildNumber(String buildNumber) {
+	public StackEntry setBuildNumber(String buildNumber) {
 		this.buildNumber = buildNumber;	
+		return this;
 	}
 	
 	@Override
@@ -92,7 +97,9 @@ public class StackEntry {
 			withoutBuild =  withoutProject.replace(buildNumber, "");
 		}
 		
-		return withoutBuild.replace(environmentTag.getEnv(), "");
+		String basename = withoutBuild.replace(environmentTag.getEnv(), "");
+		logger.debug("basename is " + basename);
+		return basename;
 	}
 
 

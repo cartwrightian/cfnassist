@@ -20,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import tw.com.entity.DeletionsPending;
+import tw.com.entity.InstanceSummary;
 import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.BadVPCDeltaIndexException;
@@ -28,11 +30,9 @@ import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.TagsAlreadyInit;
 import tw.com.exceptions.TooManyELBException;
-import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.parameters.AutoDiscoverParams;
@@ -563,8 +563,7 @@ public class AwsFacade {
 		return false;
 	}
 
-	public List<Instance> updateELBToInstancesMatchingBuild(ProjectAndEnv projectAndEnv,
-			String typeTag) throws MustHaveBuildNumber, WrongNumberOfInstancesException, TooManyELBException {
+	public List<Instance> updateELBToInstancesMatchingBuild(ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
 		logger.info(String.format("Update instances for ELB to match %s and type tag %s", projectAndEnv, typeTag));
 		return elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);	
 	}
@@ -600,6 +599,19 @@ public class AwsFacade {
 		
 		String groupId = groups.get(0);
 		return groupId;
+	}
+
+	public List<InstanceSummary> listInstances(SearchCriteria searchCriteria) throws CfnAssistException {
+		List<InstanceSummary> result = new LinkedList<>();
+		List<String> instanceIds = cfnRepository.getAllInstancesFor(searchCriteria);
+		
+		for(String id: instanceIds) {
+			com.amazonaws.services.ec2.model.Instance instance = cloudRepository.getInstanceById(id);
+			InstanceSummary summary = new InstanceSummary(id, instance.getPrivateIpAddress(), instance.getTags());
+			result.add(summary);
+		}
+		
+		return result;
 	}
 
 
