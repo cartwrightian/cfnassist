@@ -20,7 +20,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 
 	private String awsRegion;
 	private String cfnProject;
-	private String cfnBuildNumber = null;
+	private Integer cfnBuildNumber = null;
 	private String cfnEnv;
 	private String bucketName;
 	private boolean snsMonitoring;
@@ -50,7 +50,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	}
 	
 	public void setBuildNumber(String cfnBuildNumber) {
-		this.cfnBuildNumber  = cfnBuildNumber;
+		this.cfnBuildNumber  = Integer.parseInt(cfnBuildNumber);
 	}
 	
 	public void setBucketName(String bucketName) {

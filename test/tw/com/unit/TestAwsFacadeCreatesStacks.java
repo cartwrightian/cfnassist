@@ -188,7 +188,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 		andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
-		EasyMock.expect(cfnRepository.updateRepositoryFor(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
@@ -219,7 +219,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 		andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
-		EasyMock.expect(cfnRepository.updateRepositoryFor(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
@@ -230,7 +230,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	@Test
 	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParamsWithBuild() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
-		String stackName = "CfnAssist0043TestsimpleStack";
+		String stackName = "CfnAssist43TestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
@@ -238,10 +238,10 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		templateParameters.add(new TemplateParameter().withParameterKey("env"));
 		templateParameters.add(new TemplateParameter().withParameterKey("build"));
 		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
-		projectAndEnv.addBuildNumber("0043");
+		projectAndEnv.addBuildNumber(43);
 		addParam(creationParameters, "env", projectAndEnv.getEnv());
 		addParam(creationParameters, "vpc", VPC_ID);
-		addParam(creationParameters, "build", "0043");
+		addParam(creationParameters, "build", "43");
 		
 		StackNameAndId stackNameAndId = SetCreateExpectations(stackName, contents, templateParameters, creationParameters);
 		
@@ -340,7 +340,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 			andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
-		EasyMock.expect(cfnRepository.updateRepositoryFor(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
 		List<Parameter> userParams = new LinkedList<Parameter>();
@@ -371,7 +371,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 			andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
-		EasyMock.expect(cfnRepository.updateRepositoryFor(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
 		List<Parameter> userParams = new LinkedList<Parameter>();
@@ -383,14 +383,14 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	@Test
 	public void shouldApplySimpleTemplateInputParametersNotPassBuild() throws FileNotFoundException, CfnAssistException, IOException, InvalidStackParameterException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
-		String stackName = "CfnAssist0056TestsimpleStack";
+		String stackName = "CfnAssist56TestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
 		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
 		addParam(creationParameters, "subnet", "subnetValue");
 		
-		projectAndEnv.addBuildNumber("0056");
+		projectAndEnv.addBuildNumber(56);
 		StackNameAndId stackNameAndId = SetCreateExpectations(stackName, contents, templateParameters, creationParameters);
 		
 		replayAll();
@@ -469,7 +469,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, comment)).
 			andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
-		EasyMock.expect(cfnRepository.updateRepositoryFor(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		return stackNameAndId;
 	}
 	

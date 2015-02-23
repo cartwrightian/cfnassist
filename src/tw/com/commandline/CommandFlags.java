@@ -40,7 +40,7 @@ public class CommandFlags {
 	private String project;
 	private String env;
 	private String region;
-	private String buildNumber;
+	private Integer buildNumber = null;
 	private Boolean sns;
 	private Boolean capabilityIAM;
 	private String comment;
@@ -73,7 +73,10 @@ public class CommandFlags {
 		project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG, false);	
 		env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, false);
 		region = checkForArgument(commandLine, formatter, regionParam, Main.ENV_VAR_EC2_REGION, true);
-		buildNumber = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
+		String buildNumberAsString = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
+		if (!buildNumberAsString.isEmpty()) {
+			buildNumber = Integer.parseInt(buildNumberAsString);
+		}
 		sns = checkForArgumentPresent(commandLine, formatter, snsParam);
 		capabilityIAM = checkForArgumentPresent(commandLine, formatter, capIAMParam);
 		comment = checkForArgument(commandLine, formatter, commentParam, "", false);
@@ -207,7 +210,7 @@ public class CommandFlags {
 		return region;
 	}
 
-	public String getBuildNumber() {
+	public Integer getBuildNumber() {
 		return buildNumber;
 	}
 
@@ -224,7 +227,7 @@ public class CommandFlags {
 	}
 	
 	public boolean haveBuildNumber() {
-		return !buildNumber.isEmpty();
+		return buildNumber!=null;
 	}
 
 	public boolean haveComment() {

@@ -200,7 +200,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		verifyAll();
 	}
 	
-	// TODO is this a real possability?
+	// Is this a real possibility?
 	@Test
 	public void shouldAddRouteCidrMissing() throws CfnAssistException {
 		Route route = new Route().withGatewayId("local").
@@ -272,18 +272,6 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	
 		replayAll();
 		builder.addAsssociatedRouteTable(routeTable, "subnetId");
-		verifyAll();
-	}
-	
-	@Test
-	public void shouldAddRouteTableWithoutSubnet() throws CfnAssistException {
-		RouteTable routeTable = new RouteTable().withRouteTableId("rtId").
-				withTags(VpcTestBuilder.CreateNameTag("rtName"));
-		
-		networkDiagram.addRouteTable("rtId", "rtName [rtId]");
-	
-		replayAll();
-		builder.addAsssociatedRouteTable(routeTable, null);
 		verifyAll();
 	}
 	

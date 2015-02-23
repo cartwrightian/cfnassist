@@ -12,7 +12,7 @@ public class StackEntry {
 
 	private EnvironmentTag environmentTag;
 	private Stack stack;
-	private String buildNumber = "";
+	private Integer buildNumber = null;
 	private String project;
 
 	public StackEntry(String project, EnvironmentTag environmentTag, Stack stack) {
@@ -35,11 +35,11 @@ public class StackEntry {
 		return stack;
 	}
 
-	public String getBuildNumber() {
+	public Integer getBuildNumber() {
 		return buildNumber;
 	}
 	
-	public StackEntry setBuildNumber(String buildNumber) {
+	public StackEntry setBuildNumber(Integer buildNumber) {
 		this.buildNumber = buildNumber;	
 		return this;
 	}
@@ -93,8 +93,8 @@ public class StackEntry {
 		String withoutProject = fullName.replace(project, "");
 		
 		String withoutBuild = withoutProject;
-		if (!buildNumber.isEmpty()) {
-			withoutBuild =  withoutProject.replace(buildNumber, "");
+		if (buildNumber!=null) {
+			withoutBuild =  withoutProject.replace(buildNumber.toString(), "");
 		}
 		
 		String basename = withoutBuild.replace(environmentTag.getEnv(), "");
@@ -102,5 +102,8 @@ public class StackEntry {
 		return basename;
 	}
 
+	public boolean hasBuildNumber() {
+		return buildNumber!=null;
+	}
 
 }

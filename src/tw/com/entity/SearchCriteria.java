@@ -20,7 +20,7 @@ public class SearchCriteria {
 			project = projectAndEnv.getProject();
 		}
 		if (projectAndEnv.hasBuildNumber()) {
-			buildNumber = Integer.parseInt(projectAndEnv.getBuildNumber());
+			buildNumber = projectAndEnv.getBuildNumber();
 		}
 	}
 
@@ -36,12 +36,10 @@ public class SearchCriteria {
 			}
 		}
 		if (haveBuild()) {
-			if (entry.getBuildNumber().isEmpty()) {
-				return false;
+			if (!entry.hasBuildNumber()) {
+				return false; // can't match if entry has no build number
 			}
-			// TODO push down integer into criteria
-			Integer entryNumber = Integer.parseInt(entry.getBuildNumber());
-			if (!buildNumber.equals(entryNumber)) {
+			if (!buildNumber.equals(entry.getBuildNumber())) {
 				return false;
 			}
 		}

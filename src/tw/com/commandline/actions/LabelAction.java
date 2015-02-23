@@ -49,7 +49,6 @@ public class LabelAction extends SharedAction {
 
 	@Override
 	public boolean usesProject() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 

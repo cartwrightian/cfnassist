@@ -21,11 +21,11 @@ public class ArtifactUploader {
 
 	private AmazonS3Client s3Client;
 	private String bucketName;
-	private String buildNumber;
+	private Integer buildNumber;
 
 	private ProgressListener progressListener = new UploadProgressListener();
 
-	public ArtifactUploader(AmazonS3Client s3Client, String bucketName, String buildNumber) {
+	public ArtifactUploader(AmazonS3Client s3Client, String bucketName, Integer buildNumber) {
 		this.s3Client = s3Client;
 		this.bucketName = bucketName;
 		this.buildNumber = buildNumber;
@@ -54,7 +54,7 @@ public class ArtifactUploader {
 					logger.warn("Skipped item " + file.getAbsolutePath());
 				}
 			}
-			url = s3Client.getResourceUrl(bucketName, buildNumber);	
+			url = s3Client.getResourceUrl(bucketName, buildNumber.toString());	
 		} else {
 			url = uploadItem(item);
 		}

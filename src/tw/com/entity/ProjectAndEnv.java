@@ -5,7 +5,7 @@ public class ProjectAndEnv {
 	
 	private String project;
 	private String env;
-	private String buildNumber = null;
+	private Integer buildNumber = null;
 	private boolean useSns;
 	private String s3Bucket;
 	private boolean useCapabilityIAM;
@@ -30,11 +30,11 @@ public class ProjectAndEnv {
 				+ ", buildNumber=" + buildNumber + ", useArn=" + useSns + ", useCapabilityIAM = " + useCapabilityIAM + "]";
 	}
 
-	public void addBuildNumber(String buildNumber) {
+	public void addBuildNumber(Integer buildNumber) {
 		this.buildNumber  = buildNumber;		
 	}
 
-	public String getBuildNumber() {
+	public Integer getBuildNumber() {
 		return buildNumber;
 	}
 	
@@ -63,7 +63,7 @@ public class ProjectAndEnv {
 	}
 	
 	public boolean hasBuildNumber() {
-		return buildNumber!=null && !buildNumber.isEmpty();
+		return buildNumber!=null;
 	}
 	
 	@Override

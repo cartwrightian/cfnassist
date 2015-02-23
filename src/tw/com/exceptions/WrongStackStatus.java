@@ -9,7 +9,6 @@ public class WrongStackStatus extends CfnAssistException {
 
 	public WrongStackStatus(String msg) {
 		super(msg);
-		// TODO Auto-generated constructor stub
 	}
 
 	public WrongStackStatus(StackNameAndId stackId, String requiredStatus, String actual) {

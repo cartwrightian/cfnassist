@@ -101,34 +101,6 @@ public class TestCfnRepository extends EasyMockSupport {
 		verifyAll();	
 	}
 	
-	@Test
-	public void testShouldMatchOnBuildNumberAndEnv() {
-		String BuildNumber = "0042";
-		
-		List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber);
-		List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("",52);
-		//tagsB.add(EnvironmentSetupForTests.createCfnStackTAG(AwsFacade.BUILD_TAG,"0052"));
-		List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber);
-		tagsC.add(EnvironmentSetupForTests.createCfnStackTAG(AwsFacade.BUILD_TAG,BuildNumber));
-		
-		List<Stack> list = new LinkedList<Stack>();
-		list.add(new Stack().withTags(tagsA).withStackName("noBuildNumber"));
-		list.add(new Stack().withTags(tagsB).withStackName("wrongBuildNumber"));
-		list.add(new Stack().withTags(tagsC).withStackName("matchingBuildNumber"));
-		
-		String buildNumber = BuildNumber;
-			
-		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
-		replayAll();
-			
-		List<StackEntry> results = repository.stacksMatchingEnvAndBuild(envTag, buildNumber);
-		assertEquals(1, results.size());
-		results = repository.stacksMatchingEnvAndBuild(envTag, buildNumber); // second call should hit cache
-		assertEquals(1, results.size());
-
-		verifyAll();	
-	}
-	
 	@Test 
 	public void testShouldFindResourcesByIdInsideOfAStack()  {
 		String logicalId = "logicalIdOfResource";

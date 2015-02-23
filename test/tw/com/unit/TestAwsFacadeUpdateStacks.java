@@ -131,7 +131,7 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		EasyMock.expect(cfnRepository.updateStack(contents, parameters, monitor, stackName)).andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForUpdateFinished(stackNameAndId)).andReturn(StackStatus.UPDATE_COMPLETE.toString());
-		EasyMock.expect(cfnRepository.updateRepositoryFor(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cfnRepository.updateSuccess(stackNameAndId)).andReturn(stack);
 		return stackNameAndId;
 	}
 	

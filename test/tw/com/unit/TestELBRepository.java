@@ -144,7 +144,7 @@ public class TestELBRepository extends EasyMockSupport {
 		toRemove.add(insA2);;
 		
 		String vpcId = "myVPC";
-		String newBuildNumber = "0011";
+		Integer newBuildNumber = 11;
 		projAndEnv.addBuildNumber(newBuildNumber);
 
 		List<LoadBalancerDescription> initalLoadBalancers = new LinkedList<LoadBalancerDescription>();

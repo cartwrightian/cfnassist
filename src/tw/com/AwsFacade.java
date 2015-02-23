@@ -153,12 +153,12 @@ public class AwsFacade {
 		
 		try {
 			monitor.waitForUpdateFinished(id);
-		} catch (WrongStackStatus stackFailedToCreate) {
-			logger.error("Failed to create stack",stackFailedToCreate);
-			cfnRepository.updateRepositoryFor(id);
-			throw stackFailedToCreate;
+		} catch (WrongStackStatus stackFailedToUpdate) {
+			logger.error("Failed to update stack",stackFailedToUpdate);
+			cfnRepository.updateFail(id);
+			throw stackFailedToUpdate;
 		}
-		Stack createdStack = cfnRepository.updateRepositoryFor(id);
+		Stack createdStack = cfnRepository.updateSuccess(id);
 		createOutputTags(createdStack, projAndEnv);
 		return id;		
 	}
@@ -196,10 +196,10 @@ public class AwsFacade {
 			monitor.waitForCreateFinished(id);
 		} catch (WrongStackStatus stackFailedToCreate) {
 			logger.error("Failed to create stack",stackFailedToCreate);
-			cfnRepository.updateRepositoryFor(id);
+			cfnRepository.createFail(id);
 			throw stackFailedToCreate;
 		}
-		Stack createdStack = cfnRepository.updateRepositoryFor(id);
+		Stack createdStack = cfnRepository.createSuccess(id);
 		createOutputTags(createdStack, projAndEnv);
 		return id;
 	}

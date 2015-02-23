@@ -161,14 +161,14 @@ public class TestCommandLineStackOperations {
 	
 	@Test
 	public void testInvokeViaCommandLineDeploySwitchELBInstancesAndWhitelistIP() throws InterruptedException, TimeoutException {		
-		String buildNumber = "876";
+		Integer buildNumber = 876;
 		String typeTag = "web";
 		
 		String[] createELBAndInstance = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-build", buildNumber,
+				"-build", buildNumber.toString(),
 				"-file", FilesForTesting.ELB_AND_INSTANCE,
 				"-comment", testName
 				};

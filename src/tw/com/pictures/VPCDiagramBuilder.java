@@ -97,17 +97,8 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	public void addAsssociatedRouteTable(RouteTable routeTable, String subnetId) throws CfnAssistException {
-		if (subnetId!=null) {
-			SubnetDiagramBuilder subnetDiagram = subnetDiagramBuilders.get(subnetId);
-			subnetDiagram.addRouteTable(routeTable);
-		} else {
-			// TODO needed? Caller is  guarding this case, so code currently unreachable
-			String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
-			String routeTableId = routeTable.getRouteTableId();
-
-			String label = AmazonVPCFacade.createLabelFromNameAndID(routeTableId, name);
-			networkDiagram.addRouteTable(routeTableId, label);
-		}
+		SubnetDiagramBuilder subnetDiagram = subnetDiagramBuilders.get(subnetId);
+		subnetDiagram.addRouteTable(routeTable);		
 	}
 
 	public void addEIP(Address eip) throws CfnAssistException {

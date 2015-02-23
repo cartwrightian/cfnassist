@@ -251,10 +251,10 @@ public class TestAwsFacade extends EasyMockSupport {
 	
 	@Test 
 	public void shouldIncludeBuildNumberWhenFormingStackname() {
-		projectAndEnv.addBuildNumber("042");
+		projectAndEnv.addBuildNumber(42);
 		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK),projectAndEnv);
 		
-		assertEquals("CfnAssist042TestsimpleStack", stackName);	
+		assertEquals("CfnAssist42TestsimpleStack", stackName);	
 	}
 	
 	@Test
@@ -274,13 +274,13 @@ public class TestAwsFacade extends EasyMockSupport {
 	
 	@Test
 	public void shouldDeleteStackWithBuildNumber() throws WrongNumberOfStacksException, NotReadyException, WrongStackStatus, InterruptedException {
-		String stackName = "CfnAssist0057TestsimpleStack";
+		String stackName = "CfnAssist57TestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		String stackId = "stackId";
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
 		
-		projectAndEnv.addBuildNumber("0057");
+		projectAndEnv.addBuildNumber(57);
 		setDeleteExpectations(stackName, stackNameAndId);
 		
 		replayAll();

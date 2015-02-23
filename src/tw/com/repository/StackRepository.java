@@ -21,10 +21,9 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 public interface StackRepository {
 
-	public abstract List<StackEntry> stacksMatchingEnvAndBuild(EnvironmentTag envTag, String buildNumber);	
 	public abstract List<StackEntry> getStacks();
 	public abstract List<StackEntry> getStacks(EnvironmentTag envTag);
-	public abstract List<StackEntry> getStacksMatching(EnvironmentTag envTag, String string);
+	public abstract List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name);
 
 	public abstract String waitForStatusToChangeFrom(String stackName,
 			StackStatus currentStatus, List<String> aborts)
@@ -36,7 +35,10 @@ public interface StackRepository {
 	public abstract StackNameAndId getStackNameAndId(String stackName) throws WrongNumberOfStacksException;
 	public abstract Stack getStack(String stackName) throws WrongNumberOfStacksException;
 
-	public abstract Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException;
+	public abstract void createFail(StackNameAndId id) throws WrongNumberOfStacksException;
+	public abstract Stack createSuccess(StackNameAndId id) throws WrongNumberOfStacksException;
+	public abstract void updateFail(StackNameAndId id) throws WrongNumberOfStacksException;
+	public abstract Stack updateSuccess(StackNameAndId id) throws WrongNumberOfStacksException;
 
 	public abstract StackNameAndId updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
 			String stackName) throws InvalidStackParameterException,

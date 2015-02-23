@@ -188,12 +188,12 @@ public class CLIArgBuilder {
 		return args;
 	}
 
-	public static String[] updateELB(String typeTag, String buildNumber) {
+	public static String[] updateELB(String typeTag, Integer buildNumber) {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-build", buildNumber,
+				"-build", buildNumber.toString(),
 				"-elbUpdate", typeTag
 				};
 		return args;
@@ -229,7 +229,7 @@ public class CLIArgBuilder {
 		return args;
 	}
 
-	public static String[] createSubnetStackWithArtifactUpload(String buildNumber, String testName) {
+	public static String[] createSubnetStackWithArtifactUpload(Integer buildNumber, String testName) {
 		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 
 		String[] args = { 
@@ -238,7 +238,7 @@ public class CLIArgBuilder {
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
 				"-artifacts", uploads,
-				"-build", buildNumber,
+				"-build", buildNumber.toString(),
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
 				"-sns", 
 				"-comment", testName
@@ -247,7 +247,7 @@ public class CLIArgBuilder {
 		return args;
 	}
 
-	public static String[] uploadArtifacts(String buildNumber) {
+	public static String[] uploadArtifacts(Integer buildNumber) {
 		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		
 		String[] args = { 
@@ -257,12 +257,12 @@ public class CLIArgBuilder {
 				"-s3create",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", buildNumber
+				"-build", buildNumber.toString()
 				};
 		return args;
 	}
 
-	public static String[] deleteArtifacts(String buildNumber, String filenameA, String filenameB) {
+	public static String[] deleteArtifacts(Integer buildNumber, String filenameA, String filenameB) {
 		String artifacts = String.format("art1=%s;art2=%s", filenameA, filenameB);
 
 		String[] args = { 
@@ -272,7 +272,7 @@ public class CLIArgBuilder {
 				"-s3delete",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", buildNumber
+				"-build", buildNumber.toString()
 				};
 		return args;
 	}

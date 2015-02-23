@@ -33,7 +33,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 public class TestCommandLineS3Operations {
-	private static final String BUILD_NUMBER = "9987";
+	private static final Integer BUILD_NUMBER = 9987;
 	private static AmazonEC2Client ec2Client;
 	private static AmazonCloudFormationClient cfnClient;
 	private static AmazonS3Client s3Client;
@@ -143,7 +143,7 @@ public class TestCommandLineS3Operations {
 				"-s3create",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", BUILD_NUMBER
+				"-build", BUILD_NUMBER.toString()
 				};
 				
 		Main main = new Main(argsS3create);
@@ -164,7 +164,7 @@ public class TestCommandLineS3Operations {
 				"-s3delete",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", BUILD_NUMBER
+				"-build", BUILD_NUMBER.toString()
 				};
 		
 		main = new Main(argsS3Delete);

@@ -51,23 +51,6 @@ public class CfnRepository implements CloudFormRepository {
 	}
 	
 	@Override
-	public List<StackEntry> stacksMatchingEnvAndBuild(EnvironmentTag envTag, String buildNumber) {
-		List<StackEntry> stacks = new LinkedList<StackEntry>();
-		
-		for (StackEntry entry : stackCache.getEntries()) {
-			if (entry.getEnvTag().equals(envTag)) {
-				if (buildNumber.isEmpty()) {
-					stacks.add(entry);
-				}
-				else if(buildNumber.equals(entry.getBuildNumber())) {
-					stacks.add(entry);
-				}
-			}
-		}
-		return stacks;
-	}
-
-	@Override
 	public List<StackEntry> getStacks(EnvironmentTag envTag) {
 		List<StackEntry> results = new LinkedList<StackEntry>();
 		for(StackEntry entry : stackCache.getEntries()) {
@@ -77,7 +60,6 @@ public class CfnRepository implements CloudFormRepository {
 		}
 		return results;	
 	}
-	
 
 	public List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name) {
 		logger.info(String.format("Find stacks matching env %s and name %s", envTag, name));
@@ -285,30 +267,21 @@ public class CfnRepository implements CloudFormRepository {
 		return stackCache.getEntries();
 	}
 
-	// TODO make private, the cache updates should be moved into this class
-	@Override
-	public Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
-		return stackCache.updateRepositoryFor(id);		
-	}
-
 	public List<TemplateParameter> validateStackTemplate(String templateBody) {
 		return formationClient.validateTemplate(templateBody);
 	}
 
-	// TODO cache updates into this class
 	@Override
 	public void deleteStack(String stackName) {
 		formationClient.deleteStack(stackName);	
 	}
 
-	// TODO cache updates into this class
 	@Override
 	public StackNameAndId createStack(ProjectAndEnv projAndEnv,
 			String contents, String stackName, Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws CfnAssistException {
 		return formationClient.createStack(projAndEnv,contents, stackName, parameters, monitor, commentTag);		
 	}
 
-	// TODO cache updates into this class
 	@Override
 	public StackNameAndId updateStack(String contents,
 			Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws InvalidStackParameterException, WrongNumberOfStacksException, NotReadyException {			
@@ -346,7 +319,29 @@ public class CfnRepository implements CloudFormRepository {
 			throws WrongNumberOfInstancesException {
 		return cloudClient.getTagsForInstance(id);
 	}
+	
+	private Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
+		return stackCache.updateRepositoryFor(id);		
+	}
 
+	@Override
+	public void createFail(StackNameAndId id) throws WrongNumberOfStacksException {
+		updateRepositoryFor(id);
+	}
 
+	@Override
+	public Stack createSuccess(StackNameAndId id) throws WrongNumberOfStacksException {
+		return updateRepositoryFor(id);
+	}
+
+	@Override
+	public void updateFail(StackNameAndId id) throws WrongNumberOfStacksException {
+		updateRepositoryFor(id);
+	}
+
+	@Override
+	public Stack updateSuccess(StackNameAndId id) throws WrongNumberOfStacksException {
+		return updateRepositoryFor(id);
+	}
 	
 }

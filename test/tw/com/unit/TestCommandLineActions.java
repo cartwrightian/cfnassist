@@ -246,7 +246,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	@Test
 	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
 		setFactoryExpectations();
-		String buildNumber = "0042";
+		Integer buildNumber = 42;
 		String typeTag = "web";
 		
 		List<Instance> instances = new LinkedList<Instance>();
@@ -311,7 +311,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		setFactoryExpectations();
 		facadeFactory.setCommentTag(comment);
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
-		projectAndEnv.addBuildNumber("0915");
+		projectAndEnv.addBuildNumber(915);
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
 		validate(CLIArgBuilder.createSimpleStackWithBuildNumber(comment, "0915"));
@@ -332,7 +332,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	{
 		setFactoryExpectations();
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
-		projectAndEnv.addBuildNumber("0915");
+		projectAndEnv.addBuildNumber(915);
 		facade.deleteStackFrom(file, projectAndEnv);
 			
 		validate(CLIArgBuilder.deleteSimpleStackWithBuildNumber("0915"));
@@ -340,7 +340,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void testUploadArtifactsAndInvokeStackCreate() throws MissingArgumentException, CfnAssistException, InterruptedException, FileNotFoundException, IOException, InvalidStackParameterException {		
-		String buildNumber = "9987";
+		Integer buildNumber = 9987;
 		// src files to upload
 		Collection<Parameter> arts = new LinkedList<Parameter>();
 		arts.add(new Parameter().withParameterKey("urlA").withParameterValue(FilesForTesting.ACL));
@@ -371,7 +371,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void shouldUploadArtifacts() throws MissingArgumentException, CfnAssistException, InterruptedException {
-		String buildNumber = "9987";
+		Integer buildNumber = 9987;
 		Collection<Parameter> arts = new LinkedList<Parameter>();
 		arts.add(new Parameter().withParameterKey("art1").withParameterValue(FilesForTesting.ACL));
 		arts.add(new Parameter().withParameterKey("art2").withParameterValue(FilesForTesting.SUBNET_STACK));
@@ -389,7 +389,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void shouldDeleteArtifacts() throws MissingArgumentException, CfnAssistException, InterruptedException {
-		String buildNumber = "9987";
+		Integer buildNumber = 9987;
 		Collection<Parameter> arts = new LinkedList<Parameter>();
 		String filenameA = "fileA";
 		arts.add(new Parameter().withParameterKey("art1").withParameterValue(filenameA));

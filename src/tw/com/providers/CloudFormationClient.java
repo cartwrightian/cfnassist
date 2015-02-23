@@ -99,7 +99,8 @@ public class CloudFormationClient {
 		tags.add(createTag(AwsFacade.PROJECT_TAG, projectAndEnv.getProject()));
 		tags.add(createTag(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv()));
 		if (projectAndEnv.hasBuildNumber()) {
-			tags.add(createTag(AwsFacade.BUILD_TAG, projectAndEnv.getBuildNumber()));
+			Integer number = projectAndEnv.getBuildNumber();
+			tags.add(createTag(AwsFacade.BUILD_TAG, number.toString()));
 		}
 		if (!commentTag.isEmpty()) {
 			logger.info(String.format("Adding %s: %s", AwsFacade.COMMENT_TAG, commentTag));

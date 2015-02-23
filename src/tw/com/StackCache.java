@@ -60,7 +60,7 @@ public class StackCache {
 			int count = 3;
 			String env = "";
 			String proj = "";
-			String build = "";
+			Integer build = null;
 			for(Tag tag : tags) {
 				String key = tag.getKey();
 				String value = tag.getValue();
@@ -71,7 +71,7 @@ public class StackCache {
 					proj = value;
 					count--;
 				} else if (key.equals(AwsFacade.BUILD_TAG)) {
-					build = value;
+					build = Integer.parseInt(value);
 					count--;
 				}
 				if (count==0) break; // small optimisation 
@@ -80,7 +80,7 @@ public class StackCache {
 		}		
 	}
 	
-	private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, String build) {
+	private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, Integer build) {
 		String stackName = stack.getStackName();
 		if (!proj.equals(project) || (env.isEmpty())) {
 			logger.warn(String.format("Could not match expected tags (%s and %s) for project '%s' and stackname %s", 
@@ -91,7 +91,7 @@ public class StackCache {
 		logger.info(String.format("Stack %s matched %s and %s", stackName, env, proj));
 		EnvironmentTag envTag = new EnvironmentTag(env);
 		StackEntry entry = new StackEntry(proj, envTag, stack);
-		if (!build.isEmpty()) {
+		if (build!=null) {
 			logger.info(String.format("Saving associated build number (%s) into stack %s", build, stackName));
 			entry.setBuildNumber(build);
 		}

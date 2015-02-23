@@ -323,7 +323,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, templateContents, stackName, creationParameters, monitor, ""))
 			.andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
-		EasyMock.expect(cfnRepository.updateRepositoryFor(stackNameAndId)).andReturn(
+		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(
 				new Stack().withStackId(count.toString()).withStackName(stackName));
 		vpcRepository.setVpcIndexTag(projectAndEnv, count.toString());
 	}

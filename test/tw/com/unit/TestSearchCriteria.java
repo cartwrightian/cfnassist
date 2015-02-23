@@ -26,9 +26,9 @@ public class TestSearchCriteria {
 		Stack stack = new Stack();
 		entryA = new StackEntry("project", new EnvironmentTag("anEnv"), stack);
 		entryB = new StackEntry("project", new EnvironmentTag("someOtherTag"), stack);
-		entryC = new StackEntry("project", new EnvironmentTag("anEnv"), stack).setBuildNumber("42");
+		entryC = new StackEntry("project", new EnvironmentTag("anEnv"), stack).setBuildNumber(42);
 		entryD = new StackEntry("OtherProject", new EnvironmentTag("anEnv"), stack);
-		entryE = new StackEntry("OtherProject", new EnvironmentTag("anEnv"), stack).setBuildNumber("42");
+		entryE = new StackEntry("OtherProject", new EnvironmentTag("anEnv"), stack).setBuildNumber(42);
 		criteria = new SearchCriteria();
 	}
 

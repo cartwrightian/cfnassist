@@ -174,7 +174,7 @@ public class ELBRepository {
 		return removeInstancesNotMatching(projAndEnv, matchinginstances, typeTag);	
 	}
 
-	// TODO
+	// TODO filter on the request, but api does not seeem to support that currently
 	public List<LoadBalancerDescription> findELBForVPC(String vpcId) {	
 		List<LoadBalancerDescription> result = elbClient.describeLoadBalancers(); // seems to be no filter for vpc on elbs
 		

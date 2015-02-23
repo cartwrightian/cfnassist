@@ -21,9 +21,9 @@ public class TestStackEntry {
 	
 	@Test
 	public void shouldExtractBasenameFromEntryWithBuildNumber() {
-		Stack stack = new Stack().withStackName("Project00042EnvTheBaseName");
+		Stack stack = new Stack().withStackName("Project42EnvTheBaseName");
 		StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), stack);
-		entry.setBuildNumber("00042");
+		entry.setBuildNumber(42);
 		
 		assertEquals("TheBaseName",entry.getBaseName());
 	}

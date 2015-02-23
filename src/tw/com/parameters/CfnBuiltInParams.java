@@ -22,7 +22,8 @@ public class CfnBuiltInParams extends PopulatesParameters {
 		addParameterTo(result, declaredParameters, PopulatesParameters.PARAMETER_ENV, projAndEnv.getEnv());
 		addParameterTo(result, declaredParameters, PopulatesParameters.PARAMETER_VPC, vpcId);
 		if (projAndEnv.hasBuildNumber()) {
-			addParameterTo(result, declaredParameters, PopulatesParameters.PARAMETER_BUILD_NUMBER, projAndEnv.getBuildNumber());
+			addParameterTo(result, declaredParameters, PopulatesParameters.PARAMETER_BUILD_NUMBER, 
+					projAndEnv.getBuildNumber().toString());
 		}	
 	}
 }
