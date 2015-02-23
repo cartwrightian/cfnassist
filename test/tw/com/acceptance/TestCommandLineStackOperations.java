@@ -174,6 +174,7 @@ public class TestCommandLineStackOperations {
 				};
 		Main main = new Main(createELBAndInstance);
 		int result = main.parse();
+		deletesStacks.ifPresent("CfnAssist876TestelbAndInstance");
 		assertEquals(0,result);
 		
 		String[] updateELB = CLIArgBuilder.updateELB(typeTag, buildNumber);
@@ -185,9 +186,13 @@ public class TestCommandLineStackOperations {
 		String[] whitelist = CLIArgBuilder.whitelistCurrentIP(typeTag, port);
 		main = new Main(whitelist);
 		result = main.parse();
-		
-		deletesStacks.ifPresent("CfnAssist876TestelbAndInstance");
 		assertEquals(0,result);
+		
+		String[] blacklist = CLIArgBuilder.blacklistCurrentIP(typeTag, port);
+		main = new Main(blacklist);
+		result = main.parse();
+		assertEquals(0,result);
+		
 	}
 	
 	@Test

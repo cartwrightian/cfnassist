@@ -41,6 +41,19 @@
 				}			
 			}
 		},
+		"sgLoadBalance": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                    "GroupDescription": "Load Balancer Security Group",
+                    "VpcId" : { "Ref" : "vpc" },
+                    "SecurityGroupIngress": [
+                    	{ "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "10.0.0.0/16" }
+                    ],
+                    "SecurityGroupEgress": [
+                        { "IpProtocol": "tcp", "FromPort": "80", "ToPort": "80", "CidrIp": "10.0.0.0/16" }
+                    ]
+        	}                	
+        },
 		"loadBalancer":{
 			"Type":"AWS::ElasticLoadBalancing::LoadBalancer",
 			"DependsOn" : "AttachGateway",
@@ -67,7 +80,8 @@
 						]
 						
 					}
-				]
+				],
+				"SecurityGroups" : [ { "Ref" : "sgLoadBalance" } ]
 			}
 		},
 		"simpleInstance":{

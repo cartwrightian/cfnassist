@@ -116,7 +116,6 @@ public class AwsFacade {
 		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
 	}
 	
-	// TODO version that we can pass vpc into so when doing batch operations not repeatedly getting
 	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws 
 		FileNotFoundException, IOException, InterruptedException, CfnAssistException {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
