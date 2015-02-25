@@ -21,7 +21,10 @@ import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
+
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
 import tw.com.repository.CloudRepository;
 
@@ -201,6 +204,8 @@ public class TestCloudRepository extends EasyMockSupport {
 		
 		replayAll();
 		repository.updateAddIpAndPortToSecGroup(groupId, adddress, port);
+		verifyAll();
+
 	}
 	
 	@Test
@@ -215,6 +220,25 @@ public class TestCloudRepository extends EasyMockSupport {
 		
 		replayAll();
 		repository.updateRemoveIpAndPortFromSecGroup(groupId, adddress, port);
+		verifyAll();
+	}
+	
+	@Test
+	public void testShouldGetTagsForAnInstance() throws WrongNumberOfInstancesException {
+		String instanceId = "someId";
+		
+		Tag tag = new Tag().withKey("theKey").withValue("theValue");
+		Instance theInstance = new Instance().withInstanceId(instanceId).withTags(tag);
+		EasyMock.expect(cloudClient.getInstanceById(instanceId)).andReturn(theInstance);
+		
+		replayAll();
+		List<Tag> results = repository.getTagsForInstance(instanceId);
+		verifyAll();
+		
+		assertEquals(1, results.size());
+		Tag result = results.get(0);
+		assertEquals("theKey", result.getKey());
+		assertEquals("theValue", result.getValue());
 	}
 	
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {

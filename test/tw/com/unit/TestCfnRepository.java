@@ -38,9 +38,9 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
+import tw.com.repository.CloudRepository;
 
 @RunWith(EasyMockRunner.class)
 public class TestCfnRepository extends EasyMockSupport {
@@ -48,16 +48,18 @@ public class TestCfnRepository extends EasyMockSupport {
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 
     private CloudFormationClient formationClient;
-	private CloudClient cloudClient; 
 	private CfnRepository repository;
 	private EnvironmentTag envTag;
 	private Integer noBuildNumber = new Integer(-1);
+
+	private CloudRepository cloudRepository;
 	
 	@Before
 	public void beforeEachTestRuns() {
 		formationClient = createMock(CloudFormationClient.class);
-		cloudClient = createMock(CloudClient.class);
-		repository = new CfnRepository(formationClient, cloudClient, mainProjectAndEnv.getProject());	
+		
+		cloudRepository = createMock(CloudRepository.class);
+		repository = new CfnRepository(formationClient, cloudRepository, mainProjectAndEnv.getProject());	
 		envTag = new EnvironmentTag(EnvironmentSetupForTests.ENV);
 	}
 	
@@ -390,8 +392,8 @@ public class TestCfnRepository extends EasyMockSupport {
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks);
 		EasyMock.expect(formationClient.describeStackResources(stackName)).andReturn(resources);
 		String typeTag = "theTypeTag";
-		EasyMock.expect(cloudClient.getTagsForInstance(instanceIdA)).andStubReturn(withTags("0042", typeTag));
-		EasyMock.expect(cloudClient.getTagsForInstance(instanceIdB)).andStubReturn(withTags("0042", "wrongTypeTag"));
+		EasyMock.expect(cloudRepository.getTagsForInstance(instanceIdA)).andStubReturn(withTags("0042", typeTag));
+		EasyMock.expect(cloudRepository.getTagsForInstance(instanceIdB)).andStubReturn(withTags("0042", "wrongTypeTag"));
 		replayAll();
 		
 		List<Instance> result = repository.getAllInstancesMatchingType(criteria,typeTag);

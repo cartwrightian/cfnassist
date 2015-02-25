@@ -55,6 +55,7 @@ import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
+import tw.com.repository.CloudRepository;
 import tw.com.repository.VpcRepository;
 
 public class TestCloudFormationClient {
@@ -95,7 +96,8 @@ public class TestCloudFormationClient {
 	public void beforeEachTestRuns() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		formationClient = new CloudFormationClient(cfnClient);
 		cloudClient = new CloudClient(ec2Client);
-		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudClient, EnvironmentSetupForTests.PROJECT);
+		CloudRepository cloudRepository = new CloudRepository(cloudClient);
+		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudRepository, EnvironmentSetupForTests.PROJECT);
 		polligMonitor = new PollingStackMonitor(cfnRepository );
 		snsMonitor = new SNSMonitor(snsNotifProvider, cfnRepository);
 		snsMonitor.init();

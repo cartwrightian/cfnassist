@@ -10,9 +10,9 @@ import org.junit.Test;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
 import com.amazonaws.services.ec2.model.DescribeVpcsResult;
+import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.ec2.model.Vpc;
@@ -42,6 +42,7 @@ public class TestCloudClient {
 			ec2Client.terminateInstances(new TerminateInstancesRequest().withInstanceIds(instance.getInstanceId()));
 		}
 	}
+
 		
 	@Test
 	public void testCanSetAnDeleteTagsForResource() throws CannotFindVpcException {
@@ -94,15 +95,13 @@ public class TestCloudClient {
 	}
 	
 	@Test
-	public void testShouldBeAbleToGetTagsForAnInstances() throws WrongNumberOfInstancesException {
+	public void testShouldBeAbleToGetInstanceById() throws WrongNumberOfInstancesException {
 		instance = EnvironmentSetupForTests.createSimpleInstance(ec2Client);
 
 		String instanceId = instance.getInstanceId();
-		Tag tag = new Tag().withKey("testTag").withValue("tagValue");
-		ec2Client.createTags(new CreateTagsRequest().withResources(instanceId).withTags(tag));
 		
-		List<Tag> result = cloudClient.getTagsForInstance(instanceId);
-		assertTrue(result.contains(tag));
+		Instance result = cloudClient.getInstanceById(instanceId);
+		assertEquals(instanceId, result.getInstanceId());
 	}
 
 }

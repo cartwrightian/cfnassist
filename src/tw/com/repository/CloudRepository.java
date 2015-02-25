@@ -12,9 +12,11 @@ import com.amazonaws.services.ec2.model.NetworkAcl;
 import com.amazonaws.services.ec2.model.RouteTable;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 
 import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
 
 public class CloudRepository {
@@ -219,5 +221,10 @@ public class CloudRepository {
 
 	public void updateRemoveIpAndPortFromSecGroup(String groupId, InetAddress address, Integer port) {
 		cloudClient.deleteIpFromSecGroup(groupId, port, address);	
+	}
+
+	public List<Tag> getTagsForInstance(String instanceId) throws WrongNumberOfInstancesException {
+		Instance instance = cloudClient.getInstanceById(instanceId);
+		return instance.getTags();
 	}
 }

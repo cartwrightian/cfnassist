@@ -19,7 +19,6 @@ import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 
 import com.amazonaws.AmazonServiceException;
@@ -40,13 +39,12 @@ public class CfnRepository implements CloudFormRepository {
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 	private CloudFormationClient formationClient;
 	
-	// TODO Use CloudRepository instead
-	private CloudClient cloudClient;
+	private CloudRepository cloudRepository;
 	private StackCache stackCache;
 	
-	public CfnRepository(CloudFormationClient formationClient, CloudClient cloudClient, String project) {
+	public CfnRepository(CloudFormationClient formationClient, CloudRepository cloudRepository, String project) {
 		this.formationClient = formationClient;
-		this.cloudClient = cloudClient;
+		this.cloudRepository = cloudRepository;
 		stackCache = new StackCache(formationClient, project);
 	}
 	
@@ -306,18 +304,13 @@ public class CfnRepository implements CloudFormRepository {
 	}
 	
 	private boolean instanceHasCorrectType(String type, String id) throws WrongNumberOfInstancesException {
-		List<Tag> tags = getTagsForInstance(id);
+		List<Tag> tags = cloudRepository.getTagsForInstance(id);
 		for(Tag tag : tags) {
 			if (tag.getKey().equals(AwsFacade.TYPE_TAG)) {
 				return tag.getValue().equals(type);
 			}
 		}
 		return false;
-	}
-
-	private List<Tag> getTagsForInstance(String id)
-			throws WrongNumberOfInstancesException {
-		return cloudClient.getTagsForInstance(id);
 	}
 	
 	private Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {

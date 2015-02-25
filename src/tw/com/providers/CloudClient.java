@@ -76,7 +76,23 @@ public class CloudClient implements ProgressListener {
 	}
 
 	// TODO Move into repository
-	public List<Tag> getTagsForInstance(String id) throws WrongNumberOfInstancesException {
+//	public List<Tag> getTagsForInstance(String id) throws WrongNumberOfInstancesException {
+//		DescribeInstancesRequest request = new DescribeInstancesRequest().withInstanceIds(id);
+//		DescribeInstancesResult result = ec2Client.describeInstances(request);
+//		List<Reservation> res = result.getReservations();
+//		if (res.size()!=1) {
+//			throw new WrongNumberOfInstancesException(id, res.size());
+//		}
+//		List<com.amazonaws.services.ec2.model.Instance> ins = res.get(0).getInstances();
+//		if (ins.size()!=1) {
+//			throw new WrongNumberOfInstancesException(id, ins.size());
+//		}
+//		com.amazonaws.services.ec2.model.Instance instance = ins.get(0);
+//		List<Tag> tags = instance.getTags();
+//		return tags;
+//	}
+	
+	public com.amazonaws.services.ec2.model.Instance getInstanceById(String id) throws WrongNumberOfInstancesException {
 		DescribeInstancesRequest request = new DescribeInstancesRequest().withInstanceIds(id);
 		DescribeInstancesResult result = ec2Client.describeInstances(request);
 		List<Reservation> res = result.getReservations();
@@ -87,9 +103,7 @@ public class CloudClient implements ProgressListener {
 		if (ins.size()!=1) {
 			throw new WrongNumberOfInstancesException(id, ins.size());
 		}
-		com.amazonaws.services.ec2.model.Instance instance = ins.get(0);
-		List<Tag> tags = instance.getTags();
-		return tags;
+		return ins.get(0);
 	}
 	
 	public List<Vpc> getVpcs() {
@@ -167,6 +181,8 @@ public class CloudClient implements ProgressListener {
 		}
 		logger.info(progressEvent.toString());	
 	}
+
+
 
 
 }

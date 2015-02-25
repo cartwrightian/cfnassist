@@ -101,10 +101,10 @@ public class FacadeFactory {
 	}
 
 	private void createRepo() {	
-		cfnRepository = new CfnRepository(formationClient, cloudClient, project);
+		cloudRepository = new CloudRepository(cloudClient);
+		cfnRepository = new CfnRepository(formationClient, cloudRepository, project);
 		vpcRepository = new VpcRepository(cloudClient);
 		elbRepository = new ELBRepository(loadBalancerClient, vpcRepository, cfnRepository);
-		cloudRepository = new CloudRepository(cloudClient);
 	}
 
 	private void createAmazonAPIClients() {
