@@ -26,18 +26,20 @@ public class StackNotification {
 		for(int i=0; i<parts.length; i++) {
 			String[] elements = parts[i].split("=");
 			String key = elements[0];
-			String containsValue = elements[1];
-			switch (key) { 
-				case "StackName": foundName=extractValue(containsValue);
-					break;
-				case "ResourceStatus": status=extractValue(containsValue);
-					break;
-				case "StackId": stackId=extractValue(containsValue);
-					break;
-				case "ResourceType": type=extractValue(containsValue);
-					break;
-				case "ResourceStatusReason": reason=extractValue(containsValue);
-					break;
+			if (elements.length==2) {
+				String containsValue = elements[1];
+				switch (key) { 
+					case "StackName": foundName=extractValue(containsValue);
+						break;
+					case "ResourceStatus": status=extractValue(containsValue);
+						break;
+					case "StackId": stackId=extractValue(containsValue);
+						break;
+					case "ResourceType": type=extractValue(containsValue);
+						break;
+					case "ResourceStatusReason": reason=extractValue(containsValue);
+						break;
+				}
 			}
 
 		}

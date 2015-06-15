@@ -13,6 +13,8 @@ import org.junit.Test;
 
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.CloudFormationClient;
+
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
@@ -36,16 +38,20 @@ public class TestHaveValidTemplateFiles {
 		validateFolder(cloudClient, folder);
 	}
 
-	private void validateFolder(CloudFormationClient cloudClient, File folder)
-			throws FileNotFoundException, IOException, InterruptedException {
+	private void validateFolder(CloudFormationClient cloudClient, File folder) throws InterruptedException
+	{
 		File[] files = folder.listFiles();
 		for(File file : files) {
 			if (file.isDirectory()) {
 				validateFolder(cloudClient, file);		
 			} else 
 			{
-				String contents = FileUtils.readFileToString(file, Charset.defaultCharset());
-				cloudClient.validateTemplate(contents);
+				try {
+					String contents = FileUtils.readFileToString(file, Charset.defaultCharset());
+					cloudClient.validateTemplate(contents);
+				} catch (IOException | AmazonServiceException e) {
+					fail(file.getAbsolutePath() + ": " + e);
+				}
 				
 				Thread.sleep(200); // to avoid rate limit errors on AWS api
 			}

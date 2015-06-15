@@ -49,11 +49,10 @@ public class TestPictureGeneration {
 		VpcRepository vpcRepository = new VpcRepository(cloudClient);
 
 		CloudFormationClient cloudFormationClient = new CloudFormationClient(cfnClient);
-		CloudRepository cloudRepository = new CloudRepository(cloudClient);
+		cloudRepository = new CloudRepository(cloudClient);
 		ResourceRepository cfnRepository = new CfnRepository(cloudFormationClient, cloudRepository, "CfnAssist");
 		
 		elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
-		cloudRepository = new CloudRepository(cloudClient);
 		rdsClient = new RDSClient(awsRdsClient);
 	}
 
