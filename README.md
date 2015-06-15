@@ -6,7 +6,7 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Currnet Release version 1.0.97](https://cfnassist-release.s3-eu-west-1.amazonaws.com/92/cfnassist-1.0.97.zip)
+[Download Currnet Release version 1.0.97](https://cfnassist-release.s3-eu-west-1.amazonaws.com/97/cfnassist-1.0.97.zip)
 
 Previous Releases
 -----------------
