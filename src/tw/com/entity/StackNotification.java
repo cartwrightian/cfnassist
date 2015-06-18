@@ -41,7 +41,6 @@ public class StackNotification {
 						break;
 				}
 			}
-
 		}
 		return new StackNotification(foundName,status,stackId,type,reason);
 	}
@@ -49,7 +48,6 @@ public class StackNotification {
 	private static String extractValue(String value) {
 		return value.replace('\'',' ').trim();
 	}
-
 
 	public String getStatus() {
 		return status;
@@ -69,6 +67,59 @@ public class StackNotification {
 
 	public String getStatusReason() {
 		return statusReason;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((resourceId == null) ? 0 : resourceId.hashCode());
+		result = prime * result
+				+ ((resourceName == null) ? 0 : resourceName.hashCode());
+		result = prime * result
+				+ ((resourceType == null) ? 0 : resourceType.hashCode());
+		result = prime * result + ((status == null) ? 0 : status.hashCode());
+		result = prime * result
+				+ ((statusReason == null) ? 0 : statusReason.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		StackNotification other = (StackNotification) obj;
+		if (resourceId == null) {
+			if (other.resourceId != null)
+				return false;
+		} else if (!resourceId.equals(other.resourceId))
+			return false;
+		if (resourceName == null) {
+			if (other.resourceName != null)
+				return false;
+		} else if (!resourceName.equals(other.resourceName))
+			return false;
+		if (resourceType == null) {
+			if (other.resourceType != null)
+				return false;
+		} else if (!resourceType.equals(other.resourceType))
+			return false;
+		if (status == null) {
+			if (other.status != null)
+				return false;
+		} else if (!status.equals(other.status))
+			return false;
+		if (statusReason == null) {
+			if (other.statusReason != null)
+				return false;
+		} else if (!statusReason.equals(other.statusReason))
+			return false;
+		return true;
 	}
 
 }

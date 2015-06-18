@@ -1,8 +1,6 @@
 package tw.com.providers;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -17,14 +15,6 @@ import tw.com.exceptions.FailedToCreateQueueException;
 import tw.com.exceptions.NotReadyException;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.policy.Action;
-import com.amazonaws.auth.policy.Condition;
-import com.amazonaws.auth.policy.Policy;
-import com.amazonaws.auth.policy.Principal;
-import com.amazonaws.auth.policy.Resource;
-import com.amazonaws.auth.policy.Statement;
-import com.amazonaws.auth.policy.actions.SQSActions;
-import com.amazonaws.auth.policy.conditions.ConditionFactory;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.CreateTopicRequest;
 import com.amazonaws.services.sns.model.CreateTopicResult;
@@ -36,43 +26,36 @@ import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.QueueDeletedRecentlyException;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class SNSEventSource implements NotificationProvider {
+public class SNSEventSource extends QueuePolicyManager implements NotificationProvider {
+	private static final Logger logger = LoggerFactory.getLogger(SNSEventSource.class);
+
 	private static final int MAX_NUMBER_MSGS_TO_RECEIVE = 10;
 	private static final int QUEUE_READ_TIMEOUT_SECS = 20; // 20 is max allowed
-	private static final Logger logger = LoggerFactory.getLogger(SNSEventSource.class);
 	private static final String SQS_QUEUE_NAME = "CFN_ASSIST_EVENT_QUEUE";
 	public static final String SNS_TOPIC_NAME = "CFN_ASSIST_EVENTS";
 
-	private static final String SQS_PROTO = "sqs";
-	private static final String QUEUE_ARN_KEY = "QueueArn";
-	private static final String QUEUE_POLICY_KEY = "Policy";
+	public static final String SQS_PROTO = "sqs";
 	private static final int QUEUE_CREATE_RETRYS = 3;
 	private static final long QUEUE_RETRY_INTERNAL_MILLIS = 70 * 1000;
-	private Collection<String> attributeNames = new LinkedList<String>();
 	
 	private AmazonSNSClient snsClient;
-	private AmazonSQSClient sqsClient;
 	private String queueURL;
 	private String topicSnsArn;
 	private String queueArn;
 	private boolean init;
 	
 	public SNSEventSource(AmazonSNSClient snsClient,AmazonSQSClient sqsClient) {
+		super(sqsClient);
 		this.snsClient = snsClient;
-		this.sqsClient = sqsClient;
-		attributeNames.add(QUEUE_ARN_KEY);
-		attributeNames.add(QUEUE_POLICY_KEY);
+		
 		init = false;
 	}
 	
@@ -92,25 +75,12 @@ public class SNSEventSource implements NotificationProvider {
 		
 		Map<String, String> queueAttributes = getQueueAttributes(queueURL);
 		queueArn = queueAttributes.get(QUEUE_ARN_KEY);
-		checkOrCreateQueuePermissions(queueAttributes);
+		checkOrCreateQueuePermissions(queueAttributes, topicSnsArn, queueArn, queueURL);
 		
 		createOrGetSQSSubscriptionToSNS();
 		init = true;
 	}
 	
-	private Map<String, String> getQueueAttributes(String url) throws MissingArgumentException {
-		// find the queue arn, we need this to create the SNS subscription
-		GetQueueAttributesRequest getQueueAttributesRequest = new GetQueueAttributesRequest(url);
-		getQueueAttributesRequest.setAttributeNames(attributeNames);
-		GetQueueAttributesResult attribResult = sqsClient.getQueueAttributes(getQueueAttributesRequest);
-		Map<String, String> attribMap = attribResult.getAttributes();
-		if (!attribMap.containsKey(QUEUE_ARN_KEY)) {
-			String msg = "Missing arn attirbute, tried attribute with name: " + QUEUE_ARN_KEY;
-			logger.error(msg);
-			throw new MissingArgumentException(msg);
-		}	
-		return attribMap;
-	}
 	
 	private ReceiveMessageResult receiveMessages() {
 		logger.info("Waiting for messages for queue " + queueURL);
@@ -161,29 +131,7 @@ public class SNSEventSource implements NotificationProvider {
 		receiveMessageRequest.setMaxNumberOfMessages(MAX_NUMBER_MSGS_TO_RECEIVE);
 		return receiveMessageRequest;
 	}
-	
-	private void checkOrCreateQueuePermissions(
-			Map<String, String> queueAttributes) {
-		Policy policy = extractPolicy(queueAttributes);	
-		
-		if (policy!=null) {
-			logger.info("Policy found for queue, check if required conditions set");
-			for (Statement statement :  policy.getStatements()) {
-				if (allowQueuePublish(statement)) {
-					logger.info("Statement allows sending, checking for ARN condition. Statement ID is " + statement.getId());
-					for (Condition condition : statement.getConditions()) {
-						if (condition.getConditionKey().equals("aws:SourceArn") && 
-								condition.getValues().contains(topicSnsArn)) {
-								logger.info("Found a matching condition for sns arn " + topicSnsArn);
-								return;
-						}
-					}
-				}
-			}
-		}
-		logger.info("Policy allowing SNS to publish to queue not found");
-		setQueuePolicy();
-	}
+
 	
 	private List<Subscription> getSNSSubs() {
 		ListSubscriptionsResult subResults = snsClient.listSubscriptions();
@@ -199,26 +147,6 @@ public class SNSEventSource implements NotificationProvider {
 		String subscriptionArn = result.getSubscriptionArn();
 		logger.info("Created new SNS subscription, subscription arn is: " + subscriptionArn);
 		return subscriptionArn;
-	}
-	
-	
-	
-	private void setQueuePolicy() {
-		logger.info("Set up policy for queue to allow SNS to publish to it");
-		Policy sqsPolicy = new Policy()
-        .withStatements(new Statement(Statement.Effect.Allow)
-                            .withPrincipals(Principal.AllUsers)
-                            .withResources(new Resource(queueArn))
-                            .withConditions(ConditionFactory.newSourceArnCondition(topicSnsArn))
-                            .withActions(SQSActions.SendMessage));
-		
-        Map<String, String> attributes = new HashMap<String,String>();
-        attributes.put("Policy", sqsPolicy.toJson());
-        
-        SetQueueAttributesRequest setQueueAttributesRequest = new SetQueueAttributesRequest();
-        setQueueAttributesRequest.setQueueUrl(queueURL);
-        setQueueAttributesRequest.setAttributes(attributes);
-        sqsClient.setQueueAttributes(setQueueAttributesRequest);		
 	}
 	
 	private String getOrCreateQueue() throws InterruptedException, FailedToCreateQueueException {
@@ -285,30 +213,6 @@ public class SNSEventSource implements NotificationProvider {
 			}
 		}
 		return null;
-	}
-	
-	private boolean allowQueuePublish(Statement statement) {
-		if (statement.getEffect().equals(Statement.Effect.Allow)) {
-			List<Action> actions = statement.getActions();
-	
-			for(Action action : actions) { // .equals not properly defined on actions
-				if (action.getActionName().equals("sqs:"+SQSActions.SendMessage.toString())) {
-					return true;
-				}
-			}
-		}	
-		return false;
-	}
-
-	private Policy extractPolicy(Map<String, String> queueAttributes) {
-		String policyJson = queueAttributes.get(QUEUE_POLICY_KEY);
-		if (policyJson==null) {
-			return null;
-		}
-		
-		logger.debug("Current queue policy: " + policyJson);
-		Policy policy = Policy.fromJson(policyJson);
-		return policy;
 	}
 
 	private void deleteMessage(Message msg) {
