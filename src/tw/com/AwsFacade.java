@@ -19,6 +19,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tw.com.entity.CFNAssistNotification;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.InstanceSummary;
 import tw.com.entity.ProjectAndEnv;
@@ -40,6 +41,7 @@ import tw.com.parameters.CfnBuiltInParams;
 import tw.com.parameters.EnvVarParams;
 import tw.com.parameters.ParameterFactory;
 import tw.com.parameters.PopulatesParameters;
+import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
@@ -75,18 +77,19 @@ public class AwsFacade {
 	private CloudFormRepository cfnRepository;
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
-
+	private NotificationSender notificationSender;
 	private MonitorStackEvents monitor;
 
 	private String commentTag="";
 
-
-	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, ELBRepository elbRepository, CloudRepository cloudRepository) {
+	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, 
+			ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
 		this.elbRepository = elbRepository;
 		this.cloudRepository = cloudRepository;
+		this.notificationSender = notificationSender;
 	}
 	
 	public void setCommentTag(String commentTag) {
@@ -200,6 +203,7 @@ public class AwsFacade {
 		}
 		Stack createdStack = cfnRepository.createSuccess(id);
 		createOutputTags(createdStack, projAndEnv);
+		notificationSender.sendNotification(new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString()));
 		return id;
 	}
 
@@ -276,12 +280,12 @@ public class AwsFacade {
 		}
 	}
 	
-	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv) {
+	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv) throws CfnAssistException {
 		String stackName = createStackName(templateFile, projectAndEnv);
 		deleteStack(stackName, projectAndEnv);
 	}
 	
-	private void deleteStack(String stackName, ProjectAndEnv projectAndEnv) {
+	private void deleteStack(String stackName, ProjectAndEnv projectAndEnv) throws CfnAssistException {
 		StackNameAndId stackId;
 		try {
 			stackId = cfnRepository.getStackNameAndId(stackName);
@@ -295,6 +299,7 @@ public class AwsFacade {
 		
 		try {
 			monitor.waitForDeleteFinished(stackId);
+			notificationSender.sendNotification(new CFNAssistNotification(stackName, StackStatus.DELETE_COMPLETE.toString()));
 		} catch (WrongNumberOfStacksException | NotReadyException
 				| WrongStackStatus | InterruptedException e) {
 			logger.error("Unable to delete stack " + stackName);
@@ -494,7 +499,7 @@ public class AwsFacade {
 		return cfnRepository.getStacks();
 	}
 
-	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws InvalidStackParameterException, TooManyELBException {
+	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
 		if (name.endsWith(DELTA_EXTENSTION)) {

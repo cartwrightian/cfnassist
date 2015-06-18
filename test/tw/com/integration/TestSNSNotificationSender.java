@@ -62,7 +62,8 @@ public class TestSNSNotificationSender {
 		
 		snsClient.deleteTopic(arn);
 		
-		assertTrue(sender.getTopicARN().isEmpty());
+		SNSNotificationSender senderB = new SNSNotificationSender(snsClient);
+		assertTrue(senderB.getTopicARN().isEmpty());
 	}
 	
 	@Test
@@ -72,8 +73,7 @@ public class TestSNSNotificationSender {
 		CreateTopicResult createResult = snsClient.createTopic(SNSNotificationSender.TOPIC_NAME);
 		String SNSarn = createResult.getTopicArn();
 		assertNotNull(SNSarn);
-		
-		
+			
 		// test the SNS notification by creating a SQS and subscribing that to the SNS
 		CreateQueueResult queueResult = createQueue();
 		String queueUrl = queueResult.getQueueUrl();

@@ -27,11 +27,13 @@ import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
+import tw.com.entity.CFNAssistNotification;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.exceptions.InvalidStackParameterException;
+import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
@@ -47,6 +49,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private MonitorStackEvents monitor;
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
+	private NotificationSender notificationSender;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -55,8 +58,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		vpcRepository = createMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
+		notificationSender = createStrictMock(NotificationSender.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
 	}
 	
 	@Test
@@ -188,6 +192,8 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 		andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
@@ -218,7 +224,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		// now proceed with creation
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 		andReturn(stackNameAndId);
-		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
+		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
@@ -339,7 +347,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "logicalIdToFind")).andReturn("foundPhysicalId");
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 			andReturn(stackNameAndId);
-		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
+		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
@@ -371,6 +381,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, "")).
 			andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
+		
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
 		replayAll();
@@ -468,7 +481,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");	
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, comment)).
 			andReturn(stackNameAndId);
-		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());	
+		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageID");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		return stackNameAndId;
 	}

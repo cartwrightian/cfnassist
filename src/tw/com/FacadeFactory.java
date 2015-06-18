@@ -13,6 +13,7 @@ import tw.com.providers.LoadBalancerClient;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.providers.RDSClient;
 import tw.com.providers.SNSEventSource;
+import tw.com.providers.SNSNotificationSender;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
@@ -53,6 +54,7 @@ public class FacadeFactory {
 	private CloudFormationClient formationClient;
 	private LoadBalancerClient loadBalancerClient;
 	private RDSClient datastoreClient;
+	private SNSNotificationSender notificationSender;
 	
 	// repo
 	private ELBRepository elbRepository;
@@ -98,6 +100,7 @@ public class FacadeFactory {
 		cloudClient = new CloudClient(ec2Client);
 		formationClient = new CloudFormationClient(cfnClient);
 		datastoreClient = new RDSClient(rdsClient);
+		notificationSender = new SNSNotificationSender(snsClient);
 	}
 
 	private void createRepo() {	
@@ -136,7 +139,7 @@ public class FacadeFactory {
 			}
 			
 			monitor.init();
-			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository);
+			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
 			if (comment!=null) {
 				awsFacade.setCommentTag(comment);
 			}

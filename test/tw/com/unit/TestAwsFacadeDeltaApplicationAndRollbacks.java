@@ -34,12 +34,14 @@ import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.JsonExtensionFilter;
 import tw.com.MonitorStackEvents;
+import tw.com.entity.CFNAssistNotification;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
+import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
@@ -55,6 +57,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	private MonitorStackEvents monitor;
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
+	private NotificationSender notificationSender;
 	
 	private static final String THIRD_FILE = "03createRoutes.json";
 	
@@ -65,8 +68,10 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		vpcRepository = createStrictMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
+		notificationSender = createStrictMock(NotificationSender.class);
+
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
 		
 		deleteFile(THIRD_FILE);
 	}
@@ -323,6 +328,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, templateContents, stackName, creationParameters, monitor, ""))
 			.andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(notificationSender.sendNotification(notification )).andReturn("sentMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(
 				new Stack().withStackId(count.toString()).withStackName(stackName));
 		vpcRepository.setVpcIndexTag(projectAndEnv, count.toString());
