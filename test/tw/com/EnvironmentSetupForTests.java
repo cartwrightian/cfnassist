@@ -41,6 +41,7 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.rds.AmazonRDSClient;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -208,6 +209,12 @@ public class EnvironmentSetupForTests {
 
 	public static AmazonS3Client createS3Client(DefaultAWSCredentialsProviderChain credentialsProvider) {
 		AmazonS3Client client = new AmazonS3Client(credentialsProvider);
+		client.setRegion(getRegion());
+		return client;
+	}
+	
+	public static AmazonIdentityManagementClient createIamClient(DefaultAWSCredentialsProviderChain credentialsProvider) {
+		AmazonIdentityManagementClient client = new AmazonIdentityManagementClient(credentialsProvider);
 		client.setRegion(getRegion());
 		return client;
 	}

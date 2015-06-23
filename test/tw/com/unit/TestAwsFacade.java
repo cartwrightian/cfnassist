@@ -35,6 +35,7 @@ import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.TagsAlreadyInit;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
@@ -51,6 +52,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	private ELBRepository elbRepository;
 	private MonitorStackEvents monitor;
 	private CloudRepository cloudRepository;
+	private IdentityProvider identityProvider;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -59,9 +61,10 @@ public class TestAwsFacade extends EasyMockSupport {
 		vpcRepository = createMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
+		identityProvider = createStrictMock(IdentityProvider.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 	}
 	
 	@Test

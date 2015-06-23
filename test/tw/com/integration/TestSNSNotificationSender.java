@@ -3,6 +3,7 @@ package tw.com.integration;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import tw.com.providers.SNSEventSource;
 import tw.com.providers.SNSNotificationSender;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.identitymanagement.model.User;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sns.model.CreateTopicResult;
 import com.amazonaws.services.sns.model.SubscribeRequest;
@@ -68,7 +70,8 @@ public class TestSNSNotificationSender {
 	
 	@Test
 	public void shouldSendNotificationMessageOnTopic() throws CfnAssistException, MissingArgumentException, InterruptedException, JsonParseException, JsonMappingException, IOException {
-		CFNAssistNotification notification = new CFNAssistNotification("name", "complete");
+		User user  = new User("path", "userName", "userId", "userArn", new Date());
+		CFNAssistNotification notification = new CFNAssistNotification("name", "complete", user);
 		
 		CreateTopicResult createResult = snsClient.createTopic(SNSNotificationSender.TOPIC_NAME);
 		String SNSarn = createResult.getTopicArn();

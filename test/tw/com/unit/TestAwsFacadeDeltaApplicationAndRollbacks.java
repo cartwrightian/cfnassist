@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,6 +29,7 @@ import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.identitymanagement.model.User;
 
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
@@ -41,6 +43,7 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
@@ -58,6 +61,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
+	private IdentityProvider identityProvider;
+	private User user;
 	
 	private static final String THIRD_FILE = "03createRoutes.json";
 	
@@ -69,9 +74,10 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
-
+		identityProvider = createStrictMock(IdentityProvider.class);
+		user = new User("path", "userName", "userId", "arn", new Date());		
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 		
 		deleteFile(THIRD_FILE);
 	}
@@ -328,7 +334,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, templateContents, stackName, creationParameters, monitor, ""))
 			.andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification )).andReturn("sentMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(
 				new Stack().withStackId(count.toString()).withStackName(stackName));

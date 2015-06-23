@@ -9,6 +9,7 @@ import tw.com.pictures.DiagramCreator;
 import tw.com.providers.ArtifactUploader;
 import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.LoadBalancerClient;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.providers.RDSClient;
@@ -25,6 +26,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.rds.AmazonRDSClient;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sns.AmazonSNSClient;
@@ -47,6 +49,7 @@ public class FacadeFactory {
 	private AmazonEC2Client ec2Client;
 	private AmazonElasticLoadBalancingClient elbClient;
 	private AmazonRDSClient rdsClient;
+	private AmazonIdentityManagementClient iamClient;
 	
 	// providers
 	private ArtifactUploader artifactUploader;
@@ -65,6 +68,7 @@ public class FacadeFactory {
 	// controller
 	private AwsFacade awsFacade;
 	private DiagramCreator diagramCreator;
+	private IdentityProvider identityProvider;
 
 	public FacadeFactory() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();	
@@ -101,6 +105,7 @@ public class FacadeFactory {
 		formationClient = new CloudFormationClient(cfnClient);
 		datastoreClient = new RDSClient(rdsClient);
 		notificationSender = new SNSNotificationSender(snsClient);
+		identityProvider = new IdentityProvider(iamClient);
 	}
 
 	private void createRepo() {	
@@ -125,6 +130,8 @@ public class FacadeFactory {
 		s3Client.setRegion(region);
 		rdsClient = new AmazonRDSClient(credentialsProvider);
 		rdsClient.setRegion(region);
+		iamClient = new AmazonIdentityManagementClient(credentialsProvider);
+		iamClient.setRegion(region);
 	}
 
 	public AwsFacade createFacade() throws MissingArgumentException, CfnAssistException, InterruptedException {		
@@ -139,7 +146,8 @@ public class FacadeFactory {
 			}
 			
 			monitor.init();
-			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
+			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, 
+					cloudRepository, notificationSender, identityProvider);
 			if (comment!=null) {
 				awsFacade.setCommentTag(comment);
 			}

@@ -7,6 +7,7 @@ import tw.com.entity.CFNAssistNotification;
 import tw.com.exceptions.CfnAssistException;
 
 import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sns.model.AuthorizationErrorException;
 import com.amazonaws.services.sns.model.ListTopicsResult;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.amazonaws.services.sns.model.Topic;
@@ -28,19 +29,27 @@ public class SNSNotificationSender implements NotificationSender {
 	}
 
 	public String getTopicARN() {
-		if (topicANR.isEmpty()) {
-			ListTopicsResult topics = snsClient.listTopics();
-			for(Topic topic : topics.getTopics()) {
-				String foundArn = topic.getTopicArn();
-				if (foundArn.contains(TOPIC_NAME)) {
-					logger.info("Found notification topic for SNS, ARN is: " + foundArn);
-					topicANR =  foundArn;
-					break;
+		try {
+			if (topicANR.isEmpty()) {
+				ListTopicsResult topics = snsClient.listTopics();
+				for(Topic topic : topics.getTopics()) {
+					String foundArn = topic.getTopicArn();
+					if (foundArn.contains(TOPIC_NAME)) {
+						logger.info("Found notification topic for SNS, ARN is: " + foundArn);
+						topicANR =  foundArn;
+						break;
+					}
 				}
 			}
-			logger.info("Did not find notification topic for SNS, to receive updates create topic: " + TOPIC_NAME);
+			if (topicANR.isEmpty()) {
+				logger.info("Did not find notification topic for SNS, to receive updates create topic: " + TOPIC_NAME);
+			}
+			return topicANR;
+		} 
+		catch (AuthorizationErrorException authException) {
+			logger.error("Did not send SNS notification. You may need to update permissions for user via IAM. Exception was " + authException);
+			return "";
 		}
-		return topicANR;
 	}
 
 	public String sendNotification(CFNAssistNotification notification) throws CfnAssistException {
@@ -52,6 +61,7 @@ public class SNSNotificationSender implements NotificationSender {
 		
 		ObjectMapper objectMapper = new ObjectMapper();
 		try {
+			logger.info("Send notification: " + notification);
 			String json = objectMapper.writeValueAsString(notification);
 			PublishResult result = snsClient.publish(topicArn, json);
 			logger.info(String.format("Send message on topic %s with id %s", TOPIC_NAME, result.getMessageId()));
@@ -59,6 +69,11 @@ public class SNSNotificationSender implements NotificationSender {
 		}
 		catch (JsonProcessingException jsonException) {
 			throw new CfnAssistException("Unable to create notification JSON " + jsonException.toString());
+		}
+		catch (AuthorizationErrorException authException) {
+			logger.error("Did not send SNS notification. You may need to update permissions for user via IAM. Exception was " 
+					+ authException);
+			return "";
 		}
 	}
 

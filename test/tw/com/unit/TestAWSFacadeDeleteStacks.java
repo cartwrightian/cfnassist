@@ -1,6 +1,7 @@
 package tw.com.unit;
 
 import java.io.File;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,6 +15,7 @@ import org.junit.runner.RunWith;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
+import com.amazonaws.services.identitymanagement.model.User;
 
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
@@ -25,6 +27,7 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
@@ -33,6 +36,7 @@ import tw.com.repository.VpcRepository;
 
 @RunWith(EasyMockRunner.class)
 public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
+	private static final String DELETE_COMP_STATUS = StackStatus.DELETE_COMPLETE.toString();
 	private AwsFacade aws;
 	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	private CloudFormRepository cfnRepository;
@@ -43,6 +47,8 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	private EnvironmentTag environmentTag = projectAndEnv.getEnvTag();
 	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
+	private IdentityProvider identityProvider;
+	private User user;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -52,8 +58,11 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
+		identityProvider = createStrictMock(IdentityProvider.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
+		user = new User("path", "userName", "userId", "arn", new Date());		
+
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 	}
 	
 	@Test
@@ -153,8 +162,9 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
 		cfnRepository.deleteStack(stackName);
 		EasyMock.expectLastCall();
-		EasyMock.expect(monitor.waitForDeleteFinished(stackNameAndId)).andReturn(StackStatus.DELETE_COMPLETE.toString());
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.DELETE_COMPLETE.toString());
+		EasyMock.expect(monitor.waitForDeleteFinished(stackNameAndId)).andReturn(DELETE_COMP_STATUS);
+		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, DELETE_COMP_STATUS, user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("ifOfSentMessage");
 	}
 	

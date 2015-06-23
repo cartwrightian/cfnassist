@@ -18,6 +18,7 @@ import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.repository.CloudFormRepository;
@@ -36,6 +37,7 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 	private MonitorStackEvents monitor;
 	private CloudRepository cloudRepository;
 	private ProvidesCurrentIp providesCurrentIp;
+	private IdentityProvider identityProvider;
 	
 
 	@Before
@@ -47,8 +49,9 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		providesCurrentIp = createStrictMock(ProvidesCurrentIp.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
+		identityProvider = createStrictMock(IdentityProvider.class);
 		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 	}
 	
 	@Test

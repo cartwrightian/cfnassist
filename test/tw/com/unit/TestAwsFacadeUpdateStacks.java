@@ -32,6 +32,7 @@ import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
@@ -50,8 +51,8 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
+	private IdentityProvider identityProvider;
 	
-
 	@Before
 	public void beforeEachTestRuns() {
 		monitor = createMock(MonitorStackEvents.class);
@@ -60,8 +61,9 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
+		identityProvider = createStrictMock(IdentityProvider.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 	}
 	
 	@Test

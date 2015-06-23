@@ -41,6 +41,7 @@ import tw.com.parameters.CfnBuiltInParams;
 import tw.com.parameters.EnvVarParams;
 import tw.com.parameters.ParameterFactory;
 import tw.com.parameters.PopulatesParameters;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.repository.CloudFormRepository;
@@ -56,6 +57,7 @@ import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
+import com.amazonaws.services.identitymanagement.model.User;
 
 public class AwsFacade {
 
@@ -79,17 +81,21 @@ public class AwsFacade {
 	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
 	private MonitorStackEvents monitor;
+	private IdentityProvider identityProvider;
 
 	private String commentTag="";
 
+
 	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, 
-			ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender) {
+			ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
+			IdentityProvider identityProvider) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
 		this.elbRepository = elbRepository;
 		this.cloudRepository = cloudRepository;
 		this.notificationSender = notificationSender;
+		this.identityProvider = identityProvider;
 	}
 	
 	public void setCommentTag(String commentTag) {
@@ -203,8 +209,14 @@ public class AwsFacade {
 		}
 		Stack createdStack = cfnRepository.createSuccess(id);
 		createOutputTags(createdStack, projAndEnv);
-		notificationSender.sendNotification(new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString()));
+		sendNotification(stackName, StackStatus.CREATE_COMPLETE.toString());
 		return id;
+	}
+
+	private void sendNotification(String stackName, String status)
+			throws CfnAssistException {
+		User userId = identityProvider.getUserId();
+		notificationSender.sendNotification(new CFNAssistNotification(stackName, status, userId));
 	}
 
 	private void createOutputTags(Stack createdStack, ProjectAndEnv projAndEnv) {
@@ -299,7 +311,7 @@ public class AwsFacade {
 		
 		try {
 			monitor.waitForDeleteFinished(stackId);
-			notificationSender.sendNotification(new CFNAssistNotification(stackName, StackStatus.DELETE_COMPLETE.toString()));
+			sendNotification(stackName, StackStatus.DELETE_COMPLETE.toString());
 		} catch (WrongNumberOfStacksException | NotReadyException
 				| WrongStackStatus | InterruptedException e) {
 			logger.error("Unable to delete stack " + stackName);
