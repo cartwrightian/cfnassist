@@ -6,10 +6,12 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Currnet Release version 1.0.97](https://cfnassist-release.s3-eu-west-1.amazonaws.com/97/cfnassist-1.0.97.zip)
+[Download Currnet Release version 1.0.99](https://cfnassist-release.s3-eu-west-1.amazonaws.com/99/cfnassist-1.0.99.zip)
 
 Previous Releases
 -----------------
+[Version 1.0.97](https://cfnassist-release.s3-eu-west-1.amazonaws.com/97/cfnassist-1.0.97.zip)
+
 [Version 1.0.92](https://cfnassist-release.s3-eu-west-1.amazonaws.com/92/cfnassist-1.0.92.zip)
 
 [Version 1.0.88](https://cfnassist-release.s3-eu-west-1.amazonaws.com/88/cfnassist-1.0.88.zip)
@@ -32,6 +34,7 @@ an ELB based on build numbers
 * Automatically pick up values from environmental variables to use in template parameters
 * Generates diagrams of VPCs by producing [graphviz](http://www.graphviz.org/) format files
 * Manage ELB security groups by allowing you to add/remove your current IP from the current environment
+* Can send notifcations via SNS for stack CREATE or DELETE
 
 Usage
 -----
@@ -435,4 +438,12 @@ before leaving a location.
 
 If more than one ELB is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you 
 give above, if it is the tool will use that ELB, otherwise an error will be thrown. 
+
+
+20.Stack Notifications
+----------------------
+
+Detects if there is a topic called 'CFN_ASSIST_NOTIFICATIONS' and if so notifications are sent with the stackname, 
+status, user id and user name. Make sure the user has permissions to 'getuser'. You can wire up SNS to email etc via
+AWS. 
 
