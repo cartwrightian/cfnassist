@@ -1,0 +1,46 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.5',
+    	'ch.qos.logback:logback-classic:1.0.10',
+	'com.amazonaws:aws-java-sdk:1.10.6',
+	'commons-io:commons-io:2.4',
+	'commons-cli:commons-cli:1.3.1',
+	'commons-io:commons-io:2.4',
+	'commons-net:commons-net:3.3',
+	'org.apache.ant:ant:1.9.6'
+
+    testCompile 'junit:junit:4.11',
+	'org.easymock:easymock:3.2'
+}
+
+sourceSets {
+	main { java { srcDirs 'src' } }
+	test { java { srcDirs 'test' } }
+}
+
+task unit(type: Test) {
+    environment 'testEnvVar', 'testValue'
+    filter {
+        includeTestsMatching "tw.com.unit.*"
+    }
+}
+
+task integration(type: Test) {
+    filter {
+        includeTestsMatching "tw.com.integration.*"
+    }
+}
+
+task acceptance(type: Test) {
+    filter {
+        includeTestsMatching "tw.com.acceptance.*"
+    }
+}
+
