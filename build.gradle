@@ -10,6 +10,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'application'
+apply plugin: 'distribution'
 
 def buildNumber = System.getenv("SNAP_PIPELINE_COUNTER") ?: "0"
 def antBuild = new groovy.util.AntBuilder()
