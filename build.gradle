@@ -9,7 +9,6 @@ buildscript {
 
 apply plugin: 'java'
 apply plugin: 'maven'
-apply plugin: 'application'
 apply plugin: 'distribution'
 
 def buildNumber = System.getenv("SNAP_PIPELINE_COUNTER") ?: "0"
@@ -41,7 +40,6 @@ dependencies {
 	'org.easymock:easymock:3.2'
 }
 
-mainClassName = 'tw.com.commandline.Main'
 
 sourceSets {
 	main { java { srcDirs 'src' } }
@@ -76,7 +74,7 @@ jar {
         attributes(
                 "Manifest-Version": "1."+buildNumber,
                 "Class-Path": configurations.compileOnly.collect { it.getName() }.join(' '),
-                "Main-Class": mainClassName
+                "Main-Class": 'tw.com.commandline.Main'
         )
     }
     baseName = project.name + '-all'
