@@ -14,3 +14,9 @@ junit
 /bin
 network_diagramvpcId.dot
 security_diagramvpcId.dot
+.gradle
+.idea
+.env
+cfnassist.iml
+cfnassist.ipr
+cfnassist.iws
