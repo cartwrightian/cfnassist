@@ -108,8 +108,6 @@ distributions {
     }
 }
 
-task release(dependsOn: ['upload', 'tagRelease'])
-
 task cfnassist << {
     antBuild.taskdef(name: 'cfnassist', classname: 'tw.com.ant.CfnAssistAntTask') {
         classpath {
@@ -117,14 +115,16 @@ task cfnassist << {
         }
     }
 }
-cfnassist.mustRunAfter installDist
 
-task upload(dependsOn: ['distZip','cfnassist'])  << {
+task upload(dependsOn: ['distZip','installDist','cfnassist'])  << {
     antBuild.cfnassist(region: 'eu-west-1', buildNumber: buildNumber, bucketname:'cfnassist-release') {
 		Artifact(name: 'package', value: distZip.archivePath)
 		S3Create()
 	}
 }
+upload.mustRunAfter installDist
+
+task release(dependsOn: ['upload', 'tagRelease'])
 
 import org.ajoberstar.grgit.*
 ext.repo = Grgit.open(project.file('.'))
