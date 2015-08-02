@@ -21,8 +21,6 @@ def buildNumber = System.getenv("SNAP_PIPELINE_COUNTER") ?: "0"
 def antBuild = new groovy.util.AntBuilder()
 version = '1.0.'+buildNumber
 
-import org.ajoberstar.grgit.*
-ext.repo = Grgit.open(project.file('.'))
 
 repositories {
     mavenCentral()
@@ -110,22 +108,26 @@ distributions {
     }
 }
 
+task release(dependsOn: ['upload', 'tagRelease'])
+
 task cfnassist << {
     antBuild.taskdef(name: 'cfnassist', classname: 'tw.com.ant.CfnAssistAntTask') {
         classpath {
-            fileset(dir: 'build/libs/', includes: 'cfnassist-all.jar')
+            fileset(dir: jar.destinationDir, includes: jar.archiveName)
         }
     }
 }
+cfnassist.mustRunAfter installDist
 
-task release(dependsOn: ['upload', 'tagRelease'])
-
-task upload(dependsOn: ['cfnassist', 'distZip'])  << {
+task upload(dependsOn: ['distZip','cfnassist'])  << {
     antBuild.cfnassist(region: 'eu-west-1', buildNumber: buildNumber, bucketname:'cfnassist-release') {
 		Artifact(name: 'package', value: distZip.archivePath)
 		S3Create()
 	}
 }
+
+import org.ajoberstar.grgit.*
+ext.repo = Grgit.open(project.file('.'))
 
 task tagRelease << {
   repo.tag.add {
