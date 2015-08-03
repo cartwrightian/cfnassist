@@ -21,7 +21,6 @@ def buildNumber = System.getenv("SNAP_PIPELINE_COUNTER") ?: "0"
 def antBuild = new groovy.util.AntBuilder()
 version = '1.0.'+buildNumber
 
-
 repositories {
     mavenCentral()
 }
