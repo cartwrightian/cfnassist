@@ -1,46 +1,19 @@
 package tw.com;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.*;
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.ec2.model.AvailabilityZone;
+import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
+import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
+import com.amazonaws.services.identitymanagement.model.User;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import tw.com.entity.CFNAssistNotification;
-import tw.com.entity.DeletionsPending;
-import tw.com.entity.InstanceSummary;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.SearchCriteria;
-import tw.com.entity.StackEntry;
-import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.BadVPCDeltaIndexException;
-import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.DuplicateStackException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.NotReadyException;
-import tw.com.exceptions.TagsAlreadyInit;
-import tw.com.exceptions.TooManyELBException;
-import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.exceptions.WrongStackStatus;
-import tw.com.parameters.AutoDiscoverParams;
-import tw.com.parameters.CfnBuiltInParams;
-import tw.com.parameters.EnvVarParams;
-import tw.com.parameters.ParameterFactory;
-import tw.com.parameters.PopulatesParameters;
+import tw.com.entity.*;
+import tw.com.exceptions.*;
+import tw.com.parameters.*;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
@@ -49,17 +22,16 @@ import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
-import com.amazonaws.services.cloudformation.model.Output;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.amazonaws.services.identitymanagement.model.User;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.nio.charset.Charset;
+import java.util.*;
 
-public class AwsFacade {
+
+public class AwsFacade implements ProvidesZones {
 
 	private static final String DELTA_EXTENSTION = ".delta";
 
@@ -84,11 +56,11 @@ public class AwsFacade {
 	private IdentityProvider identityProvider;
 
 	private String commentTag="";
-
+	private String regionName;
 
 	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, 
 			ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
-			IdentityProvider identityProvider) {
+			IdentityProvider identityProvider, String regionName) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
@@ -96,6 +68,7 @@ public class AwsFacade {
 		this.cloudRepository = cloudRepository;
 		this.notificationSender = notificationSender;
 		this.identityProvider = identityProvider;
+		this.regionName = regionName;
 	}
 	
 	public void setCommentTag(String commentTag) {
@@ -108,25 +81,24 @@ public class AwsFacade {
 		return parameters;
 	}
 
-	public List<TemplateParameter> validateTemplate(File file) throws FileNotFoundException, IOException {
+	public List<TemplateParameter> validateTemplate(File file) throws IOException {
 		logger.info("Validating template and discovering parameters for file " + file.getAbsolutePath());
 		String contents = loadFileContents(file);
 		return validateTemplate(contents);
 	}
 	
-	public StackNameAndId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws FileNotFoundException, CfnAssistException, IOException, InterruptedException {
+	public StackNameAndId applyTemplate(String filename, ProjectAndEnv projAndEnv) throws CfnAssistException, IOException, InterruptedException {
 		File file = new File(filename);
 		return applyTemplate(file, projAndEnv);
 	}
 	
 	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv)
-			throws FileNotFoundException, IOException,
-			InvalidStackParameterException, InterruptedException, CfnAssistException {
-		return applyTemplate(file, projAndEnv, new HashSet<Parameter>());
+			throws IOException, InterruptedException, CfnAssistException {
+		return applyTemplate(file, projAndEnv, new HashSet<>());
 	}
 	
-	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws 
-		FileNotFoundException, IOException, InterruptedException, CfnAssistException {
+	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws
+			IOException, InterruptedException, CfnAssistException {
 		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
@@ -153,8 +125,9 @@ public class AwsFacade {
 
 	private StackNameAndId updateStack(ProjectAndEnv projAndEnv,
 			Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory) throws FileNotFoundException, InvalidStackParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
-		
-		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters);
+
+
+		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters, this);
 		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
 		
 		StackNameAndId id = cfnRepository.updateStack(contents, parameters, monitor, stackName);
@@ -190,13 +163,14 @@ public class AwsFacade {
 	private StackNameAndId createStack(File file, ProjectAndEnv projAndEnv,
 			Collection<Parameter> userParameters,
 			List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory)
-			throws CfnAssistException, InterruptedException, FileNotFoundException, IOException {
+			throws CfnAssistException, InterruptedException, IOException {
 		String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
 		
 		handlePossibleRollback(stackName);
-						
-		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters);
+
+        //Map<String, AvailabilityZone> zones = cloudRepository.getZones(regionName);
+        Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters, this);
 
 		StackNameAndId id = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, commentTag);
 		
@@ -326,14 +300,14 @@ public class AwsFacade {
 	}
 
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, CfnAssistException,
+			ProjectAndEnv projAndEnv) throws
+			IOException, CfnAssistException,
 			InterruptedException {
-		return applyTemplatesFromFolder(folderPath, projAndEnv, new LinkedList<Parameter>());
+		return applyTemplatesFromFolder(folderPath, projAndEnv, new LinkedList<>());
 	}
 
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws InvalidStackParameterException, FileNotFoundException, IOException, InterruptedException, CfnAssistException {
+			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws IOException, InterruptedException, CfnAssistException {
 		ArrayList<StackNameAndId> updatedStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
@@ -394,7 +368,7 @@ public class AwsFacade {
 		File toDelete = findFileToStepBack(files, highestAppliedDelta);
 		if (toDelete==null) {
 			logger.warn("No suitable stack/file found to step back from");
-			return new LinkedList<String>();
+			return new LinkedList<>();
 		}
 		
 		logger.info("Need to step back for file " + toDelete.getAbsolutePath());
@@ -405,7 +379,7 @@ public class AwsFacade {
 		if (isDelta(toDelete)) {
 			logger.warn("Rolling back a stack change/delta does nothing except update delta index on VPC");
 			setsDeltaIndex.setDeltaIndex(deltaIndex-1);	
-			return new LinkedList<String>();
+			return new LinkedList<>();
 		}
 		else {
 			StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
@@ -427,7 +401,7 @@ public class AwsFacade {
 		return toDelete;
 	}
 	
-	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws InvalidStackParameterException, CfnAssistException {
+	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -484,7 +458,7 @@ public class AwsFacade {
 
 	public int getDeltaIndex(ProjectAndEnv projAndEnv) throws CfnAssistException {
 		String tag = vpcRepository.getVpcIndexTag(projAndEnv);
-		int result = -1;
+		int result;
 		try {
 			result = Integer.parseInt(tag);
 			return result;
@@ -529,7 +503,7 @@ public class AwsFacade {
 		
 		List<String> regInstanceIds = currentlyRegisteredInstanceIDs(projectAndEnv, typeTag);
 	
-		List<StackEntry> toDelete = new LinkedList<StackEntry>();
+		List<StackEntry> toDelete = new LinkedList<>();
 		for(StackEntry entry : candidateStacks) {
 			List<String> ids = cfnRepository.getInstancesFor(entry.getStackName());
 			if (ids.isEmpty()) {
@@ -559,7 +533,7 @@ public class AwsFacade {
 			ProjectAndEnv projectAndEnv, String typeTag)
 			throws TooManyELBException {
 		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv, typeTag);
-		List<String> regInstanceIds = new LinkedList<String>();
+		List<String> regInstanceIds = new LinkedList<>();
 		if (registeredInstances.isEmpty()) {
 			logger.warn("No instances associated with ELB");
 		} else {
@@ -601,7 +575,7 @@ public class AwsFacade {
 	}
 	
 	private String getSecGroupIdForELB(ProjectAndEnv projectAndEnv, String type)
-			throws TooManyELBException, CfnAssistException {
+			throws CfnAssistException {
 		LoadBalancerDescription elb = elbRepository.findELBFor(projectAndEnv, type);
 		if (elb==null) {
 			throw new CfnAssistException("Did not find ELB for current vpc");
@@ -612,9 +586,8 @@ public class AwsFacade {
 		if (groups.size()>1) {
 			throw new CfnAssistException("Found multiple security groups associated with elb " + elb.getDNSName());
 		}
-		
-		String groupId = groups.get(0);
-		return groupId;
+
+		return groups.get(0);
 	}
 
 	public List<InstanceSummary> listInstances(SearchCriteria searchCriteria) throws CfnAssistException {
@@ -630,6 +603,8 @@ public class AwsFacade {
 		return result;
 	}
 
-
-
+    @Override
+    public Map<String, AvailabilityZone> getZones() {
+       return cloudRepository.getZones(regionName);
+    }
 }

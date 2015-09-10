@@ -1,19 +1,17 @@
 package tw.com.parameters;
 
-import java.io.FileNotFoundException;
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.exceptions.CannotFindVpcException;
+import tw.com.exceptions.InvalidStackParameterException;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.InvalidStackParameterException;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 
 public class ParameterFactory {
 	private static final Logger logger = LoggerFactory.getLogger(ParameterFactory.class);
@@ -23,22 +21,28 @@ public class ParameterFactory {
 
 	public ParameterFactory(List<PopulatesParameters> populators) {
 		this.populators = populators;
-		reservedParameters = new LinkedList<String>();
+		reservedParameters = new LinkedList<>();
 		reservedParameters.add(PopulatesParameters.PARAMETER_ENV);
 		reservedParameters.add(PopulatesParameters.PARAMETER_VPC);
 		reservedParameters.add(PopulatesParameters.PARAMETER_BUILD_NUMBER);
-	}
+        reservedParameters.add(PopulatesParameters.ZONE_A);
+        reservedParameters.add(PopulatesParameters.ZONE_B);
+        reservedParameters.add(PopulatesParameters.ZONE_C);
+    }
 
-	public Collection<Parameter> createRequiredParameters(ProjectAndEnv projAndEnv, Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters)
-			throws InvalidStackParameterException, FileNotFoundException,
+	public Collection<Parameter> createRequiredParameters(ProjectAndEnv projAndEnv,
+                                                          Collection<Parameter> userParameters,
+                                                          List<TemplateParameter> declaredParameters,
+                                                          ProvidesZones providesZones)
+			throws InvalidStackParameterException,
 			IOException, CannotFindVpcException {
 		
-		Collection<Parameter> result  = new LinkedList<Parameter>();
+		Collection<Parameter> result  = new LinkedList<>();
 		result.addAll(userParameters);
 		
 		checkNoClashWithBuiltInParameters(result);
 		for(PopulatesParameters populator : populators) {
-			populator.addParameters(result, declaredParameters, projAndEnv);
+			populator.addParameters(result, declaredParameters, projAndEnv, providesZones);
 		}
 		
 		logAllParameters(result, declaredParameters);

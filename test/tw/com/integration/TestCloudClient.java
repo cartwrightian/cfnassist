@@ -1,26 +1,23 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.regions.Region;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
-import com.amazonaws.services.ec2.model.DescribeVpcsResult;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
-import com.amazonaws.services.ec2.model.Vpc;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 public class TestCloudClient {
 	
@@ -43,7 +40,6 @@ public class TestCloudClient {
 		}
 	}
 
-		
 	@Test
 	public void testCanSetAnDeleteTagsForResource() throws CannotFindVpcException {
 			
@@ -92,6 +88,17 @@ public class TestCloudClient {
 			if (matched) break;
 		}
 		assertTrue(matched);
+	}
+
+	@Test
+	public void shouldGetAvailabilityZones() {
+		Region region = EnvironmentSetupForTests.getRegion();
+		String regionName = EnvironmentSetupForTests.getRegion().getName();
+		Map<String, AvailabilityZone> zones = cloudClient.getAvailabilityZones(regionName);
+		zones.forEach((name,zone) -> assertEquals(region.getName(), zone.getRegionName()));
+		assertEquals(3, zones.size());
+        assertTrue(zones.containsKey("a"));
+        assertTrue(zones.containsKey("b"));
 	}
 	
 	@Test

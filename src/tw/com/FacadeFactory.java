@@ -138,7 +138,7 @@ public class FacadeFactory {
 		if (awsFacade==null) {
 			init();
 			SNSEventSource eventSource = new SNSEventSource(snsClient, sqsClient);
-			MonitorStackEvents monitor = null;
+			MonitorStackEvents monitor;
 			if (snsMonitoring) {	
 				monitor = new SNSMonitor(eventSource, cfnRepository);
 			} else {
@@ -147,7 +147,7 @@ public class FacadeFactory {
 			
 			monitor.init();
 			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, 
-					cloudRepository, notificationSender, identityProvider);
+					cloudRepository, notificationSender, identityProvider, region.getName());
 			if (comment!=null) {
 				awsFacade.setCommentTag(comment);
 			}

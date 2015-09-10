@@ -1,18 +1,12 @@
 package tw.com.unit;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
+import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
@@ -25,6 +19,10 @@ import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
+
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 @RunWith(EasyMockRunner.class)
 public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
@@ -50,8 +48,9 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 		providesCurrentIp = createStrictMock(ProvidesCurrentIp.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
-		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+
+		String regionName = EnvironmentSetupForTests.getRegion().getName();
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, regionName);
 	}
 	
 	@Test

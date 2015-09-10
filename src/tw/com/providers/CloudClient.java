@@ -1,42 +1,16 @@
 package tw.com.providers;
 
-import java.net.InetAddress;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import tw.com.exceptions.WrongNumberOfInstancesException;
-
 import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.event.ProgressListener;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.AuthorizeSecurityGroupIngressRequest;
-import com.amazonaws.services.ec2.model.CreateTagsRequest;
-import com.amazonaws.services.ec2.model.DeleteTagsRequest;
-import com.amazonaws.services.ec2.model.DescribeAddressesResult;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.DescribeNetworkAclsResult;
-import com.amazonaws.services.ec2.model.DescribeRouteTablesResult;
-import com.amazonaws.services.ec2.model.DescribeSecurityGroupsResult;
-import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
-import com.amazonaws.services.ec2.model.DescribeVpcsRequest;
-import com.amazonaws.services.ec2.model.DescribeVpcsResult;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.Reservation;
-import com.amazonaws.services.ec2.model.RevokeSecurityGroupIngressRequest;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.ec2.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tw.com.exceptions.WrongNumberOfInstancesException;
+
+import java.net.InetAddress;
+import java.util.*;
 
 public class CloudClient implements ProgressListener {
 	private static final Logger logger = LoggerFactory.getLogger(CloudClient.class);
@@ -51,7 +25,7 @@ public class CloudClient implements ProgressListener {
 		logger.info("Get VPC by ID " + vpcId);
 		
 		DescribeVpcsRequest describeVpcsRequest = new DescribeVpcsRequest();
-		Collection<String> vpcIds = new LinkedList<String>();
+		Collection<String> vpcIds = new LinkedList<>();
 		vpcIds.add(vpcId);
 		describeVpcsRequest.setVpcIds(vpcIds);
 		DescribeVpcsResult results = ec2Client.describeVpcs(describeVpcsRequest);
@@ -75,23 +49,21 @@ public class CloudClient implements ProgressListener {
 		ec2Client.deleteTags(deleteTagsRequest);	
 	}
 
-	// TODO Move into repository
-//	public List<Tag> getTagsForInstance(String id) throws WrongNumberOfInstancesException {
-//		DescribeInstancesRequest request = new DescribeInstancesRequest().withInstanceIds(id);
-//		DescribeInstancesResult result = ec2Client.describeInstances(request);
-//		List<Reservation> res = result.getReservations();
-//		if (res.size()!=1) {
-//			throw new WrongNumberOfInstancesException(id, res.size());
-//		}
-//		List<com.amazonaws.services.ec2.model.Instance> ins = res.get(0).getInstances();
-//		if (ins.size()!=1) {
-//			throw new WrongNumberOfInstancesException(id, ins.size());
-//		}
-//		com.amazonaws.services.ec2.model.Instance instance = ins.get(0);
-//		List<Tag> tags = instance.getTags();
-//		return tags;
-//	}
-	
+
+	public Map<String, AvailabilityZone> getAvailabilityZones(String regionName) {
+        logger.info("Get AZ for region " + regionName);
+		DescribeAvailabilityZonesRequest request= new DescribeAvailabilityZonesRequest();
+        Collection<Filter> filter = new LinkedList<>();
+        filter.add(new Filter("region-name", Arrays.asList(regionName)));
+        request.setFilters(filter);
+        DescribeAvailabilityZonesResult result = ec2Client.describeAvailabilityZones(request);
+        List<AvailabilityZone> zones = result.getAvailabilityZones();
+
+        Map<String, AvailabilityZone> zoneMap =new HashMap<>();
+        zones.forEach(zone -> zoneMap.put(zone.getZoneName().replace(zone.getRegionName(),""),zone));
+        return zoneMap;
+	}
+
 	public com.amazonaws.services.ec2.model.Instance getInstanceById(String id) throws WrongNumberOfInstancesException {
 		DescribeInstancesRequest request = new DescribeInstancesRequest().withInstanceIds(id);
 		DescribeInstancesResult result = ec2Client.describeInstances(request);
@@ -127,7 +99,7 @@ public class CloudClient implements ProgressListener {
 	}
 	
 	public List<Instance> getInstances() {
-		List<Instance> instances = new LinkedList<Instance>();
+		List<Instance> instances = new LinkedList<>();
 		DescribeInstancesResult result = ec2Client.describeInstances();
 		List<Reservation> reservations = result.getReservations();
 		for(Reservation res : reservations) {
@@ -162,12 +134,12 @@ public class CloudClient implements ProgressListener {
 		request.setGroupId(groupId);
 		request.setIpPermissions(createPermissions(port, address));		
 		request.setGeneralProgressListener(this);
-		ec2Client.revokeSecurityGroupIngress(request );	
+		ec2Client.revokeSecurityGroupIngress(request);
 	}
 
 	private Collection<IpPermission> createPermissions(Integer port,
 			InetAddress address) {
-		Collection<IpPermission> ipPermissions = new LinkedList<IpPermission>();
+		Collection<IpPermission> ipPermissions = new LinkedList<>();
 		IpPermission permission = new IpPermission();
 		permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpRanges(String.format("%s/32", address.getHostAddress()));
 		ipPermissions.add(permission);
@@ -177,12 +149,10 @@ public class CloudClient implements ProgressListener {
 	@Override
 	public void progressChanged(ProgressEvent progressEvent) {
 		if (progressEvent.getEventType()==ProgressEventType.CLIENT_REQUEST_FAILED_EVENT) {
-	
+			logger.warn(progressEvent.toString());
 		}
 		logger.info(progressEvent.toString());	
 	}
-
-
 
 
 }

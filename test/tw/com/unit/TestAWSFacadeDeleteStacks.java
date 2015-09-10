@@ -1,31 +1,20 @@
 package tw.com.unit;
 
-import java.io.File;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
+import com.amazonaws.services.identitymanagement.model.User;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
-import com.amazonaws.services.identitymanagement.model.User;
-
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.entity.CFNAssistNotification;
-import tw.com.entity.EnvironmentTag;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.StackEntry;
-import tw.com.entity.StackNameAndId;
+import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
@@ -33,6 +22,11 @@ import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
+
+import java.io.File;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
 
 @RunWith(EasyMockRunner.class)
 public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
@@ -60,9 +54,10 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
 		
-		user = new User("path", "userName", "userId", "arn", new Date());		
+		user = new User("path", "userName", "userId", "arn", new Date());
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		String regionName = EnvironmentSetupForTests.getRegion().getName();
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider,regionName);
 	}
 	
 	@Test
@@ -105,11 +100,11 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		Stack stackB = new Stack().withStackName("CfnAssist0058TestsimpleStack").withStackId("idB");
 		Stack stackC = new Stack().withStackName("CfnAssist0059TestsimpleStack").withStackId("idC"); // only this one associated with LB
 		
-		List<StackEntry> stacksForProj = new LinkedList<StackEntry>();
+		List<StackEntry> stacksForProj = new LinkedList<>();
 		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackB));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
-		List<Instance> elbInstances = new LinkedList<Instance>();
+		List<Instance> elbInstances = new LinkedList<>();
 		
 		elbInstances.add(new Instance().withInstanceId("matchingInstanceId"));
 		
@@ -136,17 +131,17 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		Stack stackB = new Stack().withStackName("CfnAssist0058TestsimpleStack").withStackId("idB");
 		Stack stackC = new Stack().withStackName("CfnAssist0059TestsimpleStack").withStackId("idC"); // only this one associated with LB
 		
-		List<StackEntry> stacksForProj = new LinkedList<StackEntry>();
+		List<StackEntry> stacksForProj = new LinkedList<>();
 		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackB));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
-		List<Instance> elbInstances = new LinkedList<Instance>();
+		List<Instance> elbInstances = new LinkedList<>();
 		
 		elbInstances.add(new Instance().withInstanceId("matchingInstanceId"));
 		
 		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
-		EasyMock.expect(cfnRepository.getInstancesFor(stackA.getStackName())).andReturn(new LinkedList<String>());
+		EasyMock.expect(cfnRepository.getInstancesFor(stackA.getStackName())).andReturn(new LinkedList<>());
 		EasyMock.expect(cfnRepository.getInstancesFor(stackB.getStackName())).andReturn(createInstancesFor("567"));
 		EasyMock.expect(cfnRepository.getInstancesFor(stackC.getStackName())).andReturn(createInstancesFor("matchingInstanceId"));
 		
@@ -169,7 +164,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 	
 	private List<String> createInstancesFor(String id) {
-		List<String> instances = new LinkedList<String>();
+		List<String> instances = new LinkedList<>();
 		instances.add(id);
 		return instances;
 	}

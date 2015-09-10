@@ -1,23 +1,15 @@
 package tw.com.repository;
 
+import com.amazonaws.services.ec2.model.*;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.exceptions.WrongNumberOfInstancesException;
+import tw.com.providers.CloudClient;
+
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
-
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.WrongNumberOfInstancesException;
-import tw.com.providers.CloudClient;
 
 public class CloudRepository {
 
@@ -29,19 +21,20 @@ public class CloudRepository {
 	private List<Instance> instancesCache = null;
 	private List<RouteTable> routeTableCache = null;
 	private List<NetworkAcl> aclsCache = null;
+	private Map<String, AvailabilityZone> zones = null;
 
 	private Map<String,String> subnetToVpc; // subnet id -> vpc id
 	private Map<String,String> instanceToVpc; // instance id -> vpc id
 
 	public CloudRepository(CloudClient cloudClient) {
 		this.cloudClient = cloudClient;
-		subnetToVpc = new HashMap<String,String>();
-		instanceToVpc = new HashMap<String,String>();
+		subnetToVpc = new HashMap<>();
+		instanceToVpc = new HashMap<>();
 	}
 
 	public List<Subnet> getSubnetsForVpc(String vpcId) {
 		loadSubnets();	
-		List<Subnet> filtered = new LinkedList<Subnet>();
+		List<Subnet> filtered = new LinkedList<>();
 		for (Subnet subnet : subnetsCache.values()) {
 			String subnetVpcId = subnet.getVpcId();
 			if (subnetVpcId!=null) {
@@ -65,7 +58,7 @@ public class CloudRepository {
 
 	public List<Instance> getInstancesForSubnet(String subnetId) {
 		loadInstances();
-		List<Instance> result = new LinkedList<Instance>();
+		List<Instance> result = new LinkedList<>();
 
 		for(Instance i : instancesCache) {	
 			String instanceSubnetId = i.getSubnetId();
@@ -123,7 +116,7 @@ public class CloudRepository {
 		loadAddresses();
 		
 		// find the instance each address is associated with and then check the VPC ID on the instance
-		List<Address> filtered = new LinkedList<Address>();
+		List<Address> filtered = new LinkedList<>();
 		for(Address address : addressCache) {
 			String instanceId = address.getInstanceId();
 			if (instanceId!=null) {
@@ -149,7 +142,7 @@ public class CloudRepository {
 
 	public List<NetworkAcl> getALCsForVPC(String vpcId) {
 		loadACLs();
-		List<NetworkAcl> result = new LinkedList<NetworkAcl>();
+		List<NetworkAcl> result = new LinkedList<>();
 		for (NetworkAcl acl : aclsCache) {
 			if (acl.getVpcId().equals(vpcId)) {
 				result.add(acl);
@@ -160,7 +153,7 @@ public class CloudRepository {
 
 	public List<RouteTable> getRouteTablesForVPC(String vpcId) {
 		loadRouteTables();
-		List<RouteTable> result = new LinkedList<RouteTable>();
+		List<RouteTable> result = new LinkedList<>();
 
 		for(RouteTable table : routeTableCache) {
 			if (table.getVpcId().equals(vpcId)) {
@@ -204,7 +197,7 @@ public class CloudRepository {
 		if (subnetsCache==null) {	
 			
 			List<Subnet> results = cloudClient.getAllSubnets();
-			subnetsCache = new HashMap<String, Subnet>();
+			subnetsCache = new HashMap<>();
 			for(Subnet subnet : results) {
 				subnetsCache.put(subnet.getSubnetId(), subnet);
 				String vpc = subnet.getVpcId();
@@ -227,4 +220,17 @@ public class CloudRepository {
 		Instance instance = cloudClient.getInstanceById(instanceId);
 		return instance.getTags();
 	}
+
+	public Map<String, AvailabilityZone> getZones(String regionName) {
+		initAvailabilityZones(regionName);
+		return zones;
+	}
+
+	private Map<String, AvailabilityZone> initAvailabilityZones(String regionName) {
+		if (zones==null) {
+			zones = cloudClient.getAvailabilityZones(regionName);
+		}
+		return zones;
+	}
+
 }

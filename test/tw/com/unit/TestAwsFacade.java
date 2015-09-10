@@ -1,27 +1,16 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.ec2.model.Tag;
+import com.amazonaws.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -30,17 +19,22 @@ import tw.com.entity.InstanceSummary;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
-import tw.com.exceptions.BadVPCDeltaIndexException;
-import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.TagsAlreadyInit;
+import tw.com.exceptions.*;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
 public class TestAwsFacade extends EasyMockSupport {
@@ -63,8 +57,10 @@ public class TestAwsFacade extends EasyMockSupport {
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
-		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+
+		String regionName = EnvironmentSetupForTests.getRegion().getName();
+
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider,regionName);
 	}
 	
 	@Test
@@ -149,7 +145,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	
 	@Test 
 	public void testShouldListStacksEnvSupplied() {	
-		List<StackEntry> stacks = new LinkedList<StackEntry>();
+		List<StackEntry> stacks = new LinkedList<>();
 		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), new Stack()));
 		EasyMock.expect(cfnRepository.getStacks(projectAndEnv.getEnvTag())).andReturn(stacks);
 		
@@ -193,7 +189,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	
 	@Test 
 	public void testShouldListStacksNoEnvSupplied() {	
-		List<StackEntry> stacks = new LinkedList<StackEntry>();
+		List<StackEntry> stacks = new LinkedList<>();
 		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), new Stack()));
 		EasyMock.expect(cfnRepository.getStacks()).andReturn(stacks);
 		
@@ -206,7 +202,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	
 	@Test
 	public void testShouldInvokeValidation() {	
-		List<TemplateParameter> params = new LinkedList<TemplateParameter>();
+		List<TemplateParameter> params = new LinkedList<>();
 		params.add(new TemplateParameter().withDescription("a parameter"));
 		EasyMock.expect(cfnRepository.validateStackTemplate("someContents")).andReturn(params);
 		
@@ -217,17 +213,17 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 
 	@Test
-	public void cannotAddEnvParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
+	public void cannotAddEnvParameter() throws IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("env");
 	}
 	
 	@Test
-	public void cannotAddvpcParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
+	public void cannotAddvpcParameter() throws IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("vpc");
 	}
 	
 	@Test
-	public void cannotAddbuildParameter() throws FileNotFoundException, IOException, CfnAssistException, InterruptedException {
+	public void cannotAddbuildParameter() throws IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("build");
 	}
 	
@@ -252,13 +248,13 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 	
 	private void checkParameterCannotBePassed(String parameterName)
-			throws FileNotFoundException, IOException,
+			throws IOException,
 			CfnAssistException, InterruptedException {
 		Parameter parameter = new Parameter();
 		parameter.setParameterKey(parameterName);
 		parameter.setParameterValue("test");
 		
-		Collection<Parameter> parameters = new HashSet<Parameter>();
+		Collection<Parameter> parameters = new HashSet<>();
 		parameters.add(parameter);
 		
 		try {

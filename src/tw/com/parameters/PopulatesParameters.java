@@ -1,19 +1,16 @@
 package tw.com.parameters;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidStackParameterException;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 public abstract class PopulatesParameters {
 	private static final Logger logger = LoggerFactory.getLogger(PopulatesParameters.class);
@@ -24,9 +21,12 @@ public abstract class PopulatesParameters {
 	public static final String PARAM_PREFIX = "::";
 	public static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
 	public static final String ENV_TAG = PARAM_PREFIX+"ENV";
+	public static final String ZONE_A = "azA";
+	public static final String ZONE_B = "azB";
+	public static final String ZONE_C = "azC";
 
 	abstract void addParameters(Collection<Parameter> result,
-			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws FileNotFoundException, CannotFindVpcException, IOException, InvalidStackParameterException;
+			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones) throws CannotFindVpcException, IOException, InvalidStackParameterException;
 	
 	protected void addParameterTo(Collection<Parameter> parameters, List<TemplateParameter> declared, String parameterName, String parameterValue) {
 		boolean isDeclared = false;

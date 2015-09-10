@@ -1,43 +1,36 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.ec2.model.AvailabilityZone;
+import com.amazonaws.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.Vpc;
-
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.NotReadyException;
-import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.exceptions.WrongStackStatus;
+import tw.com.exceptions.*;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
 
 
 @RunWith(EasyMockRunner.class)
@@ -52,7 +45,9 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
 	private IdentityProvider identityProvider;
-	
+	private String regionName = EnvironmentSetupForTests.getRegion().getName();
+	private Map<String, AvailabilityZone> zones = new HashMap<>();
+
 	@Before
 	public void beforeEachTestRuns() {
 		monitor = createMock(MonitorStackEvents.class);
@@ -63,17 +58,18 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		String regionName = EnvironmentSetupForTests.getRegion().getName();
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, regionName);
 	}
 	
 	@Test
-	public void voidShouldUpdateAnExistingStackNoParams() throws IOException, CfnAssistException, InvalidStackParameterException, InterruptedException {
+	public void voidShouldUpdateAnExistingStackNoParams() throws IOException, CfnAssistException, InterruptedException {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
-		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
+		List<TemplateParameter> templateParameters = new LinkedList<>();
 		templateParameters.add(new TemplateParameter().withParameterKey("stackname").withDefaultValue("subnet"));
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		Collection<Parameter> parameters = new LinkedList<>();
 
 		StackNameAndId stackNameAndId = setUpdateExpectations(stackName, filename, templateParameters, parameters);
 		
@@ -88,12 +84,12 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
-		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
+		List<TemplateParameter> templateParameters = new LinkedList<>();
 		templateParameters.add(new TemplateParameter().withParameterKey("stackname").withDefaultValue("subnet"));
 		templateParameters.add(new TemplateParameter().withParameterKey("env").withDefaultValue(projectAndEnv.getEnv()));
 		templateParameters.add(new TemplateParameter().withParameterKey("vpc").withDefaultValue(VPC_ID));
 
-		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
+		Collection<Parameter> creationParameters = new LinkedList<>();
 		TestAwsFacadeCreatesStacks.addParam(creationParameters, "env", projectAndEnv.getEnv());
 		TestAwsFacadeCreatesStacks.addParam(creationParameters, "vpc", VPC_ID);
 
@@ -110,10 +106,10 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
-		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
+		List<TemplateParameter> templateParameters = new LinkedList<>();
 		templateParameters.add(new TemplateParameter().withParameterKey("stackname").withDefaultValue("subnet"));
-		Collection<Parameter> userParameters  = new LinkedList<Parameter>();
-		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
+		Collection<Parameter> userParameters  = new LinkedList<>();
+		Collection<Parameter> creationParameters = new LinkedList<>();
 		TestAwsFacadeCreatesStacks.addParam(userParameters, "userKey", "value");
 		TestAwsFacadeCreatesStacks.addParam(creationParameters, "userKey", "value");
 
@@ -138,6 +134,7 @@ public class TestAwsFacadeUpdateStacks extends EasyMockSupport {
 		EasyMock.expect(cfnRepository.updateStack(contents, parameters, monitor, stackName)).andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForUpdateFinished(stackNameAndId)).andReturn(StackStatus.UPDATE_COMPLETE.toString());
 		EasyMock.expect(cfnRepository.updateSuccess(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cloudRepository.getZones(regionName)).andReturn(zones);
 		return stackNameAndId;
 	}
 	

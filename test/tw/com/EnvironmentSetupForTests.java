@@ -1,20 +1,5 @@
 package tw.com;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.StackNameAndId;
-import tw.com.repository.VpcRepository;
-
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
@@ -24,22 +9,7 @@ import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.CreateVpcRequest;
-import com.amazonaws.services.ec2.model.CreateVpcResult;
-import com.amazonaws.services.ec2.model.DeleteTagsRequest;
-import com.amazonaws.services.ec2.model.DeleteVpcRequest;
-import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
-import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
-import com.amazonaws.services.ec2.model.DescribeTagsRequest;
-import com.amazonaws.services.ec2.model.DescribeTagsResult;
-import com.amazonaws.services.ec2.model.Filter;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.InstanceType;
-import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.ec2.model.RunInstancesResult;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
 import com.amazonaws.services.rds.AmazonRDSClient;
@@ -48,6 +18,20 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.StackNameAndId;
+import tw.com.repository.VpcRepository;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 
 public class EnvironmentSetupForTests {
 	private static final Logger logger = LoggerFactory.getLogger(EnvironmentSetupForTests.class);
@@ -69,15 +53,13 @@ public class EnvironmentSetupForTests {
 	
 	public static final String TEMPORARY_STACK = "temporaryStack";
 
-	public static final int NUMBER_AWS_TAGS = 3; // number of tags that aws cfn itself adds to created resources
-
 	public static final long DELETE_RETRY_MAX_TIMEOUT_MS = 5000; 
 	public static final int DELETE_RETRY_LIMIT = (5*60000) / 5000; // Try for 5 minutes
 	
 	public static List<Subnet> getSubnetFors(AmazonEC2Client ec2Client, Vpc vpc) {
 		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
-		Collection<Filter> filters = new HashSet<Filter>();
-		Filter vpcFilter = createVPCFilter(vpc);
+		Collection<Filter> filters = new HashSet<>();
+		Filter vpcFilter = new Filter().withName("vpc-id").withValues(vpc.getVpcId());
 		filters.add(vpcFilter);
 		describeSubnetsRequest.setFilters(filters);
 		
@@ -85,10 +67,7 @@ public class EnvironmentSetupForTests {
 		return results.getSubnets();
 	}
 
-	private static Filter createVPCFilter(Vpc vpc) {
-		Filter vpcFilter = new Filter().withName("vpc-id").withValues(vpc.getVpcId());
-		return vpcFilter;
-	}
+
 
 	public static AmazonEC2Client createEC2Client(AWSCredentialsProvider credentialsProvider) {
 		AmazonEC2Client ec2Client = new AmazonEC2Client(credentialsProvider);
@@ -108,19 +87,6 @@ public class EnvironmentSetupForTests {
 		rdsClient.setRegion(EnvironmentSetupForTests.getRegion());
 		return rdsClient;
 	}
-	
-	public static Vpc createVpc(AmazonEC2Client client) {
-		CreateVpcRequest createVpcRequest = new CreateVpcRequest();
-		createVpcRequest.setCidrBlock("10.0.10.0/24");
-		CreateVpcResult result = client.createVpc(createVpcRequest );
-		return result.getVpc();
-	}
-	
-	public static void deleteVpc(AmazonEC2Client client, Vpc vpc) {
-		DeleteVpcRequest deleteVpcRequest = new DeleteVpcRequest();
-		deleteVpcRequest.setVpcId(vpc.getVpcId());
-		client.deleteVpc(deleteVpcRequest);
-	}
 
 	public static Vpc findAltVpc(VpcRepository repository) {
 		return repository.getCopyOfVpc(VPC_ID_FOR_ALT_ENV);
@@ -131,25 +97,28 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static void clearVpcTags(AmazonEC2Client directClient, Vpc vpc) throws InterruptedException {
-		List<String> resources = new LinkedList<String>();	
+		List<String> resources = new LinkedList<>();
 		resources.add(vpc.getVpcId());
 		List<Tag> existingTags = vpc.getTags();
 		
 		DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest(resources);
 		deleteTagsRequest.setTags(existingTags);
 		directClient.deleteTags(deleteTagsRequest);
-		
-		DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest();
-		Collection<Filter> filters = new LinkedList<Filter>();
-		filters.add(createVPCFilter(vpc));
-		describeTagsRequest.setFilters(filters);
-		boolean notDeleted = false;
-		while(notDeleted) {
-			DescribeTagsResult result = directClient.describeTags(describeTagsRequest);
-			notDeleted = (result.getTags().size()!=0);
-			Thread.sleep(DELETE_RETRY_MAX_TIMEOUT_MS);
-			logger.debug("waiting for tags to clear on vpc :" + vpc.getVpcId());
-		}
+
+        // cannot filter this by vpc id, api doesn't support it
+
+//		DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest();
+//		Collection<Filter> filters = new LinkedList<>();
+//		Filter vpcFilter = new Filter().withName("vpc").withValues(vpc.getVpcId());
+//		filters.add(vpcFilter);
+//		describeTagsRequest.setFilters(filters);
+//		boolean deleted = false;
+//		while(!deleted) {
+//			DescribeTagsResult result = directClient.describeTags(describeTagsRequest);
+//			deleted = result.getTags().isEmpty();
+//			Thread.sleep(DELETE_RETRY_MAX_TIMEOUT_MS);
+//			logger.debug("waiting for tags to clear on vpc :" + vpc.getVpcId());
+//		}
 	}
 
 	public static ProjectAndEnv getMainProjectAndEnv() {
@@ -165,11 +134,11 @@ public class EnvironmentSetupForTests {
 		createStackRequest.setStackName(TEMPORARY_STACK);
 		File file = new File(FilesForTesting.SIMPLE_STACK);
 		createStackRequest.setTemplateBody(FileUtils.readFileToString(file , Charset.defaultCharset()));
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		Collection<Parameter> parameters = new LinkedList<>();
 		parameters.add(createParam("env", EnvironmentSetupForTests.ENV));
 		parameters.add(createParam("vpc", vpcId));
 		if (!arn.isEmpty()) {
-			Collection<String> notificationARNs = new LinkedList<String>();
+			Collection<String> notificationARNs = new LinkedList<>();
 			notificationARNs.add(arn);
 			logger.debug("Adding arn subscription "+ arn);
 			createStackRequest.setNotificationARNs(notificationARNs);
@@ -239,7 +208,7 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static List<com.amazonaws.services.cloudformation.model.Tag> createExpectedStackTags(String comment, Integer build) {
-		List<com.amazonaws.services.cloudformation.model.Tag> expectedTags = new LinkedList<com.amazonaws.services.cloudformation.model.Tag>();
+		List<com.amazonaws.services.cloudformation.model.Tag> expectedTags = new LinkedList<>();
 		expectedTags.add(createCfnStackTAG("CFN_ASSIST_ENV", "Test"));
 		expectedTags.add(createCfnStackTAG("CFN_ASSIST_PROJECT", "CfnAssist"));
 		if (!comment.isEmpty()) {
@@ -259,7 +228,7 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static List<com.amazonaws.services.ec2.model.Tag> createExpectedEc2Tags(ProjectAndEnv projAndEnv, String comment) {
-		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<com.amazonaws.services.ec2.model.Tag>();
+		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<>();
 		tags.add(createEc2Tag("TagEnv",projAndEnv.getEnv()));
 		tags.add(createEc2Tag("Name", "testSubnet"));
 		// stack tags appear to be inherited

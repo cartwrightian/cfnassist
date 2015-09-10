@@ -1,21 +1,11 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackStatus;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.identitymanagement.model.User;
 import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -23,19 +13,7 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.Vpc;
-import com.amazonaws.services.identitymanagement.model.User;
-
-import tw.com.AwsFacade;
-import tw.com.EnvironmentSetupForTests;
-import tw.com.FilesForTesting;
-import tw.com.JsonExtensionFilter;
-import tw.com.MonitorStackEvents;
+import tw.com.*;
 import tw.com.entity.CFNAssistNotification;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.ProjectAndEnv;
@@ -45,11 +23,18 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
-import tw.com.repository.CloudFormRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.SetDeltaIndexForProjectAndEnv;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+
+import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
 public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
@@ -75,17 +60,20 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
-		user = new User("path", "userName", "userId", "arn", new Date());		
-		
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		user = new User("path", "userName", "userId", "arn", new Date());
+
+		String regionName = EnvironmentSetupForTests.getRegion().getName();
+
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, regionName);
 		
 		deleteFile(THIRD_FILE);
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParameters() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplySimpleTemplateNoParameters() throws IOException, InterruptedException, CfnAssistException {
 		List<File> files = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
-		
+
+        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andStubReturn(new HashMap<>());
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("0");
 		setExpectationsForValidationPass(files);
 		// processing pass
@@ -106,7 +94,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	public void shouldApplySimpleTemplateNoParametersOnlyNeeded() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		List<File> files = allFiles.subList(1, 2);
-		
+
+        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andReturn(new HashMap<>());
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("1");
 		setExpectationsForValidationPass(allFiles);
 		// processing pass
@@ -124,7 +113,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParametersNoneNeeded() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplySimpleTemplateNoParametersNoneNeeded() throws IOException, InterruptedException, CfnAssistException {
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
@@ -137,16 +126,17 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldApplyNewFileAsNeeded() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplyNewFileAsNeeded() throws IOException, InterruptedException, CfnAssistException {
 		List<File> originalFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
-		
+
+        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andReturn(new HashMap<>());
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
 		// validation pass does all files
 		setExpectationsForValidationPass(originalFiles);
 		// second run set up
 		Path currentPath = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "holding", THIRD_FILE);
 		File newFile = new File(currentPath.toString());
-		LinkedList<File> newFiles = new LinkedList<File>();
+		LinkedList<File> newFiles = new LinkedList<>();
 		newFiles.addAll(originalFiles);
 		newFiles.add(newFile);
 		// second run expectations
@@ -164,7 +154,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRollbackFilesInAFolder() throws InvalidStackParameterException, CfnAssistException {
+	public void shouldRollbackFilesInAFolder() throws CfnAssistException {
 		String stackA = "CfnAssistTest01createSubnet";
 		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
 		String stackB = "CfnAssistTest02createAcls";
@@ -186,7 +176,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		pending.add(2, stackBNameAndId);
 		pending.add(1, stackANameAndId);
 	
-		List<String> deletedStacks = new LinkedList<String>();
+		List<String> deletedStacks = new LinkedList<>();
 		deletedStacks.add(stackB);
 		deletedStacks.add(stackA);
 		
@@ -201,7 +191,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRollbackFilesInAFolderWithDeltas() throws InvalidStackParameterException, CfnAssistException {
+	public void shouldRollbackFilesInAFolderWithDeltas() throws CfnAssistException {
 		String stackA = "CfnAssistTest01createSubnet";
 		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
 		
@@ -217,7 +207,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		DeletionsPending pending = new DeletionsPending();
 		pending.add(1, stackANameAndId);
 	
-		List<String> deletedStacks = new LinkedList<String>();
+		List<String> deletedStacks = new LinkedList<>();
 		deletedStacks.add(stackA);
 		
 		EasyMock.expect(monitor.waitForDeleteFinished(pending, setDeltaIndexForProjectAndEnv)).andReturn(deletedStacks);
@@ -246,7 +236,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		DeletionsPending pending = new DeletionsPending();
 		pending.add(2, stackBNameAndId);
 	
-		List<String> deletedStacks = new LinkedList<String>();
+		List<String> deletedStacks = new LinkedList<>();
 		deletedStacks.add(stackB);
 		
 		EasyMock.expect(monitor.waitForDeleteFinished(pending, setDeltaIndexForProjectAndEnv)).andReturn(deletedStacks);
@@ -306,7 +296,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 			throws IOException {
 		for(File file : allFiles) {
 			String templateContents = EnvironmentSetupForTests.loadFile(file.getAbsolutePath());
-			List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
+			List<TemplateParameter> templateParameters = new LinkedList<>();
 			EasyMock.expect(cfnRepository.validateStackTemplate(templateContents)).andReturn(templateParameters);
 		}
 	}
@@ -323,8 +313,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 
 	private void setExpectationsForFile(Integer count, File file) throws IOException, CfnAssistException, InterruptedException {
 		String templateContents = EnvironmentSetupForTests.loadFile(file.getAbsolutePath());
-		List<TemplateParameter> templateParameters = new LinkedList<TemplateParameter>();
-		Collection<Parameter> creationParameters = new LinkedList<Parameter>();
+		List<TemplateParameter> templateParameters = new LinkedList<>();
+		Collection<Parameter> creationParameters = new LinkedList<>();
 		String stackName = aws.createStackName(file, projectAndEnv);
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, count.toString());
 

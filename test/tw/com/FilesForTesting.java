@@ -10,16 +10,12 @@ public class FilesForTesting {
 	public static final String SUBNET_STACK = DIR.resolve("subnet.json").toString();
 	public static final String SUBNET_STACK_DELTA = DIR.resolve("subnet.delta.json").toString();
 	public static final String SIMPLE_STACK = DIR.resolve("simpleStack.json").toString();
+	public static final String SIMPLE_STACK_WITH_AZ = DIR.resolve("simpleStackWithAZ.json").toString();
 	public static final String ACL = DIR.resolve("acl.json").toString();
 	public static final String SUBNET_CIDR_PARAM = DIR.resolve("subnetWithCIDRParam.json").toString();
 	public static final String SUBNET_WITH_PARAM = DIR.resolve("subnetWithParam.json").toString();
 	public static final String SUBNET_WITH_S3_PARAM = DIR.resolve("subnetWithS3Param.json").toString();
-	public static final String SUBNET_STACK_WITH_VPCTAG_PARAM = DIR.resolve("subnetWithVPCTagParam.json").toString();
-	public static final String SUBNET_WITH_BUILD = DIR.resolve("subnetWithBuild.json").toString();
-	public static final String ELB = DIR.resolve("elb.json").toString();
 	public static final String INSTANCE = DIR.resolve("instance.json").toString();
-	public static final String INSTANCE_WITH_TYPE = DIR.resolve("instanceWithTypeTag.json").toString();
-	public static final String CAUSEROLLBACK = DIR.resolve("causesRollBack.json").toString();
 	public static final String ELB_AND_INSTANCE = DIR.resolve("elbAndInstance.json").toString();
 	
 	public static final String ORDERED_SCRIPTS_FOLDER = DIR.resolve("orderedScripts").toString();

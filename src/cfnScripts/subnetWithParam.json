@@ -16,7 +16,6 @@
 			"Type":"String",
 			"Default":"eu-west-1b"
 		}
-		
 	},
 	"Resources":{
 		"testSubnet":{

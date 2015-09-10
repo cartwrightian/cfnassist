@@ -1,15 +1,9 @@
 package tw.com.parameters;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
@@ -17,8 +11,11 @@ import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.VpcRepository;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 public class AutoDiscoverParams extends PopulatesParameters {
 	private static final Logger logger = LoggerFactory.getLogger(AutoDiscoverParams.class);
@@ -35,14 +32,14 @@ public class AutoDiscoverParams extends PopulatesParameters {
 
 	@Override
 	public void addParameters(Collection<Parameter> result,
-			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws FileNotFoundException, CannotFindVpcException, IOException, InvalidStackParameterException {
+			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones) throws CannotFindVpcException, IOException, InvalidStackParameterException {
 		List<Parameter> autoPopulatedParametes = fetchAutopopulateParametersFor(templateFile, projAndEnv, declaredParameters);
 		for (Parameter autoPop : autoPopulatedParametes) {
 			result.add(autoPop);
 		}	
 	}
 	
-	private List<Parameter> fetchAutopopulateParametersFor(File file, ProjectAndEnv projectAndEnv, List<TemplateParameter> declaredParameters) throws FileNotFoundException, IOException, InvalidStackParameterException, CannotFindVpcException {
+	private List<Parameter> fetchAutopopulateParametersFor(File file, ProjectAndEnv projectAndEnv, List<TemplateParameter> declaredParameters) throws IOException, InvalidStackParameterException, CannotFindVpcException {
 		logger.info(String.format("Discover and populate parameters for %s and %s", file.getAbsolutePath(), projectAndEnv));
 		List<Parameter> matches = new LinkedList<Parameter>();
 		for(TemplateParameter templateParam : declaredParameters) {

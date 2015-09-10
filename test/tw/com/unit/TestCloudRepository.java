@@ -1,32 +1,26 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.ec2.model.*;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
 import tw.com.repository.CloudRepository;
+
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(EasyMockRunner.class)
 public class TestCloudRepository extends EasyMockSupport {
@@ -54,6 +48,21 @@ public class TestCloudRepository extends EasyMockSupport {
 		assertEquals(1, result.size());
 		assertEquals(subnetId, result.get(0).getSubnetId());
 	}
+
+	@Test
+	public void shouldReturnAvailabilityZones() {
+		AvailabilityZone zone = new AvailabilityZone().withRegionName("regionName").withZoneName("regionaNameA");
+		Map<String, AvailabilityZone> zones = new HashMap<>();
+		zones.put("A", zone);
+		EasyMock.expect(cloudClient.getAvailabilityZones("regionName")).andReturn(zones);
+
+		replayAll();
+		Map<String, AvailabilityZone> result = repository.getZones("regionName");
+		result = repository.getZones("regionName"); // cached
+		verifyAll();
+
+		assertEquals(zone, result.get("A"));
+	}
 	
 	@Test
 	public void testShouldGetSubnetById() {
@@ -74,8 +83,8 @@ public class TestCloudRepository extends EasyMockSupport {
 	public void getShouldBeAbleToFindEIPsForAVPC() throws CfnAssistException {
 		String vpcId = "vpcId";	
 		String matchingAddress = "42.41.40.39";
-		List<Address> addresses = new LinkedList<Address>();
-		List<Instance> instances = new LinkedList<Instance>();
+		List<Address> addresses = new LinkedList<>();
+		List<Instance> instances = new LinkedList<>();
 
 		Instance instanceA = new Instance().withInstanceId("ins123").withVpcId(vpcId);
 		Instance instanceB = new Instance().withInstanceId("ins456").withVpcId("someOtherId");
@@ -157,7 +166,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		String vpcId = "vpcId";
 		String tableId = "tableId";
 
-		List<RouteTable> tables = new LinkedList<RouteTable>();
+		List<RouteTable> tables = new LinkedList<>();
 		tables.add(new RouteTable().withRouteTableId("someId").withVpcId("someVpcID"));
 		tables.add(new RouteTable().withRouteTableId(tableId).withVpcId(vpcId));
 		tables.add(new RouteTable().withRouteTableId("someOtherId").withVpcId("someOtherVpcID"));
@@ -177,7 +186,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		String vpcId = "vpcId";
 		String aclId = "aclId";
 
-		List<NetworkAcl> acls = new LinkedList<NetworkAcl>();
+		List<NetworkAcl> acls = new LinkedList<>();
 		acls.add(new NetworkAcl().withNetworkAclId("someId").withVpcId("someVpcID"));
 		acls.add(new NetworkAcl().withNetworkAclId(aclId).withVpcId(vpcId));
 		acls.add(new NetworkAcl().withNetworkAclId("someOtherId").withVpcId("someOtherVpcID"));
@@ -244,7 +253,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {
 		Subnet matchingSubnet = new Subnet().withVpcId(vpcId).withSubnetId(subnetId);
 		
-		List<Subnet> subnets = new LinkedList<Subnet>();
+		List<Subnet> subnets = new LinkedList<>();
 		subnets.add(new Subnet().withVpcId("anotherId"));	
 		subnets.add(matchingSubnet);
 		subnets.add(new Subnet().withVpcId("anotherId"));
@@ -252,7 +261,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	private List<Instance> createInstances(String instanceId, String subnetId) {
-		List<Instance> instances = new LinkedList<Instance>();
+		List<Instance> instances = new LinkedList<>();
 		instances.add(new Instance().withInstanceId("anotherID1").withSubnetId("subnetAAAAXXX"));
 		instances.add(new Instance().withInstanceId(instanceId).withSubnetId(subnetId));
 		instances.add(new Instance().withInstanceId("anotherID2").withSubnetId("subnetBBBBYYY"));

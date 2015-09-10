@@ -1,35 +1,32 @@
 package tw.com.parameters;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidStackParameterException;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 public class EnvVarParams extends PopulatesParameters {
 	private static final Logger logger = LoggerFactory.getLogger(EnvVarParams.class);
 
 	@Override
 	public void addParameters(Collection<Parameter> result,
-			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv)
-			throws FileNotFoundException, CannotFindVpcException, IOException,
+			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones)
+			throws CannotFindVpcException, IOException,
 			InvalidStackParameterException {
 		List<String> toPopulate = findParametersToFill(declaredParameters);
 		populateFromEnv(result, toPopulate);
 	}
 	
 	private List<String> findParametersToFill(List<TemplateParameter> declaredParameters) {
-		List<String> results = new LinkedList<String>();
+		List<String> results = new LinkedList<>();
 		for(TemplateParameter candidate : declaredParameters) {
 			if (shouldPopulateFor(candidate)) {
 				results.add(candidate.getParameterKey());
