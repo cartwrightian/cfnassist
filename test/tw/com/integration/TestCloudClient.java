@@ -43,13 +43,13 @@ public class TestCloudClient {
 	@Test
 	public void testCanSetAnDeleteTagsForResource() throws CannotFindVpcException {
 			
-		List<Tag> tags = new LinkedList<Tag>();
+		List<Tag> tags = new LinkedList<>();
 		Tag tagA = EnvironmentSetupForTests.createEc2Tag("T1", "Value1");
 		Tag tagB = EnvironmentSetupForTests.createEc2Tag("T2", "Value2");
 		tags.add(tagA);
 		tags.add(tagB);
 		
-		List<String> resources = new LinkedList<String>();
+		List<String> resources = new LinkedList<>();
 		resources.add(VpcId);
 		cloudClient.addTagsToResources(resources, tags);
 		
@@ -95,8 +95,9 @@ public class TestCloudClient {
 		Region region = EnvironmentSetupForTests.getRegion();
 		String regionName = EnvironmentSetupForTests.getRegion().getName();
 		Map<String, AvailabilityZone> zones = cloudClient.getAvailabilityZones(regionName);
-		zones.forEach((name,zone) -> assertEquals(region.getName(), zone.getRegionName()));
+
 		assertEquals(3, zones.size());
+		zones.forEach((name, zone) -> assertEquals(region.getName(), zone.getRegionName()));
         assertTrue(zones.containsKey("a"));
         assertTrue(zones.containsKey("b"));
 	}

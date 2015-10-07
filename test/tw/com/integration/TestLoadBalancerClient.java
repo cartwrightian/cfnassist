@@ -1,33 +1,28 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
-
-import java.util.LinkedList;
-import java.util.List;
-
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
-import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerRequest;
-import com.amazonaws.services.elasticloadbalancing.model.DeleteLoadBalancerRequest;
-import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersResult;
-import com.amazonaws.services.elasticloadbalancing.model.Listener;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.amazonaws.services.elasticloadbalancing.model.Tag;
+import com.amazonaws.services.elasticloadbalancing.model.*;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.LoadBalancerClient;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
 public class TestLoadBalancerClient  {
 	
 	private static final String LB_NAME = "cfnAssistTest";
-	LoadBalancerClient client;
+	private LoadBalancerClient client;
 	private static AmazonElasticLoadBalancingClient elbClient;
 	private static AmazonEC2Client ec2Client;
 	private static Instance instance;
@@ -75,7 +70,7 @@ public class TestLoadBalancerClient  {
 	
 	@Test
 	public void shouldRegisterAndDeregisterInstances() throws InterruptedException {
-		List<com.amazonaws.services.elasticloadbalancing.model.Instance> instances = new LinkedList<com.amazonaws.services.elasticloadbalancing.model.Instance>();
+		List<com.amazonaws.services.elasticloadbalancing.model.Instance> instances = new LinkedList<>();
 		instances.add(new com.amazonaws.services.elasticloadbalancing.model.Instance(instance.getInstanceId()));
 		
 		client.registerInstances(instances, LB_NAME);

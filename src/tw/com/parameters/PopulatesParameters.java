@@ -18,12 +18,11 @@ public abstract class PopulatesParameters {
 	public static final String PARAMETER_ENV = "env";
 	public static final String PARAMETER_VPC = "vpc";
 	public static final String PARAMETER_BUILD_NUMBER = "build";
+
 	public static final String PARAM_PREFIX = "::";
-	public static final String CFN_TAG_ON_OUTPUT = "::CFN_TAG";
+	public static final String CFN_TAG_ON_OUTPUT = PARAM_PREFIX+"CFN_TAG";
 	public static final String ENV_TAG = PARAM_PREFIX+"ENV";
-	public static final String ZONE_A = "azA";
-	public static final String ZONE_B = "azB";
-	public static final String ZONE_C = "azC";
+	public static final String CFN_TAG_ZONE = PARAM_PREFIX+"CFN_ZONE_";
 
 	abstract void addParameters(Collection<Parameter> result,
 			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones) throws CannotFindVpcException, IOException, InvalidStackParameterException;

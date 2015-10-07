@@ -12,6 +12,8 @@ import tw.com.exceptions.WrongNumberOfInstancesException;
 import java.net.InetAddress;
 import java.util.*;
 
+import static java.lang.String.format;
+
 public class CloudClient implements ProgressListener {
 	private static final Logger logger = LoggerFactory.getLogger(CloudClient.class);
 
@@ -49,7 +51,6 @@ public class CloudClient implements ProgressListener {
 		ec2Client.deleteTags(deleteTagsRequest);	
 	}
 
-
 	public Map<String, AvailabilityZone> getAvailabilityZones(String regionName) {
         logger.info("Get AZ for region " + regionName);
 		DescribeAvailabilityZonesRequest request= new DescribeAvailabilityZonesRequest();
@@ -58,8 +59,9 @@ public class CloudClient implements ProgressListener {
         request.setFilters(filter);
         DescribeAvailabilityZonesResult result = ec2Client.describeAvailabilityZones(request);
         List<AvailabilityZone> zones = result.getAvailabilityZones();
+		logger.info(format("Found %s zones", zones.size()));
 
-        Map<String, AvailabilityZone> zoneMap =new HashMap<>();
+        Map<String, AvailabilityZone> zoneMap = new HashMap<>();
         zones.forEach(zone -> zoneMap.put(zone.getZoneName().replace(zone.getRegionName(),""),zone));
         return zoneMap;
 	}
@@ -119,7 +121,7 @@ public class CloudClient implements ProgressListener {
 	}
 
 	public void addIpToSecGroup(String groupId, Integer port, InetAddress address) {
-		logger.info(String.format("Add address %s for port %s to group %s", address.getHostAddress(), port.toString(), groupId));
+		logger.info(format("Add address %s for port %s to group %s", address.getHostAddress(), port.toString(), groupId));
 		AuthorizeSecurityGroupIngressRequest request = new AuthorizeSecurityGroupIngressRequest();
 		request.setGroupId(groupId);
 		request.setIpPermissions(createPermissions(port, address));
@@ -129,7 +131,7 @@ public class CloudClient implements ProgressListener {
 	}
 	
 	public void deleteIpFromSecGroup(String groupId, Integer port, InetAddress address) {
-		logger.info(String.format("Remove address %s for port %s on group %s", address.getHostAddress(), port.toString(), groupId));
+		logger.info(format("Remove address %s for port %s on group %s", address.getHostAddress(), port.toString(), groupId));
 		RevokeSecurityGroupIngressRequest request = new RevokeSecurityGroupIngressRequest();
 		request.setGroupId(groupId);
 		request.setIpPermissions(createPermissions(port, address));		
@@ -141,7 +143,7 @@ public class CloudClient implements ProgressListener {
 			InetAddress address) {
 		Collection<IpPermission> ipPermissions = new LinkedList<>();
 		IpPermission permission = new IpPermission();
-		permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpRanges(String.format("%s/32", address.getHostAddress()));
+		permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpRanges(format("%s/32", address.getHostAddress()));
 		ipPermissions.add(permission);
 		return ipPermissions;
 	}

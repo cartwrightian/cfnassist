@@ -169,7 +169,6 @@ public class AwsFacade implements ProvidesZones {
 		
 		handlePossibleRollback(stackName);
 
-        //Map<String, AvailabilityZone> zones = cloudRepository.getZones(regionName);
         Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters, this);
 
 		StackNameAndId id = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, commentTag);

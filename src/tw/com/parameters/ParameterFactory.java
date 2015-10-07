@@ -25,9 +25,6 @@ public class ParameterFactory {
 		reservedParameters.add(PopulatesParameters.PARAMETER_ENV);
 		reservedParameters.add(PopulatesParameters.PARAMETER_VPC);
 		reservedParameters.add(PopulatesParameters.PARAMETER_BUILD_NUMBER);
-        reservedParameters.add(PopulatesParameters.ZONE_A);
-        reservedParameters.add(PopulatesParameters.ZONE_B);
-        reservedParameters.add(PopulatesParameters.ZONE_C);
     }
 
 	public Collection<Parameter> createRequiredParameters(ProjectAndEnv projAndEnv,

@@ -285,17 +285,17 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		templateParameters.add(new TemplateParameter().withParameterKey("vpc"));
 		templateParameters.add(new TemplateParameter().withParameterKey("env"));
 		templateParameters.add(new TemplateParameter().withParameterKey("build"));
-		templateParameters.add(new TemplateParameter().withParameterKey("azA"));
-		templateParameters.add(new TemplateParameter().withParameterKey("azB"));
-		templateParameters.add(new TemplateParameter().withParameterKey("azC"));
+		templateParameters.add(new TemplateParameter().withParameterKey("zoneA").withDescription("::CFN_ZONE_A"));
+		templateParameters.add(new TemplateParameter().withParameterKey("zoneB").withDescription("::CFN_ZONE_B"));
+		templateParameters.add(new TemplateParameter().withParameterKey("zoneC").withDescription("::CFN_ZONE_C"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		projectAndEnv.addBuildNumber(43);
 		addParam(creationParameters, "env", projectAndEnv.getEnv());
 		addParam(creationParameters, "vpc", VPC_ID);
 		addParam(creationParameters, "build", "43");
-		addParam(creationParameters, "azA", "eu-west-1a");
-		addParam(creationParameters, "azB", "eu-west-1b");
-		addParam(creationParameters, "azC", "eu-west-1c");
+		addParam(creationParameters, "zoneA", "eu-west-1a");
+		addParam(creationParameters, "zoneB", "eu-west-1b");
+		addParam(creationParameters, "zoneC", "eu-west-1c");
 
         Map<String, AvailabilityZone> zones = new HashMap<>();
         zones.put("a", new AvailabilityZone().withRegionName("eu-west-1").withZoneName("eu-west-1a"));
