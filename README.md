@@ -6,15 +6,16 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Currnet Release version 1.0.99](https://cfnassist-release.s3-eu-west-1.amazonaws.com/99/cfnassist-1.0.99.zip)
+[Download Current Release version 1.0.118](https://cfnassist-release.s3-eu-west-1.amazonaws.com/118/cfnassist-1.0.118.zip)
 
 Previous Releases
 -----------------
+
+[Version 1.0.99](https://cfnassist-release.s3-eu-west-1.amazonaws.com/99/cfnassist-1.0.99.zip)
+
 [Version 1.0.97](https://cfnassist-release.s3-eu-west-1.amazonaws.com/97/cfnassist-1.0.97.zip)
 
 [Version 1.0.92](https://cfnassist-release.s3-eu-west-1.amazonaws.com/92/cfnassist-1.0.92.zip)
-
-[Version 1.0.88](https://cfnassist-release.s3-eu-west-1.amazonaws.com/88/cfnassist-1.0.88.zip)
 
 Build Status
 ------------
@@ -25,16 +26,18 @@ Key Features
 * Works with the existing syntax of cloud formation json, it just uses some simple conventions for parameters
 * Implements a simple Project/Environment abstraction on top of AWS VPCs  (i.e. cfnassit/qa or cfnassit/dev)
 * Manages application of create and delta cloudformation scripts against particular Projects and Environments
-* Tracks which scripts need to be applied to projects and environments using a simple delta tracking mechanism borrowed from [dbdeploy](http://dbdeploy.com/)
-* Autopopulates physical id's based on logical identifiers plus the project & environment, this means you can break large scripts apart and think about project/env/logical ids instead of VPC id/physical id
-* Assists with the [Phoenix Server](http://martinfowler.com/bliki/PhoenixServer.html) pattern by automating the switch over of instances for 
-an ELB based on build numbers
+* Tracks which scripts need to be applied to projects and environments using a simple delta tracking mechanism borrowed
+from [dbdeploy](http://dbdeploy.com/)
+* Autopopulates physical id's based on logical identifiers plus the project & environment,
+this means you can break large scripts apart and think about project/env/logical ids instead of VPC id/physical id
+* Assists with the [Phoenix Server](http://martinfowler.com/bliki/PhoenixServer.html) pattern by automating the
+switch over of instances for an ELB based on build numbers
 * Allows upload to S3; along with the option of passing S3 urls of new aritifacts directly into cloudformation templates
 * Use VPC Tags as input or output to templates using a simple convention in the parameter description
-* Automatically pick up values from environmental variables to use in template parameters
+* Automatically pick up values from environmental variables and availability zones to use in template parameters
 * Generates diagrams of VPCs by producing [graphviz](http://www.graphviz.org/) format files
-* Manage ELB security groups by allowing you to add/remove your current IP from the current environment
-* Can send notifcations via SNS for stack CREATE or DELETE
+* Manage ELB security groups by allowing you to add/remove your current IP to/from a specified environment
+* Send notifcations via SNS for stack CREATE or DELETE actions
 
 Usage
 -----
@@ -443,7 +446,21 @@ give above, if it is the tool will use that ELB, otherwise an error will be thro
 20.Stack Notifications
 ----------------------
 
-Detects if there is a topic called 'CFN_ASSIST_NOTIFICATIONS' and if so notifications are sent with the stackname, 
-status, user id and user name. Make sure the user has permissions to 'getuser'. You can wire up SNS to email etc via
-AWS. 
+This can be very useful for notifying people or other software of updates to cloud formation.
+
+Cfnassist with detect if there is a SNS topic called 'CFN_ASSIST_NOTIFICATIONS' available and accessible for the user.
+If so notifications are sent containing the stackname, status, user id and user name.
+Make sure the user has permissions to do the 'getuser' call on the AWS api. You can wire up SNS to email etc via AWS.
+
+21.Auto populate availability zones
+-----------------------------------
+
+This allows auto population of the correct AZ names for the current region.
+
+>"Parameters" : {
+>	"zoneA":{ "Type":"String", "Description":"::CFN_ZONE_A" },
+>   "zoneB":{ "Type":"String", "Description":"::CFN_ZONE_B" }
+> }
+
+This means you can more easily create portable templates that will work in different regions without change.
 
