@@ -1,10 +1,10 @@
 package tw.com;
 
-import static org.junit.Assert.assertTrue;
+import com.amazonaws.services.cloudformation.model.StackStatus;
 
 import java.io.ByteArrayOutputStream;
 
-import com.amazonaws.services.cloudformation.model.StackStatus;
+import static org.junit.Assert.assertTrue;
 
 public class CLIArgBuilder {
 	
@@ -52,6 +52,17 @@ public class CLIArgBuilder {
 				"-file", FilesForTesting.SUBNET_STACK, 
 				"-comment", testName
 				};
+		return args;
+	}
+
+	public static String[] createSubnetStackWithZones(String testName) {
+		String[] args = {
+				"-env", EnvironmentSetupForTests.ENV,
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-region", EnvironmentSetupForTests.getRegion().toString(),
+				"-file", FilesForTesting.SIMPLE_STACK_WITH_AZ,
+				"-comment", testName
+		};
 		return args;
 	}
 	
@@ -276,6 +287,5 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
-
 
 }

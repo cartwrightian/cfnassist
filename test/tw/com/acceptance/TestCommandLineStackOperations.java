@@ -1,20 +1,12 @@
 package tw.com.acceptance;
 
-import static org.junit.Assert.*;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.concurrent.TimeoutException;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.Vpc;
+import org.junit.*;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
-
 import tw.com.CLIArgBuilder;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
@@ -25,10 +17,12 @@ import tw.com.exceptions.CannotFindVpcException;
 import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.Vpc;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.Assert.assertEquals;
 
 public class TestCommandLineStackOperations {
 
@@ -65,7 +59,8 @@ public class TestCommandLineStackOperations {
 			.ifPresent("CfnAssistTest02createAcls")
 			.ifPresent("CfnAssistTestsimpleStack")
 			.ifPresent("CfnAssistTestsubnet")
-			.ifPresent("CfnAssist876TestelbAndInstance");
+			.ifPresent("CfnAssist876TestelbAndInstance")
+            .ifPresent("CfnAssistTestsimpleStackWithAZ");
 		deletesStacks.act();
 		testName = test.getMethodName();
 	}
@@ -82,7 +77,7 @@ public class TestCommandLineStackOperations {
 		Main main = new Main(args);
 		int result = main.parse();
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
-		assertEquals(0,result);
+		assertEquals(0, result);
 	}
 		
 	@Test
@@ -100,7 +95,7 @@ public class TestCommandLineStackOperations {
 
 		String[] create = CLIArgBuilder.createSimpleStack(testName);
 		Main main = new Main(create);
-		int status = main.parse();
+		main.parse();
 		
 		String[] list = CLIArgBuilder.listStacks();
 		
@@ -109,7 +104,7 @@ public class TestCommandLineStackOperations {
 		System.setOut(output);
 		
 		main = new Main(list);
-		status = main.parse();
+		int status = main.parse();
 
 		System.setOut(origStream);
 	
@@ -203,16 +198,25 @@ public class TestCommandLineStackOperations {
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0,result);
 	}
+
+	@Test
+	public void testInokeViaCommandLineWithAutoPopulatedAvailabilityZones() {
+		String[] args = CLIArgBuilder.createSubnetStackWithZones(testName);
+		Main main = new Main(args);
+		int result = main.parse();
+		deletesStacks.ifPresent("CfnAssistTestsimpleStackWithAZ");
+		assertEquals(0, result);
+	}
 	
 	@Test
 	public void testUpdateViaCommandLineDeployWithFileAndSNS() throws InterruptedException, TimeoutException {
 		String[] create = CLIArgBuilder.createSubnetStack(testName); // no sns
 		Main main = new Main(create);
-		int result = main.parse();
+		main.parse();
 		
 		String[] update = CLIArgBuilder.updateSimpleStack(testName, "-sns");
 		main = new Main(update);
-		result = main.parse();
+		int result = main.parse();
 		
 		deletesStacks.ifPresent("CfnAssistTestsubnet");
 		assertEquals(0,result);

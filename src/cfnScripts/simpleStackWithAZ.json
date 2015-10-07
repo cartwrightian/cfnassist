@@ -8,24 +8,38 @@
 		"vpc":{
 			"Type":"String"
 		},
-	    "azA":{
-		  "Type":"String"
+	    "zoneA":{
+		  "Type":"String", "Description": "::CFN_ZONE_A"
 		},
-        "azB":{
-          "Type":"String"
-        },
-        "azC":{
-          "Type":"String"
+        "zoneB":{
+          "Type":"String", "Description": "::CFN_ZONE_B"
         }
 	},
 	"Resources":{
-		"handle":{
-			"Type":"AWS::CloudFormation::WaitConditionHandle",
-			"Properties":{
-				
-			}
-			
+	  "testSubnetZoneA": {
+		"Type": "AWS::EC2::Subnet",
+		"Properties": {
+		  "AvailabilityZone": {
+			"Ref": "zoneA"
+		  },
+		  "CidrBlock": "10.0.10.0/24",
+		  "VpcId": {
+			"Ref": "vpc"
+		  }
 		}
+	  },
+	  "testSubnetZoneB": {
+		"Type": "AWS::EC2::Subnet",
+		"Properties": {
+		  "AvailabilityZone": {
+			"Ref": "zoneB"
+		  },
+		  "CidrBlock": "10.0.11.0/24",
+		  "VpcId": {
+			"Ref": "vpc"
+		  }
+		}
+	  }
 		
 	}
 }

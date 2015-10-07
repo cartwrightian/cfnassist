@@ -1,59 +1,53 @@
 {
-	"AWSTemplateFormatVersion":"2010-09-09",
-	"Description":"test template for cnfassist - creates a single subnet, required build parameter",
-	"Parameters":{
-		"env":{
-			"Type":"String"
-		},
-		"vpc":{
-			"Type":"String"
-		},
-		"zoneA":{
-			"Type":"String",
-			"Default":"eu-west-1a",
-			"Description":"zoneADescription"
-		},
-		"build":{
-			"Type":"String",
-			"Description":"Should get populated with build"
-		}
-		
-	},
-	"Resources":{
-		"testSubnet":{
-			"Type":"AWS::EC2::Subnet",
-			"Properties":{
-				"AvailabilityZone":{
-					"Ref":"zoneA"
-				},
-				"CidrBlock":"10.0.10.0/24",
-				"Tags":[
-					{
-						"Key":"Name",
-						"Value":"testSubnet"
-					}
-					,
-					{
-						"Key":"TagBuild",
-						"Value":{
-							"Ref":"build"
-						}
-					}
-					,
-					{
-						"Key":"TagEnv",
-						"Value":{
-							"Ref":"env"
-						}
-					}
-				],
-				"VpcId":{
-					"Ref":"vpc"
-				}
-				
-			}
-			
-		}
-		
-	}
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "test template for cnfassist - creates a single subnet, required build parameter",
+  "Parameters": {
+    "env": {
+      "Type": "String"
+    },
+    "vpc": {
+      "Type": "String"
+    },
+    "zoneA": {
+      "Type": "String",
+      "Default": "eu-west-1a",
+      "Description": "zoneADescription"
+    },
+    "build": {
+      "Type": "String",
+      "Description": "Should get populated with build"
+    }
+  },
+  "Resources": {
+    "testSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "zoneA"
+        },
+        "CidrBlock": "10.0.10.0/24",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "testSubnet"
+          },
+          {
+            "Key": "TagBuild",
+            "Value": {
+              "Ref": "build"
+            }
+          },
+          {
+            "Key": "TagEnv",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ],
+        "VpcId": {
+          "Ref": "vpc"
+        }
+      }
+    }
+  }
 }
