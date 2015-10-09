@@ -113,6 +113,17 @@ public class CLIArgBuilder {
 		return deleteArgs;
 	}
 
+    public static String[] deleteByNameSimpleStackWithBuildNumber(String name, String buildNumber) {
+        String[] deleteArgs = {
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-rm", name,
+                "-build", buildNumber
+        };
+        return deleteArgs;
+    }
+
 	public static String[] deleteSimpleStack() {
 		String[] deleteArgs = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -122,6 +133,17 @@ public class CLIArgBuilder {
 				};
 		return deleteArgs;
 	}
+
+
+    public static String[] deleteByNameSimpleStack(String name) {
+        String[] deleteArgs = {
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-rm", name
+        };
+        return deleteArgs;
+    }
 	
 	public static String[] listStacks() {
 		String[] args = { 
@@ -287,5 +309,6 @@ public class CLIArgBuilder {
 				};
 		return args;
 	}
+
 
 }

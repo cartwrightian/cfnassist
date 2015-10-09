@@ -153,6 +153,21 @@ public class TestCommandLineStackOperations {
 		
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 	}
+
+    @Test
+    public void shouldDeleteViaCommandLineDeployWithName() throws InterruptedException, TimeoutException {
+        String[] createArgs = CLIArgBuilder.createSimpleStack(testName);
+        Main main = new Main(createArgs);
+        int createResult = main.parse();
+        assertEquals(0,createResult);
+
+        String[] deleteArgs = CLIArgBuilder.deleteByNameSimpleStack("simpleStack");
+        main = new Main(deleteArgs);
+        int deleteResult = main.parse();
+        assertEquals(0,deleteResult);
+
+        deletesStacks.ifPresent("CfnAssistTestsimpleStack");
+    }
 	
 	@Test
 	public void testInvokeViaCommandLineDeploySwitchELBInstancesAndWhitelistIP() throws InterruptedException, TimeoutException {		

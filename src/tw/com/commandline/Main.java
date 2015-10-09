@@ -1,30 +1,17 @@
 package tw.com.commandline;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import tw.com.FacadeFactory;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.TagsAlreadyInit;
-import tw.com.exceptions.WrongNumberOfStacksException;
-
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import org.apache.commons.cli.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tw.com.FacadeFactory;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.exceptions.*;
+
+import java.io.IOException;
+import java.util.Collection;
 
 public class Main {
 	public static final String ENV_VAR_EC2_REGION = "EC2_REGION";
@@ -46,7 +33,7 @@ public class Main {
 		commandActions.addActionsTo(commandLineOptions);
 	}
 	
-	public static void main(String[] args) throws ParseException, FileNotFoundException, IOException, InvalidStackParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
+	public static void main(String[] args) throws ParseException, IOException, InvalidStackParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
 		Main main = new Main(args);
 		int result = main.parse();
 		System.exit(result);

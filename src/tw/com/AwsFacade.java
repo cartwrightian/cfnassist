@@ -23,7 +23,6 @@ import tw.com.repository.ELBRepository;
 import tw.com.repository.VpcRepository;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -103,7 +102,7 @@ public class AwsFacade implements ProvidesZones {
 		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
 		List<TemplateParameter> declaredParameters = validateTemplate(file);
 
-		List<PopulatesParameters> populators = new LinkedList<PopulatesParameters>();
+		List<PopulatesParameters> populators = new LinkedList<>();
 		populators.add(new CfnBuiltInParams(vpcForEnv.getVpcId()));
 		populators.add(new AutoDiscoverParams(file, vpcRepository, cfnRepository));	
 		populators.add(new EnvVarParams());
@@ -124,7 +123,7 @@ public class AwsFacade implements ProvidesZones {
 	}
 
 	private StackNameAndId updateStack(ProjectAndEnv projAndEnv,
-			Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory) throws FileNotFoundException, InvalidStackParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
+			Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory) throws InvalidStackParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
 
 
 		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters, this);
@@ -266,11 +265,16 @@ public class AwsFacade implements ProvidesZones {
 	}
 	
 	public void deleteStackFrom(File templateFile, ProjectAndEnv projectAndEnv) throws CfnAssistException {
-		String stackName = createStackName(templateFile, projectAndEnv);
-		deleteStack(stackName, projectAndEnv);
+		String fullName = createStackName(templateFile, projectAndEnv);
+		deleteStack(fullName);
+	}
+
+	public void deleteStackByName(String partialName, ProjectAndEnv projectAndEnv) throws CfnAssistException {
+		String fullname = createName(projectAndEnv, partialName);
+		deleteStack(fullname);
 	}
 	
-	private void deleteStack(String stackName, ProjectAndEnv projectAndEnv) throws CfnAssistException {
+	private void deleteStack(String stackName) throws CfnAssistException {
 		StackNameAndId stackId;
 		try {
 			stackId = cfnRepository.getStackNameAndId(stackName);
@@ -522,7 +526,7 @@ public class AwsFacade implements ProvidesZones {
 		} else {
 			for(StackEntry delete : toDelete) {
 				logger.warn("Deleting stack " + delete.getStackName());
-				deleteStack(delete.getStackName(), projectAndEnv);
+				deleteStack(delete.getStackName());
 			}
 		}
 		
@@ -606,4 +610,6 @@ public class AwsFacade implements ProvidesZones {
     public Map<String, AvailabilityZone> getZones() {
        return cloudRepository.getZones(regionName);
     }
+
+
 }

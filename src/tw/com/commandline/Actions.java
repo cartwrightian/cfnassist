@@ -1,31 +1,15 @@
 package tw.com.commandline;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tw.com.commandline.actions.*;
 
-import tw.com.commandline.actions.BlacklistAction;
-import tw.com.commandline.actions.CreateDiagramAction;
-import tw.com.commandline.actions.DeleteAction;
-import tw.com.commandline.actions.DirAction;
-import tw.com.commandline.actions.ElbAction;
-import tw.com.commandline.actions.FileAction;
-import tw.com.commandline.actions.InitAction;
-import tw.com.commandline.actions.InstancesAction;
-import tw.com.commandline.actions.ListAction;
-import tw.com.commandline.actions.ResetAction;
-import tw.com.commandline.actions.RollbackAction;
-import tw.com.commandline.actions.S3CreateAction;
-import tw.com.commandline.actions.S3DeleteAction;
-import tw.com.commandline.actions.StepbackAction;
-import tw.com.commandline.actions.TidyOldStacksAction;
-import tw.com.commandline.actions.WhitelistAction;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Actions {
 	private static final Logger logger = LoggerFactory.getLogger(Actions.class);
@@ -33,7 +17,7 @@ public class Actions {
 	private List<CommandLineAction> actions;
 	
 	public Actions() {
-		actions = new LinkedList<CommandLineAction>();
+		actions = new LinkedList<>();
 		createActions();
 	}
 
@@ -72,6 +56,7 @@ public class Actions {
 		actions.add(new InitAction());
 		actions.add(new ElbAction());
 		actions.add(new DeleteAction());
+		actions.add(new DeleteByNameAction());
 		actions.add(new ListAction());
 		actions.add(new S3CreateAction());
 		actions.add(new S3DeleteAction());

@@ -1,24 +1,19 @@
 package tw.com.commandline.actions;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
 
 public class DeleteAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(DeleteAction.class);
@@ -32,8 +27,8 @@ public class DeleteAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
-			Collection<Parameter> artifacts, String... args) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
+			Collection<Parameter> artifacts, String... args) throws
+			IOException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		String filename = args[0];
 		logger.info(String.format("Attempting to delete corresponding to %s and %s", filename, projectAndEnv));

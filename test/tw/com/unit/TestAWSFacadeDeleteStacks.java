@@ -62,34 +62,61 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	
 	@Test
 	public void shouldDeleteStack() throws InterruptedException, CfnAssistException {
-		String stackName = "CfnAssistTestsimpleStack";
+		String fullName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		String stackId = "stackId";
-		StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
+		StackNameAndId stackNameAndId = new StackNameAndId(fullName, stackId);
 		
-		setDeleteExpectations(stackName, stackNameAndId);
+		setDeleteExpectations(fullName, stackNameAndId);
 		
 		replayAll();
 		aws.deleteStackFrom(file, projectAndEnv);
 		verifyAll();
+	}
+
+	@Test
+	public void shouldDeleteByName() throws CfnAssistException, InterruptedException {
+        String fullName = "CfnAssistTestsimpleStack";
+        String stackId = "stackId";
+        StackNameAndId stackNameAndId = new StackNameAndId(fullName, stackId);
+
+        setDeleteExpectations(fullName, stackNameAndId);
+
+        replayAll();
+        aws.deleteStackByName("simpleStack", projectAndEnv);
+        verifyAll();
 	}
 	
 	@Test
 	public void shouldDeleteStackWithBuildNumber() throws InterruptedException, CfnAssistException {
-		String stackName = "CfnAssist57TestsimpleStack";
+		String fullName = "CfnAssist57TestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		String stackId = "stackId";
-		StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
+		StackNameAndId stackNameAndId = new StackNameAndId(fullName, stackId);
 		
 		projectAndEnv.addBuildNumber(57);
-		setDeleteExpectations(stackName, stackNameAndId);
+		setDeleteExpectations(fullName, stackNameAndId);
 		
 		replayAll();
 		aws.deleteStackFrom(file, projectAndEnv);
 		verifyAll();
 	}
+
+    @Test
+    public void shouldDeleteByNameWithBuildNumber() throws CfnAssistException, InterruptedException {
+        String fullName = "CfnAssist57TestsimpleStack";
+        String stackId = "stackId";
+        StackNameAndId stackNameAndId = new StackNameAndId(fullName, stackId);
+
+        projectAndEnv.addBuildNumber(57);
+        setDeleteExpectations(fullName, stackNameAndId);
+
+        replayAll();
+        aws.deleteStackByName("simpleStack", projectAndEnv);
+        verifyAll();
+    }
 	
 	@Test
 	public void shouldDeleteNamedStacksNotAssociatedWithLB() throws InterruptedException, CfnAssistException {

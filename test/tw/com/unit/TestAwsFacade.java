@@ -15,10 +15,7 @@ import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.entity.InstanceSummary;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.SearchCriteria;
-import tw.com.entity.StackEntry;
+import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
@@ -129,7 +126,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	
 	@Test
 	public void shouldThrowForUnknownProjectAndEnvCombinationOnDeltaSet() throws CannotFindVpcException {
-		vpcRepository.setVpcIndexTag(projectAndEnv,"99");
+		vpcRepository.setVpcIndexTag(projectAndEnv, "99");
 		EasyMock.expectLastCall().andThrow(new CannotFindVpcException(projectAndEnv));
 		
 		replayAll();
@@ -151,10 +148,10 @@ public class TestAwsFacade extends EasyMockSupport {
 		
 		replayAll();
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
-		assertEquals(1,results.size());
+		assertEquals(1, results.size());
 		verifyAll();
 	}
-	
+
 	@Test
 	public void shouldListSummaryOfInstancesWithEnv() throws CfnAssistException {
 		String idA = "instanceIdA";
