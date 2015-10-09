@@ -6,16 +6,16 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Current Release version 1.0.118](https://cfnassist-release.s3-eu-west-1.amazonaws.com/118/cfnassist-1.0.118.zip)
+[Download Current Release version 1.0.119](https://cfnassist-release.s3-eu-west-1.amazonaws.com/119/cfnassist-1.0.119.zip)
 
 Previous Releases
 -----------------
 
+[Version 1.0.118](https://cfnassist-release.s3-eu-west-1.amazonaws.com/118/cfnassist-1.0.118.zip)
+
 [Version 1.0.99](https://cfnassist-release.s3-eu-west-1.amazonaws.com/99/cfnassist-1.0.99.zip)
 
 [Version 1.0.97](https://cfnassist-release.s3-eu-west-1.amazonaws.com/97/cfnassist-1.0.97.zip)
-
-[Version 1.0.92](https://cfnassist-release.s3-eu-west-1.amazonaws.com/92/cfnassist-1.0.92.zip)
 
 Build Status
 ------------
@@ -363,6 +363,14 @@ You can delete a stack created with cfnassit using the following command:
 `cfnassist -env Dev -build 1223 -delete ./templateFile.json`
 
 This will delete the stack that was created from the templateFile.json file with the build number 1223.
+
+You can also delete stacks using the name, so for the above example.
+
+`cfnassist -env Dev -build 1223 -rm templateFile`
+
+Note that the name of stack in cloudformation will include the Project,
+Environment and (optionally) the build number.
+
 
 15.Using VPC Tags
 -----------------
