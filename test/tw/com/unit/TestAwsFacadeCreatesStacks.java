@@ -151,7 +151,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
-	
+
 	@Test
 	public void shouldThrowOnCreateWhenStackExistsAndNotRolledBack() throws IOException, CfnAssistException, InterruptedException  {
 		String stackName = "CfnAssistTestsimpleStack";

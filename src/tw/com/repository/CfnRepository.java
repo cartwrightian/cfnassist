@@ -1,35 +1,21 @@
 package tw.com.repository;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.cloudformation.model.*;
+import com.amazonaws.services.ec2.model.Tag;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.StackCache;
-import tw.com.entity.EnvironmentTag;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.SearchCriteria;
-import tw.com.entity.StackEntry;
-import tw.com.entity.StackNameAndId;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.NotReadyException;
-import tw.com.exceptions.WrongNumberOfInstancesException;
-import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.entity.*;
+import tw.com.exceptions.*;
 import tw.com.providers.CloudFormationClient;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackEvent;
-import com.amazonaws.services.cloudformation.model.StackResource;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 public class CfnRepository implements CloudFormRepository {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
@@ -50,18 +36,18 @@ public class CfnRepository implements CloudFormRepository {
 	
 	@Override
 	public List<StackEntry> getStacks(EnvironmentTag envTag) {
-		List<StackEntry> results = new LinkedList<StackEntry>();
+		List<StackEntry> results = new LinkedList<>();
 		for(StackEntry entry : stackCache.getEntries()) {
 			if (entry.getEnvTag().equals(envTag)) {
 				results.add(entry);
 			}
 		}
-		return results;	
+		return results;
 	}
 
 	public List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name) {
 		logger.info(String.format("Find stacks matching env %s and name %s", envTag, name));
-		List<StackEntry> results = new LinkedList<StackEntry>();
+		List<StackEntry> results = new LinkedList<>();
 		for(StackEntry entry : stackCache.getEntries()) {
 			logger.debug("Check if entry matches " + entry);
 			if (entry.getEnvTag().equals(envTag) && entry.getBaseName().equals(name)) {
@@ -223,7 +209,7 @@ public class CfnRepository implements CloudFormRepository {
 		
 		List<StackEntry> stacks = criteria.matches(stackCache.getEntries());
 		
-		List<String> instanceIds = new LinkedList<String>();
+		List<String> instanceIds = new LinkedList<>();
 		for (StackEntry entry : stacks) {
 			String stackName = entry.getStackName();
 			if (entry.isLive()) {
@@ -237,7 +223,7 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	public List<String> getInstancesFor(String stackname) {
-		List<String> instanceIds = new LinkedList<String>();
+		List<String> instanceIds = new LinkedList<>();
 		List<StackResource> resources = stackCache.getResourcesForStack(stackname);
 		for (StackResource resource : resources) {
 			String type = resource.getResourceType();

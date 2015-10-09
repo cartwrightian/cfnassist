@@ -40,19 +40,16 @@ public class TestAwsFacade extends EasyMockSupport {
 	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	private CloudFormRepository cfnRepository;
 	private VpcRepository vpcRepository;
-	private ELBRepository elbRepository;
-	private MonitorStackEvents monitor;
 	private CloudRepository cloudRepository;
-	private IdentityProvider identityProvider;
 
 	@Before
 	public void beforeEachTestRuns() {
-		monitor = createMock(MonitorStackEvents.class);
+		MonitorStackEvents monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
 		vpcRepository = createMock(VpcRepository.class);
-		elbRepository = createMock(ELBRepository.class);
+		ELBRepository elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
-		identityProvider = createStrictMock(IdentityProvider.class);
+		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 
 		String regionName = EnvironmentSetupForTests.getRegion().getName();

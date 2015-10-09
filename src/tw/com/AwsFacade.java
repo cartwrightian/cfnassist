@@ -303,13 +303,6 @@ public class AwsFacade implements ProvidesZones {
 	}
 
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv) throws
-			IOException, CfnAssistException,
-			InterruptedException {
-		return applyTemplatesFromFolder(folderPath, projAndEnv, new LinkedList<>());
-	}
-
-	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
 			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws IOException, InterruptedException, CfnAssistException {
 		ArrayList<StackNameAndId> updatedStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);

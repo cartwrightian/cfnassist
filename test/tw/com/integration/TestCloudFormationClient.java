@@ -1,36 +1,9 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackEvent;
-import com.amazonaws.services.cloudformation.model.StackResource;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.Tag;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
@@ -38,18 +11,15 @@ import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-
-import tw.com.DeletesStacks;
-import tw.com.EnvironmentSetupForTests;
-import tw.com.FilesForTesting;
-import tw.com.PollingStackMonitor;
-import tw.com.SNSMonitor;
+import org.apache.commons.cli.MissingArgumentException;
+import org.apache.commons.io.FileUtils;
+import org.junit.*;
+import org.junit.rules.TestName;
+import tw.com.*;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.MissingCapabilities;
-import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
@@ -57,6 +27,15 @@ import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.VpcRepository;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class TestCloudFormationClient {
 	
@@ -145,7 +124,7 @@ public class TestCloudFormationClient {
 		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
 		
 		try {
-			queryResult = cfnClient.describeStacks(new DescribeStacksRequest().withStackName(stackName));
+			cfnClient.describeStacks(new DescribeStacksRequest().withStackName(stackName));
 			fail("throws if stack does not exist");
 		}
 		catch(AmazonServiceException expectedException) {
@@ -172,7 +151,7 @@ public class TestCloudFormationClient {
 	}
 	
 	@Test
-	public void shouldCreateAndDeleteSimpleStackNeedingIAMCapbility() throws IOException, CfnAssistException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+	public void shouldCreateAndDeleteSimpleStackNeedingIAMCapbility() throws IOException, CfnAssistException, InterruptedException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.STACK_IAM_CAP), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters("someVpcId");
@@ -193,7 +172,7 @@ public class TestCloudFormationClient {
 	}
 
 	@Test
-	public void shouldQueryCreatedStack() throws FileNotFoundException, IOException, InvalidStackParameterException, CfnAssistException, InterruptedException {
+	public void shouldQueryCreatedStack() throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.getVpcId();
 		String cidr = "10.0.10.0/24";
 		
@@ -308,7 +287,7 @@ public class TestCloudFormationClient {
 		
 		assertEquals(4, result.size());
 		
-		int i = 0;
+		int i;
 		for(i=0; i<4; i++) {
 			TemplateParameter parameter = result.get(i);
 			if (parameter.getParameterKey().equals("zoneA")) break;		
@@ -331,7 +310,7 @@ public class TestCloudFormationClient {
 	
 	private Subnet getSubnetDetails(String physicalId) {
 		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
-		Collection<String> subnetIds = new LinkedList<String>();
+		Collection<String> subnetIds = new LinkedList<>();
 		subnetIds.add(physicalId);
 		describeSubnetsRequest.setSubnetIds(subnetIds);
 		DescribeSubnetsResult result = ec2Client.describeSubnets(describeSubnetsRequest);
@@ -341,7 +320,7 @@ public class TestCloudFormationClient {
 	}
 	
 	private Collection<Parameter> createStandardParameters(String vpcId) {
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		Collection<Parameter> parameters = new LinkedList<>();
 		parameters.add(new Parameter().withParameterKey("env").withParameterValue("Test"));
 		parameters.add(new Parameter().withParameterKey("vpc").withParameterValue(vpcId));
 		return parameters;

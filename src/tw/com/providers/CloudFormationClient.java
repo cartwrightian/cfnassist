@@ -1,12 +1,9 @@
 package tw.com.providers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
@@ -15,26 +12,10 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.MissingCapabilities;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.CreateStackRequest;
-import com.amazonaws.services.cloudformation.model.CreateStackResult;
-import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackEventsRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackEventsResult;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStackResourcesResult;
-import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
-import com.amazonaws.services.cloudformation.model.InsufficientCapabilitiesException;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackEvent;
-import com.amazonaws.services.cloudformation.model.StackResource;
-import com.amazonaws.services.cloudformation.model.Tag;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
-import com.amazonaws.services.cloudformation.model.UpdateStackResult;
-import com.amazonaws.services.cloudformation.model.ValidateTemplateRequest;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class CloudFormationClient {
 	private static final Logger logger = LoggerFactory.getLogger(CloudFormationClient.class);
@@ -88,14 +69,13 @@ public class CloudFormationClient {
 	}
 
 	public List<Stack> describeAllStacks() {
-		DescribeStacksRequest describeStackRequest = new DescribeStacksRequest();
-		DescribeStacksResult results = cfnClient.describeStacks(describeStackRequest);
+		DescribeStacksResult results = cfnClient.describeStacks();
 
 		return results.getStacks();
 	}
 
 	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv, String commentTag) {	
-		Collection<Tag> tags = new ArrayList<Tag>();
+		Collection<Tag> tags = new ArrayList<>();
 		tags.add(createTag(AwsFacade.PROJECT_TAG, projectAndEnv.getProject()));
 		tags.add(createTag(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv()));
 		if (projectAndEnv.hasBuildNumber()) {

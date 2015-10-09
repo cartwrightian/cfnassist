@@ -1,8 +1,6 @@
 package tw.com.repository;
 
-import java.util.Collection;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.*;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.ProjectAndEnv;
@@ -13,41 +11,38 @@ import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackEvent;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import java.util.Collection;
+import java.util.List;
 
 public interface StackRepository {
 
-	public abstract List<StackEntry> getStacks();
-	public abstract List<StackEntry> getStacks(EnvironmentTag envTag);
-	public abstract List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name);
+	List<StackEntry> getStacks();
+	List<StackEntry> getStacks(EnvironmentTag envTag);
+	List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name);
 
-	public abstract String waitForStatusToChangeFrom(String stackName,
-			StackStatus currentStatus, List<String> aborts)
+	String waitForStatusToChangeFrom(String stackName,
+									 StackStatus currentStatus, List<String> aborts)
 			throws WrongNumberOfStacksException, InterruptedException;
 
-	public abstract List<StackEvent> getStackEvents(String stackName);
-	public abstract String getStackStatus(String stackName);
+	List<StackEvent> getStackEvents(String stackName);
+	String getStackStatus(String stackName);
 
-	public abstract StackNameAndId getStackNameAndId(String stackName) throws WrongNumberOfStacksException;
-	public abstract Stack getStack(String stackName) throws WrongNumberOfStacksException;
+	StackNameAndId getStackNameAndId(String stackName) throws WrongNumberOfStacksException;
+	Stack getStack(String stackName) throws WrongNumberOfStacksException;
 
-	public abstract void createFail(StackNameAndId id) throws WrongNumberOfStacksException;
-	public abstract Stack createSuccess(StackNameAndId id) throws WrongNumberOfStacksException;
-	public abstract void updateFail(StackNameAndId id) throws WrongNumberOfStacksException;
-	public abstract Stack updateSuccess(StackNameAndId id) throws WrongNumberOfStacksException;
+	void createFail(StackNameAndId id) throws WrongNumberOfStacksException;
+	Stack createSuccess(StackNameAndId id) throws WrongNumberOfStacksException;
+	void updateFail(StackNameAndId id) throws WrongNumberOfStacksException;
+	Stack updateSuccess(StackNameAndId id) throws WrongNumberOfStacksException;
 
-	public abstract StackNameAndId updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
+	StackNameAndId updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
 			String stackName) throws InvalidStackParameterException,
 			WrongNumberOfStacksException, NotReadyException;
 
-	public abstract StackNameAndId createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
+	StackNameAndId createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
 			Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws CfnAssistException;
 
-	public abstract void deleteStack(String stackName);
+	void deleteStack(String stackName);
 	
 	List<TemplateParameter> validateStackTemplate(String templateContents);
 

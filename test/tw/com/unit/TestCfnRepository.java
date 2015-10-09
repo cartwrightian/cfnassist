@@ -1,39 +1,16 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.easymock.*;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.cloudformation.model.*;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackResource;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.Tag;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
-
-import tw.com.AwsFacade;
-import tw.com.EnvironmentSetupForTests;
-import tw.com.MonitorStackEvents;
-import tw.com.PollingStackMonitor;
-import tw.com.SNSMonitor;
-import tw.com.StackMonitor;
-import tw.com.entity.EnvironmentTag;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.SearchCriteria;
-import tw.com.entity.StackEntry;
-import tw.com.entity.StackNameAndId;
+import tw.com.*;
+import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
@@ -41,6 +18,14 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.CloudRepository;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
 public class TestCfnRepository extends EasyMockSupport {
@@ -66,7 +51,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	@Test
 	public void testGetAllStacks() {
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber);
-		List<Stack> list = new LinkedList<Stack>();
+		List<Stack> list = new LinkedList<>();
 		list.add(new Stack().withTags(tags).withStackName("matchingStack"));
 		list.add(new Stack().withStackName("noMatchingTags"));
 		
@@ -84,11 +69,11 @@ public class TestCfnRepository extends EasyMockSupport {
 	@Test
 	public void testGetStacksByEnv() {
 		List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber);
-		List<Tag> tagsB = new LinkedList<Tag>();
+		List<Tag> tagsB = new LinkedList<>();
 		tagsB.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_ASSIST_ENV", "WrongTest"));
 		tagsB.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_ASSIST_PROJECT", "CfnAssist"));
 		
-		List<Stack> list = new LinkedList<Stack>();
+		List<Stack> list = new LinkedList<>();
 		list.add(new Stack().withTags(tagsA).withStackName("matchingStack"));
 		list.add(new Stack().withStackName("wrongEnvStack").withTags(tagsB));
 		
@@ -113,7 +98,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		stackResources.add(new StackResource().withLogicalResourceId("logWrong").withPhysicalResourceId("phyWrong"));
 		stackResources.add(new StackResource().withLogicalResourceId(logicalId).withPhysicalResourceId(expectedPhyId));
 		
-		List<Stack> list = new LinkedList<Stack>();
+		List<Stack> list = new LinkedList<>();
 		list.add(new Stack().
 				withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber)).
 				withStackName(stackName));
@@ -228,7 +213,7 @@ public class TestCfnRepository extends EasyMockSupport {
 				withStackName("someOtherName").
 				withStackStatus(StackStatus.CREATE_FAILED);
 		
-		List<Stack> stacks = new LinkedList<Stack>();
+		List<Stack> stacks = new LinkedList<>();
 		stacks.add(inProgressStack);
 		stacks.add(abortedStack);
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks); // cached after first call
@@ -244,8 +229,8 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void emptyStatusIfNoSuchStack() throws FileNotFoundException, WrongNumberOfStacksException, NotReadyException, IOException, InvalidStackParameterException, InterruptedException {			
-		List<Stack> stacks = new LinkedList<Stack>();
+	public void emptyStatusIfNoSuchStack() throws WrongNumberOfStacksException, NotReadyException, IOException, InvalidStackParameterException, InterruptedException {
+		List<Stack> stacks = new LinkedList<>();
 		stacks.add(new Stack().withStackName("ThisIsNotTheStackYouAreLookingFor"));
 			
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks); 
@@ -333,7 +318,7 @@ public class TestCfnRepository extends EasyMockSupport {
 //	}
 
 	private void queryForInstancesExpectations(String stackName, String stackId, String instanceId, String comment, Integer build) {
-		List<StackResource> resources = new LinkedList<StackResource>();
+		List<StackResource> resources = new LinkedList<>();
 		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceId));
 		resources.add(new StackResource().withResourceType("AWS::EC2::ELB").withPhysicalResourceId("notAnInstance"));
 		
@@ -353,7 +338,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		String stackName = "testStack";
 		String instanceId = "theInstanceId";
 		
-		List<StackResource> resources = new LinkedList<StackResource>();
+		List<StackResource> resources = new LinkedList<>();
 		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceId));
 		resources.add(new StackResource().withResourceType("AWS::EC2::ELB").withPhysicalResourceId("notAnInstance"));
 		
@@ -378,7 +363,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		String instanceIdB = "InstanceIdB";
 		SearchCriteria criteria = new SearchCriteria(EnvironmentSetupForTests.getMainProjectAndEnv());
 		
-		List<StackResource> resources = new LinkedList<StackResource>();
+		List<StackResource> resources = new LinkedList<>();
 		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceIdA));
 		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceIdB));
 		
@@ -466,7 +451,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	public void shouldCreateStack() throws CfnAssistException {
 		// this smells, at least until we pull cache updates down into repository
 		
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		Collection<Parameter> parameters = new LinkedList<>();
 		MonitorStackEvents monitor = new PollingStackMonitor(repository);
 		ProjectAndEnv projAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 		EasyMock.expect(formationClient.createStack(projAndEnv, "contents", "stackName", 
@@ -483,7 +468,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	public void shouldUpdateStack() throws NotReadyException, WrongNumberOfStacksException, InvalidStackParameterException {
 		// this smells, at least until we pull cache updates down into repository
 		
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		Collection<Parameter> parameters = new LinkedList<>();
 		MonitorStackEvents monitor = new PollingStackMonitor(repository);
 		EasyMock.expect(formationClient.updateStack("contents", parameters, monitor, "stackName")).andReturn(new StackNameAndId("stackName", "someStackId"));
 		replayAll();
@@ -499,7 +484,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		// this smells, at least until we pull cache updates down into repository
 		SNSMonitor snsMonitor = createMock(SNSMonitor.class);
 		
-		Collection<Parameter> parameters = new LinkedList<Parameter>();
+		Collection<Parameter> parameters = new LinkedList<>();
 		EasyMock.expect(formationClient.updateStack("contents", parameters, snsMonitor, "stackName")).andReturn(new StackNameAndId("stackName", "someStackId"));
 		replayAll();
 		
@@ -512,7 +497,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	@Test
 	public void shouldValidateTemplates() {
 		
-		List<TemplateParameter> params = new LinkedList<TemplateParameter>();
+		List<TemplateParameter> params = new LinkedList<>();
 		params.add(new TemplateParameter().withDefaultValue("aDefaultValue"));
 		EasyMock.expect(formationClient.validateTemplate("someContents")).andReturn(params);
 		

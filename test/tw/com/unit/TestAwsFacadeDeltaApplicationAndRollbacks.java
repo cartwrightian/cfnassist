@@ -20,13 +20,11 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.repository.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -43,7 +41,6 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 	private CloudFormRepository cfnRepository;
 	private VpcRepository vpcRepository;
 	private MonitorStackEvents monitor;
-	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
 	private IdentityProvider identityProvider;
@@ -56,7 +53,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
 		vpcRepository = createStrictMock(VpcRepository.class);
-		elbRepository = createMock(ELBRepository.class);
+		ELBRepository elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
@@ -84,14 +81,14 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		}
 		
 		replayAll();
-		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
+		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
 		assertEquals(files.size(), result.size());	
 		validateStacksCreated(files, 1, result);
 		verifyAll();	
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParametersOnlyNeeded() throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException {
+	public void shouldApplySimpleTemplateNoParametersOnlyNeeded() throws IOException, InterruptedException, CfnAssistException {
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		List<File> files = allFiles.subList(1, 2);
 
@@ -106,7 +103,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		}
 		
 		replayAll();
-		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
+		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
 		assertEquals(files.size(), result.size());
 		validateStacksCreated(files, 2, result);
 		verifyAll();	
@@ -120,7 +117,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		setExpectationsForValidationPass(allFiles);
 	
 		replayAll();
-		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
+		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
 		assertEquals(0, result.size());
 		verifyAll();	
 	}
@@ -145,10 +142,10 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		setExpectationsForFile(3, newFile);
 	
 		replayAll();
-		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
+		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
 		assertEquals(0, result.size());
 		copyInFile(THIRD_FILE);
-		result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv);
+		result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
 		assertEquals(1, result.size());
 		verifyAll();	
 	}
