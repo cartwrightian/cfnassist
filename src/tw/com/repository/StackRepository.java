@@ -2,10 +2,7 @@ package tw.com.repository;
 
 import com.amazonaws.services.cloudformation.model.*;
 import tw.com.MonitorStackEvents;
-import tw.com.entity.EnvironmentTag;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.StackEntry;
-import tw.com.entity.StackNameAndId;
+import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.exceptions.NotReadyException;
@@ -40,7 +37,7 @@ public interface StackRepository {
 			WrongNumberOfStacksException, NotReadyException;
 
 	StackNameAndId createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
-			Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws CfnAssistException;
+			Collection<Parameter> parameters, MonitorStackEvents monitor, Tagging tagging) throws CfnAssistException;
 
 	void deleteStack(String stackName);
 	

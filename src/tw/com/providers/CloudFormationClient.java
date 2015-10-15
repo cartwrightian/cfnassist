@@ -8,6 +8,7 @@ import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
+import tw.com.entity.Tagging;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.MissingCapabilities;
 import tw.com.exceptions.NotReadyException;
@@ -74,7 +75,7 @@ public class CloudFormationClient {
 		return results.getStacks();
 	}
 
-	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv, String commentTag) {	
+	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv, Tagging tagging) {
 		Collection<Tag> tags = new ArrayList<>();
 		tags.add(createTag(AwsFacade.PROJECT_TAG, projectAndEnv.getProject()));
 		tags.add(createTag(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv()));
@@ -82,10 +83,8 @@ public class CloudFormationClient {
 			Integer number = projectAndEnv.getBuildNumber();
 			tags.add(createTag(AwsFacade.BUILD_TAG, number.toString()));
 		}
-		if (!commentTag.isEmpty()) {
-			logger.info(String.format("Adding %s: %s", AwsFacade.COMMENT_TAG, commentTag));
-			tags.add(createTag(AwsFacade.COMMENT_TAG, commentTag));
-		}
+        tagging.addTagsTo(tags);
+
 		return tags;
 	}
 	
@@ -99,13 +98,13 @@ public class CloudFormationClient {
 	public StackNameAndId createStack(ProjectAndEnv projAndEnv,
 			String contents, String stackName,
 			Collection<Parameter> parameters, MonitorStackEvents monitor,
-			String commentTag) throws CfnAssistException {
+			Tagging tagging) throws CfnAssistException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setTemplateBody(contents);
 		createStackRequest.setStackName(stackName);
 		createStackRequest.setParameters(parameters);
 		monitor.addMonitoringTo(createStackRequest);
-		Collection<Tag> tags = createTagsForStack(projAndEnv, commentTag);
+		Collection<Tag> tags = createTagsForStack(projAndEnv, tagging);
 		createStackRequest.setTags(tags);
 		
 		if (projAndEnv.useCapabilityIAM()) {

@@ -1,24 +1,18 @@
 package tw.com.commandline;
 
+import com.amazonaws.services.cloudformation.model.Parameter;
+import org.apache.commons.cli.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tw.com.AwsFacade;
+import tw.com.entity.Tagging;
+import tw.com.exceptions.InvalidStackParameterException;
+import tw.com.providers.SNSEventSource;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.services.cloudformation.model.Parameter;
-
-import tw.com.AwsFacade;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.providers.SNSEventSource;
 
 public class CommandFlags {
 	private static final Logger logger = LoggerFactory.getLogger(CommandFlags.class);
@@ -77,11 +71,11 @@ public class CommandFlags {
 		if (!buildNumberAsString.isEmpty()) {
 			buildNumber = Integer.parseInt(buildNumberAsString);
 		}
-		sns = checkForArgumentPresent(commandLine, formatter, snsParam);
-		capabilityIAM = checkForArgumentPresent(commandLine, formatter, capIAMParam);
+		sns = checkForArgumentPresent(commandLine, snsParam);
+		capabilityIAM = checkForArgumentPresent(commandLine, capIAMParam);
 		comment = checkForArgument(commandLine, formatter, commentParam, "", false);
-		cfnParams = checkForKeyValueParameters(commandLine, formatter, keysValuesParam);
-		artifacts = checkForKeyValueParameters(commandLine, formatter, artifactParam);
+		cfnParams = checkForKeyValueParameters(commandLine, keysValuesParam);
+		artifacts = checkForKeyValueParameters(commandLine, artifactParam);
 		boolean bucketRequired = (!artifacts.isEmpty());
 		s3bucket = checkForArgument(commandLine, formatter, bucketParam, AwsFacade.ENV_S3_BUCKET, bucketRequired);
 	}
@@ -97,7 +91,7 @@ public class CommandFlags {
 				create("env");
 		
 		regionParam = OptionBuilder.withArgName("region").hasArg().
-				withDescription("AWS Region name, or use env var: "+Main.ENV_VAR_EC2_REGION).
+				withDescription("AWS Region name, or use env var: " + Main.ENV_VAR_EC2_REGION).
 				create("region");
 		
 		keysValuesParam = OptionBuilder.withArgName("parameters").
@@ -120,7 +114,7 @@ public class CommandFlags {
 				hasArg(false).create("capabilityIAM");
 		
 		commentParam = OptionBuilder.withArgName("comment").hasArg().
-				withDescription("Add a comment within the tag " + AwsFacade.COMMENT_TAG).create("comment");
+				withDescription("Add a comment within the tag " + Tagging.COMMENT_TAG).create("comment");
 		
 		artifactParam = OptionBuilder.withArgName("artifacts").
 				hasArgs().withValueSeparator(';').
@@ -160,9 +154,9 @@ public class CommandFlags {
 		return "";
 	}
 	
-	private Collection<Parameter> checkForKeyValueParameters(CommandLine cmd, HelpFormatter formatter, Option commandFlag) throws InvalidStackParameterException {
+	private Collection<Parameter> checkForKeyValueParameters(CommandLine cmd, Option commandFlag) throws InvalidStackParameterException {
 		
-		LinkedList<Parameter> results = new LinkedList<Parameter>();
+		LinkedList<Parameter> results = new LinkedList<>();
 		String argName = commandFlag.getArgName();
 		logger.debug("Checking for arg " + argName);
 		if (!cmd.hasOption(argName)) {
@@ -192,7 +186,7 @@ public class CommandFlags {
 	}
 	
 	private Boolean checkForArgumentPresent(CommandLine commandLine,
-			HelpFormatter formatter, Option option) {
+											Option option) {
 		String argName = option.getArgName();
 		logger.debug("Checking for arg " + argName);
 		return commandLine.hasOption(argName);

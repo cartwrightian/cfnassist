@@ -69,6 +69,10 @@ public class Main {
 			if (flags.haveCapabilityIAM()) {
 				projectAndEnv.setUseCapabilityIAM();
 			}
+            if (action.usesComment() && flags.haveComment()) {
+                String comment = flags.getComment();
+                projectAndEnv.setComment(comment);
+            }
 			logger.info("Invoking for " + projectAndEnv);
 			
 			String[] argsForAction = commandLine.getOptionValues(action.getArgName());
@@ -107,10 +111,7 @@ public class Main {
 		// TODO move some validation checking to here
 		if (action.usesProject()) {
 			factory.setProject(flags.getProject());
-		}   
-		if (action.usesComment() && flags.haveComment()) {
-			factory.setCommentTag(flags.getComment());	
-		} 
+		}
 		if (action.usesSNS() && flags.haveSnsEnable()) {
 			factory.setSNSMonitoring();
 		}

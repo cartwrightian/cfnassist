@@ -35,7 +35,7 @@ public class TestCfnRepository extends EasyMockSupport {
     private CloudFormationClient formationClient;
 	private CfnRepository repository;
 	private EnvironmentTag envTag;
-	private Integer noBuildNumber = new Integer(-1);
+	private Integer noBuildNumber = -1;
 
 	private CloudRepository cloudRepository;
 	
@@ -454,11 +454,12 @@ public class TestCfnRepository extends EasyMockSupport {
 		Collection<Parameter> parameters = new LinkedList<>();
 		MonitorStackEvents monitor = new PollingStackMonitor(repository);
 		ProjectAndEnv projAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
+		Tagging tagging = new Tagging();
 		EasyMock.expect(formationClient.createStack(projAndEnv, "contents", "stackName", 
-				parameters, monitor, "comment")).andReturn(new StackNameAndId("stackName", "someStackId"));
+				parameters, monitor, tagging)).andReturn(new StackNameAndId("stackName", "someStackId"));
 		replayAll();
 		
-		StackNameAndId result = repository.createStack(projAndEnv, "contents", "stackName", parameters, monitor, "comment");
+		StackNameAndId result = repository.createStack(projAndEnv, "contents", "stackName", parameters, monitor, tagging);
 		assertEquals("stackName", result.getStackName());
 		assertEquals("someStackId", result.getStackId());
 		verifyAll();

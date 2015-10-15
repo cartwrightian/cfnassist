@@ -1,24 +1,20 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.amazonaws.services.cloudformation.model.Parameter;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class DirAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(DirAction.class);
@@ -30,7 +26,7 @@ public class DirAction extends SharedAction {
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, 
-			String... args) throws FileNotFoundException, InvalidStackParameterException, IOException, CfnAssistException, InterruptedException, MissingArgumentException {
+			String... args) throws IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
 		String folderPath = args[0];
 		ArrayList<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(folderPath , projectAndEnv, cfnParams);

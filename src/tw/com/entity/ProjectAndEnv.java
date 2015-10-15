@@ -9,6 +9,7 @@ public class ProjectAndEnv {
 	private boolean useSns;
 	private String s3Bucket;
 	private boolean useCapabilityIAM;
+	private String comment = "";
 
 	public ProjectAndEnv(String project, String env) {
 		useSns = false;
@@ -126,4 +127,15 @@ public class ProjectAndEnv {
 		return useCapabilityIAM;
 	}
 
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
+
+	public boolean hasComment() {
+		return !comment.isEmpty();
+	}
+
+	public String getComment() {
+		return comment;
+	}
 }

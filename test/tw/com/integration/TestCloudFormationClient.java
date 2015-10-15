@@ -18,6 +18,7 @@ import org.junit.rules.TestName;
 import tw.com.*;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
+import tw.com.entity.Tagging;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.MissingCapabilities;
 import tw.com.exceptions.WrongStackStatus;
@@ -100,7 +101,7 @@ public class TestCloudFormationClient {
 		String stackName = "createStackTest";
 		String comment = test.getMethodName();
 		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment,-1); 
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, createTagging(comment));
 		deletesStacks.ifPresent(stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());
@@ -131,8 +132,14 @@ public class TestCloudFormationClient {
 			assertEquals(400, expectedException.getStatusCode());
 		}	
 	}
-	
-	@Test
+
+    private Tagging createTagging(String comment) {
+        Tagging tagging = new Tagging();
+        tagging.setCommentTag(comment);
+        return tagging;
+    }
+
+    @Test
 	public void shouldThrowIfCapabilitiesNotSetCorrectly() throws IOException, CfnAssistException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.STACK_IAM_CAP), Charset.defaultCharset());
 		
@@ -142,7 +149,7 @@ public class TestCloudFormationClient {
 		deletesStacks.ifPresent(stackName);
 		// should trigger capability exception
 		try {
-			formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
+			formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, createTagging(comment));
 			fail("Was expecting MissingCapabilities");
 		}
 		catch(MissingCapabilities expected) {
@@ -158,7 +165,7 @@ public class TestCloudFormationClient {
 		String stackName = "createIAMStackTest"; 
 		String comment = test.getMethodName();
 		projAndEnv.setUseCapabilityIAM();
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, comment);
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, createTagging(comment));
 		deletesStacks.ifPresent(stackName);
 				
 		// this  create will fail, but due to lack of user perms and not because of capabilities exception
@@ -182,7 +189,7 @@ public class TestCloudFormationClient {
 		parameters.add(new Parameter().withParameterKey("cidr").withParameterValue(cidr));
 		String stackName = "queryStackTest";
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
-				polligMonitor, test.getMethodName());
+				polligMonitor, createTagging(test.getMethodName()));
 		deletesStacks.ifPresent(nameAndId);
 		
 		String status = polligMonitor.waitForCreateFinished(nameAndId);
@@ -219,8 +226,8 @@ public class TestCloudFormationClient {
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
-		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, 
-				test.getMethodName());
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor,
+                createTagging(test.getMethodName()));
 		deletesStacks.ifPresent(stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());
@@ -254,7 +261,7 @@ public class TestCloudFormationClient {
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
-				polligMonitor, test.getMethodName());
+				polligMonitor, createTagging(test.getMethodName()));
 		deletesStacks.ifPresent(stackName);
 		
 		assertEquals(stackName, nameAndId.getStackName());

@@ -14,10 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import tw.com.*;
-import tw.com.entity.CFNAssistNotification;
-import tw.com.entity.DeletionsPending;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.entity.StackNameAndId;
+import tw.com.entity.*;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.IdentityProvider;
@@ -318,7 +315,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc());
 		EasyMock.expect(cfnRepository.validateStackTemplate(templateContents)).andReturn(templateParameters);
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");
-		EasyMock.expect(cfnRepository.createStack(projectAndEnv, templateContents, stackName, creationParameters, monitor, ""))
+		Tagging tagging = new Tagging();
+		EasyMock.expect(cfnRepository.createStack(projectAndEnv, templateContents, stackName, creationParameters, monitor, tagging))
 			.andReturn(stackNameAndId);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);

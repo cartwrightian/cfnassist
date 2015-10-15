@@ -252,7 +252,7 @@ public class TestAwsFacade extends EasyMockSupport {
 		parameters.add(parameter);
 		
 		try {
-			aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv, parameters);	
+			aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv, parameters);
 			fail("Should have thrown exception");
 		}
 		catch (InvalidStackParameterException exception) {

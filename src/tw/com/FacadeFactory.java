@@ -1,25 +1,5 @@
 package tw.com;
 
-import org.apache.commons.cli.MissingArgumentException;
-
-import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.pictures.AmazonVPCFacade;
-import tw.com.pictures.DiagramCreator;
-import tw.com.providers.ArtifactUploader;
-import tw.com.providers.CloudClient;
-import tw.com.providers.CloudFormationClient;
-import tw.com.providers.IdentityProvider;
-import tw.com.providers.LoadBalancerClient;
-import tw.com.providers.ProvidesCurrentIp;
-import tw.com.providers.RDSClient;
-import tw.com.providers.SNSEventSource;
-import tw.com.providers.SNSNotificationSender;
-import tw.com.repository.CfnRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
-
 import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
@@ -31,9 +11,18 @@ import com.amazonaws.services.rds.AmazonRDSClient;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import org.apache.commons.cli.MissingArgumentException;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.pictures.AmazonVPCFacade;
+import tw.com.pictures.DiagramCreator;
+import tw.com.providers.*;
+import tw.com.repository.CfnRepository;
+import tw.com.repository.CloudRepository;
+import tw.com.repository.ELBRepository;
+import tw.com.repository.VpcRepository;
 
 public class FacadeFactory {
-	private String comment;
 	private boolean snsMonitoring = false;
 	private Region region;
 	private String project;
@@ -84,10 +73,6 @@ public class FacadeFactory {
 	
 	public void setSNSMonitoring() {
 		this.snsMonitoring = true;		
-	}
-	
-	public void setCommentTag(String comment) {
-		this.comment = comment;	
 	}
 
 	private void init() {
@@ -148,19 +133,14 @@ public class FacadeFactory {
 			monitor.init();
 			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, 
 					cloudRepository, notificationSender, identityProvider, region.getName());
-			if (comment!=null) {
-				awsFacade.setCommentTag(comment);
-			}
+//			if (tagging !=null) {
+//				awsFacade.setTagging(tagging);
+//			}
 		}	
 		return awsFacade;	
 	}
 
-	public AmazonS3Client getS3Client() {
-		init();
-		return s3Client;
-	}
-
-	public ArtifactUploader createArtifactUploader(ProjectAndEnv projectAndEnv) {
+    public ArtifactUploader createArtifactUploader(ProjectAndEnv projectAndEnv) {
 		init();
 		if (artifactUploader==null) {
 			artifactUploader = new ArtifactUploader(s3Client, projectAndEnv.getS3Bucket(),

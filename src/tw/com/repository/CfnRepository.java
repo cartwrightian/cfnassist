@@ -262,8 +262,8 @@ public class CfnRepository implements CloudFormRepository {
 
 	@Override
 	public StackNameAndId createStack(ProjectAndEnv projAndEnv,
-			String contents, String stackName, Collection<Parameter> parameters, MonitorStackEvents monitor, String commentTag) throws CfnAssistException {
-		return formationClient.createStack(projAndEnv,contents, stackName, parameters, monitor, commentTag);		
+			String contents, String stackName, Collection<Parameter> parameters, MonitorStackEvents monitor, Tagging tagging) throws CfnAssistException {
+		return formationClient.createStack(projAndEnv,contents, stackName, parameters, monitor, tagging);
 	}
 
 	@Override

@@ -41,7 +41,6 @@ public class AwsFacade implements ProvidesZones {
 	public static final String INDEX_TAG = "CFN_ASSIST_DELTA";
 	public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
 	public static final String TYPE_TAG = "CFN_ASSIST_TYPE";
-	public static final String COMMENT_TAG = "CFN_COMMENT";
 	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
 	
 	private static final String PARAMETER_STACKNAME = "stackname";
@@ -54,7 +53,6 @@ public class AwsFacade implements ProvidesZones {
 	private MonitorStackEvents monitor;
 	private IdentityProvider identityProvider;
 
-	private String commentTag="";
 	private String regionName;
 
 	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, 
@@ -68,10 +66,6 @@ public class AwsFacade implements ProvidesZones {
 		this.notificationSender = notificationSender;
 		this.identityProvider = identityProvider;
 		this.regionName = regionName;
-	}
-	
-	public void setCommentTag(String commentTag) {
-		this.commentTag = commentTag;		
 	}
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
@@ -95,28 +89,39 @@ public class AwsFacade implements ProvidesZones {
 			throws IOException, InterruptedException, CfnAssistException {
 		return applyTemplate(file, projAndEnv, new HashSet<>());
 	}
-	
-	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws
-			IOException, InterruptedException, CfnAssistException {
-		logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));	
-		Vpc vpcForEnv = findVpcForEnv(projAndEnv);
-		List<TemplateParameter> declaredParameters = validateTemplate(file);
 
-		List<PopulatesParameters> populators = new LinkedList<>();
-		populators.add(new CfnBuiltInParams(vpcForEnv.getVpcId()));
-		populators.add(new AutoDiscoverParams(file, vpcRepository, cfnRepository));	
-		populators.add(new EnvVarParams());
-		ParameterFactory parameterFactory= new ParameterFactory(populators);
-		
-		String contents = loadFileContents(file);
-		
-		if (isDelta(file)) {
-			logger.info("Request to update a stack, filename is " + file.getAbsolutePath());
-			return updateStack(projAndEnv, userParameters, declaredParameters, contents, parameterFactory);
-		} else {
-			return createStack(file, projAndEnv, userParameters, declaredParameters, contents, parameterFactory);
-		}	
-	}
+    public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters) throws
+            IOException, InterruptedException, CfnAssistException {
+        Tagging tagging = new Tagging();
+        return applyTemplate(file, projAndEnv, userParameters, tagging);
+    }
+
+    private StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters,
+                                        Tagging tagging) throws CfnAssistException, IOException, InterruptedException {
+        logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));
+        Vpc vpcForEnv = findVpcForEnv(projAndEnv);
+        List<TemplateParameter> declaredParameters = validateTemplate(file);
+
+        List<PopulatesParameters> populators = new LinkedList<>();
+        populators.add(new CfnBuiltInParams(vpcForEnv.getVpcId()));
+        populators.add(new AutoDiscoverParams(file, vpcRepository, cfnRepository));
+        populators.add(new EnvVarParams());
+        ParameterFactory parameterFactory= new ParameterFactory(populators);
+
+        if (projAndEnv.hasComment()) {
+            tagging.setCommentTag(projAndEnv.getComment());
+        }
+
+        String contents = loadFileContents(file);
+
+        if (isDelta(file)) {
+            logger.info("Request to update a stack, filename is " + file.getAbsolutePath());
+            return updateStack(projAndEnv, userParameters, declaredParameters, contents, parameterFactory);
+        } else {
+            return createStack(file, projAndEnv, userParameters, declaredParameters, contents, parameterFactory,tagging);
+        }
+    }
+
 
 	private boolean isDelta(File file) {
 		return (file.getName().contains(DELTA_EXTENSTION));
@@ -161,7 +166,9 @@ public class AwsFacade implements ProvidesZones {
 
 	private StackNameAndId createStack(File file, ProjectAndEnv projAndEnv,
 			Collection<Parameter> userParameters,
-			List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory)
+			List<TemplateParameter> declaredParameters,
+            String contents,
+            ParameterFactory parameterFactory, Tagging tagging)
 			throws CfnAssistException, InterruptedException, IOException {
 		String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
@@ -170,7 +177,7 @@ public class AwsFacade implements ProvidesZones {
 
         Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters, this);
 
-		StackNameAndId id = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, commentTag);
+		StackNameAndId id = cfnRepository.createStack(projAndEnv, contents, stackName, parameters, monitor, tagging);
 		
 		try {
 			monitor.waitForCreateFinished(id);
@@ -321,8 +328,10 @@ public class AwsFacade implements ProvidesZones {
 		for(File file : files) {
 			int deltaIndex = extractIndexFrom(file);
 			if (deltaIndex>highestAppliedDelta) {
-				logger.info(String.format("Apply template file: %s, index is %s",file.getAbsolutePath(), deltaIndex));
-				StackNameAndId stackId = applyTemplate(file, projAndEnv, cfnParams);
+				logger.info(String.format("Apply template file: %s, index is %s", file.getAbsolutePath(), deltaIndex));
+                Tagging tagging = new Tagging();
+
+				StackNameAndId stackId = applyTemplate(file, projAndEnv, cfnParams, tagging);
 				logger.info("Create/Updated stack " + stackId);
 				updatedStacks.add(stackId); 
 				setDeltaIndex(projAndEnv, deltaIndex);

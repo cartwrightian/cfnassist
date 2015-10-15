@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.StackNameAndId;
+import tw.com.entity.Tagging;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
@@ -85,7 +86,10 @@ public class TestCloudFormationClient extends EasyMockSupport {
         EasyMock.expect(cfnClient.createStack(createStackRequest)).andReturn(createStackResponse);
 
         replayAll();
-        StackNameAndId result = client.createStack(EnvironmentSetupForTests.getMainProjectAndEnv(), "{json}", "stackName", parameters, monitor, "commentForStack");
+        Tagging tagging = new Tagging();
+        tagging.setCommentTag("commentForStack");
+        StackNameAndId result = client.createStack(EnvironmentSetupForTests.getMainProjectAndEnv(), "{json}",
+                "stackName", parameters, monitor, tagging);
         verifyAll();
 
         assertEquals("stackName", result.getStackName());
