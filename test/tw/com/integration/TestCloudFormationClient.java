@@ -100,7 +100,7 @@ public class TestCloudFormationClient {
 		Collection<Parameter> parameters = createStandardParameters("someVpcId");
 		String stackName = "createStackTest";
 		String comment = test.getMethodName();
-		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment,-1); 
+		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment,-1, "CfnAssist");
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, createTagging(comment));
 		deletesStacks.ifPresent(stackName);
 		

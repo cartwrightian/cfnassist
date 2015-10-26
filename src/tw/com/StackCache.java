@@ -1,11 +1,10 @@
 package tw.com;
 
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackResource;
+import com.amazonaws.services.cloudformation.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
@@ -13,9 +12,10 @@ import tw.com.entity.StackResources;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.providers.CloudFormationClient;
 
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackResource;
-import com.amazonaws.services.cloudformation.model.Tag;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class StackCache {
 	private static final Logger logger = LoggerFactory.getLogger(StackCache.class);
@@ -29,7 +29,7 @@ public class StackCache {
 		this.formationClient = formationClient;
 		this.project = project;
 		stackResources = new StackResources();
-		theEntries = new LinkedList<StackEntry>();
+		theEntries = new LinkedList<>();
 	}
 
 	public List<StackEntry> getEntries() {
@@ -51,12 +51,13 @@ public class StackCache {
 	}
 	
 	private void populateEntriesIfProjectMatches(List<Stack> stacks) {
-		logger.info(String.format("Populating stack entries for %s stacks",stacks.size()));
+		logger.info(String.format("Populating stack entries for %s stacks", stacks.size()));
 		for(Stack stack : stacks) {
 
 			logger.info(String.format("Checking stack %s for tag", stack.getStackName()));
 		
 			List<Tag> tags = stack.getTags();
+            Map<String, String> keyValues = convertToMap(tags);
 			int count = 3;
 			String env = "";
 			String proj = "";
@@ -76,11 +77,18 @@ public class StackCache {
 				}
 				if (count==0) break; // small optimisation 
 			}
-			addEntryIfProjectAndEnvMatches(stack, env, proj, build);
+            String index = keyValues.get(AwsFacade.INDEX_TAG);
+            addEntryIfProjectAndEnvMatches(stack, env, proj, build, keyValues);
 		}		
 	}
-	
-	private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, Integer build) {
+
+    private HashMap<String, String> convertToMap(List<Tag> tags) {
+        HashMap<String, String> result = new HashMap<>();
+        tags.forEach(tag -> result.put(tag.getKey(), tag.getValue()));
+        return result;
+    }
+
+    private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, Integer build, Map<String, String> keyValues) {
 		String stackName = stack.getStackName();
 		if (!proj.equals(project) || (env.isEmpty())) {
 			logger.warn(String.format("Could not match expected tags (%s and %s) for project '%s' and stackname %s", 
@@ -95,6 +103,12 @@ public class StackCache {
 			logger.info(String.format("Saving associated build number (%s) into stack %s", build, stackName));
 			entry.setBuildNumber(build);
 		}
+        if (keyValues.containsKey(AwsFacade.INDEX_TAG)) {
+            String index = keyValues.get(AwsFacade.INDEX_TAG);
+            int number = Integer.parseInt(index);
+            logger.info(String.format("Saving associated index (%s) into stack %s", number, stackName));
+            entry.setIndex(number);
+        }
 		if (theEntries.contains(entry)) {
 			theEntries.remove(entry);
 			logger.info("Replacing or Removing entry for stack " + stackName);
@@ -115,7 +129,7 @@ public class StackCache {
 	}
 	
 	private void populateEntriesIfProjectMatches(Stack stack) {
-		LinkedList<Stack> list = new LinkedList<Stack>();
+		LinkedList<Stack> list = new LinkedList<>();
 		list.add(stack);
 		this.populateEntriesIfProjectMatches(list);
 	}

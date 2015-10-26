@@ -73,12 +73,13 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		// processing pass
 		Integer count = 1;
 		for(File file : files) {
-			setExpectationsForFile(count, file);	
+			setExpectationsForFile(count, file);
 			count++;
 		}
 		
 		replayAll();
-		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
+		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER,
+                projectAndEnv, new LinkedList<>());
 		assertEquals(files.size(), result.size());	
 		validateStacksCreated(files, 1, result);
 		verifyAll();	
@@ -95,7 +96,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		// processing pass
 		Integer count = 2;
 		for(File file : files) {
-			setExpectationsForFile(count, file);	
+			setExpectationsForFile(count, file);
 			count++;
 		}
 		
@@ -127,6 +128,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
 		// validation pass does all files
 		setExpectationsForValidationPass(originalFiles);
+
 		// second run set up
 		Path currentPath = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "holding", THIRD_FILE);
 		File newFile = new File(currentPath.toString());
@@ -135,12 +137,14 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		newFiles.add(newFile);
 		// second run expectations
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
-		setExpectationsForValidationPass(newFiles);
-		setExpectationsForFile(3, newFile);
-	
+        setExpectationsForValidationPass(newFiles);
+
+        setExpectationsForFile(3, newFile);
+
 		replayAll();
 		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
 		assertEquals(0, result.size());
+
 		copyInFile(THIRD_FILE);
 		result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
 		assertEquals(1, result.size());
@@ -315,16 +319,24 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc());
 		EasyMock.expect(cfnRepository.validateStackTemplate(templateContents)).andReturn(templateParameters);
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");
+		// tagging
 		Tagging tagging = new Tagging();
+        tagging.setIndexTag(count);
+        // create stack
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, templateContents, stackName, creationParameters, monitor, tagging))
 			.andReturn(stackNameAndId);
+		// monitor
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
+		// notification
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
 		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString(), user);
-		EasyMock.expect(notificationSender.sendNotification(notification )).andReturn("sentMessageId");
+		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sentMessageId");
+		// success
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(
-				new Stack().withStackId(count.toString()).withStackName(stackName));
+                new Stack().withStackId(count.toString()).withStackName(stackName));
+		// index update
 		vpcRepository.setVpcIndexTag(projectAndEnv, count.toString());
+
 	}
 	
 	private List<File> loadFiles(File folder) {

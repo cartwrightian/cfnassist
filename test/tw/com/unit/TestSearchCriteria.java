@@ -1,15 +1,14 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
+import com.amazonaws.services.cloudformation.model.Stack;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.amazonaws.services.cloudformation.model.Stack;
-
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TestSearchCriteria {
 	
@@ -19,9 +18,9 @@ public class TestSearchCriteria {
 	private StackEntry entryD;
 	private SearchCriteria criteria;
 	private StackEntry entryE;
-	
+    private StackEntry entryF;
 
-	@Before
+    @Before
 	public void beforeEachTestRuns() {
 		Stack stack = new Stack();
 		entryA = new StackEntry("project", new EnvironmentTag("anEnv"), stack);
@@ -29,8 +28,17 @@ public class TestSearchCriteria {
 		entryC = new StackEntry("project", new EnvironmentTag("anEnv"), stack).setBuildNumber(42);
 		entryD = new StackEntry("OtherProject", new EnvironmentTag("anEnv"), stack);
 		entryE = new StackEntry("OtherProject", new EnvironmentTag("anEnv"), stack).setBuildNumber(42);
+		entryF = new StackEntry("project", new EnvironmentTag("anEnv"), stack).setIndex(98);
 		criteria = new SearchCriteria();
 	}
+
+    @Test
+    public void shouldMatchOnEnvProjectAndIndex() {
+        criteria.withEnv("anEnv").withIndex(98);
+
+        assertFalse(criteria.matches(entryA));
+        assertTrue(criteria.matches(entryF));
+    }
 
 	@Test
 	public void shouldMatchOnEnvAndProject() {

@@ -1,15 +1,21 @@
 package tw.com.entity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 public class SearchCriteria {
-	
-	private String env = "";
-	private Integer buildNumber = -1;
+    private static final Logger logger = LoggerFactory.getLogger(SearchCriteria.class);
+
+    private String env = "";
+	private Optional<Integer> buildNumber = Optional.empty();
 	private String project = "";
-	
-	public SearchCriteria() {	
+    private Optional<Integer> index = Optional.empty();
+
+    public SearchCriteria() {
 	}
 	
 	public SearchCriteria(ProjectAndEnv projectAndEnv) {
@@ -20,7 +26,7 @@ public class SearchCriteria {
 			project = projectAndEnv.getProject();
 		}
 		if (projectAndEnv.hasBuildNumber()) {
-			buildNumber = projectAndEnv.getBuildNumber();
+			buildNumber = Optional.of(projectAndEnv.getBuildNumber());
 		}
 	}
 
@@ -30,6 +36,7 @@ public class SearchCriteria {
 	}
 
 	public boolean matches(StackEntry entry) {
+        logger.debug("checking " + entry + " against " + this);
 		if (haveEnv()) {
 			if (!env.equals(entry.getEnvTag().getEnv())) {
 				return false;
@@ -39,7 +46,7 @@ public class SearchCriteria {
 			if (!entry.hasBuildNumber()) {
 				return false; // can't match if entry has no build number
 			}
-			if (!buildNumber.equals(entry.getBuildNumber())) {
+			if (!buildNumber.get().equals(entry.getBuildNumber())) {
 				return false;
 			}
 		}
@@ -48,12 +55,25 @@ public class SearchCriteria {
 				return false;
 			}
 		}
+        if (index.isPresent()) {
+            if (!entry.hasIndex()) {
+                return false;
+            }
+            if (!index.get().equals(entry.getIndex())) {
+                return false;
+            }
+        }
 		return true;
 	}
 
 	public SearchCriteria withBuild(int buildNumber) {
-		this.buildNumber = buildNumber;	
+		this.buildNumber = Optional.of(buildNumber);
 		return this;
+	}
+
+	public SearchCriteria withIndex(Integer index) {
+		this.index = Optional.of(index);
+        return this;
 	}
 
 	public SearchCriteria withProject(String project) {
@@ -66,7 +86,7 @@ public class SearchCriteria {
 	}
 
 	public boolean haveBuild() {
-		return buildNumber >= 0;
+		return buildNumber.isPresent();
 	}
 
 	private boolean haveEnv() {
@@ -82,49 +102,38 @@ public class SearchCriteria {
 		}
 		return matched;
 	}
-	
-	@Override
-	public String toString() {
-		return "SearchCriteria [env=" + env + ", buildNumber=" + buildNumber
-				+ ", project=" + project + "]";
-	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result
-				+ ((buildNumber == null) ? 0 : buildNumber.hashCode());
-		result = prime * result + ((env == null) ? 0 : env.hashCode());
-		result = prime * result + ((project == null) ? 0 : project.hashCode());
-		return result;
-	}
+    @Override
+    public String toString() {
+        return "SearchCriteria{" +
+                "env='" + env + '\'' +
+                ", buildNumber=" + buildNumber +
+                ", project='" + project + '\'' +
+                ", index=" + index +
+                '}';
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		SearchCriteria other = (SearchCriteria) obj;
-		if (buildNumber == null) {
-			if (other.buildNumber != null)
-				return false;
-		} else if (!buildNumber.equals(other.buildNumber))
-			return false;
-		if (env == null) {
-			if (other.env != null)
-				return false;
-		} else if (!env.equals(other.env))
-			return false;
-		if (project == null) {
-			if (other.project != null)
-				return false;
-		} else if (!project.equals(other.project))
-			return false;
-		return true;
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        SearchCriteria criteria = (SearchCriteria) o;
+
+        if (env != null ? !env.equals(criteria.env) : criteria.env != null) return false;
+        if (buildNumber != null ? !buildNumber.equals(criteria.buildNumber) : criteria.buildNumber != null)
+            return false;
+        if (project != null ? !project.equals(criteria.project) : criteria.project != null) return false;
+        return !(index != null ? !index.equals(criteria.index) : criteria.index != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = env != null ? env.hashCode() : 0;
+        result = 31 * result + (buildNumber != null ? buildNumber.hashCode() : 0);
+        result = 31 * result + (project != null ? project.hashCode() : 0);
+        result = 31 * result + (index != null ? index.hashCode() : 0);
+        return result;
+    }
 }

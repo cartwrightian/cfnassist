@@ -23,14 +23,16 @@ public class CfnRepository implements CloudFormRepository {
 	private static final String AWS_EC2_INSTANCE_TYPE = "AWS::EC2::Instance";
 	private static final long STATUS_CHECK_INTERVAL_MILLIS = 1000;
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
-	private CloudFormationClient formationClient;
-	
+
+    private final String project;
+    private CloudFormationClient formationClient;
 	private CloudRepository cloudRepository;
 	private StackCache stackCache;
 	
 	public CfnRepository(CloudFormationClient formationClient, CloudRepository cloudRepository, String project) {
 		this.formationClient = formationClient;
 		this.cloudRepository = cloudRepository;
+        this.project = project;
 		stackCache = new StackCache(formationClient, project);
 	}
 	
@@ -58,6 +60,8 @@ public class CfnRepository implements CloudFormRepository {
 		return results;
 	}
 
+
+
 	@Override
 	public String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId) {
 		logger.info(String.format("Looking for resource matching logicalID: %s for %s",logicalId, envTag));
@@ -68,7 +72,7 @@ public class CfnRepository implements CloudFormRepository {
 			String maybeHaveId = findPhysicalIdByLogicalId(envTag, stackName, logicalId);
 			if (maybeHaveId != null) {
 				logger.info(String.format(
-						"Found physicalID: %s for logical ID: %s in stack %s", maybeHaveId, logicalId, stackName));
+                        "Found physicalID: %s for logical ID: %s in stack %s", maybeHaveId, logicalId, stackName));
 				return maybeHaveId;
 			}
 		}
@@ -78,8 +82,8 @@ public class CfnRepository implements CloudFormRepository {
 
 	private String findPhysicalIdByLogicalId(EnvironmentTag envTag, String stackName, String logicalId) {
 		logger.info(String.format(
-				"Check Env %s and stack %s for logical ID %s", envTag,
-				stackName, logicalId));
+                "Check Env %s and stack %s for logical ID %s", envTag,
+                stackName, logicalId));
 
 		try {
 			List<StackResource> resources = stackCache.getResourcesForStack(stackName);
@@ -131,7 +135,7 @@ public class CfnRepository implements CloudFormRepository {
 		}
 		logger.info(String
 				.format("Stack status changed, status is now %s and reason (if any) was: '%s' ",
-						status, stack.getStackStatusReason()));
+                        status, stack.getStackStatusReason()));
 		return status;
 	}
 
@@ -245,6 +249,19 @@ public class CfnRepository implements CloudFormRepository {
 		// TODO we can only get here if stack is not tagged by cfn assist managed, should we throw?
 		return formationClient.describeStack(stackName);
 	}
+
+    @Override
+    public String getStacknameFor(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException {
+        SearchCriteria criteria = new SearchCriteria(new ProjectAndEnv(project, envTag.getEnv())).withIndex(index);
+
+        List<StackEntry> stacks = criteria.matches(stackCache.getEntries());
+        if (stacks.size()!=1) {
+            throw new WrongNumberOfStacksException(1, stacks.size());
+        }
+        StackEntry stack = stacks.get(0);
+        logger.info(String.format("Found stack %s for %s and index %s", stack, envTag, index));
+        return stack.getStackName();
+    }
 	
 	@Override
 	public List<StackEntry> getStacks() {

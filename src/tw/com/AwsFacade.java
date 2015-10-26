@@ -325,12 +325,13 @@ public class AwsFacade implements ProvidesZones {
 		logger.info("Current index is " + highestAppliedDelta);
 		
 		logger.info("Validation ok, apply template files");
+
 		for(File file : files) {
 			int deltaIndex = extractIndexFrom(file);
 			if (deltaIndex>highestAppliedDelta) {
 				logger.info(String.format("Apply template file: %s, index is %s", file.getAbsolutePath(), deltaIndex));
                 Tagging tagging = new Tagging();
-
+                tagging.setIndexTag(deltaIndex);
 				StackNameAndId stackId = applyTemplate(file, projAndEnv, cfnParams, tagging);
 				logger.info("Create/Updated stack " + stackId);
 				updatedStacks.add(stackId); 

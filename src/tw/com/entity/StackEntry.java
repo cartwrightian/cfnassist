@@ -7,13 +7,17 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
+import java.util.Optional;
+
 public class StackEntry {
 	private static final Logger logger = LoggerFactory.getLogger(StackEntry.class);
 
 	private EnvironmentTag environmentTag;
 	private Stack stack;
-	private Integer buildNumber = null;
 	private String project;
+
+    private Optional<Integer> buildNumber = Optional.empty();
+    private Optional<Integer> index = Optional.empty();
 
 	public StackEntry(String project, EnvironmentTag environmentTag, Stack stack) {
 		this.environmentTag = environmentTag;
@@ -23,8 +27,10 @@ public class StackEntry {
 	
 	@Override
 	public String toString() {
-		return String.format("StackEntry [env=%s, project=%s, stackName=%s, buildNumber='%s']", 
-				environmentTag.getEnv(), project, stack.getStackName(), buildNumber);
+		return String.format("StackEntry [env=%s, project=%s, stackName=%s, buildNumber='%s', index='%s']",
+				environmentTag.getEnv(), project, stack.getStackName(),
+                (buildNumber.isPresent()?buildNumber.get():""),
+                 (index.isPresent()?index.get():""));
 	}
 
 	public EnvironmentTag getEnvTag() {
@@ -36,12 +42,17 @@ public class StackEntry {
 	}
 
 	public Integer getBuildNumber() {
-		return buildNumber;
+        return buildNumber.get();
 	}
 	
 	public StackEntry setBuildNumber(Integer buildNumber) {
-		this.buildNumber = buildNumber;	
+		this.buildNumber = Optional.of(buildNumber);
 		return this;
+	}
+
+	public StackEntry setIndex(int index) {
+		this.index = Optional.of(index);
+        return this;
 	}
 	
 	@Override
@@ -93,8 +104,8 @@ public class StackEntry {
 		String withoutProject = fullName.replace(project, "");
 		
 		String withoutBuild = withoutProject;
-		if (buildNumber!=null) {
-			withoutBuild =  withoutProject.replace(buildNumber.toString(), "");
+		if (buildNumber.isPresent()) {
+			withoutBuild =  withoutProject.replace(buildNumber.get().toString(), "");
 		}
 		
 		String basename = withoutBuild.replace(environmentTag.getEnv(), "");
@@ -103,7 +114,14 @@ public class StackEntry {
 	}
 
 	public boolean hasBuildNumber() {
-		return buildNumber!=null;
+		return buildNumber.isPresent();
 	}
 
+    public Integer getIndex() {
+        return index.get();
+    }
+
+    public boolean hasIndex() {
+        return index.isPresent();
+    }
 }

@@ -3,26 +3,41 @@ package tw.com.entity;
 import com.amazonaws.services.cloudformation.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tw.com.AwsFacade;
 
 import java.util.Collection;
+import java.util.Optional;
 
 public class Tagging {
-    public static final String COMMENT_TAG = "CFN_COMMENT";
-
     private static final Logger logger = LoggerFactory.getLogger(Tagging.class);
 
+    public static final String COMMENT_TAG = "CFN_COMMENT";
+
     private String commentTag = "";
+    private Optional<Integer> indexTag = Optional.empty();
 
     public void addTagsTo(Collection<Tag> tagCollection) {
         if (!commentTag.isEmpty()) {
-            logger.info(String.format("Adding %s: %s", COMMENT_TAG, commentTag));
-            tagCollection.add(createTag(COMMENT_TAG, commentTag));
+            addTag(tagCollection, COMMENT_TAG, commentTag);
         }
+        if (indexTag.isPresent()) {
+            addTag(tagCollection, AwsFacade.INDEX_TAG, indexTag.get().toString());
+        }
+    }
+
+    private void addTag(Collection<Tag> tagCollection, String tag, String value) {
+        logger.info(String.format("Adding %s: %s", tag, value));
+        tagCollection.add(createTag(tag, value));
     }
 
     public void setCommentTag(String commentTag) {
         this.commentTag = commentTag;
     }
+
+    public void setIndexTag(Integer indexTag) {
+        this.indexTag = Optional.of(indexTag);
+    }
+
 
     private Tag createTag(String key, String value) {
         Tag tag = new Tag();
@@ -38,19 +53,23 @@ public class Tagging {
 
         Tagging tagging = (Tagging) o;
 
-        return !(commentTag != null ? !commentTag.equals(tagging.commentTag) : tagging.commentTag != null);
+        if (commentTag != null ? !commentTag.equals(tagging.commentTag) : tagging.commentTag != null) return false;
+        return !(indexTag != null ? !indexTag.equals(tagging.indexTag) : tagging.indexTag != null);
 
     }
 
     @Override
     public int hashCode() {
-        return commentTag != null ? commentTag.hashCode() : 0;
+        int result = commentTag != null ? commentTag.hashCode() : 0;
+        result = 31 * result + (indexTag != null ? indexTag.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
         return "Tagging{" +
                 "commentTag='" + commentTag + '\'' +
+                ", indexTag=" + indexTag +
                 '}';
     }
 }

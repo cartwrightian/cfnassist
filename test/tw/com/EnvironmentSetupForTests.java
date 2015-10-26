@@ -207,10 +207,10 @@ public class EnvironmentSetupForTests {
 		return requestResult.getObjectSummaries();
 	}
 
-	public static List<com.amazonaws.services.cloudformation.model.Tag> createExpectedStackTags(String comment, Integer build) {
+	public static List<com.amazonaws.services.cloudformation.model.Tag> createExpectedStackTags(String comment, Integer build, String project) {
 		List<com.amazonaws.services.cloudformation.model.Tag> expectedTags = new LinkedList<>();
 		expectedTags.add(createCfnStackTAG("CFN_ASSIST_ENV", "Test"));
-		expectedTags.add(createCfnStackTAG("CFN_ASSIST_PROJECT", "CfnAssist"));
+		expectedTags.add(createCfnStackTAG("CFN_ASSIST_PROJECT", project));
 		if (!comment.isEmpty()) {
 			expectedTags.add(createCfnStackTAG("CFN_COMMENT", comment));
 		}

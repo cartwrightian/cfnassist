@@ -16,6 +16,7 @@ public interface StackRepository {
 	List<StackEntry> getStacks();
 	List<StackEntry> getStacks(EnvironmentTag envTag);
 	List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name);
+	String getStacknameFor(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException;
 
 	String waitForStatusToChangeFrom(String stackName,
 									 StackStatus currentStatus, List<String> aborts)
@@ -42,5 +43,6 @@ public interface StackRepository {
 	void deleteStack(String stackName);
 	
 	List<TemplateParameter> validateStackTemplate(String templateContents);
+
 
 }

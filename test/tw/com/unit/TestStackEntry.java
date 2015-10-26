@@ -1,13 +1,13 @@
 package tw.com.unit;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-
 import com.amazonaws.services.cloudformation.model.Stack;
-
+import org.junit.Test;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.StackEntry;
+
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class TestStackEntry {
 	
@@ -27,5 +27,25 @@ public class TestStackEntry {
 		
 		assertEquals("TheBaseName",entry.getBaseName());
 	}
+
+	@Test
+    public void shouldHaveIndex() {
+        StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), new Stack().withStackName("theStackName"));
+        entry.setIndex(56);
+
+        assertTrue(entry.hasIndex());
+        assertEquals(new Integer(56), entry.getIndex());
+    }
+
+    @Test
+    public void shouldHaveEquality() {
+        StackEntry entryA = new StackEntry("project", new EnvironmentTag("Env1"), new Stack());
+        StackEntry entryB = new StackEntry("project", new EnvironmentTag("Env1"), new Stack());
+        StackEntry entryC = new StackEntry("project", new EnvironmentTag("Env2"), new Stack());
+
+        assertTrue(entryA.equals(entryB));
+        assertTrue(entryB.equals(entryA));
+        assertFalse(entryC.equals(entryA));
+    }
 
 }
