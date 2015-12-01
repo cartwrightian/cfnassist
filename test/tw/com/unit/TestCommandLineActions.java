@@ -196,7 +196,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		setFactoryExpectations();
 		
 		List<String> deleted = new LinkedList<>();
-		EasyMock.expect(facade.stepbackLastChange(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(deleted);
+		EasyMock.expect(facade.stepbackLastChangeFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(deleted);
 		
 		validate(CLIArgBuilder.stepback(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
 	}

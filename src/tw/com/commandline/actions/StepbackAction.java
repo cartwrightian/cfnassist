@@ -30,7 +30,7 @@ public class StepbackAction extends SharedAction {
 		String folder = args[0];
 		logger.info("Invoking stepback for " + projectAndEnv + " and folder " + folder);
 		AwsFacade aws = factory.createFacade();
-		aws.stepbackLastChange(folder, projectAndEnv);
+		aws.stepbackLastChangeFromFolder(folder, projectAndEnv);
 	}
 
 	@Override

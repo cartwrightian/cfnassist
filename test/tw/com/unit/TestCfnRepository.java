@@ -105,7 +105,55 @@ public class TestCfnRepository extends EasyMockSupport {
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
         replayAll();
-        String result = repository.getStacknameFor(envTag, 4);
+        String result = repository.getStacknameByIndex(envTag, 4);
+        verifyAll();
+
+        assertEquals("matchingStack", result);
+    }
+
+	@Test
+	public void shouldGetStackNameByUpdateIndexSingle() throws WrongNumberOfStacksException {
+        List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
+        List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
+        List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
+
+        tagsA.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("4"));
+        tagsB.add(new Tag().withKey(AwsFacade.INDEX_TAG).withValue("3"));
+        tagsC.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("5"));
+
+        List<Stack> list = new LinkedList<>();
+        list.add(new Stack().withStackName("matchingStack").withTags(tagsA).withStackId("anId"));
+        list.add(new Stack().withStackName("wrongStackB").withTags(tagsB));
+        list.add(new Stack().withStackName("wrongStackC").withTags(tagsC));
+
+        EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
+
+        replayAll();
+        String result = repository.getStacknameByIndex(envTag, 4);
+        verifyAll();
+
+        assertEquals("matchingStack", result);
+	}
+
+    @Test
+    public void shouldGetStackNameByUpdateIndexMultiple() throws WrongNumberOfStacksException {
+        List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
+        List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
+        List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
+
+        tagsA.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("3,4,8"));
+        tagsB.add(new Tag().withKey(AwsFacade.INDEX_TAG).withValue("2"));
+        tagsC.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("5,6"));
+
+        List<Stack> list = new LinkedList<>();
+        list.add(new Stack().withStackName("matchingStack").withTags(tagsA).withStackId("anId"));
+        list.add(new Stack().withStackName("wrongStackB").withTags(tagsB));
+        list.add(new Stack().withStackName("wrongStackC").withTags(tagsC));
+
+        EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
+
+        replayAll();
+        String result = repository.getStacknameByIndex(envTag, 4);
         verifyAll();
 
         assertEquals("matchingStack", result);

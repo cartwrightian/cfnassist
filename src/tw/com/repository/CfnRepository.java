@@ -72,7 +72,7 @@ public class CfnRepository implements CloudFormRepository {
 			String maybeHaveId = findPhysicalIdByLogicalId(envTag, stackName, logicalId);
 			if (maybeHaveId != null) {
 				logger.info(String.format(
-                        "Found physicalID: %s for logical ID: %s in stack %s", maybeHaveId, logicalId, stackName));
+						"Found physicalID: %s for logical ID: %s in stack %s", maybeHaveId, logicalId, stackName));
 				return maybeHaveId;
 			}
 		}
@@ -82,8 +82,8 @@ public class CfnRepository implements CloudFormRepository {
 
 	private String findPhysicalIdByLogicalId(EnvironmentTag envTag, String stackName, String logicalId) {
 		logger.info(String.format(
-                "Check Env %s and stack %s for logical ID %s", envTag,
-                stackName, logicalId));
+				"Check Env %s and stack %s for logical ID %s", envTag,
+				stackName, logicalId));
 
 		try {
 			List<StackResource> resources = stackCache.getResourcesForStack(stackName);
@@ -135,7 +135,7 @@ public class CfnRepository implements CloudFormRepository {
 		}
 		logger.info(String
 				.format("Stack status changed, status is now %s and reason (if any) was: '%s' ",
-                        status, stack.getStackStatusReason()));
+						status, stack.getStackStatusReason()));
 		return status;
 	}
 
@@ -251,10 +251,15 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
     @Override
-    public String getStacknameFor(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException {
-        SearchCriteria criteria = new SearchCriteria(new ProjectAndEnv(project, envTag.getEnv())).withIndex(index);
+    public String getStacknameByIndex(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException {
+        SearchCriteria criteriaForIndex = new SearchCriteria(new ProjectAndEnv(project, envTag.getEnv())).withIndex(index);
 
-        List<StackEntry> stacks = criteria.matches(stackCache.getEntries());
+        List<StackEntry> stacks = criteriaForIndex.matches(stackCache.getEntries());
+        if (stacks.isEmpty()) {
+            SearchCriteria criteria = new SearchCriteria(new ProjectAndEnv(project, envTag.getEnv())).
+                    withUpdateIndex(index);
+            stacks = criteria.matches(stackCache.getEntries());
+        }
         if (stacks.size()!=1) {
             throw new WrongNumberOfStacksException(1, stacks.size());
         }
@@ -262,7 +267,7 @@ public class CfnRepository implements CloudFormRepository {
         logger.info(String.format("Found stack %s for %s and index %s", stack, envTag, index));
         return stack.getStackName();
     }
-	
+
 	@Override
 	public List<StackEntry> getStacks() {
 		return stackCache.getEntries();

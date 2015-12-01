@@ -1,13 +1,14 @@
 package tw.com.entity;
 
 
+import com.amazonaws.services.cloudformation.model.Stack;
+import com.amazonaws.services.cloudformation.model.StackStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 public class StackEntry {
 	private static final Logger logger = LoggerFactory.getLogger(StackEntry.class);
@@ -18,6 +19,7 @@ public class StackEntry {
 
     private Optional<Integer> buildNumber = Optional.empty();
     private Optional<Integer> index = Optional.empty();
+	private Set<Integer> updateIndex = new HashSet<>();
 
 	public StackEntry(String project, EnvironmentTag environmentTag, Stack stack) {
 		this.environmentTag = environmentTag;
@@ -124,4 +126,17 @@ public class StackEntry {
     public boolean hasIndex() {
         return index.isPresent();
     }
+
+	public StackEntry setUpdateIndex(Set<Integer> updateIndex) {
+		this.updateIndex = updateIndex;
+		return this;
+	}
+
+	public boolean hasUpdateIndex() {
+		return  !updateIndex.isEmpty();
+	}
+
+	public Set<Integer> getUpdateIndex() {
+		return updateIndex;
+	}
 }

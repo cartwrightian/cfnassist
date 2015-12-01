@@ -5,6 +5,10 @@ import org.junit.Test;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.StackEntry;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -35,6 +39,16 @@ public class TestStackEntry {
 
         assertTrue(entry.hasIndex());
         assertEquals(new Integer(56), entry.getIndex());
+    }
+
+    @Test
+    public void shouldHaveUpdateIndex() {
+        StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), new Stack().withStackName("theStackName"));
+        Set<Integer> updates = new HashSet<>(Arrays.asList(42));
+        entry.setUpdateIndex(updates);
+
+        assertTrue(entry.hasUpdateIndex());
+        assertEquals(new HashSet<>(Arrays.asList(42)), entry.getUpdateIndex());
     }
 
     @Test

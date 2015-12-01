@@ -29,23 +29,28 @@ import java.net.InetAddress;
 import java.nio.charset.Charset;
 import java.util.*;
 
+import static java.lang.String.format;
+
 
 public class AwsFacade implements ProvidesZones {
 
-	private static final String DELTA_EXTENSTION = ".delta";
+    @Deprecated
+	private static final String UPDATE_EXTENSTION_LEGACY = ".delta"; // use update instead
+    private static final String UPDATE_EXTENSTION = ".update";
 
-	private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
+    private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
 	
 	public static final String ENVIRONMENT_TAG = "CFN_ASSIST_ENV";
 	public static final String PROJECT_TAG = "CFN_ASSIST_PROJECT"; 
 	public static final String INDEX_TAG = "CFN_ASSIST_DELTA";
-	public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
+    public static final String UPDATE_INDEX_TAG = "CFN_ASSIST_UPDATE";
+    public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
 	public static final String TYPE_TAG = "CFN_ASSIST_TYPE";
 	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
 	
 	private static final String PARAMETER_STACKNAME = "stackname";
-	
-	private VpcRepository vpcRepository;
+
+    private VpcRepository vpcRepository;
 	private CloudFormRepository cfnRepository;
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
@@ -70,7 +75,7 @@ public class AwsFacade implements ProvidesZones {
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
 		List<TemplateParameter> parameters = cfnRepository.validateStackTemplate(templateBody);
-		logger.info(String.format("Found %s parameters", parameters.size()));
+		logger.info(format("Found %s parameters", parameters.size()));
 		return parameters;
 	}
 
@@ -98,7 +103,7 @@ public class AwsFacade implements ProvidesZones {
 
     private StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv, Collection<Parameter> userParameters,
                                         Tagging tagging) throws CfnAssistException, IOException, InterruptedException {
-        logger.info(String.format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));
+        logger.info(format("Applying template %s for %s", file.getAbsoluteFile(), projAndEnv));
         Vpc vpcForEnv = findVpcForEnv(projAndEnv);
         List<TemplateParameter> declaredParameters = validateTemplate(file);
 
@@ -114,7 +119,7 @@ public class AwsFacade implements ProvidesZones {
 
         String contents = loadFileContents(file);
 
-        if (isDelta(file)) {
+        if (isUpdate(file)) {
             logger.info("Request to update a stack, filename is " + file.getAbsolutePath());
             return updateStack(projAndEnv, userParameters, declaredParameters, contents, parameterFactory);
         } else {
@@ -122,9 +127,13 @@ public class AwsFacade implements ProvidesZones {
         }
     }
 
+	private boolean isUpdate(File file) {
+        String name = file.getName();
+        return (name.contains(UPDATE_EXTENSTION) || name.contains(UPDATE_EXTENSTION_LEGACY));
+	}
 
-	private boolean isDelta(File file) {
-		return (file.getName().contains(DELTA_EXTENSTION));
+	private boolean updateSuffix(String name) {
+		return name.endsWith(UPDATE_EXTENSTION) || name.endsWith(UPDATE_EXTENSTION_LEGACY);
 	}
 
 	private StackNameAndId updateStack(ProjectAndEnv projAndEnv,
@@ -155,12 +164,12 @@ public class AwsFacade implements ProvidesZones {
 				if ((defaultValue!=null) && (!defaultValue.isEmpty())) {
 					return createName(projAndEnv, defaultValue);
 				} else {
-					logger.error(String.format("Found parameter %s but no default given",PARAMETER_STACKNAME));
+					logger.error(format("Found parameter %s but no default given", PARAMETER_STACKNAME));
 					throw new InvalidStackParameterException(PARAMETER_STACKNAME); 
 				}
 			}
 		}
-		logger.error(String.format("Unable to find parameter %s which is required to peform a stack update", PARAMETER_STACKNAME));
+		logger.error(format("Unable to find parameter %s which is required to peform a stack update", PARAMETER_STACKNAME));
 		throw new InvalidStackParameterException(PARAMETER_STACKNAME);
 	}
 
@@ -245,7 +254,7 @@ public class AwsFacade implements ProvidesZones {
 			logger.error("Unable to find VPC tagged as environment:" + projAndEnv);
 			throw new InvalidStackParameterException(projAndEnv.toString());
 		}
-		logger.info(String.format("Found VPC %s corresponding to %s", vpcForEnv.getVpcId(), projAndEnv));
+		logger.info(format("Found VPC %s corresponding to %s", vpcForEnv.getVpcId(), projAndEnv));
 		return vpcForEnv;
 	}
 
@@ -254,7 +263,7 @@ public class AwsFacade implements ProvidesZones {
 		// note: aws only allows [a-zA-Z][-a-zA-Z0-9]* in stacknames
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
-		if (name.endsWith(DELTA_EXTENSTION)) {
+		if (updateSuffix(name)) {
 			logger.debug("Detected delta filename, remove additional extension");
 			name = FilenameUtils.removeExtension(name);
 		}
@@ -329,7 +338,7 @@ public class AwsFacade implements ProvidesZones {
 		for(File file : files) {
 			int deltaIndex = extractIndexFrom(file);
 			if (deltaIndex>highestAppliedDelta) {
-				logger.info(String.format("Apply template file: %s, index is %s", file.getAbsolutePath(), deltaIndex));
+				logger.info(format("Apply template file: %s, index is %s", file.getAbsolutePath(), deltaIndex));
                 Tagging tagging = new Tagging();
                 tagging.setIndexTag(deltaIndex);
 				StackNameAndId stackId = applyTemplate(file, projAndEnv, cfnParams, tagging);
@@ -337,7 +346,7 @@ public class AwsFacade implements ProvidesZones {
 				updatedStacks.add(stackId); 
 				setDeltaIndex(projAndEnv, deltaIndex);
 			} else {
-				logger.info(String.format("Skipping file %s as already applied, index was %s", file.getAbsolutePath(), deltaIndex));
+				logger.info(format("Skipping file %s as already applied, index was %s", file.getAbsolutePath(), deltaIndex));
 			}		
 		}
 		
@@ -361,8 +370,28 @@ public class AwsFacade implements ProvidesZones {
 		}
 		return folder;
 	}
-	
-	public List<String> stepbackLastChange(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
+
+    public List<String> stepbackLastChange(ProjectAndEnv projAndEnv) throws CfnAssistException {
+        DeletionsPending pending = new DeletionsPending();
+
+        int highestAppliedDelta = getDeltaIndex(projAndEnv);
+        logger.info("Current delta is " + highestAppliedDelta);
+        SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);
+
+        try {
+            String stackName = cfnRepository.getStacknameByIndex(projAndEnv.getEnvTag(), highestAppliedDelta);
+            StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
+            cfnRepository.deleteStack(stackName);
+            pending.add(highestAppliedDelta,id);
+        }
+        catch (WrongNumberOfStacksException notFound) {
+            logger.error("Could not find stack with correct index to delete, index was "+highestAppliedDelta, notFound);
+        }
+        return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
+    }
+
+    @Deprecated
+	public List<String> stepbackLastChangeFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -382,7 +411,7 @@ public class AwsFacade implements ProvidesZones {
 		SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);	
 		String stackName = createStackName(toDelete, projAndEnv);
 
-		if (isDelta(toDelete)) {
+		if (isUpdate(toDelete)) {
 			logger.warn("Rolling back a stack change/delta does nothing except update delta index on VPC");
 			setsDeltaIndex.setDeltaIndex(deltaIndex-1);	
 			return new LinkedList<>();
@@ -406,8 +435,33 @@ public class AwsFacade implements ProvidesZones {
 		}
 		return toDelete;
 	}
-	
-	public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
+
+
+    public List<String> rollbackTemplatesByIndexTag(ProjectAndEnv projAndEnv) throws CfnAssistException {
+        DeletionsPending pending = new DeletionsPending();
+        int highestAppliedDelta = getDeltaIndex(projAndEnv);
+
+        while (highestAppliedDelta>0) {
+            try {
+                logger.info("Current delta is " + highestAppliedDelta);
+                String stackToDelete = cfnRepository.getStacknameByIndex(projAndEnv.getEnvTag(), highestAppliedDelta);
+                StackNameAndId id = cfnRepository.getStackNameAndId(stackToDelete);
+                logger.info(format("Found stack %s matching index", id));
+                cfnRepository.deleteStack(stackToDelete);
+                pending.add(highestAppliedDelta,id);
+                highestAppliedDelta--;
+            }
+            catch (WrongNumberOfStacksException notFound) {
+                logger.error("Unable to find a stack matching index " + highestAppliedDelta, notFound);
+                break;
+            }
+        }
+        SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);
+        return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
+    }
+
+    @Deprecated
+    public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
 		File folder = validFolder(folderPath);
 		List<File> files = loadFiles(folder);
@@ -422,19 +476,19 @@ public class AwsFacade implements ProvidesZones {
 		}
 		
 		for(File file : files) {
-			if (!isDelta(file)) {
+			if (!isUpdate(file)) {
 				int deltaIndex = extractIndexFrom(file);
 				String stackName = createStackName(file, projAndEnv);
 				if (deltaIndex>highestAppliedDelta) {
-					logger.warn(String.format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
+					logger.warn(format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
 				} else {			
-					logger.info(String.format("About to request deletion of stackname %s", stackName));
+					logger.info(format("About to request deletion of stackname %s", stackName));
 					StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
 					cfnRepository.deleteStack(stackName);
 					pending.add(deltaIndex,id);
 				}
 			} else {
-				logger.info(String.format("Skipping file %s as it is a stack update file",file.getAbsolutePath()));
+				logger.info(format("Skipping file %s as it is a stack update file", file.getAbsolutePath()));
 			}
 		}
 		SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);	
@@ -478,7 +532,7 @@ public class AwsFacade implements ProvidesZones {
 	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws CfnAssistException {
 		Vpc result = vpcRepository.getCopyOfVpc(projectAndEnvToSet);
 		if (result!=null) {
-			logger.error(String.format("Managed to find vpc already present with tags %s and id %s", projectAndEnvToSet, result.getVpcId()));
+			logger.error(format("Managed to find vpc already present with tags %s and id %s", projectAndEnvToSet, result.getVpcId()));
 			throw new TagsAlreadyInit(targetVpcId);
 		}	
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
@@ -494,11 +548,11 @@ public class AwsFacade implements ProvidesZones {
 	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
-		if (name.endsWith(DELTA_EXTENSTION)) {
+		if (updateSuffix(name)) {
 			throw new InvalidStackParameterException("Cannot invoke for .delta files");
 		}
-		logger.info(String.format("Checking for non-instance-associated stacks for %s and name %s. Will use %s:%s if >1 ELB",
-				projectAndEnv, name, AwsFacade.TYPE_TAG,typeTag));
+		logger.info(format("Checking for non-instance-associated stacks for %s and name %s. Will use %s:%s if >1 ELB",
+                projectAndEnv, name, AwsFacade.TYPE_TAG, typeTag));
 
 		List<StackEntry> candidateStacks = cfnRepository.getStacksMatching(projectAndEnv.getEnvTag(), name);
 		
@@ -513,12 +567,12 @@ public class AwsFacade implements ProvidesZones {
 		for(StackEntry entry : candidateStacks) {
 			List<String> ids = cfnRepository.getInstancesFor(entry.getStackName());
 			if (ids.isEmpty()) {
-				logger.warn(String.format("Stack %s has no instances at all, will not be deleted", entry.getStackName()));
+				logger.warn(format("Stack %s has no instances at all, will not be deleted", entry.getStackName()));
 			} else {
 				if (containsAny(regInstanceIds,ids)) {
-					logger.info(String.format("Stack %s contains instances registered to LB, will not be deleted", entry.getStackName()));
+					logger.info(format("Stack %s contains instances registered to LB, will not be deleted", entry.getStackName()));
 				} else {
-					logger.warn(String.format("Stack %s has no registered instances, will be deleted", entry.getStackName()));
+					logger.warn(format("Stack %s has no registered instances, will be deleted", entry.getStackName()));
 					toDelete.add(entry);
 				}
 			}
@@ -560,13 +614,13 @@ public class AwsFacade implements ProvidesZones {
 	}
 
 	public List<Instance> updateELBToInstancesMatchingBuild(ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
-		logger.info(String.format("Update instances for ELB to match %s and type tag %s", projectAndEnv, typeTag));
+		logger.info(format("Update instances for ELB to match %s and type tag %s", projectAndEnv, typeTag));
 		return elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);	
 	}
 
 	public void whitelistCurrentIpForPortToElb(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {		
 		InetAddress address = hasCurrentIp.getCurrentIp();
-		logger.info(String.format("Request to add %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
+		logger.info(format("Request to add %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
 		String groupId = getSecGroupIdForELB(projectAndEnv, type);
 		logger.info("Found sec group: " + groupId);
 		cloudRepository.updateAddIpAndPortToSecGroup(groupId, address, port);
@@ -574,7 +628,7 @@ public class AwsFacade implements ProvidesZones {
 
 	public void blacklistCurrentIpForPortToElb(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {
 		InetAddress address = hasCurrentIp.getCurrentIp();
-		logger.info(String.format("Request to remove %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
+		logger.info(format("Request to remove %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
 		String groupId = getSecGroupIdForELB(projectAndEnv, type);
 		logger.info("Found sec group: " + groupId);
 		cloudRepository.updateRemoveIpAndPortFromSecGroup(groupId, address, port);
@@ -613,6 +667,5 @@ public class AwsFacade implements ProvidesZones {
     public Map<String, AvailabilityZone> getZones() {
        return cloudRepository.getZones(regionName);
     }
-
 
 }

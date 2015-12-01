@@ -7,6 +7,10 @@ import tw.com.entity.EnvironmentTag;
 import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -19,6 +23,7 @@ public class TestSearchCriteria {
 	private SearchCriteria criteria;
 	private StackEntry entryE;
     private StackEntry entryF;
+    private StackEntry entryG;
 
     @Before
 	public void beforeEachTestRuns() {
@@ -29,8 +34,18 @@ public class TestSearchCriteria {
 		entryD = new StackEntry("OtherProject", new EnvironmentTag("anEnv"), stack);
 		entryE = new StackEntry("OtherProject", new EnvironmentTag("anEnv"), stack).setBuildNumber(42);
 		entryF = new StackEntry("project", new EnvironmentTag("anEnv"), stack).setIndex(98);
+        Set<Integer> updates= new HashSet(Arrays.asList(140));
+        entryG = new StackEntry("project", new EnvironmentTag("anEnv"), stack).setUpdateIndex(updates);
 		criteria = new SearchCriteria();
 	}
+
+    @Test
+    public void shouldMatchOnEnvProjectAndUpdateIndex() {
+        criteria.withEnv("anEnv").withUpdateIndex(140);
+
+        assertFalse(criteria.matches(entryF));
+        assertTrue(criteria.matches(entryG));
+    }
 
     @Test
     public void shouldMatchOnEnvProjectAndIndex() {

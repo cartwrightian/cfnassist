@@ -11,9 +11,10 @@ public class SearchCriteria {
     private static final Logger logger = LoggerFactory.getLogger(SearchCriteria.class);
 
     private String env = "";
-	private Optional<Integer> buildNumber = Optional.empty();
-	private String project = "";
+    private String project = "";
+    private Optional<Integer> buildNumber = Optional.empty();
     private Optional<Integer> index = Optional.empty();
+    private Optional<Integer> updateIndex = Optional.empty();
 
     public SearchCriteria() {
 	}
@@ -63,6 +64,14 @@ public class SearchCriteria {
                 return false;
             }
         }
+        if (updateIndex.isPresent()) {
+            if (!entry.hasUpdateIndex()) {
+                return false;
+            }
+            if (!entry.getUpdateIndex().contains(updateIndex.get())) {
+                return false;
+            }
+        }
 		return true;
 	}
 
@@ -73,6 +82,11 @@ public class SearchCriteria {
 
 	public SearchCriteria withIndex(Integer index) {
 		this.index = Optional.of(index);
+        return this;
+	}
+
+	public SearchCriteria withUpdateIndex(int index) {
+        this.updateIndex = Optional.of(index);
         return this;
 	}
 
@@ -136,4 +150,5 @@ public class SearchCriteria {
         result = 31 * result + (index != null ? index.hashCode() : 0);
         return result;
     }
+
 }

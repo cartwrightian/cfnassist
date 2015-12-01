@@ -12,10 +12,7 @@ import tw.com.entity.StackResources;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.providers.CloudFormationClient;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StackCache {
 	private static final Logger logger = LoggerFactory.getLogger(StackCache.class);
@@ -77,7 +74,7 @@ public class StackCache {
 				}
 				if (count==0) break; // small optimisation 
 			}
-            String index = keyValues.get(AwsFacade.INDEX_TAG);
+            //String index = keyValues.get(AwsFacade.INDEX_TAG);
             addEntryIfProjectAndEnvMatches(stack, env, proj, build, keyValues);
 		}		
 	}
@@ -104,10 +101,10 @@ public class StackCache {
 			entry.setBuildNumber(build);
 		}
         if (keyValues.containsKey(AwsFacade.INDEX_TAG)) {
-            String index = keyValues.get(AwsFacade.INDEX_TAG);
-            int number = Integer.parseInt(index);
-            logger.info(String.format("Saving associated index (%s) into stack %s", number, stackName));
-            entry.setIndex(number);
+            addIndexTag(keyValues, stackName, entry);
+        }
+		if (keyValues.containsKey(AwsFacade.UPDATE_INDEX_TAG)) {
+            addUpdateIndexTag(keyValues, entry);
         }
 		if (theEntries.contains(entry)) {
 			theEntries.remove(entry);
@@ -118,8 +115,25 @@ public class StackCache {
 		stackResources.removeResources(stackName);
 		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));			 
 	}
-	
-	public Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
+
+    private void addUpdateIndexTag(Map<String, String> keyValues, StackEntry entry) {
+        String raw = keyValues.get(AwsFacade.UPDATE_INDEX_TAG);
+        String[] values = raw.split(",");
+        Set<Integer> updateIndexs = new HashSet<>();
+        for (String value : values) {
+            updateIndexs.add(Integer.parseInt(value));
+        }
+        entry.setUpdateIndex(updateIndexs);
+    }
+
+    private void addIndexTag(Map<String, String> keyValues, String stackName, StackEntry entry) {
+        String index = keyValues.get(AwsFacade.INDEX_TAG);
+        int number = Integer.parseInt(index);
+        logger.info(String.format("Saving associated index (%s) into stack %s", number, stackName));
+        entry.setIndex(number);
+    }
+
+    public Stack updateRepositoryFor(StackNameAndId id) throws WrongNumberOfStacksException {
 		logger.info("Update stack repository for stack: " + id);
 		Stack stack = formationClient.describeStack(id.getStackName());
 		

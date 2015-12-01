@@ -1,23 +1,17 @@
 package tw.com.commandline.actions;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.OptionBuilder;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.TooManyELBException;
-import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
 
 public class TidyOldStacksAction extends SharedAction {
 	
@@ -32,10 +26,9 @@ public class TidyOldStacksAction extends SharedAction {
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... args) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException, MissingArgumentException,
-			TooManyELBException {
+			String... args) throws
+			IOException,
+			InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade facade = factory.createFacade();
 		File file = new File(args[0]);
 		facade.tidyNonLBAssocStacks(file, projectAndEnv, args[1]);

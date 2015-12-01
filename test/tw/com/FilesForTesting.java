@@ -19,8 +19,8 @@ public class FilesForTesting {
 	public static final String ELB_AND_INSTANCE = DIR.resolve("elbAndInstance.json").toString();
 	
 	public static final String ORDERED_SCRIPTS_FOLDER = DIR.resolve("orderedScripts").toString();
-	public static final Path ORDERED_SCRIPTS_WITH_DELTAS_FOLDER = DIR.resolve("orderedScriptsWithDelta");
-	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_DELTAS_FOLDER.resolve("02createSubnet.delta.json").toString();
+	public static final Path ORDERED_SCRIPTS_WITH_UPDATES_FOLDER = DIR.resolve("orderedScriptsWithUpdate");
+	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.resolve("02createSubnet.update.json").toString();
 
 	public static final String STACK_IAM_CAP = DIR.resolve("simpleIAMStack.json").toString();
 
