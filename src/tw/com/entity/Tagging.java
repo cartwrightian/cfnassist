@@ -15,6 +15,7 @@ public class Tagging {
 
     private String commentTag = "";
     private Optional<Integer> indexTag = Optional.empty();
+    private Optional<Integer> updateIndex = Optional.empty();
 
     public void addTagsTo(Collection<Tag> tagCollection) {
         if (!commentTag.isEmpty()) {
@@ -38,12 +39,24 @@ public class Tagging {
         this.indexTag = Optional.of(indexTag);
     }
 
+    public void setUpdateIndexTag(int updateIndex) {
+        this.updateIndex = Optional.of(updateIndex);
+    }
 
     private Tag createTag(String key, String value) {
         Tag tag = new Tag();
         tag.setKey(key);
         tag.setValue(value);
         return tag;
+    }
+
+    @Override
+    public String toString() {
+        return "Tagging{" +
+                "commentTag='" + commentTag + '\'' +
+                ", indexTag=" + indexTag +
+                ", updateIndex=" + updateIndex +
+                '}';
     }
 
     @Override
@@ -54,7 +67,8 @@ public class Tagging {
         Tagging tagging = (Tagging) o;
 
         if (commentTag != null ? !commentTag.equals(tagging.commentTag) : tagging.commentTag != null) return false;
-        return !(indexTag != null ? !indexTag.equals(tagging.indexTag) : tagging.indexTag != null);
+        if (indexTag != null ? !indexTag.equals(tagging.indexTag) : tagging.indexTag != null) return false;
+        return !(updateIndex != null ? !updateIndex.equals(tagging.updateIndex) : tagging.updateIndex != null);
 
     }
 
@@ -62,14 +76,7 @@ public class Tagging {
     public int hashCode() {
         int result = commentTag != null ? commentTag.hashCode() : 0;
         result = 31 * result + (indexTag != null ? indexTag.hashCode() : 0);
+        result = 31 * result + (updateIndex != null ? updateIndex.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public String toString() {
-        return "Tagging{" +
-                "commentTag='" + commentTag + '\'' +
-                ", indexTag=" + indexTag +
-                '}';
     }
 }

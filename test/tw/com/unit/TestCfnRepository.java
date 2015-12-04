@@ -105,10 +105,10 @@ public class TestCfnRepository extends EasyMockSupport {
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
         replayAll();
-        String result = repository.getStacknameByIndex(envTag, 4);
+        StackEntry result = repository.getStacknameByIndex(envTag, 4);
         verifyAll();
 
-        assertEquals("matchingStack", result);
+        assertEquals("matchingStack", result.getStackName());
     }
 
 	@Test
@@ -129,10 +129,10 @@ public class TestCfnRepository extends EasyMockSupport {
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
         replayAll();
-        String result = repository.getStacknameByIndex(envTag, 4);
+        StackEntry result = repository.getStacknameByIndex(envTag, 4);
         verifyAll();
 
-        assertEquals("matchingStack", result);
+        assertEquals("matchingStack", result.getStackName());
 	}
 
     @Test
@@ -153,10 +153,10 @@ public class TestCfnRepository extends EasyMockSupport {
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
         replayAll();
-        String result = repository.getStacknameByIndex(envTag, 4);
+        StackEntry result = repository.getStacknameByIndex(envTag, 4);
         verifyAll();
 
-        assertEquals("matchingStack", result);
+        assertEquals("matchingStack", result.getStackName());
     }
 	
 	@Test 
@@ -347,46 +347,6 @@ public class TestCfnRepository extends EasyMockSupport {
 		assertEquals(instanceId, result.get(0));
 		verifyAll();
 	}
-	
-	// into SearchCriteria
-//	@Test
-//	public void shouldFindInstancesForProjectAndEnvNoBuildNumberInStackNameNoEnvInQuery() throws CfnAssistException {
-//		String stackName = "testStack";
-//		String stackId = "theIdOfTheStack";
-//		String instanceId = "theInstanceId";
-//		
-//		queryForInstancesExpectations(stackName, stackId, instanceId, "", noBuildNumber);
-//		
-//		replayAll();
-//		ProjectAndEnv projectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, "");
-//		SearchCriteria criteria = new SearchCriteria().withProject(EnvironmentSetupForTests.PROJECT);
-//		List<String> result = repository.getAllInstancesFor(projectAndEnv);
-//		assertEquals(result.size(),1);
-//		result = repository.getAllInstancesFor(projectAndEnv); // cached call
-//		assertEquals(result.size(),1);
-//
-//		assertEquals(instanceId, result.get(0));
-//		verifyAll();
-//	}
-	
-	// into SearchCriteria
-//	@Test
-//	public void shouldFindInstancesForProjectAndEnvWithBuildNumberInStackName() throws CfnAssistException {
-//		String stackName = "testStack";
-//		String stackId = "theIdOfTheStack";
-//		String instanceId = "theInstanceId";
-//		
-//		queryForInstancesExpectations(stackName, stackId, instanceId, "", 42 );
-//		
-//		replayAll();
-//		List<String> result = repository.getAllInstancesFor(EnvironmentSetupForTests.getMainProjectAndEnv());
-//		assertEquals(result.size(),1);
-//		result = repository.getAllInstancesFor(EnvironmentSetupForTests.getMainProjectAndEnv()); // cached call
-//		assertEquals(result.size(),1);
-//
-//		assertEquals(instanceId, result.get(0));
-//		verifyAll();
-//	}
 
 	private void queryForInstancesExpectations(String stackName, String stackId, String instanceId, String comment, Integer build) {
 		List<StackResource> resources = new LinkedList<>();
@@ -537,12 +497,13 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStack() throws NotReadyException, WrongNumberOfStacksException, InvalidStackParameterException {
+	public void shouldUpdateStack() throws CfnAssistException {
 		// this smells, at least until we pull cache updates down into repository
 		
 		Collection<Parameter> parameters = new LinkedList<>();
 		MonitorStackEvents monitor = new PollingStackMonitor(repository);
-		EasyMock.expect(formationClient.updateStack("contents", parameters, monitor, "stackName")).andReturn(new StackNameAndId("stackName", "someStackId"));
+        EasyMock.expect(formationClient.updateStack("contents", parameters, monitor, "stackName")).
+                andReturn(new StackNameAndId("stackName", "someStackId"));
 		replayAll();
 		
 		StackNameAndId result = repository.updateStack("contents", parameters, monitor, "stackName");
@@ -552,12 +513,13 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStackWithSNS() throws NotReadyException, WrongNumberOfStacksException, InvalidStackParameterException {
+	public void shouldUpdateStackWithSNS() throws CfnAssistException {
 		// this smells, at least until we pull cache updates down into repository
 		SNSMonitor snsMonitor = createMock(SNSMonitor.class);
 		
 		Collection<Parameter> parameters = new LinkedList<>();
-		EasyMock.expect(formationClient.updateStack("contents", parameters, snsMonitor, "stackName")).andReturn(new StackNameAndId("stackName", "someStackId"));
+		EasyMock.expect(formationClient.updateStack("contents", parameters, snsMonitor, "stackName"))
+                .andReturn(new StackNameAndId("stackName", "someStackId"));
 		replayAll();
 		
 		StackNameAndId result = repository.updateStack("contents", parameters, snsMonitor, "stackName");

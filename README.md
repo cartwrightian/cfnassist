@@ -25,7 +25,7 @@ Key Features
 ------------
 * Works with the existing syntax of cloud formation json, it just uses some simple conventions for parameters
 * Implements a simple Project/Environment abstraction on top of AWS VPCs  (i.e. cfnassit/qa or cfnassit/dev)
-* Manages application of create and delta cloudformation scripts against particular Projects and Environments
+* Manages application of create and update cloudformation scripts against particular Projects and Environments
 * Tracks which scripts need to be applied to projects and environments using a simple delta tracking mechanism borrowed
 from [dbdeploy](http://dbdeploy.com/)
 * Autopopulates physical id's based on logical identifiers plus the project & environment,
@@ -163,7 +163,7 @@ You should also be able to see all the associated stacks using
 
 *Create or Update?*
 
-By default cfnassit invokes cloud formation 'create', but if the filename contains ends with `.delta.json` it will do a cloud formation 'update' 
+By default cfnassit invokes cloud formation 'create', but if the filename contains ends with `.update.json` (or `.delta.json`) it will do a cloud formation 'update'
 instead. 
 As described above cfnassit will keep track of which creates and updates been applied. The semantics of cloud formation updates are complex
 and specific to the resource type involved, you need to **check the AWS documents** especially as some updates can actually result in a resource

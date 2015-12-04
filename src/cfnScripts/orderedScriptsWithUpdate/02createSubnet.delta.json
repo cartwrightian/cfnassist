@@ -22,7 +22,6 @@
 			"Default":"01createSubnet",
 			"Description":"The name of the stack to apply this update to"
 		}
-		
 	},
 	"Resources":{
 		"webSubnet":{

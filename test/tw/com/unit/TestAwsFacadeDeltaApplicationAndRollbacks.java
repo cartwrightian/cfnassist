@@ -9,8 +9,8 @@ import com.amazonaws.services.identitymanagement.model.User;
 import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import tw.com.*;
@@ -32,13 +32,8 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
-public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
+public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpectations {
 	private AwsFacade aws;
-	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
-	private CloudFormRepository cfnRepository;
-	private VpcRepository vpcRepository;
-	private MonitorStackEvents monitor;
-	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
 	private IdentityProvider identityProvider;
 	private User user;
@@ -73,7 +68,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		// processing pass
 		Integer count = 1;
 		for(File file : files) {
-			setExpectationsForFile(count, file);
+			setExpectationsForFile(count, file, new LinkedList<>());
 			count++;
 		}
 		
@@ -96,7 +91,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		// processing pass
 		Integer count = 2;
 		for(File file : files) {
-			setExpectationsForFile(count, file);
+			setExpectationsForFile(count, file, new LinkedList<>());
 			count++;
 		}
 		
@@ -139,7 +134,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
         setExpectationsForValidationPass(newFiles);
 
-        setExpectationsForFile(3, newFile);
+        setExpectationsForFile(3, newFile, new LinkedList<>());
 
 		replayAll();
 		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
@@ -151,21 +146,52 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		verifyAll();	
 	}
 
+    @Test
+    public void shouldApplyFilesInAFolderWithUpdate() throws CfnAssistException, IOException, InterruptedException {
+        List<File> allFiles = loadFiles(FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toFile());
+
+        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andReturn(new HashMap<>());
+        EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("0");
+        // first file - no parameters needed
+        setExpectationsForValidationPass(allFiles);
+
+        LinkedList<Parameter> cfnParams = new LinkedList<>();
+
+        List<TemplateParameter> templateParameters = Arrays.asList(new TemplateParameter().
+                withParameterKey(AwsFacade.PARAMETER_STACKNAME).withDefaultValue("01createSubnet"));
+        // processing pass
+        setExpectationsForFile(1, allFiles.get(0), new LinkedList<>());
+        setUpdateExpectations("CfnAssistTest01createSubnet", allFiles.get(1).getAbsolutePath(), templateParameters,
+                cfnParams);
+        vpcRepository.setVpcIndexTag(projectAndEnv, "2");
+        EasyMock.expectLastCall();
+
+        replayAll();
+        ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString(),
+                projectAndEnv, cfnParams);
+        verifyAll();
+        assertEquals(2, result.size());
+    }
+
 	@Test
-	public void shouldRollbackTemplatesBasedOnIndex() throws CfnAssistException {
+	public void shouldRollbackTemplatesWithNoUpdateBasedOnIndex() throws CfnAssistException {
 		String stackA = "CfnAssistTest01createSubnet";
+        StackEntry stackEntryA = new StackEntry(projectAndEnv.getProject(), projectAndEnv.getEnvTag(),
+                new Stack().withStackName(stackA));
 		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
 		String stackB = "CfnAssistTest02createAcls";
 		StackNameAndId stackBNameAndId = new StackNameAndId(stackB, "id2");
+        StackEntry stackEntryB = new StackEntry(projectAndEnv.getProject(), projectAndEnv.getEnvTag(),
+                new Stack().withStackName(stackB));
 
 		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
 
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
-        EasyMock.expect(cfnRepository.getStacknameByIndex(projectAndEnv.getEnvTag(), 2)).andReturn(stackB);
+        EasyMock.expect(cfnRepository.getStacknameByIndex(projectAndEnv.getEnvTag(), 2)).andReturn(stackEntryB);
 		EasyMock.expect(cfnRepository.getStackNameAndId(stackB)).andReturn(stackBNameAndId);
 		cfnRepository.deleteStack(stackB);
 		EasyMock.expectLastCall();
-        EasyMock.expect(cfnRepository.getStacknameByIndex(projectAndEnv.getEnvTag(), 1)).andReturn(stackA);
+        EasyMock.expect(cfnRepository.getStacknameByIndex(projectAndEnv.getEnvTag(), 1)).andReturn(stackEntryA);
         EasyMock.expect(cfnRepository.getStackNameAndId(stackA)).andReturn(stackANameAndId);
 		cfnRepository.deleteStack(stackA);
 		EasyMock.expectLastCall();
@@ -226,17 +252,18 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		assertTrue(result.contains(stackA));
 		assertTrue(result.contains(stackB));
 	}
-	
+
+
 	@Test
-	public void shouldRollbackFilesInAFolderWithDeltas() throws CfnAssistException {
+	public void shouldRollbackFilesInAFolderWithUpdate() throws CfnAssistException {
 		String stackA = "CfnAssistTest01createSubnet";
 		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
 		
 		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
 
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
-		
 		EasyMock.expect(cfnRepository.getStackNameAndId(stackA)).andReturn(stackANameAndId);
+
 		cfnRepository.deleteStack(stackA);
 		EasyMock.expectLastCall();
 		EasyMock.expect(vpcRepository.getSetsDeltaIndexFor(projectAndEnv)).andReturn(setDeltaIndexForProjectAndEnv);
@@ -256,6 +283,12 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		assertTrue(result.contains(stackA));
 	}
 
+    @Ignore
+    @Test
+    public void shouldRollbackWithDeltas() throws CfnAssistException {
+       fail("no way to do this until we can unpdate tags on a stack");
+    }
+
     @Test
     public void shouldStepBackLastChangeOnAVpc() throws CfnAssistException {
         String stackB = "CfnAssistTest02createAcls";
@@ -264,7 +297,10 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
         SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
 
         EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
-        EasyMock.expect(cfnRepository.getStacknameByIndex(projectAndEnv.getEnvTag(), 2)).andReturn(stackB);
+        StackEntry stackEntry = new StackEntry(projectAndEnv.getProject(), projectAndEnv.getEnvTag(),
+                new Stack().withStackName(stackB));
+
+        EasyMock.expect(cfnRepository.getStacknameByIndex(projectAndEnv.getEnvTag(), 2)).andReturn(stackEntry);
         EasyMock.expect(cfnRepository.getStackNameAndId(stackB)).andReturn(stackBNameAndId);
         cfnRepository.deleteStack(stackB);
         EasyMock.expectLastCall();
@@ -331,6 +367,12 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		assertEquals(0, result.size());
 	}
 
+    @Ignore
+    @Test
+    public void shouldStepBackLastChangeOnAVpcWhenUpdate()  {
+        fail("Cannot support this until way to update tag on an existing stack");
+    }
+
 	@Test
 	public void shouldHandleStepBackWhenNotFileAvailable() throws CfnAssistException {
 
@@ -378,9 +420,10 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends EasyMockSupport {
 		}
 	}
 
-	private void setExpectationsForFile(Integer count, File file) throws IOException, CfnAssistException, InterruptedException {
+	private void setExpectationsForFile(Integer count, File file, List<TemplateParameter> templateParameters)
+            throws IOException, CfnAssistException, InterruptedException {
 		String templateContents = EnvironmentSetupForTests.loadFile(file.getAbsolutePath());
-		List<TemplateParameter> templateParameters = new LinkedList<>();
+
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		String stackName = aws.createStackName(file, projectAndEnv);
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, count.toString());

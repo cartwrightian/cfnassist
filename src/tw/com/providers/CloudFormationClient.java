@@ -135,6 +135,7 @@ public class CloudFormationClient {
 		updateStackRequest.setStackName(stackName);
 		updateStackRequest.setTemplateBody(contents);
 		monitor.addMonitoringTo(updateStackRequest);
+
 		UpdateStackResult result = cfnClient.updateStack(updateStackRequest);
 		
 		return new StackNameAndId(stackName,result.getStackId());

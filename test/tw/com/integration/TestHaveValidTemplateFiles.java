@@ -1,23 +1,21 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.Charset;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Test;
-
-import tw.com.EnvironmentSetupForTests;
-import tw.com.providers.CloudFormationClient;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import org.apache.commons.io.FileUtils;
+import org.junit.Before;
+import org.junit.Test;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.providers.CloudFormationClient;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestHaveValidTemplateFiles {
 
@@ -29,7 +27,7 @@ public class TestHaveValidTemplateFiles {
 	}
 	
 	@Test
-	public void testAllTestCfnFilesAreValid() throws FileNotFoundException, IOException, InterruptedException {
+	public void testAllTestCfnFilesAreValid() throws IOException, InterruptedException {
 		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
 		CloudFormationClient cloudClient = new CloudFormationClient(cfnClient);
 		File folder = new File("src/cfnScripts");
@@ -46,12 +44,14 @@ public class TestHaveValidTemplateFiles {
 				validateFolder(cloudClient, file);		
 			} else 
 			{
-				try {
-					String contents = FileUtils.readFileToString(file, Charset.defaultCharset());
-					cloudClient.validateTemplate(contents);
-				} catch (IOException | AmazonServiceException e) {
-					fail(file.getAbsolutePath() + ": " + e);
-				}
+				if (!file.isHidden()) {
+                    try {
+                        String contents = FileUtils.readFileToString(file, Charset.defaultCharset());
+                        cloudClient.validateTemplate(contents);
+                    } catch (IOException | AmazonServiceException e) {
+                        fail(file.getAbsolutePath() + ": " + e);
+                    }
+                }
 				
 				Thread.sleep(200); // to avoid rate limit errors on AWS api
 			}

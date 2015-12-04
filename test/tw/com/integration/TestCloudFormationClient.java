@@ -45,11 +45,8 @@ public class TestCloudFormationClient {
 	
 	private PollingStackMonitor polligMonitor;
 	private ProjectAndEnv projAndEnv;
-	private CloudClient cloudClient;
 	private static VpcRepository vpcRepository;
 	private static SNSEventSource snsNotifProvider;
-	private static AmazonSNSClient snsClient;
-	private static AmazonSQSClient sqsClient;
 	CloudFormationClient formationClient;
 	private DeletesStacks deletesStacks;
 	private Vpc mainTestVPC;
@@ -60,8 +57,8 @@ public class TestCloudFormationClient {
 		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		snsClient =  EnvironmentSetupForTests.createSNSClient(credentialsProvider);
-		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
+		AmazonSNSClient snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
+		AmazonSQSClient sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
 		snsNotifProvider = new SNSEventSource(snsClient, sqsClient);
 		
 		new DeletesStacks(cfnClient).ifPresent("queryStackTest").
@@ -75,7 +72,7 @@ public class TestCloudFormationClient {
 	@Before
 	public void beforeEachTestRuns() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		formationClient = new CloudFormationClient(cfnClient);
-		cloudClient = new CloudClient(ec2Client);
+		CloudClient cloudClient = new CloudClient(ec2Client);
 		CloudRepository cloudRepository = new CloudRepository(cloudClient);
 		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudRepository, EnvironmentSetupForTests.PROJECT);
 		polligMonitor = new PollingStackMonitor(cfnRepository );
@@ -248,9 +245,7 @@ public class TestCloudFormationClient {
 		status = polligMonitor.waitForUpdateFinished(nameAndId);
 		assertEquals(StackStatus.UPDATE_COMPLETE.toString(), status);
 
-		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);	
-		
-		// TODO Check TAGS?
+		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);
 	}
 	
 	@Test
@@ -284,7 +279,6 @@ public class TestCloudFormationClient {
 
 		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);	
 		
-		// TODO Check TAGS?
 	}
 	
 	@Test

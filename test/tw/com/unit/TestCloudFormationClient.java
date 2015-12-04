@@ -153,8 +153,10 @@ public class TestCloudFormationClient extends EasyMockSupport {
         monitor.addMonitoringTo(EasyMock.isA(UpdateStackRequest.class));
         EasyMock.expectLastCall();
 
-        UpdateStackRequest request = new UpdateStackRequest().withStackName("stackName").
-                withParameters(parameters).withTemplateBody("{json}");
+        UpdateStackRequest request = new UpdateStackRequest().
+                withStackName("stackName").
+                withParameters(parameters).
+                withTemplateBody("{json}");
         UpdateStackResult response = new UpdateStackResult().withStackId("stackId");
         EasyMock.expect(cfnClient.updateStack(request)).andReturn(response);
 

@@ -48,7 +48,7 @@ public class AwsFacade implements ProvidesZones {
 	public static final String TYPE_TAG = "CFN_ASSIST_TYPE";
 	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
 	
-	private static final String PARAMETER_STACKNAME = "stackname";
+	public static final String PARAMETER_STACKNAME = "stackname";
 
     private VpcRepository vpcRepository;
 	private CloudFormRepository cfnRepository;
@@ -111,7 +111,7 @@ public class AwsFacade implements ProvidesZones {
         populators.add(new CfnBuiltInParams(vpcForEnv.getVpcId()));
         populators.add(new AutoDiscoverParams(file, vpcRepository, cfnRepository));
         populators.add(new EnvVarParams());
-        ParameterFactory parameterFactory= new ParameterFactory(populators);
+        ParameterFactory parameterFactory = new ParameterFactory(populators);
 
         if (projAndEnv.hasComment()) {
             tagging.setCommentTag(projAndEnv.getComment());
@@ -136,11 +136,12 @@ public class AwsFacade implements ProvidesZones {
 		return name.endsWith(UPDATE_EXTENSTION) || name.endsWith(UPDATE_EXTENSTION_LEGACY);
 	}
 
-	private StackNameAndId updateStack(ProjectAndEnv projAndEnv,
-			Collection<Parameter> userParameters, List<TemplateParameter> declaredParameters, String contents, ParameterFactory parameterFactory) throws InvalidStackParameterException, IOException, InterruptedException, WrongNumberOfStacksException, NotReadyException, WrongStackStatus, CannotFindVpcException {
+	private StackNameAndId updateStack(ProjectAndEnv projAndEnv, Collection<Parameter> userParameters,
+                                       List<TemplateParameter> declaredParameters, String contents,
+                                       ParameterFactory parameterFactory) throws CfnAssistException, IOException, InterruptedException {
 
-
-		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters, declaredParameters, this);
+		Collection<Parameter> parameters = parameterFactory.createRequiredParameters(projAndEnv, userParameters,
+                declaredParameters, this);
 		String stackName = findStackToUpdate(declaredParameters, projAndEnv);
 		
 		StackNameAndId id = cfnRepository.updateStack(contents, parameters, monitor, stackName);
@@ -169,7 +170,7 @@ public class AwsFacade implements ProvidesZones {
 				}
 			}
 		}
-		logger.error(format("Unable to find parameter %s which is required to peform a stack update", PARAMETER_STACKNAME));
+		logger.error(format("Unable to find parameter call '%s' which is required to peform a stack update", PARAMETER_STACKNAME));
 		throw new InvalidStackParameterException(PARAMETER_STACKNAME);
 	}
 
@@ -319,7 +320,8 @@ public class AwsFacade implements ProvidesZones {
 	}
 
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams) throws IOException, InterruptedException, CfnAssistException {
+			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams)
+            throws IOException, InterruptedException, CfnAssistException {
 		ArrayList<StackNameAndId> updatedStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);
 		logger.info("Invoking templates from folder: " + folderPath);
@@ -379,9 +381,9 @@ public class AwsFacade implements ProvidesZones {
         SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);
 
         try {
-            String stackName = cfnRepository.getStacknameByIndex(projAndEnv.getEnvTag(), highestAppliedDelta);
-            StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
-            cfnRepository.deleteStack(stackName);
+            StackEntry stackEntry = cfnRepository.getStacknameByIndex(projAndEnv.getEnvTag(), highestAppliedDelta);
+            StackNameAndId id = cfnRepository.getStackNameAndId(stackEntry.getStackName()); // important to get id's before deletion request, may throw otherwise
+            cfnRepository.deleteStack(stackEntry.getStackName());
             pending.add(highestAppliedDelta,id);
         }
         catch (WrongNumberOfStacksException notFound) {
@@ -436,7 +438,6 @@ public class AwsFacade implements ProvidesZones {
 		return toDelete;
 	}
 
-
     public List<String> rollbackTemplatesByIndexTag(ProjectAndEnv projAndEnv) throws CfnAssistException {
         DeletionsPending pending = new DeletionsPending();
         int highestAppliedDelta = getDeltaIndex(projAndEnv);
@@ -444,10 +445,11 @@ public class AwsFacade implements ProvidesZones {
         while (highestAppliedDelta>0) {
             try {
                 logger.info("Current delta is " + highestAppliedDelta);
-                String stackToDelete = cfnRepository.getStacknameByIndex(projAndEnv.getEnvTag(), highestAppliedDelta);
-                StackNameAndId id = cfnRepository.getStackNameAndId(stackToDelete);
+                StackEntry stackToDelete = cfnRepository.getStacknameByIndex(projAndEnv.getEnvTag(), highestAppliedDelta);
+                // TODO add ID to StackEntry
+                StackNameAndId id = cfnRepository.getStackNameAndId(stackToDelete.getStackName());
                 logger.info(format("Found stack %s matching index", id));
-                cfnRepository.deleteStack(stackToDelete);
+                cfnRepository.deleteStack(stackToDelete.getStackName());
                 pending.add(highestAppliedDelta,id);
                 highestAppliedDelta--;
             }

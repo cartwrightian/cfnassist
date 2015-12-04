@@ -60,8 +60,6 @@ public class CfnRepository implements CloudFormRepository {
 		return results;
 	}
 
-
-
 	@Override
 	public String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId) {
 		logger.info(String.format("Looking for resource matching logicalID: %s for %s",logicalId, envTag));
@@ -82,8 +80,8 @@ public class CfnRepository implements CloudFormRepository {
 
 	private String findPhysicalIdByLogicalId(EnvironmentTag envTag, String stackName, String logicalId) {
 		logger.info(String.format(
-				"Check Env %s and stack %s for logical ID %s", envTag,
-				stackName, logicalId));
+                "Check Env %s and stack %s for logical ID %s", envTag,
+                stackName, logicalId));
 
 		try {
 			List<StackResource> resources = stackCache.getResourcesForStack(stackName);
@@ -251,7 +249,7 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
     @Override
-    public String getStacknameByIndex(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException {
+    public StackEntry getStacknameByIndex(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException {
         SearchCriteria criteriaForIndex = new SearchCriteria(new ProjectAndEnv(project, envTag.getEnv())).withIndex(index);
 
         List<StackEntry> stacks = criteriaForIndex.matches(stackCache.getEntries());
@@ -265,7 +263,7 @@ public class CfnRepository implements CloudFormRepository {
         }
         StackEntry stack = stacks.get(0);
         logger.info(String.format("Found stack %s for %s and index %s", stack, envTag, index));
-        return stack.getStackName();
+        return stack;
     }
 
 	@Override
@@ -290,7 +288,7 @@ public class CfnRepository implements CloudFormRepository {
 
 	@Override
 	public StackNameAndId updateStack(String contents,
-			Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws InvalidStackParameterException, WrongNumberOfStacksException, NotReadyException {			
+                                      Collection<Parameter> parameters, MonitorStackEvents monitor, String stackName) throws CfnAssistException {
 		return formationClient.updateStack(contents, parameters, monitor, stackName);
 	}
 
