@@ -1,36 +1,22 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-
+import com.amazonaws.services.ec2.model.*;
+import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
+import com.amazonaws.services.rds.model.DBInstance;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.NetworkAclEntry;
-import com.amazonaws.services.ec2.model.PortRange;
-import com.amazonaws.services.ec2.model.Route;
-import com.amazonaws.services.ec2.model.RouteState;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.RuleAction;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.amazonaws.services.rds.model.DBInstance;
-
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.*;
 import tw.com.pictures.dot.Recorder;
+
+import java.io.IOException;
+
+import static org.junit.Assert.assertSame;
 
 @RunWith(EasyMockRunner.class)
 public class TestVPCDiagramBuilder extends EasyMockSupport {
@@ -521,14 +507,13 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 
 	private NetworkAclEntry createAclEntry(PortRange thePortRange, String cidrBlock, Boolean outbound, Integer ruleNumber, 
 			RuleAction ruleAction) {
-		NetworkAclEntry outboundEntry = new NetworkAclEntry().
+		return new NetworkAclEntry().
 				withCidrBlock(cidrBlock).
 				withEgress(outbound).
 				withPortRange(thePortRange).
 				withProtocol("6").
 				withRuleAction(ruleAction).
 				withRuleNumber(ruleNumber);
-		return outboundEntry;
 	}
 	
 	private SubnetDiagramBuilder setupSubnetDiagramBuidler() {

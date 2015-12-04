@@ -1,26 +1,25 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
-
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.commons.cli.MissingArgumentException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-
+import org.apache.commons.cli.MissingArgumentException;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.StackNotification;
 import tw.com.exceptions.FailedToCreateQueueException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.providers.SNSEventSource;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestSNSEventSource {
 	
@@ -28,9 +27,7 @@ public class TestSNSEventSource {
 	private static AmazonSQSClient sqsClient;
 	
 	SNSEventSource eventSource;
-	
-	DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-	
+
 	@BeforeClass
 	public static void beforeAllTestsRun() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();

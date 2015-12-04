@@ -1,17 +1,15 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.elasticloadbalancing.model.Instance;
+import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
+import com.amazonaws.services.elasticloadbalancing.model.Tag;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.SearchCriteria;
@@ -23,10 +21,11 @@ import tw.com.repository.ELBRepository;
 import tw.com.repository.ResourceRepository;
 import tw.com.repository.VpcRepository;
 
-import com.amazonaws.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.amazonaws.services.elasticloadbalancing.model.Tag;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(EasyMockRunner.class)
 public class TestELBRepository extends EasyMockSupport {
@@ -55,7 +54,7 @@ public class TestELBRepository extends EasyMockSupport {
 		List<Tag> lb2Tags = new LinkedList<>();
 		lb2Tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue(typeTag));
 		
-		List<LoadBalancerDescription> lbs = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> lbs = new LinkedList<>();
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
 		
@@ -77,14 +76,14 @@ public class TestELBRepository extends EasyMockSupport {
 		List<Tag> tags = new LinkedList<>();
 		tags.add(new Tag().withKey("someOtherTag").withValue("someOtherValue"));
 		
-		List<LoadBalancerDescription> lbs = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> lbs = new LinkedList<>();
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
 		
 		Vpc vpc = new Vpc().withVpcId("vpcId");
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
-		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(new LinkedList<Tag>());
+		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(new LinkedList<>());
 		EasyMock.expect(elbClient.getTagsFor("lb2Name")).andReturn(tags);
 		
 		replayAll();
@@ -100,7 +99,7 @@ public class TestELBRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldFetchELBsForTheVPC() throws TooManyELBException {
-		List<LoadBalancerDescription> lbs = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> lbs = new LinkedList<>();
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("someId"));
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
 
@@ -120,16 +119,8 @@ public class TestELBRepository extends EasyMockSupport {
 		Instance insA2 = new Instance().withInstanceId("instanceA2"); // initial
 		Instance insB1 = new Instance().withInstanceId("instanceB1"); // new
 		Instance insB2 = new Instance().withInstanceId("instanceB2"); // new
-		Instance insB3 = new Instance().withInstanceId("instanceB3"); // new but wrong tags
-		
-		List<String> instanceIds = new LinkedList<String>();
-		instanceIds.add(insA1.getInstanceId());
-		instanceIds.add(insA2.getInstanceId());
-		instanceIds.add(insB1.getInstanceId());
-		instanceIds.add(insB2.getInstanceId());
-		instanceIds.add(insB3.getInstanceId());
-		
-		List<Instance> instancesThatMatch = new LinkedList<Instance>();
+
+		List<Instance> instancesThatMatch = new LinkedList<>();
 		instancesThatMatch.add(insA1);
 		instancesThatMatch.add(insA2);
 		instancesThatMatch.add(insB1);
@@ -141,18 +132,18 @@ public class TestELBRepository extends EasyMockSupport {
 		
 		List<Instance> toRemove = new LinkedList<>();
 		toRemove.add(insA1);
-		toRemove.add(insA2);;
+		toRemove.add(insA2);
 		
 		String vpcId = "myVPC";
 		Integer newBuildNumber = 11;
 		projAndEnv.addBuildNumber(newBuildNumber);
 
-		List<LoadBalancerDescription> initalLoadBalancers = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> initalLoadBalancers = new LinkedList<>();
 		initalLoadBalancers.add(new LoadBalancerDescription().withVPCId(vpcId).
 				withInstances(insA1,insA2).
 				withLoadBalancerName("lbName").withDNSName("dnsName"));
 		
-		List<LoadBalancerDescription> updatedLoadBalancers = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> updatedLoadBalancers = new LinkedList<>();
 		updatedLoadBalancers.add(new LoadBalancerDescription().withVPCId(vpcId).
 				withInstances(insA1, insA2, insB1, insB2).
 				withLoadBalancerName("lbName").withDNSName("dnsName"));
@@ -180,7 +171,7 @@ public class TestELBRepository extends EasyMockSupport {
 		String vpcId = "myVPC";
 		Instance insA = new Instance().withInstanceId("instanceA"); // associated
 		
-		List<LoadBalancerDescription> theLB = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> theLB = new LinkedList<>();
 		theLB.add(new LoadBalancerDescription().withVPCId(vpcId).
 				withInstances(insA).
 				withLoadBalancerName("lbName").withDNSName("dnsName"));

@@ -1,23 +1,23 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.ec2.model.Tag;
+import com.amazonaws.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
-
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 
 @RunWith(EasyMockRunner.class)
@@ -36,7 +36,7 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldGetVpcByProjectAndEnvironmentTags() {
-		List<Vpc> vpcs = new LinkedList<Vpc>();
+		List<Vpc> vpcs = new LinkedList<>();
 	
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
 		vpcs.add(new Vpc().withVpcId("firstWrongId"));
@@ -53,9 +53,9 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldTestFindVpcAndThenDeleteATag() {
-		List<Vpc> vpcs = new LinkedList<Vpc>();
+		List<Vpc> vpcs = new LinkedList<>();
 		vpcs.add(new Vpc().withVpcId("correctId").withTags(EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"")));
-		List<String> resources = new LinkedList<String>();
+		List<String> resources = new LinkedList<>();
 		resources.add("correctId");
 		
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);	
@@ -78,7 +78,7 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldMatchVpcAndFindDetlaIndexTag() throws CannotFindVpcException {
-		List<Vpc> vpcs = new LinkedList<Vpc>();
+		List<Vpc> vpcs = new LinkedList<>();
 		
 		List<Tag> matchingTags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
 		matchingTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA","004422"));
@@ -98,7 +98,7 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldTestSomething() throws CannotFindVpcException {
-		List<Vpc> vpcs = new LinkedList<Vpc>();
+		List<Vpc> vpcs = new LinkedList<>();
 		
 		List<Tag> matchingTags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
 		matchingTags.add(EnvironmentSetupForTests.createEc2Tag("tagName","correctValue"));
@@ -118,13 +118,13 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldTestSomegthing() throws CannotFindVpcException {
-		List<Tag> expectedTags = new LinkedList<Tag>();
+		List<Tag> expectedTags = new LinkedList<>();
 		expectedTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA", "0"));
 		expectedTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_PROJECT", "CfnAssist"));
 		expectedTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_ENV", "Test"));
 			
 		EasyMock.expect(cloudClient.describeVpc("vpcID11")).andReturn(new Vpc().withCidrBlock("cidrBlock"));
-		List<String> resources = new LinkedList<String>();
+		List<String> resources = new LinkedList<>();
 		resources.add("vpcID11");
 		cloudClient.addTagsToResources(resources, expectedTags);
 		EasyMock.expectLastCall();
@@ -136,16 +136,16 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldTestSetCfnDeltaIndex() throws CannotFindVpcException {
-		List<Vpc> vpcs = new LinkedList<Vpc>();
+		List<Vpc> vpcs = new LinkedList<>();
 		List<Tag> initialTags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
 		initialTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA","initialValue"));
 		
 		vpcs.add(new Vpc().withVpcId("correctId").withTags(initialTags));
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);
 		
-		List<String> resources = new LinkedList<String>();
+		List<String> resources = new LinkedList<>();
 		resources.add("correctId");
-		List<Tag> tags = new LinkedList<Tag>();
+		List<Tag> tags = new LinkedList<>();
 		tags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA","newIndexValue"));
 		cloudClient.addTagsToResources(resources, tags);
 		EasyMock.expectLastCall();
@@ -157,16 +157,16 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldTestSomethign() {
-		List<Vpc> vpcs = new LinkedList<Vpc>();
+		List<Vpc> vpcs = new LinkedList<>();
 		List<Tag> initialTags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
 		initialTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA","initialValue"));
 		
 		vpcs.add(new Vpc().withVpcId("correctId").withTags(initialTags));
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);
 		
-		List<Tag> tags = new LinkedList<Tag>();
+		List<Tag> tags = new LinkedList<>();
 		tags.add(EnvironmentSetupForTests.createEc2Tag("someKey","someValue"));
-		List<String> resources = new LinkedList<String>();
+		List<String> resources = new LinkedList<>();
 		resources.add("correctId");
 		cloudClient.addTagsToResources(resources, tags);
 		EasyMock.expectLastCall();

@@ -1,27 +1,25 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.commons.io.FilenameUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.FilesForTesting;
+import tw.com.providers.ArtifactUploader;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.commons.io.FilenameUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import tw.com.EnvironmentSetupForTests;
-import tw.com.FilesForTesting;
-import tw.com.providers.ArtifactUploader;
-
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import static org.junit.Assert.*;
 
 public class TestArtifactUploader {
 	
@@ -61,7 +59,7 @@ public class TestArtifactUploader {
 
 	@Test
 	public void expectUploadFilesAndURLsReturnedBack() {		
-		List<Parameter> arts = new LinkedList<Parameter>();
+		List<Parameter> arts = new LinkedList<>();
 		
 		// any files would do here
 		Parameter artA = new Parameter().withParameterKey("urlA").withParameterValue(FilesForTesting.INSTANCE); 
@@ -91,18 +89,13 @@ public class TestArtifactUploader {
 	
 	@Test
 	public void expectUploadDirWithFolderURLReturnedBack() {
-		List<Parameter> arts = new LinkedList<Parameter>();
+		List<Parameter> arts = new LinkedList<>();
 		
 		// any folder with files would do here
 		String folderPath = FilesForTesting.ORDERED_SCRIPTS_FOLDER;
 		
 		File folder = new File(folderPath);
-		FilenameFilter filter = new FilenameFilter() {	
-			@Override
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".json");
-			}
-		};
+		FilenameFilter filter = (dir, name) -> name.endsWith(".json");
 		String[] filesOnDisc = folder.list(filter);
 		Parameter folderParam = new Parameter().withParameterKey("folder").withParameterValue(folderPath); 
 		arts.add(folderParam);
@@ -124,7 +117,7 @@ public class TestArtifactUploader {
 	
 	@Test
 	public void canDeleteArtifactsFromS3() {
-		List<Parameter> arts = new LinkedList<Parameter>();
+		List<Parameter> arts = new LinkedList<>();
 		
 		// any files would do here
 		Parameter artA = new Parameter().withParameterKey("urlA").withParameterValue(FilesForTesting.INSTANCE); 

@@ -1,28 +1,26 @@
 package tw.com.acceptance;
 
-import static org.junit.Assert.*;
-
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.Vpc;
-
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.commandline.Main;
 import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
 
+import static org.junit.Assert.assertEquals;
+
 public class TestCommandLineVLCoperations {
 	
 	private static AmazonEC2Client ec2Client;
-	private VpcRepository vpcRepository;
 	private Vpc altEnvVPC;
 	
 	@Before
 	public void beforeEveryTestRun() {
-		vpcRepository = new VpcRepository(new CloudClient(ec2Client));		
+		VpcRepository vpcRepository = new VpcRepository(new CloudClient(ec2Client));
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
 	}
 

@@ -1,17 +1,15 @@
 package tw.com;
 
-import java.util.LinkedList;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import tw.com.entity.StackNameAndId;
-
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Stack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tw.com.entity.StackNameAndId;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class DeletesStacks {
 	private static final int TIMEOUT_INCREMENT_MS = 500;
@@ -25,8 +23,8 @@ public class DeletesStacks {
 
 	public DeletesStacks(AmazonCloudFormationClient cfnClient) {
 		this.cfnClient = cfnClient;
-		deleteIfPresent = new LinkedList<String>();
-		deleteIfPresentNonBlocking = new LinkedList<String>();
+		deleteIfPresent = new LinkedList<>();
+		deleteIfPresentNonBlocking = new LinkedList<>();
 	}
 
 	public DeletesStacks ifPresent(String stackName) {
@@ -37,16 +35,11 @@ public class DeletesStacks {
 	public DeletesStacks ifPresent(StackNameAndId stackId) {
 		return ifPresent(stackId.getStackName());	
 	}
-	
-	public DeletesStacks ifPresentNonBlocking(String stackName) {
-		deleteIfPresentNonBlocking.add(stackName);
-		return this;
-	}
 
 	public void act() {
 		List<String> currentStacks = fetchCurrentStacks();
-		List<String> deletionList = new LinkedList<String>();
-		List<String> deletionListNonBlocking = new LinkedList<String>();
+		List<String> deletionList = new LinkedList<>();
+		List<String> deletionListNonBlocking = new LinkedList<>();
 		for(String stackName : currentStacks) {
 			if (deleteIfPresent.contains(stackName)) {
 				deletionList.add(stackName);
@@ -68,7 +61,7 @@ public class DeletesStacks {
 	}
 
 	private List<String> fetchCurrentStacks() {
-		List<String> current = new LinkedList<String>();
+		List<String> current = new LinkedList<>();
 
 		DescribeStacksResult result = cfnClient.describeStacks();
 		for(Stack stack : result.getStacks()) {

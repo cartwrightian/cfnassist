@@ -1,24 +1,5 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
-
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.cli.MissingArgumentException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import tw.com.EnvironmentSetupForTests;
-import tw.com.entity.CFNAssistNotification;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.providers.QueuePolicyManager;
-import tw.com.providers.SNSEventSource;
-import tw.com.providers.SNSNotificationSender;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.identitymanagement.model.User;
 import com.amazonaws.services.sns.AmazonSNSClient;
@@ -26,15 +7,26 @@ import com.amazonaws.services.sns.model.CreateTopicResult;
 import com.amazonaws.services.sns.model.SubscribeRequest;
 import com.amazonaws.services.sns.model.SubscribeResult;
 import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.QueueDeletedRecentlyException;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.amazonaws.services.sqs.model.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.cli.MissingArgumentException;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.entity.CFNAssistNotification;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.providers.QueuePolicyManager;
+import tw.com.providers.SNSEventSource;
+import tw.com.providers.SNSNotificationSender;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
 
 public class TestSNSNotificationSender {
 	private static AmazonSNSClient snsClient;
@@ -69,7 +61,7 @@ public class TestSNSNotificationSender {
 	}
 	
 	@Test
-	public void shouldSendNotificationMessageOnTopic() throws CfnAssistException, MissingArgumentException, InterruptedException, JsonParseException, JsonMappingException, IOException {
+	public void shouldSendNotificationMessageOnTopic() throws CfnAssistException, MissingArgumentException, InterruptedException, IOException {
 		User user  = new User("path", "userName", "userId", "userArn", new Date());
 		CFNAssistNotification notification = new CFNAssistNotification("name", "complete", user);
 		
@@ -120,7 +112,7 @@ public class TestSNSNotificationSender {
 	}
 
 	private CreateQueueResult createQueue() throws InterruptedException {
-		CreateQueueResult queueResult = null;
+		CreateQueueResult queueResult;
 		try {
 			queueResult = sqsClient.createQueue("TestSNSNotificationSender");
 		}

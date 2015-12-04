@@ -34,7 +34,6 @@ public class TestVPCVisitor extends EasyMockSupport {
 	private DiagramBuilder diagramBuilder;
 	private DiagramFactory diagramFactory;
 	private AmazonVPCFacade awsFacade;
-	private String vpcId = "theVpcId";
 	private VpcTestBuilder vpcBuilder;
 	private VPCDiagramBuilder vpcDiagramBuilder;
 	private SubnetDiagramBuilder subnetDiagramBuilder;
@@ -50,7 +49,8 @@ public class TestVPCVisitor extends EasyMockSupport {
 		subnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 		dbSubnetDiagramBuilder = createStrictMock(SubnetDiagramBuilder.class);
 
-		vpcBuilder = new VpcTestBuilder(vpcId);	
+		String vpcId = "theVpcId";
+		vpcBuilder = new VpcTestBuilder(vpcId);
 	}
 	
 	@Test

@@ -1,33 +1,17 @@
 package tw.com;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.easymock.EasyMock;
-
-import tw.com.exceptions.CfnAssistException;
-import tw.com.pictures.AmazonVPCFacade;
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.GroupIdentifier;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.NetworkAclAssociation;
-import com.amazonaws.services.ec2.model.NetworkAclEntry;
-import com.amazonaws.services.ec2.model.PortRange;
-import com.amazonaws.services.ec2.model.Route;
-import com.amazonaws.services.ec2.model.RouteState;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.RouteTableAssociation;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
+import org.easymock.EasyMock;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.pictures.AmazonVPCFacade;
+
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 public class VpcTestBuilder {
 	private List<Subnet> subnets;
@@ -48,13 +32,9 @@ public class VpcTestBuilder {
 	private Subnet dbSubnet;
 	private Instance instance;
 	private RouteTable routeTable;
-	private RouteTableAssociation routeTableAssociationA;
-	private RouteTableAssociation routeTableAssociationB;
 	private Address eip;
 	private LoadBalancerDescription elb;
 	private DBInstance dbInstance;
-	private NetworkAclAssociation aclAssoc;
-	private PortRange portRange;
 	private NetworkAclEntry outboundAclEntry;
 	private NetworkAclEntry inboundAclEntry;
 	private NetworkAcl acl;
@@ -73,7 +53,7 @@ public class VpcTestBuilder {
 		subnets = new LinkedList<>();
 		instances = new LinkedList<>();
 		routeTables = new LinkedList<>();
-		eips = new LinkedList<Address>();
+		eips = new LinkedList<>();
 		loadBalancers = new LinkedList<>();
 		databases = new LinkedList<>();
 		acls = new LinkedList<>();
@@ -97,10 +77,10 @@ public class VpcTestBuilder {
 				withTags(CreateNameTag("instanceName")).
 				withPrivateIpAddress("privateIp");
 		String instanceId = instance.getInstanceId();
-		routeTableAssociationA = new RouteTableAssociation().
+		RouteTableAssociation routeTableAssociationA = new RouteTableAssociation().
 				withRouteTableAssociationId("assocId").
 				withSubnetId(subnetId);
-		routeTableAssociationB = new RouteTableAssociation().
+		RouteTableAssociation routeTableAssociationB = new RouteTableAssociation().
 				withRouteTableAssociationId("assocId").
 				withSubnetId(dbSubnet.getSubnetId());
 		add(new Route().withDestinationCidrBlock("10.1.0.11/32").withGatewayId("igwId").withState(RouteState.Active));
@@ -130,9 +110,9 @@ public class VpcTestBuilder {
 		dbInstance = new DBInstance().
 				withDBInstanceIdentifier("dbInstanceId").
 				withDBName("dbName");
-		aclAssoc = new NetworkAclAssociation().
+		NetworkAclAssociation aclAssoc = new NetworkAclAssociation().
 				withSubnetId(subnetId);
-		portRange = new PortRange().
+		PortRange portRange = new PortRange().
 				withFrom(1024).
 				withTo(2048);
 		outboundAclEntry = new NetworkAclEntry().
@@ -217,13 +197,13 @@ public class VpcTestBuilder {
 	private void addAndAssociate(LoadBalancerDescription elb) {
 		loadBalancers.add(elb);	
 		// instances
-		Collection<com.amazonaws.services.elasticloadbalancing.model.Instance> list = new LinkedList<com.amazonaws.services.elasticloadbalancing.model.Instance>();
+		Collection<com.amazonaws.services.elasticloadbalancing.model.Instance> list = new LinkedList<>();
 		for(Instance i : instances) {
 			list.add(new com.amazonaws.services.elasticloadbalancing.model.Instance().withInstanceId(i.getInstanceId()));
 		}
 		elb.setInstances(list);
 		// subnets
-		List<String> subnetIds = new LinkedList<String>();
+		List<String> subnetIds = new LinkedList<>();
 		for(Subnet s : subnets) {
 			subnetIds.add(s.getSubnetId());
 		}
@@ -255,7 +235,7 @@ public class VpcTestBuilder {
 	public Vpc setFacadeVisitExpections(AmazonVPCFacade awsFacade) throws CfnAssistException {
 		EasyMock.expect(awsFacade.getSubnetFors(vpcId)).andStubReturn(subnets);
 		EasyMock.expect(awsFacade.getInstancesFor(subnetId)).andStubReturn(instances);
-		EasyMock.expect(awsFacade.getInstancesFor(dbSubnet.getSubnetId())).andStubReturn(new LinkedList<Instance>());
+		EasyMock.expect(awsFacade.getInstancesFor(dbSubnet.getSubnetId())).andStubReturn(new LinkedList<>());
 
 		EasyMock.expect(awsFacade.getRouteTablesFor(vpcId)).andReturn(routeTables);
 		EasyMock.expect(awsFacade.getEIPFor(vpcId)).andReturn(eips);

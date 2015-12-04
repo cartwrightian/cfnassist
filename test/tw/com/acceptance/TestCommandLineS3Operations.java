@@ -1,27 +1,5 @@
 package tw.com.acceptance;
 
-import static org.junit.Assert.*;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.apache.commons.io.FilenameUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-import org.junit.rules.Timeout;
-
-import tw.com.CLIArgBuilder;
-import tw.com.DeletesStacks;
-import tw.com.EnvironmentSetupForTests;
-import tw.com.FilesForTesting;
-import tw.com.commandline.Main;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.providers.CloudClient;
-import tw.com.repository.VpcRepository;
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -31,6 +9,23 @@ import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.apache.commons.io.FilenameUtils;
+import org.junit.*;
+import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
+import tw.com.CLIArgBuilder;
+import tw.com.DeletesStacks;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.FilesForTesting;
+import tw.com.commandline.Main;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.providers.CloudClient;
+import tw.com.repository.VpcRepository;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class TestCommandLineS3Operations {
 	private static final Integer BUILD_NUMBER = 9987;
@@ -107,7 +102,7 @@ public class TestCommandLineS3Operations {
 		assertEquals(1, subnets.size());
 		List<Tag> tags = subnets.get(0).getTags();
 
-		List<Tag> expectedTags = new LinkedList<Tag>();
+		List<Tag> expectedTags = new LinkedList<>();
 		expectedTags.add(new Tag().withKey("urlATag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A));
 		expectedTags.add(new Tag().withKey("urlBTag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B));
 		assertTrue(tags.containsAll(expectedTags));

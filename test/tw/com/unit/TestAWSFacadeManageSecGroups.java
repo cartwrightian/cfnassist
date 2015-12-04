@@ -29,25 +29,21 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 	
 	private AwsFacade aws;
 	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
-	private CloudFormRepository cfnRepository;
-	private VpcRepository vpcRepository;
 	private ELBRepository elbRepository;
-	private MonitorStackEvents monitor;
 	private CloudRepository cloudRepository;
 	private ProvidesCurrentIp providesCurrentIp;
-	private IdentityProvider identityProvider;
-	
+
 
 	@Before
 	public void beforeEachTestRuns() {
-		monitor = createMock(MonitorStackEvents.class);
-		cfnRepository = createStrictMock(CloudFormRepository.class);
-		vpcRepository = createStrictMock(VpcRepository.class);
+		MonitorStackEvents monitor = createMock(MonitorStackEvents.class);
+		CloudFormRepository cfnRepository = createStrictMock(CloudFormRepository.class);
+		VpcRepository vpcRepository = createStrictMock(VpcRepository.class);
 		elbRepository = createStrictMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		providesCurrentIp = createStrictMock(ProvidesCurrentIp.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
-		identityProvider = createStrictMock(IdentityProvider.class);
+		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 
 		String regionName = EnvironmentSetupForTests.getRegion().getName();
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, regionName);

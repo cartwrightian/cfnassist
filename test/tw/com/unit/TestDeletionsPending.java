@@ -1,18 +1,17 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.util.LinkedList;
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import tw.com.SetsDeltaIndex;
 import tw.com.entity.DeletionPending;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CannotFindVpcException;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class TestDeletionsPending implements SetsDeltaIndex {
 
@@ -33,7 +32,7 @@ public class TestDeletionsPending implements SetsDeltaIndex {
 	@Test
 	public void shouldIterateOverPendingsInCorrectOrder() {
 		
-		LinkedList<Integer> results = new LinkedList<Integer>();
+		LinkedList<Integer> results = new LinkedList<>();
 		for(DeletionPending item : pending) {
 			results.add(item.getDelta());
 		}

@@ -42,8 +42,8 @@ public class TestCloudRepository extends EasyMockSupport {
 		EasyMock.expect(cloudClient.getAllSubnets()).andReturn(createSubnets(vpcId, subnetId));
 		
 		replayAll();
-		List<Subnet> result = repository.getSubnetsForVpc(vpcId);
-		result = repository.getSubnetsForVpc(vpcId); // cached
+		repository.getSubnetsForVpc(vpcId);
+		List<Subnet> result = repository.getSubnetsForVpc(vpcId); // cached
 		verifyAll();
 		assertEquals(1, result.size());
 		assertEquals(subnetId, result.get(0).getSubnetId());
@@ -57,8 +57,8 @@ public class TestCloudRepository extends EasyMockSupport {
 		EasyMock.expect(cloudClient.getAvailabilityZones("regionName")).andReturn(zones);
 
 		replayAll();
-		Map<String, AvailabilityZone> result = repository.getZones("regionName");
-		result = repository.getZones("regionName"); // cached
+		repository.getZones("regionName");
+		Map<String, AvailabilityZone> result = repository.getZones("regionName"); // cached
 		verifyAll();
 
 		assertEquals(zone, result.get("A"));
@@ -72,8 +72,8 @@ public class TestCloudRepository extends EasyMockSupport {
 		EasyMock.expect(cloudClient.getAllSubnets()).andReturn(createSubnets(vpcId, subnetId));
 		
 		replayAll();
-		Subnet result = repository.getSubnetById(subnetId);
-		result = repository.getSubnetById(subnetId); // cached
+		repository.getSubnetById(subnetId);
+		Subnet result = repository.getSubnetById(subnetId); // cached
 		verifyAll();
 
 		assertEquals(subnetId, result.getSubnetId());
@@ -98,8 +98,8 @@ public class TestCloudRepository extends EasyMockSupport {
 		EasyMock.expect(cloudClient.getInstances()).andReturn(instances);
 		
 		replayAll();
-		List<Address> result = repository.getEIPForVPCId(vpcId);
-		result = repository.getEIPForVPCId(vpcId); //cached
+		repository.getEIPForVPCId(vpcId);
+		List<Address> result = repository.getEIPForVPCId(vpcId); //cached
 		verifyAll();
 		
 		assertEquals(1, result.size());
@@ -111,7 +111,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		String groupId = "groupId";
 		String groupName = "groupName";
 		
-		List<SecurityGroup> groups = new LinkedList<SecurityGroup>();
+		List<SecurityGroup> groups = new LinkedList<>();
 		groups.add(new SecurityGroup().withGroupId("xxxx1").withGroupName("abcgc"));
 		groups.add(new SecurityGroup().withGroupId(groupId).withGroupName(groupName));
 		groups.add(new SecurityGroup().withGroupId("xxxx2").withGroupName("zzzhdh"));

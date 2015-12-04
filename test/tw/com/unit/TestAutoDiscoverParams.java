@@ -27,7 +27,6 @@ import static junit.framework.TestCase.assertEquals;
 
 public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZones {
     private VpcRepository vpcRepository;
-    private CloudFormRepository cfnRepository;
     private AutoDiscoverParams autoDiscover;
     private LinkedList<Parameter> results;
     private LinkedList<TemplateParameter> declaredParameters;
@@ -35,7 +34,7 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
     @Before
     public void beforeEachTestRuns() {
         vpcRepository = createMock(VpcRepository.class);
-        cfnRepository = createMock(CloudFormRepository.class);
+        CloudFormRepository cfnRepository = createMock(CloudFormRepository.class);
         File templateFile = new File(FilesForTesting.SIMPLE_STACK_WITH_AZ);
         autoDiscover = new AutoDiscoverParams(templateFile, vpcRepository, cfnRepository);
 

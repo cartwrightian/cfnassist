@@ -34,12 +34,10 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	private AwsFacade aws;
 	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	private CloudFormRepository cfnRepository;
-	private VpcRepository vpcRepository;
 	private ELBRepository elbRepository;
 	private MonitorStackEvents monitor;
 	private String project = projectAndEnv.getProject();
 	private EnvironmentTag environmentTag = projectAndEnv.getEnvTag();
-	private CloudRepository cloudRepository;
 	private NotificationSender notificationSender;
 	private IdentityProvider identityProvider;
 	private User user;
@@ -48,9 +46,9 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	public void beforeEachTestRuns() {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
-		vpcRepository = createMock(VpcRepository.class);
+		VpcRepository vpcRepository = createMock(VpcRepository.class);
 		elbRepository = createMock(ELBRepository.class);
-		cloudRepository =  createStrictMock(CloudRepository.class);
+		CloudRepository cloudRepository = createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
 		

@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import tw.com.*;
 import tw.com.entity.StackNameAndId;
-import tw.com.entity.Tagging;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
@@ -75,7 +74,6 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		TestAwsFacadeCreatesStacks.addParam(creationParameters, "env", projectAndEnv.getEnv());
 		TestAwsFacadeCreatesStacks.addParam(creationParameters, "vpc", VPC_ID);
 
-        Tagging tagging = new Tagging();
         StackNameAndId stackNameAndId = setUpdateExpectations(stackName, filename, templateParameters, creationParameters);
 		
 		replayAll();
@@ -96,7 +94,6 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		TestAwsFacadeCreatesStacks.addParam(userParameters, "userKey", "value");
 		TestAwsFacadeCreatesStacks.addParam(creationParameters, "userKey", "value");
 
-        Tagging tagging = new Tagging();
         StackNameAndId stackNameAndId = setUpdateExpectations(stackName, filename, templateParameters, creationParameters);
 		
 		replayAll();

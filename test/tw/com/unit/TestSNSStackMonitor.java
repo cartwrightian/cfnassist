@@ -1,10 +1,6 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.StackStatus;
 import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -12,22 +8,20 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import com.amazonaws.services.cloudformation.model.StackStatus;
-
 import tw.com.NotificationProvider;
 import tw.com.SNSMonitor;
 import tw.com.SetsDeltaIndex;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.StackNameAndId;
 import tw.com.entity.StackNotification;
-import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.FailedToCreateQueueException;
-import tw.com.exceptions.NotReadyException;
-import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.exceptions.WrongStackStatus;
+import tw.com.exceptions.*;
 import tw.com.repository.CheckStackExists;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(EasyMockRunner.class)
 public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackExists, SetsDeltaIndex {
@@ -131,7 +125,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	}
 
 	private void setExpectationsRepondInProgressUntilLimit(String inProgress) throws NotReadyException {
-		List<StackNotification> theEvents = new LinkedList<StackNotification>();
+		List<StackNotification> theEvents = new LinkedList<>();
 		addMatchingEvent(theEvents, inProgress, stackName, stackId);
 		for(int count=0; count<=LIMIT; count++) {
 			EasyMock.expect(eventSource.receiveNotifications()).andReturn(theEvents);
@@ -274,14 +268,14 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	}
 
 	private void setEventStreamExpectations(String inProgress, String complete, String theName, String theId) throws NotReadyException {
-		List<StackNotification> theEvents = new LinkedList<StackNotification>();
+		List<StackNotification> theEvents = new LinkedList<>();
 		addMatchingEvent(theEvents, inProgress, theName, theId);
 		addNonMatchingEvent(theEvents, complete, theName, theId);
 		addMatchingEvent(theEvents, inProgress, theName, theId);
 		addNonMatchingEvent(theEvents, inProgress, theName, theId);
 		EasyMock.expect(eventSource.receiveNotifications()).andReturn(theEvents);
 		
-		List<StackNotification> moreEvents = new LinkedList<StackNotification>();
+		List<StackNotification> moreEvents = new LinkedList<>();
 		moreEvents.addAll(theEvents);
 		addNonMatchingEvent(moreEvents, complete, theName, theId);
 		addMatchingEvent(moreEvents, complete, theName, theId);

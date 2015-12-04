@@ -52,7 +52,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	public void shouldAddRouteTable() throws CfnAssistException {
 		RouteTable routeTable = new RouteTable().
 				withRouteTableId("routeTableId").
-				withTags(new Tag().withKey("Name").withValue("routeTableName"));;
+				withTags(new Tag().withKey("Name").withValue("routeTableName"));
 
 		networkDiagram.addRouteTable("subnetId_routeTableId", "routeTableName [routeTableId]");
 		
@@ -131,20 +131,18 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	}
 	
 	public static SecurityGroup setupSecurityGroup() {
-		SecurityGroup group = new SecurityGroup().
+		return new SecurityGroup().
 				withGroupId("groupId").
 				withGroupName("fullGroupName").
 				withTags(VpcTestBuilder.CreateNameTag("name"));
-		return group;
 	}
 	
 	public static IpPermission setupIpPerms() {
-		IpPermission ipPerms = new IpPermission().
+		return new IpPermission().
 				withFromPort(80).
 				withToPort(100).
 				withIpProtocol("tcp").
 				withIpRanges("ipRanges");
-		return ipPerms;
 	}
 
 }
