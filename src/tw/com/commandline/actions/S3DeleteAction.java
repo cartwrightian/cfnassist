@@ -1,35 +1,28 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
-
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.providers.ArtifactUploader;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import java.io.IOException;
+import java.util.Collection;
 
 public class S3DeleteAction extends SharedAction {
 	
 	@SuppressWarnings("static-access")
 	public S3DeleteAction() {
-		option = OptionBuilder.withArgName("s3delete").withDescription("Create artifacts in S3").create("s3delete");
-	}
+        createOption("s3delete", "Create artifacts in S3");
+    }
 
-	@Override
+    @Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argument) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException, MissingArgumentException {
+			String... argument) throws
+            IOException, InterruptedException, CfnAssistException, MissingArgumentException {
 		ArtifactUploader uploader = factory.createArtifactUploader(projectAndEnv);
 		for(Parameter item : artifacts) {
 			uploader.delete(item.getParameterValue());

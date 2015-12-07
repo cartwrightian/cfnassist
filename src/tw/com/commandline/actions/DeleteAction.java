@@ -2,7 +2,6 @@ package tw.com.commandline.actions;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
@@ -18,11 +17,9 @@ import java.util.Collection;
 public class DeleteAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(DeleteAction.class);
 
-	
 	@SuppressWarnings("static-access")
 	public DeleteAction() {
-		option = OptionBuilder.withArgName("delete").hasArg().
-				withDescription("The template file corresponding to stack to delete").create("delete");
+		createOptionWithArg("delete", "The template file corresponding to stack to delete");
 	}
 
 	@Override

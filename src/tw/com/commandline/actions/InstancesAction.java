@@ -1,13 +1,7 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
@@ -15,23 +9,23 @@ import tw.com.entity.InstanceSummary;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.SearchCriteria;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 public class InstancesAction extends SharedAction {
 	
 	@SuppressWarnings("static-access")
 	public InstancesAction() {
-		option = OptionBuilder.withArgName("instances").withDescription("List out sumamry of instances").create("instances");
+		createOption("instances", "List out sumamry of instances");
 	}
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException, MissingArgumentException {
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws
+            IOException,
+            InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
 		SearchCriteria criteria = new SearchCriteria(projectAndEnv);
 		List<InstanceSummary> results = aws.listInstances(criteria);

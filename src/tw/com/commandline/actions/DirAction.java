@@ -2,7 +2,6 @@ package tw.com.commandline.actions;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
@@ -21,8 +20,7 @@ public class DirAction extends SharedAction {
 
 	@SuppressWarnings("static-access")
 	public DirAction() {
-		option = OptionBuilder.withArgName("dir").hasArg().
-				withDescription("The directory/folder containing delta templates to apply").create("dir");
+		createOptionWithArg("dir","The directory/folder containing delta templates to apply");
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, 

@@ -1,34 +1,27 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.WrongNumberOfStacksException;
-import com.amazonaws.services.cloudformation.model.Parameter;
+
+import java.io.IOException;
+import java.util.Collection;
 
 public class ElbAction extends SharedAction {
 
 	@SuppressWarnings("static-access")
 	public ElbAction() {
-		option = OptionBuilder.withArgName("elbUpdate").hasArg().
-				withDescription("Update elb to point at instances tagged with build").create("elbUpdate");
+		createOptionWithArg("elbUpdate", "Update elb to point at instances tagged with build");
 	}
 	
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
 			Collection<Parameter> artifacts, String... args)
-			throws InvalidStackParameterException, FileNotFoundException,
-			IOException, WrongNumberOfStacksException, InterruptedException,
+			throws IOException, InterruptedException,
 			CfnAssistException, MissingArgumentException {
 
 		AwsFacade facade = factory.createFacade();

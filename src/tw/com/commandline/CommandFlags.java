@@ -42,7 +42,6 @@ public class CommandFlags {
 	private Collection<Parameter> cfnParams;
 	private Collection<Parameter> artifacts;
 
-
 	public CommandFlags(String executableName, Options commandLineOptions) {
 		this.executableName = executableName;
 		this.commandLineOptions = commandLineOptions;
@@ -82,51 +81,45 @@ public class CommandFlags {
 	
 	@SuppressWarnings("static-access")
 	private void createOptions() {
-		projectParam = OptionBuilder.withArgName("project").hasArg().
-				withDescription("Name of the cfnassist project, or use env var: " + AwsFacade.PROJECT_TAG).
-				create("project");
-		
-		envParam = OptionBuilder.withArgName("env").hasArg().
-				withDescription("Name of cfnassit environment, or use env var: " + AwsFacade.ENVIRONMENT_TAG).
-				create("env");
-		
-		regionParam = OptionBuilder.withArgName("region").hasArg().
-				withDescription("AWS Region name, or use env var: " + Main.ENV_VAR_EC2_REGION).
-				create("region");
-		
-		keysValuesParam = OptionBuilder.withArgName("parameters").
-				hasArgs().withValueSeparator(';').
-				withDescription("Provide paramters for cfn scripts, format as per cfn commandline tools").
-				create("parameters");
-		
-		buildNumberParam = OptionBuilder.withArgName("build").
-				hasArgs().withDescription("A Build number/id to tag the deployed stacks with, or use env var: " + AwsFacade.BUILD_TAG).
-				create("build");
-		
-		snsParam = OptionBuilder.withArgName("sns").
-				withDescription(
-						String.format("Use SNS to publish updates from cloud formation, uses the topic %s"
-						,SNSEventSource.SNS_TOPIC_NAME)).
-						hasArg(false).create("sns");
-		
-		capIAMParam = OptionBuilder.withArgName("capabilityIAM").
-				withDescription("Pass capability IAM to create stack (needed if you get capability missing exceptions)").
-				hasArg(false).create("capabilityIAM");
-		
-		commentParam = OptionBuilder.withArgName("comment").hasArg().
-				withDescription("Add a comment within the tag " + Tagging.COMMENT_TAG).create("comment");
-		
-		artifactParam = OptionBuilder.withArgName("artifacts").
-				hasArgs().withValueSeparator(';').
-				withDescription("Provide files to be uploaded to S3 bucket, param values will be replaced with the S3 URLs and passed into the template file").
-				create("artifacts");
-		
-		bucketParam = OptionBuilder.withArgName("bucket").
-				hasArgs().withDescription("Bucket name to use for S3 artifacts").
-				create("bucket");
-		
+		projectParam = createParam("project", "Name of the cfnassist project, or use env var: " + AwsFacade.PROJECT_TAG);
+		envParam = createParam("env", "Name of cfnassit environment, or use env var: " + AwsFacade.ENVIRONMENT_TAG);
+        regionParam = createParam("region", "AWS Region name, or use env var: " + Main.ENV_VAR_EC2_REGION);
+
+        keysValuesParam = createParamMultiArgs("parameters",
+                "Provide paramters for cfn scripts, format as per cfn commandline tools");
+
+        buildNumberParam = createParam("build",
+                "A Build number/id to tag the deployed stacks with, or use env var: " + AwsFacade.BUILD_TAG);
+
+        snsParam = createParamNoArg("sns", String.format("Use SNS to publish updates from cloud formation, uses the topic %s"
+                , SNSEventSource.SNS_TOPIC_NAME));
+
+        capIAMParam = createParamNoArg("capabilityIAM",
+                "Pass capability IAM to create stack (needed if you get capability missing exceptions)");
+
+        commentParam = createParam("comment", "Add a comment within the tag " + Tagging.COMMENT_TAG);
+
+        artifactParam = createParamMultiArgs("artifacts","Provide files to be uploaded to S3 bucket, param values will " +
+                "be replaced with the S3 URLs and passed into the template file");
+
+        bucketParam = createParam("bucket", "Bucket name to use for S3 artifacts");
 	}
-	
+
+    private Option createParamMultiArgs(String name, String description) {
+        return Option.builder(name).
+                argName(name).desc(description).valueSeparator(';').hasArgs().build();
+    }
+
+    private Option createParamNoArg(String name, String description) {
+        return Option.builder(name).
+                argName(name).desc(description).hasArg(false).build();
+    }
+
+    private Option createParam(String name, String description) {
+        return Option.builder(name).
+                argName(name).desc(description).hasArg(true).build();
+	}
+
 	private String checkForArgument(CommandLine cmd, HelpFormatter formatter,
 			Option option, String environmentalVar, boolean required) throws MissingArgumentException {
 		String argName = option.getArgName();

@@ -444,7 +444,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		validate(CLIArgBuilder.blacklistCurrentIP(type, port));
 	}
 
-	
 	@Test
 	public void shouldNotAllowSNSWithS3Create() {
 		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
@@ -584,7 +583,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		int result = main.parse(facadeFactory,true);
 		assertEquals(EnvironmentSetupForTests.FAILURE_STATUS, result);
 	}
-	
 
 	private void validate(String[] args) {
 		replayAll();

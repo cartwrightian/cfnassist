@@ -1,21 +1,16 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.providers.ProvidesCurrentIp;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import java.io.IOException;
+import java.util.Collection;
 
 public class WhitelistAction extends SharedAction {
 
@@ -23,18 +18,16 @@ public class WhitelistAction extends SharedAction {
 
 	@SuppressWarnings("static-access")
 	public WhitelistAction() {
-		option = OptionBuilder.
-				withArgName("whitelist").
-				hasArgs(2).
-				withDescription("Whitelist current ip (i.e. add to the security group) for ELB tagged with type tag, supply tag & port").
-				create("whitelist");
+		createOptionWithArgs("whitelist",
+				"Whitelist current ip (i.e. add to the security group) for ELB tagged with type tag, supply tag & port",
+				2);
 	}
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argument) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, InterruptedException,
+			String... argument) throws
+			IOException, InterruptedException,
 			CfnAssistException, MissingArgumentException {
 		
 		AwsFacade facade = factory.createFacade();

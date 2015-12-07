@@ -1,36 +1,30 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackEntry;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.WrongNumberOfStacksException;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 public class ListAction extends SharedAction {
 	
 	@SuppressWarnings("static-access")
 	public ListAction() {
-		option = OptionBuilder.withArgName("ls").withDescription("List out the stacks").create("ls");
+		createOption("ls", "List out the stacks");
 	}
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, WrongNumberOfStacksException,
-			InterruptedException, CfnAssistException, MissingArgumentException {
+			Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws
+            IOException,
+            InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
 		render(results);

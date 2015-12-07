@@ -1,38 +1,37 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collection;
-
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
-
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.providers.ProvidesCurrentIp;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import java.io.IOException;
+import java.util.Collection;
 
 public class BlacklistAction extends SharedAction {
 
 	@SuppressWarnings("static-access")
 	public BlacklistAction() {
-		option = OptionBuilder.
-				withArgName("blacklist").
-				hasArgs(2).
-				withDescription("Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port").
-				create("blacklist");
+		createOptionWithArgs("blacklist",
+                "Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port", 2);
+//		option = OptionBuilder.
+//				withArgName("blacklist").
+//				hasArgs(2).
+//				withDescription("Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port").
+//				create("blacklist");
 	}
 
-	@Override
+
+
+    @Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argument) throws InvalidStackParameterException,
-			FileNotFoundException, IOException, InterruptedException,
+			String... argument) throws
+            IOException, InterruptedException,
 			CfnAssistException, MissingArgumentException {
 		
 		AwsFacade facade = factory.createFacade();

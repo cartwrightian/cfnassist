@@ -1,37 +1,32 @@
 package tw.com.commandline.actions;
 
-import java.io.FileNotFoundException;
+import com.amazonaws.services.cloudformation.model.Parameter;
+import org.apache.commons.cli.MissingArgumentException;
+import tw.com.FacadeFactory;
+import tw.com.commandline.CommandLineException;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.exceptions.CfnAssistException;
+import tw.com.pictures.DiagramCreator;
+import tw.com.pictures.dot.FileRecorder;
+import tw.com.pictures.dot.Recorder;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
-import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
-
-import tw.com.FacadeFactory;
-import tw.com.commandline.CommandLineException;
-import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.pictures.DiagramCreator;
-import tw.com.pictures.dot.FileRecorder;
-import tw.com.pictures.dot.Recorder;
-
-import com.amazonaws.services.cloudformation.model.Parameter;
-
 public class CreateDiagramAction extends SharedAction {
 	
 	@SuppressWarnings("static-access")
 	public CreateDiagramAction() {
-		option = OptionBuilder.withArgName("diagrams").hasArg().withDescription("Create diagrams for VPCs in given folder").create("diagrams");
+		createOptionWithArg("diagrams", "Create diagrams for VPCs in given folder");
 	}
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argument) throws InvalidStackParameterException,
-			FileNotFoundException, IOException,
+			String... argument) throws
+            IOException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		DiagramCreator diagramCreator = factory.createDiagramCreator();
 		Path folder = Paths.get(argument[0]);

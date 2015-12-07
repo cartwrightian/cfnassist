@@ -2,7 +2,6 @@ package tw.com.commandline.actions;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.OptionBuilder;
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
@@ -17,10 +16,8 @@ public class TidyOldStacksAction extends SharedAction {
 	
 	@SuppressWarnings("static-access")
 	public TidyOldStacksAction() {
-		option = OptionBuilder.withArgName("tidyOldStacks").hasArgs(2).
-				withDescription("Delete stacks matching given template no longer associated to the LB via an instance."+ 
-								"Pass template filename and type tag").
-				create("tidyOldStacks");
+		createOptionWithArgs("tidyOldStacks","Delete stacks matching given template no longer associated to the LB via an instance."+
+				"Pass template filename and type tag",2);
 	}
 	
 	@Override

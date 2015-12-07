@@ -33,7 +33,8 @@ public class Main {
 		commandActions.addActionsTo(commandLineOptions);
 	}
 	
-	public static void main(String[] args) throws ParseException, IOException, InvalidStackParameterException, WrongNumberOfStacksException, InterruptedException, TagsAlreadyInit, CannotFindVpcException {
+	public static void main(String[] args) throws ParseException, IOException,
+			CfnAssistException, InterruptedException {
 		Main main = new Main(args);
 		int result = main.parse();
 		System.exit(result);
@@ -115,7 +116,6 @@ public class Main {
 		if (action.usesSNS() && flags.haveSnsEnable()) {
 			factory.setSNSMonitoring();
 		}
-		
 	}
 
 	private Region populateRegion(String regionName) throws MissingArgumentException {

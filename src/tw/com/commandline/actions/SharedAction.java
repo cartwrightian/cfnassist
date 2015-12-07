@@ -1,16 +1,14 @@
 package tw.com.commandline.actions;
 
-import java.util.Collection;
-
-import org.apache.commons.cli.Option;
-
 import com.amazonaws.services.cloudformation.model.Parameter;
-
+import org.apache.commons.cli.Option;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.ArtifactUploader;
+
+import java.util.Collection;
 
 public abstract class SharedAction implements CommandLineAction {
 
@@ -25,6 +23,18 @@ public abstract class SharedAction implements CommandLineAction {
 	public String getArgName() {
 		return option.getArgName();
 	}
+
+	protected void createOption(String optName, String description) {
+		option = Option.builder(optName).argName(optName).desc(description).build();
+	}
+
+    protected void createOptionWithArg(String optName, String description) {
+        option =  Option.builder(optName).argName(optName).desc(description).hasArg().build();
+    }
+
+    protected void createOptionWithArgs(String name, String description, int numberOfArgs) {
+        option =  Option.builder(name).argName(name).desc(description).hasArgs().numberOfArgs(numberOfArgs).build();
+    }
 
 	protected void guardForProjectAndEnv(ProjectAndEnv projectAndEnv)
 			throws CommandLineException {
