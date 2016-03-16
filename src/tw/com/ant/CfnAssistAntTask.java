@@ -32,9 +32,9 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	
 	public CfnAssistAntTask() {
 		snsMonitoring = false;
-		params = new LinkedList<Param>();
-		artifactParams = new LinkedList<Param>();
-		actionElements = new LinkedList<ActionElement>();
+		params = new LinkedList<>();
+		artifactParams = new LinkedList<>();
+		actionElements = new LinkedList<>();
 	}
 	
 	public void setRegion(String awsRegion) {
@@ -74,6 +74,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	
 	public void addConfiguredDelete(DeleteElement deleteElement) {
 		actionElements.add(deleteElement);
+	}
+
+	public void addConfiguredInit(InitElement initElement) {
+		actionElements.add(initElement);
 	}
 	
 	public void addConfiguredRollback(RollbackElement rollbackElement) {

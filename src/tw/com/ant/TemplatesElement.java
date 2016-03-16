@@ -34,7 +34,7 @@ public class TemplatesElement implements ActionElement {
 
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) 
-			throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException, 
+			throws IOException, InterruptedException, CfnAssistException,
 			CommandLineException, MissingArgumentException {
 		String absolutePath = target.getAbsolutePath();
 		CommandLineAction actionToInvoke = null;

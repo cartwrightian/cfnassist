@@ -1,42 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project basedir="." default="test" name="cfnassist">
-    <property name="lib" value="dist/lib" />
-	<property name="awsVer" value="1.9.14" />
-	<property name="aws_sdk_loc" value="lib/aws-java-sdk-${awsVer}" />
-    <path id="aws_sdk_lib">
-	 	<pathelement location="${aws_sdk_loc}/lib/aws-java-sdk-${awsVer}.jar"/>
-		<fileset dir="${aws_sdk_loc}/third-party/">
-			<include name="**/*.jar"/>
-		</fileset>
-    </path>
-	<path id="logging_libs">
-		<pathelement location="${lib}/slf4j-api-1.7.5.jar"/>
-		<pathelement location="${lib}/logback-core-1.0.10.jar"/>
-		<pathelement location="${lib}/logback-classic-1.0.10.jar"/>
-	</path>
-	<path id="apacheCommons">
-		<pathelement location="${lib}/commons-io-2.4.jar"/>
-		<pathelement location="${lib}/commons-cli-1.2.jar"/>
-	</path>
-	<path id="ant_libs">
-		<pathelement location="${lib}/apache-ant-1.9.3/lib/ant.jar"/>
-	</path>
 
 	<!-- set up the custom task, your classpath may vary -->	
 	<target name="cfnTask" >
 		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
 			<classpath>
-				<pathelement location="${lib}/cfnassist.jar"/>
-						<path refid="aws_sdk_lib"/>
-				    	<path refid="logging_libs"/>
-				    	<path refid="apacheCommons"/>
+				<pathelement location="build/libs/cfnassist-all-1.0.0.jar"/>
 			</classpath>
 		</taskdef>
 	</target>
 
 	<!-- used for testing -->	
 	<target name="test" depends="testSimpleTemplateAndDelete,testSimpleTemplateBuildNumber,testSimpleTemplateWithParam,testSimpleDir, testSimpleSNS,testELBSwitchOver,testSimpleTemplateWithS3Uploads,testS3,testTidyOldStacks,testCreateDiagrams,testElbAcccessControl" />
-	
+
+	<target name="testInitVpc" depends="cfnTask">
+		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<Init vpcId="someId"></Init>
+		</cfnassist>
+	</target>
+
 	<!-- creates a cfn a cfn stack based on subnet.json, then deletes it again -->	
 	<target name="testSimpleTemplateAndDelete" depends="cfnTask">
 		<sequential>

@@ -31,8 +31,7 @@ public class DiagramsElement implements ActionElement {
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
-			throws FileNotFoundException, IOException,
-			InvalidStackParameterException, InterruptedException,
+			throws IOException, InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		String path = target.getAbsolutePath();
 

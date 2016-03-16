@@ -30,7 +30,7 @@ public class RollbackElement implements ActionElement {
 	}
 	
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) 
-			throws FileNotFoundException, IOException, InvalidStackParameterException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
+			throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
 		String absolutePath = target.getAbsolutePath();
 		
 		if (!target.isDirectory()) {
