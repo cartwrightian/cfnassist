@@ -76,9 +76,9 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		actionElements.add(deleteElement);
 	}
 
-	public void addConfiguredInit(InitElement initElement) {
-		actionElements.add(initElement);
-	}
+	public void addConfiguredInit(InitElement initElement) { actionElements.add(initElement); }
+
+	public void addConfiguredSetTag(SetTagAction setTagAction) { actionElements.add(setTagAction);}
 	
 	public void addConfiguredRollback(RollbackElement rollbackElement) {
 		actionElements.add(rollbackElement);
