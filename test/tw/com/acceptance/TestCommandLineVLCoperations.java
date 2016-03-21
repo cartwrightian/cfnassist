@@ -6,12 +6,14 @@ import com.amazonaws.services.ec2.model.Vpc;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import tw.com.CLIArgBuilder;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.commandline.Main;
 import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class TestCommandLineVLCoperations {
 	
@@ -33,13 +35,8 @@ public class TestCommandLineVLCoperations {
 	@Test
 	public void testInvokeInitViaCommandLine() throws InterruptedException {	
 		EnvironmentSetupForTests.clearVpcTags(ec2Client, altEnvVPC);
-		
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ALT_ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-init", altEnvVPC.getVpcId()
-				};
+		String[] args = CLIArgBuilder.initVPC(EnvironmentSetupForTests.ALT_ENV, EnvironmentSetupForTests.PROJECT, altEnvVPC.getVpcId());
+
 		Main main = new Main(args);
 		int result = main.parse();
 
@@ -54,6 +51,13 @@ public class TestCommandLineVLCoperations {
 				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-reset"
 				};
+		Main main = new Main(args);
+		assertEquals(0,main.parse());
+	}
+
+	@Test
+	public void testTagVPCViaCommandLine() {
+        String[] args = CLIArgBuilder.tagVPC("TEST_TAG_NAME", "Test Tag Value");
 		Main main = new Main(args);
 		assertEquals(0,main.parse());
 	}

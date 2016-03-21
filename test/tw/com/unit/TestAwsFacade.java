@@ -67,6 +67,16 @@ public class TestAwsFacade extends EasyMockSupport {
 		aws.initEnvAndProjectForVPC("targetVpc", projectAndEnv);
 		verifyAll();
 	}
+
+	@Test
+	public void shouldSetTagOnVPC() {
+		vpcRepository.setVpcTag(projectAndEnv, "tagKey", "tagValue");
+		EasyMock.expectLastCall();
+
+		replayAll();
+		aws.setTagForVpc(projectAndEnv, "tagKey", "tagValue");
+		verifyAll();
+	}
 	
 	@Test
 	public void testShouldInitTagsOnVpcThrowIfAlreadyExists() throws CfnAssistException {

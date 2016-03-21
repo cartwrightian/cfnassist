@@ -22,7 +22,7 @@ public class InitAction extends SharedAction {
 	}
 
 	@Override
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,  Collection<Parameter> unused,
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
 			Collection<Parameter> artifacts, String... args) throws
             IOException, InterruptedException, CfnAssistException, MissingArgumentException {
 		String vpcId = args[0];

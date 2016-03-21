@@ -539,6 +539,10 @@ public class AwsFacade implements ProvidesZones {
 		}	
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
 	}
+
+	public void setTagForVpc(ProjectAndEnv projectAndEnv, String tagName, String tagValue) {
+		vpcRepository.setVpcTag(projectAndEnv,tagName,tagValue);
+	}
 	
 	public List<StackEntry> listStacks(ProjectAndEnv projectAndEnv) {
 		if (projectAndEnv.hasEnv()) {

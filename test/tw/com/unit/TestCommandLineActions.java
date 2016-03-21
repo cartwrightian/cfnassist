@@ -66,17 +66,18 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void shouldInitVPCWithEnvironmentAndProject() throws MissingArgumentException, CfnAssistException, InterruptedException {
-		
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-init", "vpcID"
-				};
-		
+		String[] args = CLIArgBuilder.initVPC(EnvironmentSetupForTests.ENV, EnvironmentSetupForTests.PROJECT, "vpcID");
 		setVPCopExpectations();		
 		facade.initEnvAndProjectForVPC("vpcID", projectAndEnv);		
 		validate(args);	
+	}
+
+	@Test
+	public void shouldSetTagOnVPC() throws InterruptedException, MissingArgumentException, CfnAssistException {
+		String[] args = CLIArgBuilder.tagVPC("TEST_TAG_NAME", "TestTagValue");
+		setVPCopExpectations();
+		facade.setTagForVpc(projectAndEnv, "TEST_TAG_NAME", "TestTagValue");
+		validate(args);
 	}
 	
 	@Test
@@ -92,7 +93,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		facade.resetDeltaIndex(projectAndEnv);		
 		validate(args);	
 	}
-	
+
 	// TODO stop extra parameters on this call?
 	@Test
 	public void shouldResetVPCIndexEnvironmentAndProjectWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException {		
@@ -402,7 +403,6 @@ public class TestCommandLineActions extends EasyMockSupport {
         EasyMock.expectLastCall();
         artifactUploader.delete(filenameB);
         EasyMock.expectLastCall();
-
 
         validate(CLIArgBuilder.deleteArtifacts(buildNumber, filenameA, filenameB));
 	}

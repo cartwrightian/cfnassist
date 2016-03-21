@@ -54,6 +54,7 @@ public class Actions {
 		actions.add(new ResetAction());
 		actions.add(new RollbackAction());
 		actions.add(new InitAction());
+		actions.add(new AddTagAction());
 		actions.add(new ElbAction());
 		actions.add(new DeleteAction());
 		actions.add(new DeleteByNameAction());
@@ -67,5 +68,4 @@ public class Actions {
 		actions.add(new StepbackAction());
 		actions.add(new InstancesAction());
 	}
-
 }
