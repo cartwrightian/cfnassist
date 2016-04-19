@@ -49,6 +49,7 @@ public class AwsFacade implements ProvidesZones {
     public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
 	public static final String TYPE_TAG = "CFN_ASSIST_TYPE";
 	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
+    public static final String KEYNAME_TAG = "CFN_ASSIST_KEYNAME";
 	
 	public static final String PARAMETER_STACKNAME = "stackname";
 
@@ -680,6 +681,9 @@ public class AwsFacade implements ProvidesZones {
 		String env = projAndEnv.getEnv();
         String project = projAndEnv.getProject();
 		String keypairName = format("%s_%s_keypair", project,env);
-		return cloudRepository.createKeyPair(keypairName, destination);
+        logger.info("Create key pair with name " + keypairName);
+		KeyPair result = cloudRepository.createKeyPair(keypairName, destination);
+		vpcRepository.setVpcTag(projAndEnv,KEYNAME_TAG, result.getKeyName());
+		return result;
 	}
 }

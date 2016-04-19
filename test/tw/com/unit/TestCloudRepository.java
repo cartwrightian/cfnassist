@@ -70,7 +70,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldGetSubnetById() {
+	public void shouldGetSubnetById() {
 		String vpcId = "vpcId";
 		String subnetId = "subnetId";
 		
@@ -149,7 +149,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldFindInstancesForASubnet() {
+	public void shouldFindInstancesForASubnet() {
 		String subnetId = "subnetId";
 		String instanceId = "instanceId";
 		String instanceIdB = "instanceId1";
@@ -167,7 +167,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldGetRouteTablesForVPC() {
+	public void shouldGetRouteTablesForVPC() {
 		String vpcId = "vpcId";
 		String tableId = "tableId";
 
@@ -187,7 +187,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldGetACLSForVPC() {
+	public void shouldGetACLSForVPC() {
 		String vpcId = "vpcId";
 		String aclId = "aclId";
 
@@ -207,7 +207,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldAddIpAndPortToASecurityGroup() throws UnknownHostException {
+	public void shouldAddIpAndPortToASecurityGroup() throws UnknownHostException {
 		String groupId = "groupId";
 		Integer port = 8081;
 		InetAddress adddress = Inet4Address.getByName("192.168.0.1");
@@ -223,7 +223,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldRemoveIpAndPortFromASecurityGroup() throws UnknownHostException {
+	public void shouldRemoveIpAndPortFromASecurityGroup() throws UnknownHostException {
 		String groupId = "groupId";
 		Integer port = 8081;
 		InetAddress adddress = Inet4Address.getByName("192.168.0.2");
@@ -238,7 +238,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldGetTagsForAnInstance() throws WrongNumberOfInstancesException {
+	public void shouldGetTagsForAnInstance() throws WrongNumberOfInstancesException {
 		String instanceId = "someId";
 		
 		Tag tag = new Tag().withKey("theKey").withValue("theValue");
