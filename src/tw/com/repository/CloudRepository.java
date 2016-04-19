@@ -1,9 +1,12 @@
 package tw.com.repository;
 
 import com.amazonaws.services.ec2.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
+import tw.com.providers.SavesFile;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -11,7 +14,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.String.format;
+
 public class CloudRepository {
+    private static final Logger logger = LoggerFactory.getLogger(CloudRepository.class);
 
 	private CloudClient cloudClient;
 	
@@ -78,7 +84,7 @@ public class CloudRepository {
 				return group;
 			}
 		}
-		throw new CfnAssistException(String.format("Failed to find SecurityGroup with name '%s'", groupName));
+		throw new CfnAssistException(format("Failed to find SecurityGroup with name '%s'", groupName));
 	}
 
 	public SecurityGroup getSecurityGroupById(String groupId) throws CfnAssistException {
@@ -88,7 +94,7 @@ public class CloudRepository {
 				return group;
 			}
 		}
-		throw new CfnAssistException(String.format("Failed to find SecurityGroup with id '%s'", groupId));
+		throw new CfnAssistException(format("Failed to find SecurityGroup with id '%s'", groupId));
 	}
 	
 	public List<SecurityGroup> getSecurityGroupsFor(String vpcId) {
@@ -109,7 +115,7 @@ public class CloudRepository {
 				return i;
 			}
 		}
-		throw new CfnAssistException(String.format("Failed to find Instance with id '%s'", instanceId));
+		throw new CfnAssistException(format("Failed to find Instance with id '%s'", instanceId));
 	}
 
 	public List<Address> getEIPForVPCId(String vpcId) throws CfnAssistException {
@@ -233,4 +239,17 @@ public class CloudRepository {
 		return zones;
 	}
 
+	public KeyPair createKeyPair(String keypairName, SavesFile savesFile) throws CfnAssistException {
+        String home = System.getenv("HOME");
+        String filename = format("%s/.ssh/%s.pem", home, keypairName);
+        if (!savesFile.exists(filename)) {
+            KeyPair pair = cloudClient.createKeyPair(keypairName);
+            savesFile.save(filename, pair.getKeyMaterial());
+            return pair;
+        } else {
+            String message = format("Could not create key pair, file %s exists", filename);
+            logger.error(message);
+            throw new CfnAssistException(message);
+        }
+	}
 }

@@ -157,4 +157,12 @@ public class CloudClient implements ProgressListener {
 	}
 
 
+	public KeyPair createKeyPair(String keypairName) {
+		logger.info("Create keypair with name " + keypairName);
+		CreateKeyPairRequest request = new CreateKeyPairRequest().withKeyName(keypairName);
+		CreateKeyPairResult result = ec2Client.createKeyPair(request);
+        KeyPair keyPair = result.getKeyPair();
+        logger.info(format("Created keypair %s with fingerprint %s", keyPair.getKeyName(), keyPair.getKeyFingerprint()));
+        return keyPair;
+	}
 }

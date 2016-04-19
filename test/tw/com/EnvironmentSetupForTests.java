@@ -104,21 +104,6 @@ public class EnvironmentSetupForTests {
 		DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest(resources);
 		deleteTagsRequest.setTags(existingTags);
 		directClient.deleteTags(deleteTagsRequest);
-
-        // cannot filter this by vpc id, api doesn't support it
-
-//		DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest();
-//		Collection<Filter> filters = new LinkedList<>();
-//		Filter vpcFilter = new Filter().withName("vpc").withValues(vpc.getVpcId());
-//		filters.add(vpcFilter);
-//		describeTagsRequest.setFilters(filters);
-//		boolean deleted = false;
-//		while(!deleted) {
-//			DescribeTagsResult result = directClient.describeTags(describeTagsRequest);
-//			deleted = result.getTags().isEmpty();
-//			Thread.sleep(DELETE_RETRY_MAX_TIMEOUT_MS);
-//			logger.debug("waiting for tags to clear on vpc :" + vpc.getVpcId());
-//		}
 	}
 
 	public static ProjectAndEnv getMainProjectAndEnv() {

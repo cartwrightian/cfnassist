@@ -10,6 +10,7 @@ import org.junit.runner.RunWith;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
+import tw.com.providers.SavesFile;
 import tw.com.repository.CloudRepository;
 
 import java.net.Inet4Address;
@@ -20,19 +21,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(EasyMockRunner.class)
 public class TestCloudRepository extends EasyMockSupport {
 	
 	CloudRepository repository;
 	private CloudClient cloudClient;
+    private String home;
 
-	@Before
+    @Before
 	public void beforeEachTestRuns() {
 		cloudClient = createStrictMock(CloudClient.class);
 		repository = new CloudRepository(cloudClient);
-	}
+        home = System.getenv("HOME");
+    }
 	
 	@Test
 	public void shouldReturnSubnetsForGivenVPCId() {
@@ -249,6 +254,41 @@ public class TestCloudRepository extends EasyMockSupport {
 		assertEquals("theKey", result.getKey());
 		assertEquals("theValue", result.getValue());
 	}
+
+	@Test
+	public void shouldCreateKeyPairAndSaveToFile() throws CfnAssistException {
+        SavesFile savesFile = createStrictMock(SavesFile.class);
+
+        String filename = format("%s/.ssh/keyName.pem", home);
+
+        String material = "somePem";
+        EasyMock.expect(cloudClient.createKeyPair("keyName")).
+                andReturn(new KeyPair().withKeyFingerprint("fingerprint").withKeyMaterial(material));
+        EasyMock.expect(savesFile.exists(filename)).andReturn(false);
+        EasyMock.expect(savesFile.save(filename, material)).andReturn(true);
+
+        replayAll();
+        repository.createKeyPair("keyName", savesFile);
+        verifyAll();
+    }
+
+    @Test
+    public void shouldNotCreateKeyIfFileExists() {
+        SavesFile savesFile = createStrictMock(SavesFile.class);
+
+        String filename = format("%s/.ssh/keyName.pem", home);
+
+        EasyMock.expect(savesFile.exists(filename)).andReturn(true);
+
+        replayAll();
+        try {
+            repository.createKeyPair("keyName", savesFile);
+            fail("should have thrown");
+        } catch (CfnAssistException e) {
+            // noop - expected
+        }
+        verifyAll();
+    }
 	
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {
 		Subnet matchingSubnet = new Subnet().withVpcId(vpcId).withSubnetId(subnetId);

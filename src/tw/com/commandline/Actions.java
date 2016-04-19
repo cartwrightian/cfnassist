@@ -67,5 +67,6 @@ public class Actions {
 		actions.add(new BlacklistAction());
 		actions.add(new StepbackAction());
 		actions.add(new InstancesAction());
+		actions.add(new CreateKeyPairAction());
 	}
 }

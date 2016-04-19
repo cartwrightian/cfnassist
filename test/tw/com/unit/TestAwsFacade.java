@@ -3,6 +3,7 @@ package tw.com.unit;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import com.amazonaws.services.ec2.model.KeyPair;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
@@ -19,6 +20,7 @@ import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
+import tw.com.providers.SavesFile;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
@@ -250,6 +252,21 @@ public class TestAwsFacade extends EasyMockSupport {
 		
 		assertEquals("CfnAssist42TestsimpleStack", stackName);	
 	}
+
+	@Test
+    public void shouldCreateKeyPairAndSavePrivateKey() throws CfnAssistException {
+        SavesFile destination = createStrictMock(SavesFile.class);
+
+		KeyPair keypair = new KeyPair().withKeyName("keyName");
+		EasyMock.expect(cloudRepository.createKeyPair("CfnAssist_Test_keypair", destination)).
+				andReturn(keypair);
+
+        replayAll();
+		KeyPair result = aws.createKeyPair(projectAndEnv, destination);
+        verifyAll();
+
+		assertEquals("keyName", result.getKeyName());
+    }
 	
 	private void checkParameterCannotBePassed(String parameterName)
 			throws IOException,

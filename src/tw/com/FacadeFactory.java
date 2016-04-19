@@ -47,8 +47,9 @@ public class FacadeFactory {
 	private LoadBalancerClient loadBalancerClient;
 	private RDSClient datastoreClient;
 	private SNSNotificationSender notificationSender;
-	
-	// repo
+    private SavesFile savesFile;
+
+    // repo
 	private ELBRepository elbRepository;
 	private CfnRepository cfnRepository;
 	private VpcRepository vpcRepository;
@@ -59,7 +60,7 @@ public class FacadeFactory {
 	private DiagramCreator diagramCreator;
 	private IdentityProvider identityProvider;
 
-	public FacadeFactory() {
+    public FacadeFactory() {
 		credentialsProvider = new DefaultAWSCredentialsProviderChain();	
 	}
 	
@@ -133,9 +134,6 @@ public class FacadeFactory {
 			monitor.init();
 			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, 
 					cloudRepository, notificationSender, identityProvider, region.getName());
-//			if (tagging !=null) {
-//				awsFacade.setTagging(tagging);
-//			}
 		}	
 		return awsFacade;	
 	}
@@ -162,4 +160,10 @@ public class FacadeFactory {
 		return new ProvidesCurrentIp();
 	}
 
+	public SavesFile getSavesFile() {
+        if (savesFile==null) {
+            savesFile = new SavesFile();
+        }
+        return savesFile;
+	}
 }

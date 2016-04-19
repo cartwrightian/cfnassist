@@ -18,14 +18,7 @@ public class BlacklistAction extends SharedAction {
 	public BlacklistAction() {
 		createOptionWithArgs("blacklist",
                 "Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port", 2);
-//		option = OptionBuilder.
-//				withArgName("blacklist").
-//				hasArgs(2).
-//				withDescription("Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port").
-//				create("blacklist");
 	}
-
-
 
     @Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,

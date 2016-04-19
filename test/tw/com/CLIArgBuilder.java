@@ -301,4 +301,12 @@ public class CLIArgBuilder {
                 "-init", vpcId
         };
     }
+
+	public static String[] createKeyPair() {
+		return new String[] {
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+				"-keypair"
+		};
+	}
 }

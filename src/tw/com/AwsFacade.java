@@ -3,6 +3,7 @@ package tw.com;
 import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.ec2.model.AvailabilityZone;
+import com.amazonaws.services.ec2.model.KeyPair;
 import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
+import tw.com.providers.SavesFile;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
@@ -674,4 +676,10 @@ public class AwsFacade implements ProvidesZones {
        return cloudRepository.getZones(regionName);
     }
 
+	public KeyPair createKeyPair(ProjectAndEnv projAndEnv, SavesFile destination) throws CfnAssistException {
+		String env = projAndEnv.getEnv();
+        String project = projAndEnv.getProject();
+		String keypairName = format("%s_%s_keypair", project,env);
+		return cloudRepository.createKeyPair(keypairName, destination);
+	}
 }

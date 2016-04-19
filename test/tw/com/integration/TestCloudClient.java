@@ -17,6 +17,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.junit.Assert.*;
 
 public class TestCloudClient {
@@ -110,6 +112,20 @@ public class TestCloudClient {
 		
 		Instance result = cloudClient.getInstanceById(instanceId);
 		assertEquals(instanceId, result.getInstanceId());
+	}
+
+	@Test
+	public void shouldCreateKeyPair() {
+        String testKeypairName = "testKeyPairName";
+
+        KeyPair keyPair = cloudClient.createKeyPair(testKeypairName);
+
+        DeleteKeyPairRequest deleteRequest = new DeleteKeyPairRequest().withKeyName(testKeypairName);
+        ec2Client.deleteKeyPair(deleteRequest);
+
+        assertEquals(testKeypairName, keyPair.getKeyName());
+        assertThat(keyPair.getKeyMaterial(), startsWith("-----BEGIN RSA PRIVATE KEY-----"));
+        assertThat(keyPair.getKeyMaterial(), endsWith("-----END RSA PRIVATE KEY-----"));
 	}
 
 }
