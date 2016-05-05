@@ -457,9 +457,9 @@ public class TestCommandLineActions extends EasyMockSupport {
 
         setFactoryExpectations();
 
-        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
         EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
-        
+        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
+
         validate((CLIArgBuilder.createKeyPair("")));
     }
 
@@ -471,8 +471,8 @@ public class TestCommandLineActions extends EasyMockSupport {
 
         setFactoryExpectations();
 
-        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
         EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
+        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
 
         validate((CLIArgBuilder.createKeyPair(filename)));
     }

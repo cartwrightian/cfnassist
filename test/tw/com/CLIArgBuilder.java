@@ -270,6 +270,24 @@ public class CLIArgBuilder {
                 };
 	}
 
+    public static String[] createKeyPair(String filename) {
+        if (filename.isEmpty()) {
+            return new String[] {
+                    "-env", EnvironmentSetupForTests.ENV,
+                    "-project", EnvironmentSetupForTests.PROJECT,
+                    "-region", EnvironmentSetupForTests.getRegion().toString(),
+                    "-keypair"
+            };
+        } else {
+            return new String[]{
+                    "-env", EnvironmentSetupForTests.ENV,
+                    "-project", EnvironmentSetupForTests.PROJECT,
+                    "-region", EnvironmentSetupForTests.getRegion().toString(),
+                    "-keypair", filename
+            };
+        }
+    }
+
 	public static String[] deleteArtifacts(Integer buildNumber, String filenameA, String filenameB) {
 		String artifacts = String.format("art1=%s;art2=%s", filenameA, filenameB);
 
@@ -302,19 +320,4 @@ public class CLIArgBuilder {
         };
     }
 
-	public static String[] createKeyPair(String filename) {
-		if (filename.isEmpty()) {
-            return new String[] {
-                    "-env", EnvironmentSetupForTests.ENV,
-                    "-project", EnvironmentSetupForTests.PROJECT,
-                    "-keypair"
-            };
-        } else {
-            return new String[]{
-                    "-env", EnvironmentSetupForTests.ENV,
-                    "-project", EnvironmentSetupForTests.PROJECT,
-                    "-keypair", filename
-            };
-        }
-	}
 }
