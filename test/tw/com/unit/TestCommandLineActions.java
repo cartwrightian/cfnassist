@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(EasyMockRunner.class)
@@ -447,7 +448,9 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-    public void shouldCreateKeypair() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    public void shouldCreateKeypairWithNoFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
+        String home = System.getenv("HOME");
+        String filename = format("%s/.ssh/CfnAssist_Test.pem",home);
 
         setFactoryExpectations();
 
@@ -455,14 +458,30 @@ public class TestCommandLineActions extends EasyMockSupport {
 
         EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
         KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
-        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile)).andReturn(keyPair);
+        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
 
-        validate((CLIArgBuilder.createKeyPair()));
+        validate((CLIArgBuilder.createKeyPair("")));
+    }
+
+    @Test
+    public void shouldCreateKeypairWithFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
+
+        String filename = "someFilename";
+
+        setFactoryExpectations();
+
+        SavesFile savesFile = EasyMock.createMock(SavesFile.class);
+
+        EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
+        KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
+        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
+
+        validate((CLIArgBuilder.createKeyPair(filename)));
     }
 
 	@Test
 	public void shouldNotAllowSNSWithS3Create() {
-		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String artifacts = format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -479,7 +498,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void shouldNotAllowSNSWithS3Delete() {
-		String artifacts = String.format("art1=%s;art2=%s", "fileA", "fileB");
+		String artifacts = format("art1=%s;art2=%s", "fileA", "fileB");
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,
@@ -541,7 +560,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void testMustGiveTheBuildNumberWhenUploadingArtifacts() {
-		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -555,7 +574,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void testMustGiveTheBucketWhenUploadingArtifacts() {
-		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -581,7 +600,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	@Test
 	public void testUploadArgumentParsingFailsWithoutBucket() {
 		
-		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,

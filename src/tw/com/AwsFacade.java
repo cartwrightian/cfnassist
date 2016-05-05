@@ -677,12 +677,17 @@ public class AwsFacade implements ProvidesZones {
        return cloudRepository.getZones(regionName);
     }
 
-	public KeyPair createKeyPair(ProjectAndEnv projAndEnv, SavesFile destination) throws CfnAssistException {
+	public KeyPair createKeyPair(ProjectAndEnv projAndEnv, SavesFile destination, String filename) throws CfnAssistException {
+
+		if (destination.exists(filename)) {
+            throw new CfnAssistException(format("File '%s' already exists", filename));
+        }
+
 		String env = projAndEnv.getEnv();
         String project = projAndEnv.getProject();
 		String keypairName = format("%s_%s_keypair", project,env);
         logger.info("Create key pair with name " + keypairName);
-		KeyPair result = cloudRepository.createKeyPair(keypairName, destination);
+		KeyPair result = cloudRepository.createKeyPair(keypairName, destination, filename);
 		vpcRepository.setVpcTag(projAndEnv,KEYNAME_TAG, result.getKeyName());
 		return result;
 	}

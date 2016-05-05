@@ -239,17 +239,9 @@ public class CloudRepository {
 		return zones;
 	}
 
-	public KeyPair createKeyPair(String keypairName, SavesFile savesFile) throws CfnAssistException {
-        String home = System.getenv("HOME");
-        String filename = format("%s/.ssh/%s.pem", home, keypairName);
-        if (!savesFile.exists(filename)) {
-            KeyPair pair = cloudClient.createKeyPair(keypairName);
-            savesFile.save(filename, pair.getKeyMaterial());
-            return pair;
-        } else {
-            String message = format("Could not create key pair, file %s exists", filename);
-            logger.error(message);
-            throw new CfnAssistException(message);
-        }
+	public KeyPair createKeyPair(String keypairName, SavesFile savesFile, String filename) throws CfnAssistException {
+        KeyPair pair = cloudClient.createKeyPair(keypairName);
+        savesFile.save(filename, pair.getKeyMaterial());
+        return pair;
 	}
 }

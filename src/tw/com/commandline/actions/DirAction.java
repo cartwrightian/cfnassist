@@ -26,6 +26,7 @@ public class DirAction extends SharedAction {
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, 
 			String... args) throws IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
+
 		String folderPath = args[0];
 		ArrayList<StackNameAndId> stackIds = aws.applyTemplatesFromFolder(folderPath , projectAndEnv, cfnParams);
 		logger.info(String.format("Created %s stacks", stackIds.size()));

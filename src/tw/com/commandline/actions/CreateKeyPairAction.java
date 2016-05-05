@@ -8,10 +8,7 @@ import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.providers.SavesFile;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -21,13 +18,24 @@ public class CreateKeyPairAction extends SharedAction {
 
     @SuppressWarnings("static-access")
     public CreateKeyPairAction() {
-        createOption("keypair", "Create a new keypair for the given project and environment");
+        createOptionalWithOptionalArg("keypair", "Create a new keypair for the given project and environment");
     }
 
     @Override
-    public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws IOException, InterruptedException, CfnAssistException, MissingArgumentException {
+    public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+                       Collection<Parameter> artifacts, String... argument) throws IOException, InterruptedException, CfnAssistException, MissingArgumentException {
         AwsFacade facade = factory.createFacade();
-        KeyPair keyPair = facade.createKeyPair(projectAndEnv, factory.getSavesFile());
+
+        String filename;
+        if (argument==null) {
+            String home = System.getenv("HOME");
+            String keypairName = format("%s_%s", projectAndEnv.getProject(), projectAndEnv.getEnv());
+            filename = format("%s/.ssh/%s.pem", home, keypairName);
+        } else {
+            filename = argument[0];
+        }
+
+        KeyPair keyPair = facade.createKeyPair(projectAndEnv, factory.getSavesFile(), filename);
         System.out.println(format("Created key %s with fingerprint %s", keyPair.getKeyName(),
                 keyPair.getKeyFingerprint()));
     }

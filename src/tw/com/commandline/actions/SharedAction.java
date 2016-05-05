@@ -28,13 +28,17 @@ public abstract class SharedAction implements CommandLineAction {
 		option = Option.builder(optName).argName(optName).desc(description).build();
 	}
 
-    protected void createOptionWithArg(String optName, String description) {
-        option =  Option.builder(optName).argName(optName).desc(description).hasArg().build();
+    protected void createOptionWithArg(String name, String description) {
+        option =  Option.builder(name).argName(name).desc(description).hasArg().build();
     }
 
     protected void createOptionWithArgs(String name, String description, int numberOfArgs) {
         option =  Option.builder(name).argName(name).desc(description).hasArgs().numberOfArgs(numberOfArgs).build();
     }
+
+	protected void createOptionalWithOptionalArg(String name, String description) {
+		option =  Option.builder(name).argName(name).desc(description).hasArg().optionalArg(true).build();
+	}
 
 	protected void guardForProjectAndEnv(ProjectAndEnv projectAndEnv)
 			throws CommandLineException {

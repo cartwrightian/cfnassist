@@ -255,20 +255,41 @@ public class TestAwsFacade extends EasyMockSupport {
 
 	@Test
     public void shouldCreateKeyPairAndTagVPC() throws CfnAssistException {
-        SavesFile destination = createStrictMock(SavesFile.class);
+        String filename = "fileForPem.pem";
 
+        SavesFile destination = createStrictMock(SavesFile.class);
 		KeyPair keypair = new KeyPair().withKeyName("CfnAssist_Test_keypair");
-		EasyMock.expect(cloudRepository.createKeyPair("CfnAssist_Test_keypair", destination)).
+        EasyMock.expect(destination.exists(filename)).andReturn(false);
+
+		EasyMock.expect(cloudRepository.createKeyPair("CfnAssist_Test_keypair", destination, filename)).
 				andReturn(keypair);
         vpcRepository.setVpcTag(projectAndEnv, "CFN_ASSIST_KEYNAME", "CfnAssist_Test_keypair");
         EasyMock.expectLastCall();
 
         replayAll();
-		KeyPair result = aws.createKeyPair(projectAndEnv, destination);
+		KeyPair result = aws.createKeyPair(projectAndEnv, destination, filename);
         verifyAll();
 
 		assertEquals("CfnAssist_Test_keypair", result.getKeyName());
     }
+
+	@Test
+	public void shouldNotCreateKeyPairIfFileAlreadyExists() throws CfnAssistException {
+		SavesFile destination = createStrictMock(SavesFile.class);
+		String filename = "fileForPem.pem";
+
+		EasyMock.expect(destination.exists(filename)).andReturn(true);
+
+		replayAll();
+		try {
+			aws.createKeyPair(projectAndEnv, destination, filename);
+			fail("should have thrown");
+		}
+		catch(CfnAssistException expected) {
+			// no-op
+		}
+		verifyAll();
+	}
 	
 	private void checkParameterCannotBePassed(String parameterName)
 			throws IOException,

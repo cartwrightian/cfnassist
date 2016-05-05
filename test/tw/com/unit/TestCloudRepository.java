@@ -264,32 +264,14 @@ public class TestCloudRepository extends EasyMockSupport {
         String material = "somePem";
         EasyMock.expect(cloudClient.createKeyPair("keyName")).
                 andReturn(new KeyPair().withKeyFingerprint("fingerprint").withKeyMaterial(material));
-        EasyMock.expect(savesFile.exists(filename)).andReturn(false);
+        //EasyMock.expect(savesFile.exists(filename)).andReturn(false);
         EasyMock.expect(savesFile.save(filename, material)).andReturn(true);
 
         replayAll();
-        repository.createKeyPair("keyName", savesFile);
+        repository.createKeyPair("keyName", savesFile, filename);
         verifyAll();
     }
 
-    @Test
-    public void shouldNotCreateKeyIfFileExists() {
-        SavesFile savesFile = createStrictMock(SavesFile.class);
-
-        String filename = format("%s/.ssh/keyName.pem", home);
-
-        EasyMock.expect(savesFile.exists(filename)).andReturn(true);
-
-        replayAll();
-        try {
-            repository.createKeyPair("keyName", savesFile);
-            fail("should have thrown");
-        } catch (CfnAssistException e) {
-            // noop - expected
-        }
-        verifyAll();
-    }
-	
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {
 		Subnet matchingSubnet = new Subnet().withVpcId(vpcId).withSubnetId(subnetId);
 		

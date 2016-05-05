@@ -15,7 +15,7 @@ import tw.com.repository.VpcRepository;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class TestCommandLineVLCoperations {
+public class TestCommandLineVPCoperations {
 	
 	private static AmazonEC2Client ec2Client;
 	private Vpc altEnvVPC;

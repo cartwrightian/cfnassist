@@ -302,11 +302,19 @@ public class CLIArgBuilder {
         };
     }
 
-	public static String[] createKeyPair() {
-		return new String[] {
-                "-env", EnvironmentSetupForTests.ENV,
-                "-project", EnvironmentSetupForTests.PROJECT,
-				"-keypair"
-		};
+	public static String[] createKeyPair(String filename) {
+		if (filename.isEmpty()) {
+            return new String[] {
+                    "-env", EnvironmentSetupForTests.ENV,
+                    "-project", EnvironmentSetupForTests.PROJECT,
+                    "-keypair"
+            };
+        } else {
+            return new String[]{
+                    "-env", EnvironmentSetupForTests.ENV,
+                    "-project", EnvironmentSetupForTests.PROJECT,
+                    "-keypair", filename
+            };
+        }
 	}
 }
