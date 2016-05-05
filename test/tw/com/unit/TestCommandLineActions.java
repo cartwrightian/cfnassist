@@ -451,30 +451,28 @@ public class TestCommandLineActions extends EasyMockSupport {
     public void shouldCreateKeypairWithNoFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
         String home = System.getenv("HOME");
         String filename = format("%s/.ssh/CfnAssist_Test.pem",home);
-
-        setFactoryExpectations();
+        KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
 
         SavesFile savesFile = EasyMock.createMock(SavesFile.class);
 
-        EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
-        KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
-        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
+        setFactoryExpectations();
 
+        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
+        EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
+        
         validate((CLIArgBuilder.createKeyPair("")));
     }
 
     @Test
     public void shouldCreateKeypairWithFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
-
         String filename = "someFilename";
+        SavesFile savesFile = EasyMock.createMock(SavesFile.class);
+        KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
 
         setFactoryExpectations();
 
-        SavesFile savesFile = EasyMock.createMock(SavesFile.class);
-
-        EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
-        KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
         EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
+        EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
 
         validate((CLIArgBuilder.createKeyPair(filename)));
     }
