@@ -241,6 +241,7 @@ public class CloudRepository {
 
 	public KeyPair createKeyPair(String keypairName, SavesFile savesFile, String filename) throws CfnAssistException {
         KeyPair pair = cloudClient.createKeyPair(keypairName);
+        logger.info("Saving private key to " + filename);
         savesFile.save(filename, pair.getKeyMaterial());
         return pair;
 	}
