@@ -6,16 +6,14 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Current Release version 1.0.125](https://cfnassist-release.s3-eu-west-1.amazonaws.com/125/cfnassist-1.0.125.zip)
+[Download Current Release version 1.0.131](https://cfnassist-release.s3-eu-west-1.amazonaws.com/131/cfnassist-1.0.131.zip)
 
 Previous Releases
 -----------------
 
+[Version 1.0.125](https://cfnassist-release.s3-eu-west-1.amazonaws.com/125/cfnassist-1.0.125.zip)
+
 [Version 1.0.119](https://cfnassist-release.s3-eu-west-1.amazonaws.com/119/cfnassist-1.0.119.zip)
-
-[Version 1.0.99](https://cfnassist-release.s3-eu-west-1.amazonaws.com/99/cfnassist-1.0.99.zip)
-
-[Version 1.0.97](https://cfnassist-release.s3-eu-west-1.amazonaws.com/97/cfnassist-1.0.97.zip)
 
 Build Status
 ------------
@@ -42,6 +40,7 @@ switch over of instances for an ELB based on build numbers
 Usage
 -----
 The tool provides a command line interface and ant tasks. Examples of the CLI use below, see `exampleAntTasks.xml` for ant task usage. 
+
 Warning
 -------
 Creating AWS resources can mean you might be liable for charges. Please check the AWS documentation.
@@ -470,5 +469,26 @@ This allows auto population of the correct AZ names for the current region.
 >   "zoneB":{ "Type":"String", "Description":"::CFN_ZONE_B" }
 > }
 
-This means you can more easily create portable templates that will work in different regions without change.
+This means you can more easily create portable templates that
+will work in different regions without change.
+In the above example zoneA and zoneB will be populated with the
+correct zone names for the current region.
+
+22.Create a key pair
+
+`cfnassist -env Dev -keypair <filename>`
+
+This will create a key pair named after the current project and
+environment. A tag will be created on the VPC for the project/env
+that contains the keyname, the TAG is called 'CFN_ASSIST_KEYNAME'.
+
+**NOTE**
+NEVER save a private key in a place where it could get checked into your source control,
+
+The key will be named '<projectName>_<env name>_keypair'.
+If you provide a `filename` the private key will be saved in this file. If you don't
+give a filename the key will be saved in `$HOME/.ssh/<projectName>_<env name>.pem`
+
+**NOTE**
+ALWAYS Keep your private keys safe
 
