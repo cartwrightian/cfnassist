@@ -49,7 +49,7 @@ public class AwsFacade implements ProvidesZones {
     public static final String BUILD_TAG = "CFN_ASSIST_BUILD_NUMBER";
 	public static final String TYPE_TAG = "CFN_ASSIST_TYPE";
 	public static final String ENV_S3_BUCKET = "CFN_ASSIST_BUCKET";
-    public static final String KEYNAME_TAG = "CFN_ASSIST_KEYNAME";
+    public static final String KEYNAME_TAG = "keypairname";
 	
 	public static final String PARAMETER_STACKNAME = "stackname";
 

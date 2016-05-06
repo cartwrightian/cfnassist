@@ -263,7 +263,7 @@ public class TestAwsFacade extends EasyMockSupport {
 
 		EasyMock.expect(cloudRepository.createKeyPair("CfnAssist_Test_keypair", destination, filename)).
 				andReturn(keypair);
-        vpcRepository.setVpcTag(projectAndEnv, "CFN_ASSIST_KEYNAME", "CfnAssist_Test_keypair");
+        vpcRepository.setVpcTag(projectAndEnv, "keypairname", "CfnAssist_Test_keypair");
         EasyMock.expectLastCall();
 
         replayAll();

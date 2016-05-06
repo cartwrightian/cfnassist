@@ -24,6 +24,4 @@ public class FilesForTesting {
 
 	public static final String STACK_IAM_CAP = DIR.resolve("simpleIAMStack.json").toString();
 
-	
-
 }
