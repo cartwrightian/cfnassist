@@ -12,6 +12,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.sns.AmazonSNSClient;
 import com.amazonaws.services.sqs.AmazonSQSClient;
 import org.apache.commons.cli.MissingArgumentException;
+import tw.com.commandline.CommandExecutor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
@@ -165,5 +166,9 @@ public class FacadeFactory {
             savesFile = new SavesFile();
         }
         return savesFile;
+	}
+
+	public CommandExecutor getCommandExecutor() {
+		return new CommandExecutor();
 	}
 }

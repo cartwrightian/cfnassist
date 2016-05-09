@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import tw.com.*;
+import tw.com.commandline.CommandExecutor;
 import tw.com.commandline.Main;
 import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
@@ -27,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -280,15 +282,15 @@ public class TestCommandLineActions extends EasyMockSupport {
 		stackEntries.add(new StackEntry(project, new EnvironmentTag(env), stack));
 		EasyMock.expect(facade.listStacks(projectAndEnv)).andReturn(stackEntries);
 		
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		PrintStream output = new PrintStream(stream);
-		System.setOut(output);
+//		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//		PrintStream output = new PrintStream(stream);
+//		System.setOut(output);
 		
-		validate(CLIArgBuilder.listStacks());
+		String output = validate(CLIArgBuilder.listStacks());
 		
-		System.setOut(origStream);
+		//System.setOut(origStream);
 		
-		CLIArgBuilder.checkForExpectedLine(stackName, project, env, stream);
+		CLIArgBuilder.checkForExpectedLine(stackName, project, env, output);
 	}
 
 	@Test
@@ -474,10 +476,24 @@ public class TestCommandLineActions extends EasyMockSupport {
         EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
         EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
 
-        validate((CLIArgBuilder.createKeyPair(filename)));
+        validate(CLIArgBuilder.createKeyPair(filename));
     }
 
 	@Test
+    public void shouldPutSSHCommandOnStandardOut() throws InterruptedException, MissingArgumentException, CfnAssistException {
+        CommandExecutor commandExecutor = createMock(CommandExecutor.class);
+
+        setFactoryExpectations();
+        EasyMock.expect(facade.createSSHCommand(projectAndEnv)).andReturn("theCommandText");
+        EasyMock.expect(factory.getCommandExecutor()).andReturn(commandExecutor);
+
+        commandExecutor.execute("theCommandText");
+        EasyMock.expectLastCall();
+
+        validate(CLIArgBuilder.createSSHCommand());
+    }
+
+    @Test
 	public void shouldNotAllowSNSWithS3Create() {
 		String artifacts = format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
 		
@@ -617,12 +633,23 @@ public class TestCommandLineActions extends EasyMockSupport {
 		assertEquals(EnvironmentSetupForTests.FAILURE_STATUS, result);
 	}
 
-	private void validate(String[] args) {
+	private String validate(String[] args) {
 		replayAll();
 		Main main = new Main(args);
-		int result = main.parse(factory, true);
+
+        PrintStream original = System.out;
+
+        ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(arrayOutputStream);
+        System.setOut(printStream);
+        int result = main.parse(factory, true);
+        printStream.close();
+        System.setOut(original);
+
 		verifyAll();
-		assertEquals(0,result);
+
+        assertEquals(0,result);
+        return new String(arrayOutputStream.toByteArray(), Charset.defaultCharset());
 	}
 
 	private void setFactoryExpectations()

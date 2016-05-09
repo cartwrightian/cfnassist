@@ -691,4 +691,8 @@ public class AwsFacade implements ProvidesZones {
 		vpcRepository.setVpcTag(projAndEnv,KEYNAME_TAG, result.getKeyName());
 		return result;
 	}
+
+	public String createSSHCommand(ProjectAndEnv projectAndEnv) {
+		return null;
+	}
 }

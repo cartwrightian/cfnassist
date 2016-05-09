@@ -52,7 +52,8 @@ public class Main {
 			HelpFormatter formatter = new HelpFormatter();
 		
 			flags.populateFlags(commandLine, formatter);
-			CommandLineAction action = commandActions.selectCorrectActionFromArgs(commandLine, formatter, executableName, commandLineOptions );	
+			CommandLineAction action = commandActions.selectCorrectActionFromArgs(commandLine, formatter,
+					executableName, commandLineOptions );
 			
 			Region awsRegion = populateRegion(flags.getRegion());
 			logger.info("Region set to " + awsRegion);

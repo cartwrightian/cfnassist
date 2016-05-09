@@ -2,15 +2,15 @@ package tw.com;
 
 import com.amazonaws.services.cloudformation.model.StackStatus;
 
-import java.io.ByteArrayOutputStream;
-
 import static org.junit.Assert.assertTrue;
 
 public class CLIArgBuilder {
-	
-	public static void checkForExpectedLine(String stackName, String project,
-			String env, ByteArrayOutputStream stream) {
-		String result = stream.toString();
+
+    private static final String region = EnvironmentSetupForTests.getRegion().toString();
+
+    public static void checkForExpectedLine(String stackName, String project,
+                                            String env, String result) {
+		//String result = stream.toString();
 		String lines[] = result.split("\\r?\\n");
 		
 		boolean found=false;
@@ -25,7 +25,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SIMPLE_STACK,
                 "-comment", testName
                 };
@@ -35,7 +35,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-capabilityIAM",
                 "-file", FilesForTesting.STACK_IAM_CAP,
                 "-comment", testName
@@ -46,7 +46,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SUBNET_STACK,
                 "-comment", testName
                 };
@@ -56,7 +56,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SIMPLE_STACK_WITH_AZ,
                 "-comment", testName
         };
@@ -66,7 +66,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SUBNET_STACK_DELTA,
                 sns,
                 "-comment", testName
@@ -77,7 +77,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SIMPLE_STACK,
                 "-sns",
                 "-comment", testName
@@ -88,7 +88,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SIMPLE_STACK,
                 "-build", buildNumber,
                 "-comment", testName
@@ -99,7 +99,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-delete", FilesForTesting.SIMPLE_STACK,
                 "-build", buildNumber
                 };
@@ -109,7 +109,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-rm", name,
                 "-build", buildNumber
         };
@@ -119,7 +119,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-delete", FilesForTesting.SIMPLE_STACK
                 };
 	}
@@ -129,7 +129,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-rm", name
         };
     }
@@ -138,7 +138,7 @@ public class CLIArgBuilder {
         return new String[]{
             "-env", EnvironmentSetupForTests.ENV,
             "-project", EnvironmentSetupForTests.PROJECT,
-            "-region", EnvironmentSetupForTests.getRegion().toString(),
+            "-region", region,
             "-ls"
             };
 	}
@@ -148,14 +148,14 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-instances"
                 };
 	}
 	
 	public static String[] createDiagrams(String folder) {
         return new String[]{
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-diagrams", folder
                 };
 	}
@@ -164,7 +164,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SUBNET_WITH_PARAM,
                 "-parameters", "zoneA=eu-west-1a",
                 "-comment", testName
@@ -176,7 +176,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-dir", orderedScriptsFolder,
                 "-comment", testName,
                 sns
@@ -187,7 +187,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-rollback", orderedScriptsFolder,
                 sns
                 };
@@ -197,7 +197,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-stepback", orderedScriptsFolder,
                 sns
                 };
@@ -207,7 +207,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-build", buildNumber.toString(),
                 "-elbUpdate", typeTag
                 };
@@ -217,7 +217,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-whitelist", type, port.toString()
                 };
 	}
@@ -226,7 +226,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-blacklist", type, port.toString()
                 };
 	}
@@ -235,7 +235,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-tidyOldStacks", FilesForTesting.SIMPLE_STACK, "typeTag"
                 };
 	}
@@ -246,7 +246,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
                 "-artifacts", uploads,
                 "-build", buildNumber.toString(),
@@ -262,7 +262,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-s3create",
                 "-artifacts", artifacts,
                 "-bucket", EnvironmentSetupForTests.BUCKET_NAME,
@@ -270,19 +270,28 @@ public class CLIArgBuilder {
                 };
 	}
 
+    public static String[] createSSHCommand() {
+        return new String[] {
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-region", region,
+                "-ssh"
+        };
+    }
+
     public static String[] createKeyPair(String filename) {
         if (filename.isEmpty()) {
             return new String[] {
                     "-env", EnvironmentSetupForTests.ENV,
                     "-project", EnvironmentSetupForTests.PROJECT,
-                    "-region", EnvironmentSetupForTests.getRegion().toString(),
+                    "-region", region,
                     "-keypair"
             };
         } else {
             return new String[]{
                     "-env", EnvironmentSetupForTests.ENV,
                     "-project", EnvironmentSetupForTests.PROJECT,
-                    "-region", EnvironmentSetupForTests.getRegion().toString(),
+                    "-region", region,
                     "-keypair", filename
             };
         }
@@ -294,7 +303,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-s3delete",
                 "-artifacts", artifacts,
                 "-bucket", EnvironmentSetupForTests.BUCKET_NAME,
@@ -306,7 +315,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-tag", tagName, tagValue
         };
 	}
@@ -315,9 +324,10 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", env,
                 "-project", project,
-                "-region", EnvironmentSetupForTests.getRegion().toString(),
+                "-region", region,
                 "-init", vpcId
         };
     }
 
+ 
 }

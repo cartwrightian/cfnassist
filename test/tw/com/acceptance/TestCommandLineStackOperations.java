@@ -20,6 +20,7 @@ import tw.com.repository.VpcRepository;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
@@ -107,8 +108,9 @@ public class TestCommandLineStackOperations {
 		int status = main.parse();
 
 		System.setOut(origStream);
-	
-		CLIArgBuilder.checkForExpectedLine("CfnAssistTestsimpleStack", "CfnAssist", "Test", stream);
+
+		String outputText = new String(stream.toByteArray(), Charset.defaultCharset());
+		CLIArgBuilder.checkForExpectedLine("CfnAssistTestsimpleStack", "CfnAssist", "Test", outputText);
 
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0, status);
