@@ -264,12 +264,24 @@ public class TestCloudRepository extends EasyMockSupport {
         String material = "somePem";
         EasyMock.expect(cloudClient.createKeyPair("keyName")).
                 andReturn(new KeyPair().withKeyFingerprint("fingerprint").withKeyMaterial(material));
-        //EasyMock.expect(savesFile.exists(filename)).andReturn(false);
         EasyMock.expect(savesFile.save(filename, material)).andReturn(true);
 
         replayAll();
         repository.createKeyPair("keyName", savesFile, filename);
         verifyAll();
+    }
+
+	@Test
+    public void shouldGetIPForAnEIPAllocationId() {
+        List<Address> addresses = new LinkedList<>();
+        addresses.add(new Address().withAllocationId("allocationId").withPublicIp("10.1.2.3"));
+        EasyMock.expect(cloudClient.getEIPs()).andReturn(addresses);
+
+        replayAll();
+        String result = repository.getIpFor("allocationId");
+        verifyAll();
+
+        assertEquals("10.1.2.3", result);
     }
 
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {

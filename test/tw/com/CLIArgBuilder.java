@@ -270,13 +270,22 @@ public class CLIArgBuilder {
                 };
 	}
 
-    public static String[] createSSHCommand() {
-        return new String[] {
-                "-env", EnvironmentSetupForTests.ENV,
-                "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", region,
-                "-ssh"
-        };
+    public static String[] createSSHCommand(String user) {
+        if (user.isEmpty()) {
+            return new String[] {
+                    "-env", EnvironmentSetupForTests.ENV,
+                    "-project", EnvironmentSetupForTests.PROJECT,
+                    "-region", region,
+                    "-ssh"
+            };
+        } else {
+            return new String[] {
+                    "-env", EnvironmentSetupForTests.ENV,
+                    "-project", EnvironmentSetupForTests.PROJECT,
+                    "-region", region,
+                    "-ssh", user
+            };
+        }
     }
 
     public static String[] createKeyPair(String filename) {

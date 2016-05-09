@@ -16,7 +16,10 @@ import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.MonitorStackEvents;
-import tw.com.entity.*;
+import tw.com.entity.InstanceSummary;
+import tw.com.entity.ProjectAndEnv;
+import tw.com.entity.SearchCriteria;
+import tw.com.entity.StackEntry;
 import tw.com.exceptions.*;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
@@ -258,19 +261,19 @@ public class TestAwsFacade extends EasyMockSupport {
         String filename = "fileForPem.pem";
 
         SavesFile destination = createStrictMock(SavesFile.class);
-		KeyPair keypair = new KeyPair().withKeyName("CfnAssist_Test_keypair");
+		KeyPair keypair = new KeyPair().withKeyName("CfnAssist_Test");
         EasyMock.expect(destination.exists(filename)).andReturn(false);
 
-		EasyMock.expect(cloudRepository.createKeyPair("CfnAssist_Test_keypair", destination, filename)).
+		EasyMock.expect(cloudRepository.createKeyPair("CfnAssist_Test", destination, filename)).
 				andReturn(keypair);
-        vpcRepository.setVpcTag(projectAndEnv, "keypairname", "CfnAssist_Test_keypair");
+        vpcRepository.setVpcTag(projectAndEnv, "keypairname", "CfnAssist_Test");
         EasyMock.expectLastCall();
 
         replayAll();
 		KeyPair result = aws.createKeyPair(projectAndEnv, destination, filename);
         verifyAll();
 
-		assertEquals("CfnAssist_Test_keypair", result.getKeyName());
+		assertEquals("CfnAssist_Test", result.getKeyName());
     }
 
 	@Test
@@ -290,6 +293,26 @@ public class TestAwsFacade extends EasyMockSupport {
 		}
 		verifyAll();
 	}
+
+	@Test
+    public void shouldFormCorrectTestForSSHCommand() throws CannotFindVpcException {
+        String home = System.getenv("HOME");
+        EasyMock.expect(vpcRepository.getVpcTag(AwsFacade.KEYNAME_TAG, projectAndEnv)).andReturn("keyNameFromTag");
+        EasyMock.expect(vpcRepository.getVpcTag(AwsFacade.NAT_EIP, projectAndEnv)).andReturn("eipAllocationId");
+        EasyMock.expect(cloudRepository.getIpFor("eipAllocationId")).andReturn("10.1.2.3");
+
+        replayAll();
+        List<String> commandText = aws.createSSHCommand(projectAndEnv, "ec2-user");
+        verifyAll();
+        StringBuilder result = new StringBuilder();
+        commandText.forEach(text -> {
+            if (result.length()>0) {
+                result.append(" ");
+            }
+            result.append(text);
+        });
+        assertEquals(String.format("ssh -i %s/.ssh/keyNameFromTag.pem ec2-user@10.1.2.3", home), result.toString());
+    }
 	
 	private void checkParameterCannotBePassed(String parameterName)
 			throws IOException,

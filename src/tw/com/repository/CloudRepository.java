@@ -9,10 +9,8 @@ import tw.com.providers.CloudClient;
 import tw.com.providers.SavesFile;
 
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -244,5 +242,14 @@ public class CloudRepository {
         logger.info("Saving private key to " + filename);
         savesFile.save(filename, pair.getKeyMaterial());
         return pair;
+	}
+
+	public String getIpFor(String eipAllocationId) {
+        logger.info("Find EIP for " + eipAllocationId);
+		List<Address> addresses = cloudClient.getEIPs();
+        Stream<Address> filtered = addresses.stream().filter(address -> eipAllocationId.equals(address.getAllocationId()));
+        Optional<Address> result = filtered.findFirst();
+        result.ifPresent(found -> logger.info("Found address "+found));
+        return result.isPresent() ? result.get().getPublicIp() : "";
 	}
 }

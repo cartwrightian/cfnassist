@@ -480,17 +480,35 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
 	@Test
-    public void shouldPutSSHCommandOnStandardOut() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    public void shouldExecuteSSHCommandDefaultUser() throws InterruptedException, MissingArgumentException, CfnAssistException, IOException {
         CommandExecutor commandExecutor = createMock(CommandExecutor.class);
 
         setFactoryExpectations();
-        EasyMock.expect(facade.createSSHCommand(projectAndEnv)).andReturn("theCommandText");
+        List<String> commandList = new LinkedList<>();
+        commandList.add("theCommandText");
+        EasyMock.expect(facade.createSSHCommand(projectAndEnv, "ec2-user")).andReturn(commandList);
         EasyMock.expect(factory.getCommandExecutor()).andReturn(commandExecutor);
 
-        commandExecutor.execute("theCommandText");
+        commandExecutor.execute(commandList);
         EasyMock.expectLastCall();
 
-        validate(CLIArgBuilder.createSSHCommand());
+        validate(CLIArgBuilder.createSSHCommand(""));
+    }
+
+    @Test
+    public void shouldExecuteSSHCommandProvidedUser() throws InterruptedException, MissingArgumentException, CfnAssistException, IOException {
+        CommandExecutor commandExecutor = createMock(CommandExecutor.class);
+
+        setFactoryExpectations();
+        List<String> commandList = new LinkedList<>();
+        commandList.add("theCommandText");
+        EasyMock.expect(facade.createSSHCommand(projectAndEnv, "userName")).andReturn(commandList);
+        EasyMock.expect(factory.getCommandExecutor()).andReturn(commandExecutor);
+
+        commandExecutor.execute(commandList);
+        EasyMock.expectLastCall();
+
+        validate(CLIArgBuilder.createSSHCommand("userName"));
     }
 
     @Test

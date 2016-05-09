@@ -14,13 +14,14 @@ import tw.com.exceptions.CfnAssistException;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 
 public class SSHCommandAction extends SharedAction {
     private static final Logger logger = LoggerFactory.getLogger(SSHCommandAction.class);
 
     @SuppressWarnings("static-access")
     public SSHCommandAction() {
-        createOption("ssh", "Create ssh command for the project/env combination");
+        createOptionalWithOptionalArg("ssh", "Create ssh command for the project/env combination");
     }
 
 
@@ -30,7 +31,8 @@ public class SSHCommandAction extends SharedAction {
 
         AwsFacade aws = factory.createFacade();
         CommandExecutor commandExecutor = factory.getCommandExecutor();
-        String sshCommand = aws.createSSHCommand(projectAndEnv);
+        String user = (argument==null) ? "ec2-user" : argument[0];
+        List<String> sshCommand = aws.createSSHCommand(projectAndEnv, user);
         logger.info("About to execute " + sshCommand);
         commandExecutor.execute(sshCommand);
     }
@@ -38,7 +40,7 @@ public class SSHCommandAction extends SharedAction {
     @Override
     public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
                          Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
-        guardForProject(projectAndEnv);
+        guardForProjectAndEnv(projectAndEnv);
         guardForNoBuildNumber(projectAndEnv);
         guardForNoArtifacts(artifacts);
     }

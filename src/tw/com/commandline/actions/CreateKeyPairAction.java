@@ -23,7 +23,8 @@ public class CreateKeyPairAction extends SharedAction {
 
     @Override
     public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-                       Collection<Parameter> artifacts, String... argument) throws IOException, InterruptedException, CfnAssistException, MissingArgumentException {
+                       Collection<Parameter> artifacts, String... argument) throws IOException, InterruptedException,
+            CfnAssistException, MissingArgumentException {
         AwsFacade facade = factory.createFacade();
 
         String filename;

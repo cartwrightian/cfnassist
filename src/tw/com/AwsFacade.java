@@ -52,8 +52,9 @@ public class AwsFacade implements ProvidesZones {
     public static final String KEYNAME_TAG = "keypairname";
 	
 	public static final String PARAMETER_STACKNAME = "stackname";
+	public static final String NAT_EIP = "natEip";
 
-    private VpcRepository vpcRepository;
+	private VpcRepository vpcRepository;
 	private CloudFormRepository cfnRepository;
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
@@ -685,14 +686,23 @@ public class AwsFacade implements ProvidesZones {
 
 		String env = projAndEnv.getEnv();
         String project = projAndEnv.getProject();
-		String keypairName = format("%s_%s_keypair", project,env);
+		String keypairName = format("%s_%s", project,env);
         logger.info("Create key pair with name " + keypairName);
 		KeyPair result = cloudRepository.createKeyPair(keypairName, destination, filename);
 		vpcRepository.setVpcTag(projAndEnv,KEYNAME_TAG, result.getKeyName());
 		return result;
 	}
 
-	public String createSSHCommand(ProjectAndEnv projectAndEnv) {
-		return null;
+	public List<String> createSSHCommand(ProjectAndEnv projectAndEnv, String user) throws CannotFindVpcException {
+        String home = System.getenv("HOME");
+		String keyName = vpcRepository.getVpcTag(AwsFacade.KEYNAME_TAG, projectAndEnv);
+		String eipAllocId = vpcRepository.getVpcTag(AwsFacade.NAT_EIP, projectAndEnv);
+        String address = cloudRepository.getIpFor(eipAllocId);
+        List<String> command = new LinkedList<>();
+        command.add("ssh");
+        command.add("-i");
+        command.add(format("%s/.ssh/%s.pem",home, keyName));
+        command.add(format("%s@%s", user,address));
+        return command;
 	}
 }
