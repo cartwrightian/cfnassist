@@ -6,7 +6,7 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Current Release version 1.0.131](https://cfnassist-release.s3-eu-west-1.amazonaws.com/131/cfnassist-1.0.131.zip)
+[Download Current Release version 1.0.132](https://cfnassist-release.s3-eu-west-1.amazonaws.com/132/cfnassist-1.0.132.zip)
 
 Previous Releases
 -----------------
@@ -480,7 +480,7 @@ correct zone names for the current region.
 
 This will create a key pair named after the current project and
 environment. A tag will be created on the VPC for the project/env
-that contains the keyname, the TAG is called 'CFN_ASSIST_KEYNAME'.
+that contains the keyname, the TAG is called 'keypairname'.
 
 **NOTE**
 NEVER save a private key in a place where it could get checked into your source control,
