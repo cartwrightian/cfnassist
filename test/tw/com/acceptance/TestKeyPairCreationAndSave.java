@@ -1,5 +1,6 @@
 package tw.com.acceptance;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DeleteKeyPairRequest;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.List;
 
 import static junit.framework.TestCase.assertTrue;
@@ -34,6 +36,9 @@ public class TestKeyPairCreationAndSave {
 
     @Test
     public void shouldCreateKeyPairWithFilename() throws IOException {
+        String keypairName = "CfnAssist_Test";
+
+        deleteKeyPair(keypairName);
 
         String filename = "testFilenameForPem.tmp";
         Path path = Paths.get(filename);
@@ -43,17 +48,7 @@ public class TestKeyPairCreationAndSave {
         Main main = new Main(args);
         int commandResult = main.parse();
 
-        String keypairName = "CfnAssist_Test_keypair";
-        DescribeKeyPairsRequest query = new DescribeKeyPairsRequest().withKeyNames(keypairName);
-        DescribeKeyPairsResult keysFound = ec2Client.describeKeyPairs(query);
-        List<KeyPairInfo> keys = keysFound.getKeyPairs();
-
-        // need to make sure always delete keys
-
-        if (keys.size()>0) {
-            DeleteKeyPairRequest deleteRequest = new DeleteKeyPairRequest().withKeyName(keypairName);
-            ec2Client.deleteKeyPair(deleteRequest);
-        }
+        List<KeyPairInfo> keys = deleteKeyPair(keypairName);
 
         // now do the asserts
         assertEquals(0, commandResult);
@@ -63,5 +58,22 @@ public class TestKeyPairCreationAndSave {
         assertTrue(Files.exists(path));
 
         Files.deleteIfExists(path);
+    }
+
+    private List<KeyPairInfo> deleteKeyPair(String keypairName) {
+        List<KeyPairInfo> keys;
+        try {
+            DescribeKeyPairsRequest query = new DescribeKeyPairsRequest().withKeyNames(keypairName);
+            DescribeKeyPairsResult keysFound = ec2Client.describeKeyPairs(query);
+            keys = keysFound.getKeyPairs();
+        } catch (AmazonServiceException exception) {
+            keys = new LinkedList<>();
+        }
+        
+        if (keys.size() > 0) {
+            DeleteKeyPairRequest deleteRequest = new DeleteKeyPairRequest().withKeyName(keypairName);
+            ec2Client.deleteKeyPair(deleteRequest);
+        }
+        return keys;
     }
 }
