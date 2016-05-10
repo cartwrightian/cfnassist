@@ -5,14 +5,19 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.SavesFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static java.nio.file.attribute.PosixFilePermission.*;
+import static org.junit.Assert.*;
 
 public class TestSavesFile {
     File testFile = new File("testFile");
@@ -48,4 +53,16 @@ public class TestSavesFile {
 
         assertEquals("someText", result);
     }
+
+    @Test
+    public void shouldChangePermissions() throws IOException {
+        savesFile.save(filename, "someText");
+        savesFile.ownerOnlyPermisssion(filename);
+
+        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(Paths.get(filename), LinkOption.NOFOLLOW_LINKS);
+
+        EnvironmentSetupForTests.checkKeyPairFilePermissions(permissions);
+    }
+
+
 }

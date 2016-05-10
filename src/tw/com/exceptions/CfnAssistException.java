@@ -7,4 +7,8 @@ public class CfnAssistException extends Exception {
 		super(msg);
 	}
 
+	public CfnAssistException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
+
 }

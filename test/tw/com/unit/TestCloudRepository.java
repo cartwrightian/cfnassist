@@ -13,6 +13,7 @@ import tw.com.providers.CloudClient;
 import tw.com.providers.SavesFile;
 import tw.com.repository.CloudRepository;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -256,7 +257,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldCreateKeyPairAndSaveToFile() throws CfnAssistException {
+	public void shouldCreateKeyPairAndSaveToFile() throws CfnAssistException, IOException {
         SavesFile savesFile = createStrictMock(SavesFile.class);
 
         String filename = format("%s/.ssh/keyName.pem", home);
@@ -265,6 +266,8 @@ public class TestCloudRepository extends EasyMockSupport {
         EasyMock.expect(cloudClient.createKeyPair("keyName")).
                 andReturn(new KeyPair().withKeyFingerprint("fingerprint").withKeyMaterial(material));
         EasyMock.expect(savesFile.save(filename, material)).andReturn(true);
+        savesFile.ownerOnlyPermisssion(filename);
+        EasyMock.expectLastCall();
 
         replayAll();
         repository.createKeyPair("keyName", savesFile, filename);

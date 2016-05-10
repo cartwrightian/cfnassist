@@ -8,6 +8,7 @@ import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
 import tw.com.providers.SavesFile;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.stream.Stream;
@@ -241,6 +242,11 @@ public class CloudRepository {
         KeyPair pair = cloudClient.createKeyPair(keypairName);
         logger.info("Saving private key to " + filename);
         savesFile.save(filename, pair.getKeyMaterial());
+        try {
+            savesFile.ownerOnlyPermisssion(filename);
+        } catch (IOException ioException) {
+            throw new CfnAssistException("Unable to change permission on file "+ filename, ioException);
+        }
         return pair;
 	}
 

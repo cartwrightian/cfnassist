@@ -16,10 +16,13 @@ import tw.com.commandline.Main;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
@@ -57,6 +60,9 @@ public class TestKeyPairCreationAndSave {
 
         assertTrue(Files.exists(path));
 
+        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(Paths.get(filename), LinkOption.NOFOLLOW_LINKS);
+        EnvironmentSetupForTests.checkKeyPairFilePermissions(permissions);
+
         Files.deleteIfExists(path);
     }
 
@@ -69,7 +75,7 @@ public class TestKeyPairCreationAndSave {
         } catch (AmazonServiceException exception) {
             keys = new LinkedList<>();
         }
-        
+
         if (keys.size() > 0) {
             DeleteKeyPairRequest deleteRequest = new DeleteKeyPairRequest().withKeyName(keypairName);
             ec2Client.deleteKeyPair(deleteRequest);

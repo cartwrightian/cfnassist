@@ -28,10 +28,14 @@ import tw.com.repository.VpcRepository;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.*;
+
+import static java.nio.file.attribute.PosixFilePermission.*;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class EnvironmentSetupForTests {
 	private static final Logger logger = LoggerFactory.getLogger(EnvironmentSetupForTests.class);
@@ -239,6 +243,21 @@ public class EnvironmentSetupForTests {
 		RunInstancesResult instancesResults = ec2Client.runInstances(runInstancesRequest);
 		List<Instance> instances = instancesResults.getReservation().getInstances();	
 		return instances.get(0);
+	}
+
+	public static void checkKeyPairFilePermissions(Set<PosixFilePermission> permissions) {
+		assertTrue(permissions.contains(OWNER_READ));
+		assertTrue(permissions.contains(OWNER_WRITE));
+		// no exec
+		assertFalse(permissions.contains(OWNER_EXECUTE));
+		// no group
+		assertFalse(permissions.contains(GROUP_EXECUTE));
+		assertFalse(permissions.contains(GROUP_READ));
+		assertFalse(permissions.contains(GROUP_WRITE));
+		// no other
+		assertFalse(permissions.contains(OTHERS_EXECUTE));
+		assertFalse(permissions.contains(OTHERS_READ));
+		assertFalse(permissions.contains(OTHERS_WRITE));
 	}
 
 }
