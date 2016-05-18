@@ -253,6 +253,7 @@ public class CloudRepository {
 	public String getIpFor(String eipAllocationId) {
         logger.info("Find EIP for " + eipAllocationId);
 		List<Address> addresses = cloudClient.getEIPs();
+		logger.info(format("Found %s addresses", addresses.size()));
         Stream<Address> filtered = addresses.stream().filter(address -> eipAllocationId.equals(address.getAllocationId()));
         Optional<Address> result = filtered.findFirst();
         result.ifPresent(found -> logger.info("Found address "+found));

@@ -679,7 +679,6 @@ public class AwsFacade implements ProvidesZones {
     }
 
 	public KeyPair createKeyPair(ProjectAndEnv projAndEnv, SavesFile destination, String filename) throws CfnAssistException {
-
 		if (destination.exists(filename)) {
             throw new CfnAssistException(format("File '%s' already exists", filename));
         }
@@ -693,10 +692,14 @@ public class AwsFacade implements ProvidesZones {
 		return result;
 	}
 
-	public List<String> createSSHCommand(ProjectAndEnv projectAndEnv, String user) throws CannotFindVpcException {
+	public List<String> createSSHCommand(ProjectAndEnv projectAndEnv, String user) throws CfnAssistException {
         String home = System.getenv("HOME");
-		String keyName = vpcRepository.getVpcTag(AwsFacade.KEYNAME_TAG, projectAndEnv);
+		String keyNameFromTag = vpcRepository.getVpcTag(AwsFacade.KEYNAME_TAG, projectAndEnv);
+		String keyName = keyNameFromTag.replaceFirst("_keypair","");
 		String eipAllocId = vpcRepository.getVpcTag(AwsFacade.NAT_EIP, projectAndEnv);
+		if (eipAllocId==null) {
+			throw new CfnAssistException(format("Unable to find tag %s for %s", AwsFacade.NAT_EIP, projectAndEnv));
+		}
         String address = cloudRepository.getIpFor(eipAllocId);
         List<String> command = new LinkedList<>();
         command.add("ssh");

@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 @RunWith(EasyMockRunner.class)
 public class TestELBRepository extends EasyMockSupport {
 	
-	ELBRepository elbRepository;
+	private ELBRepository elbRepository;
 	private LoadBalancerClient elbClient;
 	private VpcRepository vpcRepository;
 	private ResourceRepository cfnRepository;

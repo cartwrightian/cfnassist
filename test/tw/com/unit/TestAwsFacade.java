@@ -295,9 +295,9 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 
 	@Test
-    public void shouldFormCorrectTestForSSHCommand() throws CannotFindVpcException {
+    public void shouldFormCorrectTestForSSHCommand() throws CfnAssistException {
         String home = System.getenv("HOME");
-        EasyMock.expect(vpcRepository.getVpcTag(AwsFacade.KEYNAME_TAG, projectAndEnv)).andReturn("keyNameFromTag");
+        EasyMock.expect(vpcRepository.getVpcTag(AwsFacade.KEYNAME_TAG, projectAndEnv)).andReturn("project_env_keypair");
         EasyMock.expect(vpcRepository.getVpcTag(AwsFacade.NAT_EIP, projectAndEnv)).andReturn("eipAllocationId");
         EasyMock.expect(cloudRepository.getIpFor("eipAllocationId")).andReturn("10.1.2.3");
 
@@ -311,7 +311,7 @@ public class TestAwsFacade extends EasyMockSupport {
             }
             result.append(text);
         });
-        assertEquals(String.format("ssh -i %s/.ssh/keyNameFromTag.pem ec2-user@10.1.2.3", home), result.toString());
+        assertEquals(String.format("ssh -i %s/.ssh/project_env.pem ec2-user@10.1.2.3", home), result.toString());
     }
 	
 	private void checkParameterCannotBePassed(String parameterName)
