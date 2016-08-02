@@ -47,7 +47,7 @@ public class TestCloudFormationClient {
 	private ProjectAndEnv projAndEnv;
 	private static VpcRepository vpcRepository;
 	private static SNSEventSource snsNotifProvider;
-	CloudFormationClient formationClient;
+	private CloudFormationClient formationClient;
 	private DeletesStacks deletesStacks;
 	private Vpc mainTestVPC;
 	

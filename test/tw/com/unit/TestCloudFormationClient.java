@@ -100,9 +100,8 @@ public class TestCloudFormationClient extends EasyMockSupport {
     public void shouldDeleteStack() {
 
         DeleteStackRequest deleteRequest = new DeleteStackRequest().withStackName("stackName");
-        cfnClient.deleteStack(deleteRequest);
-        EasyMock.expectLastCall();
-
+        DeleteStackResult result = new DeleteStackResult();
+        EasyMock.expect(cfnClient.deleteStack(deleteRequest)).andReturn(result);
 
         replayAll();
         client.deleteStack("stackName");
