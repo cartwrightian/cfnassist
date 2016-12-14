@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
@@ -24,7 +25,7 @@ public class SavesFile {
     public boolean save(String destination, String contents) {
         File file = new File(destination);
         try {
-            FileUtils.write(file, contents);
+            FileUtils.write(file, contents, Charset.defaultCharset());
             return true;
         } catch (IOException e) {
             logger.error("Unable to save to file " + file.getAbsolutePath(), e);

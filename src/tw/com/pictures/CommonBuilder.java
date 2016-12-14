@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.amazonaws.services.ec2.model.IpRange;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.CommonElements;
 
@@ -65,7 +66,7 @@ public class CommonBuilder {
 	}
 	
 	private String createLabel(IpPermission perms) {
-		List<String> ipRanges = perms.getIpRanges();
+		List<IpRange> ipRanges = perms.getIpv4Ranges();
 		String ipProtocol = perms.getIpProtocol();
 		if (ipProtocol.equals("-1")) {
 			ipProtocol = "all";
@@ -78,16 +79,17 @@ public class CommonBuilder {
 		return String.format("(%s)\n[%s]", ipRangesIntoTextList(ipRanges) ,ipProtocol);
 	}
 
-	private String ipRangesIntoTextList(List<String> ipRanges) {
+	private String ipRangesIntoTextList(List<IpRange> ipRanges) {
 		StringBuilder rangesPart = new StringBuilder();
-		for (String range : ipRanges) {
+		for (IpRange range : ipRanges) {
 			if (rangesPart.length()!=0) {
 				rangesPart.append(",\n");
 			}
-			if (range.equals("0.0.0.0/0")) {
-				range = "all";
-			}
-			rangesPart.append(range);
+			if (range.getCidrIp().equals("0.0.0.0/0")) {
+                rangesPart.append("all");
+			} else {
+                rangesPart.append(range.getCidrIp());
+            }
 		}
 		return rangesPart.toString();
 	}

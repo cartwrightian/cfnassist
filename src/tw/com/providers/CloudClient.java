@@ -143,7 +143,8 @@ public class CloudClient implements ProgressListener {
                                                        InetAddress address) {
         Collection<IpPermission> ipPermissions = new LinkedList<>();
         IpPermission permission = new IpPermission();
-        permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpRanges(format("%s/32", address.getHostAddress()));
+        IpRange ipRange = new IpRange().withCidrIp(format("%s/32", address.getHostAddress()));
+        permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpv4Ranges(ipRange);
         ipPermissions.add(permission);
         return ipPermissions;
     }
