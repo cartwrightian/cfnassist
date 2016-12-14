@@ -1,5 +1,6 @@
 package tw.com.unit;
 
+import com.amazonaws.services.ec2.model.*;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -9,13 +10,6 @@ import org.junit.runner.RunWith;
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.*;
-
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
 
 @RunWith(EasyMockRunner.class)
 public class TestSubnetDiagramBuilder extends EasyMockSupport {
@@ -142,7 +136,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 				withFromPort(80).
 				withToPort(100).
 				withIpProtocol("tcp").
-				withIpRanges("ipRanges");
+				withIpv4Ranges(new IpRange().withCidrIp("ipRanges"));
 	}
 
 }

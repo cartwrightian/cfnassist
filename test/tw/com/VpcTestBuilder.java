@@ -47,7 +47,9 @@ public class VpcTestBuilder {
 	private IpPermission ipElbPermsInbound;
 	private IpPermission ipElbPermsOutbound;
 	private SecurityGroup elbSecurityGroup;
-	
+
+	IpRange range = new IpRange().withCidrIp("ipRanges");
+
 	public VpcTestBuilder(String vpcId) {
 		this.vpcId = vpcId;
 		subnets = new LinkedList<>();
@@ -93,10 +95,10 @@ public class VpcTestBuilder {
 		eip = new Address().
 				withAllocationId("eipAllocId").
 				withInstanceId(instanceId).
-				withPublicIp("publicIP");	
-		
-		ipElbPermsInbound = new IpPermission().withFromPort(20).withToPort(29).withIpProtocol("tcp").withIpRanges("ipRanges");
-		ipElbPermsOutbound = new IpPermission().withFromPort(200).withToPort(300).withIpProtocol("tcp").withIpRanges("ipRanges");
+				withPublicIp("publicIP");
+
+		ipElbPermsInbound = new IpPermission().withFromPort(20).withToPort(29).withIpProtocol("tcp").withIpv4Ranges(range);
+		ipElbPermsOutbound = new IpPermission().withFromPort(200).withToPort(300).withIpProtocol("tcp").withIpv4Ranges(range);
 		elbSecurityGroup = new SecurityGroup().
 				withGroupId("secElbGroupId").
 				withGroupName("secElbGroupName").
@@ -132,16 +134,16 @@ public class VpcTestBuilder {
 		acl = new NetworkAcl().withAssociations(aclAssoc).
 				withEntries(outboundAclEntry, inboundAclEntry).
 				withNetworkAclId("aclId");
-		ipPermsInbound = new IpPermission().withFromPort(80).withToPort(89).withIpProtocol("tcp").withIpRanges("ipRanges");
-		ipPermsOutbound = new IpPermission().withFromPort(600).withToPort(700).withIpProtocol("tcp").withIpRanges("ipRanges");
+		ipPermsInbound = new IpPermission().withFromPort(80).withToPort(89).withIpProtocol("tcp").withIpv4Ranges(range);
+		ipPermsOutbound = new IpPermission().withFromPort(600).withToPort(700).withIpProtocol("tcp").withIpv4Ranges(range);
 		instSecurityGroup = new SecurityGroup().
 				withGroupId("secGroupId").
 				withGroupName("secGroupName").
 				withIpPermissions(ipPermsInbound).
 				withIpPermissionsEgress(ipPermsOutbound);
 		
-		ipDbPermsInbound = new IpPermission().withFromPort(90).withToPort(99).withIpProtocol("tcp").withIpRanges("ipRanges");
-		ipDbPermsOutbound = new IpPermission().withFromPort(700).withToPort(800).withIpProtocol("tcp").withIpRanges("ipRanges");
+		ipDbPermsInbound = new IpPermission().withFromPort(90).withToPort(99).withIpProtocol("tcp").withIpv4Ranges(range);
+		ipDbPermsOutbound = new IpPermission().withFromPort(700).withToPort(800).withIpProtocol("tcp").withIpv4Ranges(range);
 		dbSecurityGroup = new SecurityGroup().
 				withGroupId("secDbGroupId").
 				withGroupName("secDbGroupName").

@@ -116,8 +116,12 @@ public class CommandFlags {
     }
 
     private Option createParam(String name, String description) {
-        return Option.builder(name).
-                argName(name).desc(description).hasArg(true).build();
+        return Option.builder().
+				argName(name).
+				longOpt(name).
+				desc(description).
+				hasArg(true).
+				build();
 	}
 
 	private String checkForArgument(CommandLine cmd, HelpFormatter formatter,

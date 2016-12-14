@@ -664,10 +664,12 @@ public class TestCommandLineActions extends EasyMockSupport {
         printStream.close();
         System.setOut(original);
 
+		String output = new String(arrayOutputStream.toByteArray(), Charset.defaultCharset());
+
 		verifyAll();
 
-        assertEquals(0,result);
-        return new String(arrayOutputStream.toByteArray(), Charset.defaultCharset());
+		assertEquals(output, 0,result);
+		return output;
 	}
 
 	private void setFactoryExpectations()

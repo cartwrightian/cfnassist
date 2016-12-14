@@ -47,7 +47,7 @@ public class Main {
 
 	public int parse(FacadeFactory factory, boolean act) {	
 		try {
-			CommandLineParser parser = new BasicParser();
+			CommandLineParser parser = new DefaultParser();
 			CommandLine commandLine = parser.parse(commandLineOptions, args);
 			HelpFormatter formatter = new HelpFormatter();
 		

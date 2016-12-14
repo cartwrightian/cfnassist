@@ -93,8 +93,8 @@ public class TestManageSecGroups {
 		IpPermission ipPermission = perms.get(0);
 		assertEquals(port, ipPermission.getToPort());
 		assertEquals(port, ipPermission.getFromPort());
-		assertEquals(1, ipPermission.getIpRanges().size());
-		assertEquals(cidr, ipPermission.getIpRanges().get(0));
+		assertEquals(1, ipPermission.getIpv4Ranges().size());
+		assertEquals(cidr, ipPermission.getIpv4Ranges().get(0).getCidrIp());
 		
 		//remove
 		client.deleteIpFromSecGroup(groupId, port, adddress);

@@ -10,6 +10,7 @@ import tw.com.providers.SavesFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Paths;
@@ -48,7 +49,7 @@ public class TestSavesFile {
     public void shouldSaveStringInFile() throws IOException {
         savesFile.save(filename, "someText");
 
-        String result = FileUtils.readFileToString(testFile);
+        String result = FileUtils.readFileToString(testFile, Charset.defaultCharset());
 
         assertEquals("someText", result);
     }
