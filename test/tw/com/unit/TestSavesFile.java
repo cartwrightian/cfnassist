@@ -16,7 +16,6 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 
-import static java.nio.file.attribute.PosixFilePermission.*;
 import static org.junit.Assert.*;
 
 public class TestSavesFile {
