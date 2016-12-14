@@ -52,7 +52,6 @@ public class Actions {
 		actions.add(new FileAction());
 		actions.add(new DirAction());
 		actions.add(new ResetAction());
-		actions.add(new RollbackAction());
 		actions.add(new InitAction());
 		actions.add(new AddTagAction());
 		actions.add(new ElbAction());
@@ -65,9 +64,13 @@ public class Actions {
 		actions.add(new CreateDiagramAction());
 		actions.add(new WhitelistAction());
 		actions.add(new BlacklistAction());
-		actions.add(new StepbackAction());
 		actions.add(new InstancesAction());
 		actions.add(new CreateKeyPairAction());
 		actions.add(new SSHCommandAction());
+        actions.add(new BackAction());
+        actions.add(new PurgeAction());
+		// deprecated folder based state handling
+		actions.add(new RollbackLegacyAction());
+		actions.add(new StepbackLegacyAction());
 	}
 }

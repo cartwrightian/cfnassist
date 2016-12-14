@@ -259,25 +259,25 @@ public class TestCommandLineStackOperations {
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
-		invokeForDirAndThenRollback(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
+		invokeForDirAndThenPurge(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
 	}
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirAndThenRollbackWithSNS() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
-		invokeForDirAndThenRollback(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
+		invokeForDirAndThenPurge(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
 	}
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
-		invokeForDirAndThenRollback(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString());
+		invokeForDirAndThenPurge(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString());
 	}
 	
 	@Test
 	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollbackWithSNS() throws CannotFindVpcException, InterruptedException, TimeoutException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
-		invokeForDirAndThenRollback(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString());
+		invokeForDirAndThenPurge(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString());
 	}
 	
 	@Test
@@ -290,7 +290,7 @@ public class TestCommandLineStackOperations {
 		int result = main.parse();
 		assertEquals("deploy failed",0,result);
 		
-		String[] stepback = CLIArgBuilder.stepback(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns");
+		String[] stepback = CLIArgBuilder.back("-sns");
 		
 		// step back first stack
 		main = new Main(stepback);
@@ -301,13 +301,12 @@ public class TestCommandLineStackOperations {
 		
 		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
 		
-		assertEquals("first stepback failed",0,resultA);
-		assertEquals("second stepback failed",0,resultB);
+		assertEquals("first back failed",0,resultA);
+		assertEquals("second back failed",0,resultB);
 	}
 
-
-	private void invokeForDirAndThenRollback(ProjectAndEnv projAndEnv,
-			String sns, String orderedScriptsFolder) throws CannotFindVpcException {
+	private void invokeForDirAndThenPurge(ProjectAndEnv projAndEnv,
+										  String sns, String orderedScriptsFolder) throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projAndEnv, "0");
 		
 		String[] argsDeploy = CLIArgBuilder.deployFromDir(orderedScriptsFolder, sns, testName);
@@ -315,7 +314,7 @@ public class TestCommandLineStackOperations {
 		int result = main.parse();
 		assertEquals("deploy failed",0,result);
 		
-		String[] rollbackDeploy = CLIArgBuilder.rollbackFromDir(orderedScriptsFolder, sns);
+		String[] rollbackDeploy = CLIArgBuilder.purge(sns);
 		main = new Main(rollbackDeploy);
 		result = main.parse();
 		
@@ -324,7 +323,7 @@ public class TestCommandLineStackOperations {
 		//cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
 		
 		// check
-		assertEquals("rollback failed",0,result);
+		assertEquals("purge failed",0,result);
 	}
 	
 	@Ignore("cant find way to label at existing stack via apis")

@@ -12,20 +12,22 @@ import tw.com.exceptions.CfnAssistException;
 
 import java.util.Collection;
 
-public class StepbackAction extends SharedAction {
-	private static final Logger logger = LoggerFactory.getLogger(StepbackAction.class);
+@Deprecated
+public class RollbackLegacyAction extends SharedAction {
+	private static final Logger logger = LoggerFactory.getLogger(RollbackLegacyAction.class);
 
 	@SuppressWarnings("static-access")
-	public StepbackAction() {
-		createOptionWithArg("stepback", "Warning: Remove last delta and reset index accordingly");
+	public RollbackLegacyAction() {
+		createOptionWithArg("rollback",
+                "Warning: Rollback all current deltas and reset index accordingly. DEPRECATED: use purge");
 	}
 
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused, 
+    public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
 			Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
 		String folder = args[0];
-		logger.info("Invoking stepback for " + projectAndEnv + " and folder " + folder);
+		logger.info("Invoking rollback for " + projectAndEnv + " and folder " + folder);
 		AwsFacade aws = factory.createFacade();
-		aws.stepbackLastChangeFromFolder(folder, projectAndEnv);
+		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
 	}
 
 	@Override

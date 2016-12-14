@@ -183,6 +183,7 @@ public class CLIArgBuilder {
                 };
 	}
 
+    @Deprecated
 	public static String[] rollbackFromDir(String orderedScriptsFolder, String sns) {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
@@ -192,7 +193,19 @@ public class CLIArgBuilder {
                 sns
                 };
 	}
-	
+
+
+    public static String[] purge(String sns) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-region", region,
+                "-purge",
+                sns
+        };
+    }
+
+    @Deprecated
 	public static String[] stepback(String orderedScriptsFolder, String sns) {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
@@ -202,6 +215,16 @@ public class CLIArgBuilder {
                 sns
                 };
 	}
+
+    public static String[] back(String sns) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-region", region,
+                "-back",
+                sns
+        };
+    }
 
 	public static String[] updateELB(String typeTag, Integer buildNumber) {
         return new String[]{
@@ -338,5 +361,5 @@ public class CLIArgBuilder {
         };
     }
 
- 
+
 }

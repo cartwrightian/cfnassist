@@ -186,27 +186,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 			
 		validate(CLIArgBuilder.deployFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns", comment));
 	}
-	
-	@Test
-	public void shouldRollbackStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
-		setFactoryExpectations();
 
-		ArrayList<String> stacks = new ArrayList<>();
-		EasyMock.expect(facade.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(stacks);
-			
-		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
-	}
-	
-	@Test
-	public void testShouldStepBackOneChange() throws MissingArgumentException, CfnAssistException, InterruptedException {
-		setFactoryExpectations();
-		
-		List<String> deleted = new LinkedList<>();
-		EasyMock.expect(facade.stepbackLastChangeFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(deleted);
-		
-		validate(CLIArgBuilder.stepback(FilesForTesting.ORDERED_SCRIPTS_FOLDER, ""));
-	}
-	
 	@Test
 	public void testShouldListInstances() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		SearchCriteria criteria = new SearchCriteria(projectAndEnv);
@@ -218,19 +198,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		
 		validate(CLIArgBuilder.listInstances());
 	}
-	
-	@Test
-	public void shouldRollbackStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
-		setFactoryExpectations();
-		factory.setSNSMonitoring();
 
-		ArrayList<String> stacks = new ArrayList<>();
-		projectAndEnv.setUseSNS();
-		EasyMock.expect(facade.rollbackTemplatesInFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv)).andReturn(stacks);
-			
-		validate(CLIArgBuilder.rollbackFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns"));
-	}
-	
 	@Test
 	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
@@ -509,6 +477,38 @@ public class TestCommandLineActions extends EasyMockSupport {
         EasyMock.expectLastCall();
 
         validate(CLIArgBuilder.createSSHCommand("userName"));
+    }
+
+    @Test
+    public void shouldPurgeAllStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+        setFactoryExpectations();
+
+        ArrayList<String> stacks = new ArrayList<>();
+        EasyMock.expect(facade.rollbackTemplatesByIndexTag(projectAndEnv)).andReturn(stacks);
+
+        validate(CLIArgBuilder.purge(""));
+    }
+
+    @Test
+    public void testShouldStepBackOneChange() throws MissingArgumentException, CfnAssistException, InterruptedException {
+        setFactoryExpectations();
+
+        List<String> deleted = new LinkedList<>();
+        EasyMock.expect(facade.stepbackLastChange(projectAndEnv)).andReturn(deleted);
+
+        validate(CLIArgBuilder.back(""));
+    }
+
+    @Test
+    public void shouldPurgeStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+        setFactoryExpectations();
+        factory.setSNSMonitoring();
+
+        ArrayList<String> stacks = new ArrayList<>();
+        projectAndEnv.setUseSNS();
+        EasyMock.expect(facade.rollbackTemplatesByIndexTag(projectAndEnv)).andReturn(stacks);
+
+        validate(CLIArgBuilder.purge("-sns"));
     }
 
     @Test

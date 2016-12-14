@@ -9,25 +9,25 @@ import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
 
 import java.util.Collection;
 
-public class RollbackAction extends SharedAction {
-	private static final Logger logger = LoggerFactory.getLogger(RollbackAction.class);
+@Deprecated
+public class StepbackLegacyAction extends SharedAction {
+	private static final Logger logger = LoggerFactory.getLogger(StepbackLegacyAction.class);
 
 	@SuppressWarnings("static-access")
-	public RollbackAction() {
-		createOptionWithArg("rollback", "Warning: Rollback all current deltas and reset index accordingly");
+	public StepbackLegacyAction() {
+		createOptionWithArg("stepback",
+                "Warning: Remove last delta and reset index accordingly. DEPRECATED: use back");
 	}
 
-
-    public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
-			Collection<Parameter> artifacts, String... args) throws InvalidStackParameterException, CfnAssistException, MissingArgumentException, InterruptedException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused, 
+			Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
 		String folder = args[0];
-		logger.info("Invoking rollback for " + projectAndEnv + " and folder " + folder);
+		logger.info("Invoking stepback for " + projectAndEnv + " and folder " + folder);
 		AwsFacade aws = factory.createFacade();
-		aws.rollbackTemplatesInFolder(folder, projectAndEnv);
+		aws.stepbackLastChangeFromFolder(folder, projectAndEnv);
 	}
 
 	@Override

@@ -386,7 +386,8 @@ public class AwsFacade implements ProvidesZones {
 
         try {
             StackEntry stackEntry = cfnRepository.getStacknameByIndex(projAndEnv.getEnvTag(), highestAppliedDelta);
-            StackNameAndId id = cfnRepository.getStackNameAndId(stackEntry.getStackName()); // important to get id's before deletion request, may throw otherwise
+            // important to get id's before deletion request, may throw otherwise
+            StackNameAndId id = cfnRepository.getStackNameAndId(stackEntry.getStackName());
             cfnRepository.deleteStack(stackEntry.getStackName());
             pending.add(highestAppliedDelta,id);
         }
@@ -396,6 +397,7 @@ public class AwsFacade implements ProvidesZones {
         return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
     }
 
+    // use stepbackLastChange
     @Deprecated
 	public List<String> stepbackLastChangeFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();
@@ -466,6 +468,7 @@ public class AwsFacade implements ProvidesZones {
         return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
     }
 
+	// use rollbackTemplatesByIndexTag
     @Deprecated
     public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
 		DeletionsPending pending = new DeletionsPending();

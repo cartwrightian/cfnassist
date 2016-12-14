@@ -1,7 +1,6 @@
 package tw.com.ant;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -11,10 +10,9 @@ import org.apache.tools.ant.BuildException;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
-import tw.com.commandline.actions.RollbackAction;
+import tw.com.commandline.actions.RollbackLegacyAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 
@@ -37,7 +35,7 @@ public class RollbackElement implements ActionElement {
 			throw new BuildException("Rollback only meaningful for a directory");
 		}
 		
-		CommandLineAction actionToInvoke = new RollbackAction();
+		CommandLineAction actionToInvoke = new RollbackLegacyAction();
 
 		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, absolutePath);
 		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, absolutePath);		
