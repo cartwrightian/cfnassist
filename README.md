@@ -6,14 +6,15 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Current Release version 1.0.132](https://cfnassist-release.s3-eu-west-1.amazonaws.com/132/cfnassist-1.0.132.zip)
+[Download Current Release version  1.0.140](https://cfnassist-release.s3-eu-west-1.amazonaws.com/140/cfnassist-1.0.140.zip)
+
 
 Previous Releases
 -----------------
 
-[Version 1.0.125](https://cfnassist-release.s3-eu-west-1.amazonaws.com/125/cfnassist-1.0.125.zip)
+[Version 1.0.132](https://cfnassist-release.s3-eu-west-1.amazonaws.com/132/cfnassist-1.0.132.zip)
 
-[Version 1.0.119](https://cfnassist-release.s3-eu-west-1.amazonaws.com/119/cfnassist-1.0.119.zip)
+[Version 1.0.125](https://cfnassist-release.s3-eu-west-1.amazonaws.com/125/cfnassist-1.0.125.zip)
 
 Build Status
 ------------
@@ -173,15 +174,22 @@ being *recreated*.
 
 **Use with CARE!** 
 
-This first command will rollback all delta's by deleting the stacks for a VPC in the correct order and updating the DELTA 
-tag on the VPC as it goes! 
-You may want to do this while getting things bedded in initially or when you want to check you can fully recreate an environment.
+This first command will rollback all delta's by deleting the stacks for a VPC in the correct order
+and updating the DELTA tag on the VPC as it goes!
+You may want to do this while getting things bedded in initially or when you want to check you can
+fully recreate an environment.
 
-`cfnassist -env Dev -rollback ./infrastructure`
+`cfnassist -env Dev -purge`
+
+~~cfnassist -env Dev -rollback ./infrastructure~~ is now deprecated, please use `-purge` which will work
+if your stack was create after version 1.0.25.
 
 Alternatively you can roll back just the last change using:
 
-`cfnassist -env Dev -stepback ./infrastructure`
+`cfnassist -env Dev -stepback`
+
+~~cfnassist -env Dev -back ./infrastructure~~ is now deprecated, please use `-back` which will work
+if your stack was create after version 1.0.25.
 
 
 4.Built-in parameters and Mappings
@@ -357,18 +365,18 @@ The current file path is not used, so the file dist/release.txt will end up in t
 
 14.Delete a stack
 -----------------
-You can delete a stack created with cfnassit using the following command:
-
-`cfnassist -env Dev -build 1223 -delete ./templateFile.json`
-
-This will delete the stack that was created from the templateFile.json file with the build number 1223.
-
-You can also delete stacks using the name, so for the above example.
+You can delete stacks using the name, so for the above example.
 
 `cfnassist -env Dev -build 1223 -rm templateFile`
 
 Note that the name of stack in cloudformation will include the Project,
 Environment and (optionally) the build number.
+
+You can also delete a stack created with cfnassit using the following command:
+
+`cfnassist -env Dev -build 1223 -delete ./templateFile.json`
+
+This will delete the stack that was created from the templateFile.json file with the build number 1223.
 
 
 15.Using VPC Tags
@@ -475,6 +483,7 @@ In the above example zoneA and zoneB will be populated with the
 correct zone names for the current region.
 
 22.Create a key pair
+--------------------
 
 `cfnassist -env Dev -keypair <filename>`
 
