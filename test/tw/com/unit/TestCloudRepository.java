@@ -24,7 +24,6 @@ import java.util.Map;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(EasyMockRunner.class)
 public class TestCloudRepository extends EasyMockSupport {

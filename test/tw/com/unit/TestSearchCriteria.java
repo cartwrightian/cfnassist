@@ -7,11 +7,10 @@ import tw.com.entity.EnvironmentTag;
 import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

@@ -35,7 +35,7 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 		String name = getNameForInstance(instance);
 		String privateIp = instance.getPrivateIpAddress();
 		String id = instance.getInstanceId();
-		String label = "";
+		String label;
 		if (!name.isEmpty()) {
 			label = String.format("%s\n[%s]\n(%s)", name, id, privateIp);
 		} else {

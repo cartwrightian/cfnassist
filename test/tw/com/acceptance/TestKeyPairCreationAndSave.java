@@ -13,7 +13,6 @@ import tw.com.CLIArgBuilder;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.commandline.Main;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;

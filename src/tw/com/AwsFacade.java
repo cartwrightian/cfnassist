@@ -214,12 +214,10 @@ public class AwsFacade implements ProvidesZones {
 
 	private void createOutputTags(Stack createdStack, ProjectAndEnv projAndEnv) {
 		List<Output> outputs = createdStack.getOutputs();
-		for(Output output  : outputs) {
-			if (shouldCreateTag(output.getDescription())) {
-				logger.info("Should create output tag for " + output.toString());
-				vpcRepository.setVpcTag(projAndEnv, output.getOutputKey(), output.getOutputValue());
-			}
-		}
+		outputs.stream().filter(output -> shouldCreateTag(output.getDescription())).forEach(output -> {
+			logger.info("Should create output tag for " + output.toString());
+			vpcRepository.setVpcTag(projAndEnv, output.getOutputKey(), output.getOutputValue());
+		});
 	}
 
 	private boolean shouldCreateTag(String description) {
@@ -313,8 +311,7 @@ public class AwsFacade implements ProvidesZones {
 		} catch (WrongNumberOfStacksException | NotReadyException
 				| WrongStackStatus | InterruptedException e) {
 			logger.error("Unable to delete stack " + stackName);
-			logger.error(e.getMessage());
-			logger.error(e.getStackTrace().toString());
+			logger.error("Exception", e);
 		}
 		
 	}
@@ -397,54 +394,7 @@ public class AwsFacade implements ProvidesZones {
         return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
     }
 
-    // use stepbackLastChange
-    @Deprecated
-	public List<String> stepbackLastChangeFromFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
-		DeletionsPending pending = new DeletionsPending();
-		File folder = validFolder(folderPath);
-		List<File> files = loadFiles(folder);
-		Collections.reverse(files); // delete in reverse direction
-		
-		int highestAppliedDelta = getDeltaIndex(projAndEnv);
-		logger.info("Current delta is " + highestAppliedDelta);	
-		
-		File toDelete = findFileToStepBack(files, highestAppliedDelta);
-		if (toDelete==null) {
-			logger.warn("No suitable stack/file found to step back from");
-			return new LinkedList<>();
-		}
-		
-		logger.info("Need to step back for file " + toDelete.getAbsolutePath());
-		int deltaIndex = extractIndexFrom(toDelete);
-		SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);	
-		String stackName = createStackName(toDelete, projAndEnv);
-
-		if (isUpdate(toDelete)) {
-			logger.warn("Rolling back a stack change/delta does nothing except update delta index on VPC");
-			setsDeltaIndex.setDeltaIndex(deltaIndex-1);	
-			return new LinkedList<>();
-		}
-		else {
-			StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
-			cfnRepository.deleteStack(stackName);
-			pending.add(deltaIndex,id);
-			return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
-		}	
-	}
-
-	private File findFileToStepBack(List<File> files, int highestAppliedDelta) {
-		File toDelete = null;
-		for(File file : files) {
-			int deltaIndex = extractIndexFrom(file);
-			if (deltaIndex==highestAppliedDelta) {
-				toDelete = file;
-				break;
-			}
-		}
-		return toDelete;
-	}
-
-    public List<String> rollbackTemplatesByIndexTag(ProjectAndEnv projAndEnv) throws CfnAssistException {
+	public List<String> rollbackTemplatesByIndexTag(ProjectAndEnv projAndEnv) throws CfnAssistException {
         DeletionsPending pending = new DeletionsPending();
         int highestAppliedDelta = getDeltaIndex(projAndEnv);
 
@@ -467,42 +417,6 @@ public class AwsFacade implements ProvidesZones {
         SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);
         return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
     }
-
-	// use rollbackTemplatesByIndexTag
-    @Deprecated
-    public List<String> rollbackTemplatesInFolder(String folderPath, ProjectAndEnv projAndEnv) throws CfnAssistException {
-		DeletionsPending pending = new DeletionsPending();
-		File folder = validFolder(folderPath);
-		List<File> files = loadFiles(folder);
-		Collections.reverse(files); // delete in reverse direction
-		
-		int highestAppliedDelta = getDeltaIndex(projAndEnv);
-		logger.info("Current delta is " + highestAppliedDelta);
-		
-		File fileMatchingIndex = findFileToStepBack(files,highestAppliedDelta);
-		if (fileMatchingIndex==null) {
-			throw new CfnAssistException("Cannot find file that corresponds to current index, folder was " + folderPath);
-		}
-		
-		for(File file : files) {
-			if (!isUpdate(file)) {
-				int deltaIndex = extractIndexFrom(file);
-				String stackName = createStackName(file, projAndEnv);
-				if (deltaIndex>highestAppliedDelta) {
-					logger.warn(format("Not deleting %s as index %s is greater than current delta %s", stackName, deltaIndex, highestAppliedDelta));
-				} else {			
-					logger.info(format("About to request deletion of stackname %s", stackName));
-					StackNameAndId id = cfnRepository.getStackNameAndId(stackName); // important to get id's before deletion request, may throw otherwise
-					cfnRepository.deleteStack(stackName);
-					pending.add(deltaIndex,id);
-				}
-			} else {
-				logger.info(format("Skipping file %s as it is a stack update file", file.getAbsolutePath()));
-			}
-		}
-		SetsDeltaIndex setsDeltaIndex = vpcRepository.getSetsDeltaIndexFor(projAndEnv);	
-		return monitor.waitForDeleteFinished(pending, setsDeltaIndex);
-	}
 
 	private int extractIndexFrom(File file) {
 		StringBuilder indexPart = new StringBuilder();

@@ -237,7 +237,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
-		PrintStream origStream = System.out;
 		String stackName = "theStackName";
 		String project = "theProject";
 		String stackId = "theStackId";
@@ -250,14 +249,8 @@ public class TestCommandLineActions extends EasyMockSupport {
 		stackEntries.add(new StackEntry(project, new EnvironmentTag(env), stack));
 		EasyMock.expect(facade.listStacks(projectAndEnv)).andReturn(stackEntries);
 		
-//		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//		PrintStream output = new PrintStream(stream);
-//		System.setOut(output);
-		
 		String output = validate(CLIArgBuilder.listStacks());
-		
-		//System.setOut(origStream);
-		
+
 		CLIArgBuilder.checkForExpectedLine(stackName, project, env, output);
 	}
 

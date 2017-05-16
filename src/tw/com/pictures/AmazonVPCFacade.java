@@ -37,19 +37,11 @@ public class AmazonVPCFacade {
 	public List<Subnet> getSubnetFors(String vpcId) {
 		return cloudRepository.getSubnetsForVpc(vpcId);
 	}
-	
-	public Subnet getSubnet(String subnetId) {
-		return cloudRepository.getSubnetById(subnetId);
-	}
-	
+
 	public List<Instance> getInstancesFor(String subnetId) {
 		return cloudRepository.getInstancesForSubnet(subnetId);
 	}
-	
-	public SecurityGroup getSecurityGroupDetails(GroupIdentifier groupIdentifier) throws CfnAssistException {	
-		return getSecurityGroupDetailsById(groupIdentifier.getGroupId());
-	}
-	
+
 	public SecurityGroup getSecurityGroupDetailsByName(String groupName) throws CfnAssistException {
 		return cloudRepository.getSecurityGroupByName(groupName);
 	}
@@ -99,10 +91,6 @@ public class AmazonVPCFacade {
 		return String.format("%s [%s]", name, id);
 	}
 
-	public List<SecurityGroup> getSecurityGroupsFor(String vpcId) {
-		return cloudRepository.getSecurityGroupsFor(vpcId);
-	}
-	
 	public static String labelForSecGroup(SecurityGroup group) {
 		String name = getNameFromTags(group.getTags());
 		if (name.isEmpty()) {

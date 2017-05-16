@@ -17,7 +17,7 @@ public class StackResources {
 	private Map<String,List<StackResource>> theResources;
 	
 	public StackResources() {
-		theResources = new HashMap<String,List<StackResource>>(); 
+		theResources = new HashMap<>();
 	}
 
 	public boolean containsStack(String stackName) {

@@ -80,8 +80,8 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 
 	public void addConfiguredSetTag(SetTagAction setTagAction) { actionElements.add(setTagAction);}
 	
-	public void addConfiguredRollback(RollbackElement rollbackElement) {
-		actionElements.add(rollbackElement);
+	public void addConfiguredPurge(PurgeElement purgeElement) {
+		actionElements.add(purgeElement);
 	}
 	
 	public void addConfiguredELBUpdate(ELBUpdateElement elbUpdateElement) {

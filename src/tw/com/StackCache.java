@@ -150,7 +150,7 @@ public class StackCache {
 
 	public List<StackResource> getResourcesForStack(String stackName) {
 
-		List<StackResource> resources = null;
+		List<StackResource> resources;
 		if (stackResources.containsStack(stackName)) {
 			logger.info("Cache hit on stack resources for stack " + stackName);
 			resources = stackResources.getStackResources(stackName);

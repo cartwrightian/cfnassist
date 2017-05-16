@@ -32,8 +32,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
-import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
-import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

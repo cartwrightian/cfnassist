@@ -183,18 +183,6 @@ public class CLIArgBuilder {
                 };
 	}
 
-    @Deprecated
-	public static String[] rollbackFromDir(String orderedScriptsFolder, String sns) {
-        return new String[]{
-                "-env", EnvironmentSetupForTests.ENV,
-                "-project", EnvironmentSetupForTests.PROJECT,
-                "-region", region,
-                "-rollback", orderedScriptsFolder,
-                sns
-                };
-	}
-
-
     public static String[] purge(String sns) {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,

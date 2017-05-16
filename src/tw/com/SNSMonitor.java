@@ -87,7 +87,7 @@ public class SNSMonitor extends StackMonitor  {
 				retryCount++;
 			} else {
 				retryCount = 0; // reset retries
-				processNotificationsWithPendingDeletions(pending, notifications, setsDeltaIndex);
+				processNotificationsWithPendingDeletions(pending, notifications);
 				notifications.clear();	
 			}	
 		}
@@ -95,8 +95,7 @@ public class SNSMonitor extends StackMonitor  {
 		return pending.getNamesOfDeleted();
 	}
 
-	private void processNotificationsWithPendingDeletions(DeletionsPending pending, List<StackNotification> notifications,
-			SetsDeltaIndex setsDeltaIndex) throws WrongStackStatus {
+	private void processNotificationsWithPendingDeletions(DeletionsPending pending, List<StackNotification> notifications) throws WrongStackStatus {
 		String deleteStatus = StackStatus.DELETE_COMPLETE.toString();
 		for(StackNotification notification : notifications) {
 			String resourceType = notification.getResourceType();

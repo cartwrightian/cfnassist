@@ -58,7 +58,7 @@ public class PollingStackMonitor extends StackMonitor {
 	
 	public String waitForDeleteFinished(StackNameAndId stackId) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus initialStatus = StackStatus.DELETE_IN_PROGRESS;
-		String result = StackStatus.DELETE_FAILED.toString();
+		String result;
 		try {
 			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), initialStatus, Arrays.asList(DELETE_ABORTS));
 		}

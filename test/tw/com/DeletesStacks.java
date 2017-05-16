@@ -55,8 +55,7 @@ public class DeletesStacks {
 				deleteStacks(deletionList);
 			}
 		} catch (InterruptedException e) {
-			logger.error(e.getMessage());
-			logger.error(e.getStackTrace().toString());	
+			logger.error("Exception",e);
 		}
 	}
 

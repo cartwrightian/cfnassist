@@ -69,8 +69,5 @@ public class Actions {
 		actions.add(new SSHCommandAction());
         actions.add(new BackAction());
         actions.add(new PurgeAction());
-		// deprecated folder based state handling
-		actions.add(new RollbackLegacyAction());
-		actions.add(new StepbackLegacyAction());
 	}
 }

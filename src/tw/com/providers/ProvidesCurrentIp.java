@@ -20,7 +20,7 @@ public class ProvidesCurrentIp {
 	public InetAddress getCurrentIp() throws CfnAssistException {
         try {
         	URL whatismyip = new URL(GETIP_URL);
-            BufferedReader in = null;
+            BufferedReader in;
             logger.debug("Attempt to fetch public IP from " + GETIP_URL);
             in = new BufferedReader(new InputStreamReader(whatismyip.openStream()));
             String ip = in.readLine();

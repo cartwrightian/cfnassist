@@ -69,7 +69,7 @@ public class CFNAssistNotification {
 		return mapper.writeValueAsString(notif);
 	}
 	
-	public static CFNAssistNotification fromJSON(String json) throws JsonParseException, JsonMappingException, IOException {
+	public static CFNAssistNotification fromJSON(String json) throws IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.readValue(json, CFNAssistNotification.class);
 	}

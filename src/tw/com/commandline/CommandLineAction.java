@@ -21,7 +21,7 @@ public interface CommandLineAction {
 	String getArgName();
 
 	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, 
-			Collection<Parameter> artifacts, String... argument) throws InvalidStackParameterException, FileNotFoundException, 
+			Collection<Parameter> artifacts, String... argument) throws
 			IOException, InterruptedException, CfnAssistException, MissingArgumentException;
 
 	void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,

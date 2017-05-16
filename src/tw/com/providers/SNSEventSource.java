@@ -115,7 +115,7 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	}
 	
 	private JsonNode extractMessageNode(Message msg, ObjectMapper objectMapper)
-			throws IOException, JsonProcessingException {
+			throws IOException {
 		String json = msg.getBody();
 		
 		//logger.debug("Body json: " + json);
