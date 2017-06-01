@@ -17,9 +17,11 @@ apply plugin: 'maven'
 apply plugin: 'application'
 apply plugin: 'idea'
 
-def buildNumber = System.getenv("SNAP_PIPELINE_COUNTER") ?: "0"
+def snapNumber = System.getenv("SNAP_PIPELINE_COUNTER") ?: "0"
+def buildNumber = System.getenv("TRAVIS_BUILD_NUMBER") ?: snapNumber
+
 def antBuild = new groovy.util.AntBuilder()
-version = '1.0.'+buildNumber
+version = '1.1.'+buildNumber
 
 repositories {
     mavenCentral()
