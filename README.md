@@ -18,6 +18,10 @@ Previous Releases
 
 Build Status
 ------------
+Travis
+[![Build Status](https://travis-ci.org/cartwrightian/cfnassist.svg?branch=master)](https://travis-ci.org/cartwrightian/cfnassist)
+
+Snap
 [![Build Status](https://snap-ci.com/cartwrightian/cfnassist/branch/master/build_image)](https://snap-ci.com/cartwrightian/cfnassist/branch/master)
 
 Key Features
