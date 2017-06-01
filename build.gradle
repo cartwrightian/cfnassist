@@ -56,6 +56,13 @@ sourceSets.all {
     compileClasspath += configurations.compileOnly
 }
 
+test {
+    environment 'testEnvVar', 'testValue'
+    filter {
+        includeTestsMatching "tw.com.unit.*"
+    }
+}
+
 task unit(type: Test) {
     environment 'testEnvVar', 'testValue'
     filter {
