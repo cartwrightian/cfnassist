@@ -61,6 +61,10 @@ test {
     filter {
         includeTestsMatching "tw.com.unit.*"
     }
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
+    }
 }
 
 task unit(type: Test) {
@@ -68,17 +72,29 @@ task unit(type: Test) {
     filter {
         includeTestsMatching "tw.com.unit.*"
     }
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
+    }
 }
 
 task integration(type: Test) {
     filter {
         includeTestsMatching "tw.com.integration.*"
     }
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
+    }
 }
 
 task acceptance(type: Test) {
     filter {
         includeTestsMatching "tw.com.acceptance.*"
+    }
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
     }
 }
 
