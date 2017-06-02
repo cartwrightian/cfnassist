@@ -21,13 +21,14 @@ jobs:
     script: ./gradlew integration
   - stage: acceptance
     script: travis_wait 30 ./gradlew acceptance
-before_deploy: ./gradlew distZip
-deploy:
-  provider: releases
-  api_key:
-    secure: AaR+lAisPy2k7CbVH0KFq5GLuUntcl9YJmqfqewXHX2i5xxBoMNxXpf3KZLj5Oss8/23e0GJusRY3WCiXg/InKdN4cafPeBl+6la11lXCLVuDYvXXuD7jTjVysxOgxj192f4KTc9T+fYFY4ASNQIUgT7j+xLgMONyOR1DVhLRzkSM+jJEHYf/AjclilkOiwzq/hlSpAsmXVTX3bIccAwdW1w019SfboYrKFrwp2pCIA5eA8qgpxv9bmDuQspmTTTS/8BDBdEnpTdvY+D/6i8I/GOk9EpZmxKFmN3VuYE+gRGOmkDwK3GK0DDWGrzPoElDLFycc5d3dGR2e5V1gUV9gRj8/g8ujw7cuIUKboBhSz3C/VK1MCjh5EnfUoTUErTzcfB84e1os43vFdB4xOblz0rXGAexBIFLFqzSf+OJ08DagBz13UO1tAlugVT9X3JNv9x+OWYEqAc8pB+j2RynUrQQ6JpURz6LoPiEk/NphaXy+Gwszn5w6FCe0KhFPirulxorxC0Gty4e79t4jxHkkvPkmcj/aOIEz7y7Q4mutBmRthzr5wESOBFFESDj4O7Jp0YcPB37VH2sgKsAur8MKoTePhshWyIQk9a/N4AhCxIV0PxDRw9yhbBflcLQvYOkVrb1EGWLak/3AW8OG9+XQvN9T3w/21BE2wVWhNGf1s=
-  file: build/distributions/cfnassist-1.1.${TRAVIS_BUILD_NUMBER}.zip
-  on:
-    repo: cartwrightian/cfnassist
-  skip_cleanup: true
+  - stage: deploy
+    script: ./gradlew distZip
+    deploy:
+      provider: releases
+      api_key:
+        secure: AaR+lAisPy2k7CbVH0KFq5GLuUntcl9YJmqfqewXHX2i5xxBoMNxXpf3KZLj5Oss8/23e0GJusRY3WCiXg/InKdN4cafPeBl+6la11lXCLVuDYvXXuD7jTjVysxOgxj192f4KTc9T+fYFY4ASNQIUgT7j+xLgMONyOR1DVhLRzkSM+jJEHYf/AjclilkOiwzq/hlSpAsmXVTX3bIccAwdW1w019SfboYrKFrwp2pCIA5eA8qgpxv9bmDuQspmTTTS/8BDBdEnpTdvY+D/6i8I/GOk9EpZmxKFmN3VuYE+gRGOmkDwK3GK0DDWGrzPoElDLFycc5d3dGR2e5V1gUV9gRj8/g8ujw7cuIUKboBhSz3C/VK1MCjh5EnfUoTUErTzcfB84e1os43vFdB4xOblz0rXGAexBIFLFqzSf+OJ08DagBz13UO1tAlugVT9X3JNv9x+OWYEqAc8pB+j2RynUrQQ6JpURz6LoPiEk/NphaXy+Gwszn5w6FCe0KhFPirulxorxC0Gty4e79t4jxHkkvPkmcj/aOIEz7y7Q4mutBmRthzr5wESOBFFESDj4O7Jp0YcPB37VH2sgKsAur8MKoTePhshWyIQk9a/N4AhCxIV0PxDRw9yhbBflcLQvYOkVrb1EGWLak/3AW8OG9+XQvN9T3w/21BE2wVWhNGf1s=
+      file: build/distributions/cfnassist-1.1.${TRAVIS_BUILD_NUMBER}.zip
+      on:
+        repo: cartwrightian/cfnassist
+      skip_cleanup: true
 
