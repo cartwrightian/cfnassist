@@ -21,7 +21,7 @@ jobs:
     script: ./gradlew integration
   - stage: acceptance
     script: travis_wait 30 ./gradlew acceptance
-after_success: ./gradlew distZip
+before_deploy: ./gradlew distZip
 deploy:
   provider: releases
   api_key:
