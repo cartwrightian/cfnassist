@@ -13,3 +13,12 @@ addons:
   apt:
     packages:
       - oracle-java8-installer
+
+jobs:
+  include:
+    - stage: unit
+      script: ./gradlew unit
+    - stage: integration
+      script: ./gradlew integration
+    - stage: integration
+      script: ./gradlew acceptance
