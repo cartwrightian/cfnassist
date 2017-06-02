@@ -20,5 +20,5 @@ jobs:
       script: ./gradlew unit
     - stage: integration
       script: ./gradlew integration
-    - stage: integration
+    - stage: acceptance
       script: ./gradlew acceptance
