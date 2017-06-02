@@ -30,5 +30,6 @@ jobs:
       file: build/distributions/cfnassist-1.1.${TRAVIS_BUILD_NUMBER}.zip
       on:
         repo: cartwrightian/cfnassist
+        branch: master
       skip_cleanup: true
 
