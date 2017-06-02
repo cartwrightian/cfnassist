@@ -21,4 +21,4 @@ jobs:
     - stage: integration
       script: ./gradlew integration
     - stage: acceptance
-      script: ./gradlew acceptance
+      script: travis_wait 30 ./gradlew acceptance
