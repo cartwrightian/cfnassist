@@ -148,7 +148,7 @@ task cfnassist << {
 }
 
 task upload(dependsOn: ['distZip','installDist','cfnassist'])  << {
-    antBuild.cfnassist(region: 'eu-west-1', buildNumber: buildNumber, bucketname:'cfnassist-release') {
+    antBuild.cfnassist(buildNumber: buildNumber, bucketname:'cfnassist-release') {
 		Artifact(name: 'package', value: distZip.archivePath)
 		S3Create()
 	}
