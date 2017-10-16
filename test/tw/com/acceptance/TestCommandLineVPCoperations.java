@@ -1,7 +1,8 @@
 package tw.com.acceptance;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.Vpc;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -16,19 +17,19 @@ import static org.junit.Assert.assertEquals;
 
 public class TestCommandLineVPCoperations {
 	
-	private static AmazonEC2Client ec2Client;
+	private static AmazonEC2 ec2Client;
 	private Vpc altEnvVPC;
 	
 	@Before
 	public void beforeEveryTestRun() {
-		VpcRepository vpcRepository = new VpcRepository(new CloudClient(ec2Client));
+		VpcRepository vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
 	}
 
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		ec2Client = EnvironmentSetupForTests.createEC2Client();
 	}
 
 	@Test
@@ -47,7 +48,6 @@ public class TestCommandLineVPCoperations {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-reset"
 				};
 		Main main = new Main(args);

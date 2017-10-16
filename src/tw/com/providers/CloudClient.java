@@ -3,7 +3,8 @@ package tw.com.providers;
 import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.event.ProgressListener;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.regions.AwsRegionProvider;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +18,12 @@ import static java.lang.String.format;
 public class CloudClient implements ProgressListener {
     private static final Logger logger = LoggerFactory.getLogger(CloudClient.class);
 
-    private AmazonEC2Client ec2Client;
+    private AmazonEC2 ec2Client;
+    private AwsRegionProvider regionProvider;
 
-    public CloudClient(AmazonEC2Client ec2Client) {
+    public CloudClient(AmazonEC2 ec2Client, AwsRegionProvider regionProvider) {
         this.ec2Client = ec2Client;
+        this.regionProvider = regionProvider;
     }
 
     public Vpc describeVpc(String vpcId) {
@@ -51,12 +54,14 @@ public class CloudClient implements ProgressListener {
         ec2Client.deleteTags(deleteTagsRequest);
     }
 
-    public Map<String, AvailabilityZone> getAvailabilityZones(String regionName) {
+    public Map<String, AvailabilityZone> getAvailabilityZones() {
+        String regionName = regionProvider.getRegion();
         logger.info("Get AZ for region " + regionName);
         DescribeAvailabilityZonesRequest request = new DescribeAvailabilityZonesRequest();
         Collection<Filter> filter = new LinkedList<>();
         filter.add(new Filter("region-name", Arrays.asList(regionName)));
         request.setFilters(filter);
+
         DescribeAvailabilityZonesResult result = ec2Client.describeAvailabilityZones(request);
         List<AvailabilityZone> zones = result.getAvailabilityZones();
         logger.info(format("Found %s zones", zones.size()));

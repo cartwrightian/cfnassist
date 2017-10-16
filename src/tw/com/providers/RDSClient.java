@@ -3,15 +3,16 @@ package tw.com.providers;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.AmazonRDSClient;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
 import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
 
 public class RDSClient {
-	AmazonRDSClient rdsClient;
+	AmazonRDS rdsClient;
 
-	public RDSClient(AmazonRDSClient rdsClient) {
+	public RDSClient(AmazonRDS rdsClient) {
 		this.rdsClient = rdsClient;
 	}
 

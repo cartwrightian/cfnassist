@@ -45,8 +45,7 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 
-		String regionName = EnvironmentSetupForTests.getRegion().getName();
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, regionName);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 	}
 	
 	@Test

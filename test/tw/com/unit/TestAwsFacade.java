@@ -57,9 +57,7 @@ public class TestAwsFacade extends EasyMockSupport {
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 
-		String regionName = EnvironmentSetupForTests.getRegion().getName();
-
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider,regionName);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 	}
 	
 	@Test

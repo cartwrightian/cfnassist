@@ -7,6 +7,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.ec2.AmazonEC2;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -15,7 +17,6 @@ import org.junit.Test;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateSecurityGroupRequest;
 import com.amazonaws.services.ec2.model.CreateSecurityGroupResult;
 import com.amazonaws.services.ec2.model.DeleteSecurityGroupRequest;
@@ -32,17 +33,17 @@ public class TestManageSecGroups {
 	private static final String GROUP_NAME = "TestManageSecGroups";
 	private CloudClient client;
 	private static String groupId = "";
-	private static AmazonEC2Client ec2Client;
+	private static AmazonEC2 ec2Client;
 
 	@BeforeClass
 	public static void onceBeforeAllTestsRuns() {
 		AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		ec2Client = EnvironmentSetupForTests.createEC2Client();
 	}
 	
 	@Before
 	public void beforeEachTestRuns() {	
-		client = new CloudClient(ec2Client);
+		client = new CloudClient(ec2Client, new DefaultAwsRegionProviderChain());
 		
 		deleteGroupIfPresent();
 		

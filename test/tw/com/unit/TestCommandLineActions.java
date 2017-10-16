@@ -90,7 +90,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-reset"
 				};
 		
@@ -105,8 +104,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-reset", 
+				"-reset",
 				"-parameters", "testA=123;testB=123"
 				};
 		
@@ -342,7 +340,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		arts.add(new Parameter().withParameterKey("art2").withParameterValue(FilesForTesting.SUBNET_STACK));
 		List<Parameter> uploaded = new LinkedList<>();
 		
-		factory.setRegion(EnvironmentSetupForTests.getRegion());
 		factory.setProject(EnvironmentSetupForTests.PROJECT);
 		
 		projectAndEnv.addBuildNumber(buildNumber);
@@ -358,8 +355,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String filenameA = "fileA";
 		String filenameB = "fileB";
 
-		factory.setRegion(EnvironmentSetupForTests.getRegion());
-        EasyMock.expectLastCall();
 		factory.setProject(EnvironmentSetupForTests.PROJECT);
         EasyMock.expectLastCall();
 
@@ -377,7 +372,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 	public void shouldRequestCreationOfDiagrams() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {			
 		Recorder recorder = new FileRecorder(Paths.get("./diagrams"));
 		EasyMock.expect(factory.createDiagramCreator()).andReturn(diagramCreator);
-		factory.setRegion(EnvironmentSetupForTests.getRegion());
 		diagramCreator.createDiagrams(recorder);
 		
 		String folder = "./diagrams";
@@ -511,7 +505,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-s3create",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
@@ -527,7 +520,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-s3delete",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
@@ -542,7 +534,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-tidyOldStakcs", FilesForTesting.SIMPLE_STACK,
 				"-build", "3373"
 				};
@@ -565,8 +556,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
-				"-init" 
+				"-init"
 				};
 		expectCommandLineFailureStatus(args);
 	}
@@ -576,7 +566,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-reset",
 				"-parameters", "testA=123;testB"
 				};
@@ -616,7 +605,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-tidyOldStacks", FilesForTesting.SIMPLE_STACK
 				};
 		expectCommandLineFailureStatus(args);
@@ -629,7 +617,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
 				"-artifacts", uploads,
 				"-build", "9987",
@@ -668,14 +655,12 @@ public class TestCommandLineActions extends EasyMockSupport {
 	private void setFactoryExpectations()
 			throws MissingArgumentException, CfnAssistException,
 			InterruptedException {
-		factory.setRegion(EnvironmentSetupForTests.getRegion());
 		factory.setProject(EnvironmentSetupForTests.PROJECT);
 		EasyMock.expect(factory.createFacade()).andReturn(facade);
 	}
 	
 	private void setVPCopExpectations() throws MissingArgumentException,
 		CfnAssistException, InterruptedException {
-		factory.setRegion(EnvironmentSetupForTests.getRegion());
 		factory.setProject(EnvironmentSetupForTests.PROJECT);
 		EasyMock.expect(factory.createFacade()).andReturn(facade);
 	}

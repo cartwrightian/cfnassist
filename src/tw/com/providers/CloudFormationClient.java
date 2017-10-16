@@ -1,6 +1,6 @@
 package tw.com.providers;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +21,9 @@ import java.util.List;
 public class CloudFormationClient {
 	private static final Logger logger = LoggerFactory.getLogger(CloudFormationClient.class);
 
-	private AmazonCloudFormationClient cfnClient;
+	private AmazonCloudFormation cfnClient;
 
-	public CloudFormationClient(AmazonCloudFormationClient cfnClient) {
+	public CloudFormationClient(AmazonCloudFormation cfnClient) {
 		this.cfnClient = cfnClient;
 	}
 

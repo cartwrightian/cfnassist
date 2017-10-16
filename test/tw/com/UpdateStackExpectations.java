@@ -23,7 +23,6 @@ import java.util.Map;
 
 
 public class UpdateStackExpectations extends EasyMockSupport {
-    private String regionName = EnvironmentSetupForTests.getRegion().getName();
     protected static final String VPC_ID = "vpcId";
 
     protected CloudFormRepository cfnRepository;
@@ -48,7 +47,7 @@ public class UpdateStackExpectations extends EasyMockSupport {
         EasyMock.expect(cfnRepository.updateStack(contents, parameters, monitor, stackName)).andReturn(stackNameAndId);
         EasyMock.expect(monitor.waitForUpdateFinished(stackNameAndId)).andReturn(StackStatus.UPDATE_COMPLETE.toString());
         EasyMock.expect(cfnRepository.updateSuccess(stackNameAndId)).andReturn(stack);
-        EasyMock.expect(cloudRepository.getZones(regionName)).andReturn(zones);
+        EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
         return stackNameAndId;
     }
 }

@@ -2,6 +2,7 @@ package tw.com.providers;
 
 import java.util.List;
 
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +23,9 @@ import com.amazonaws.services.elasticloadbalancing.model.TagDescription;
 public class LoadBalancerClient {
 	private static final Logger logger = LoggerFactory.getLogger(LoadBalancerClient.class);
 
-	private AmazonElasticLoadBalancingClient elbClient;
+	private AmazonElasticLoadBalancing elbClient;
 
-	public LoadBalancerClient(AmazonElasticLoadBalancingClient elbClient) {
+	public LoadBalancerClient(AmazonElasticLoadBalancing elbClient) {
 		this.elbClient = elbClient;
 	}
 

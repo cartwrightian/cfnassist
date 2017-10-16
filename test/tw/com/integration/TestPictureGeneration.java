@@ -4,15 +4,16 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
+import com.amazonaws.services.rds.AmazonRDS;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
-import com.amazonaws.services.rds.AmazonRDSClient;
 
 import tw.com.EnvironmentSetupForTests;
 import tw.com.exceptions.CfnAssistException;
@@ -39,12 +40,12 @@ public class TestPictureGeneration {
 	@Before
 	public void beforeEachTestRuns() {
 		AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		AmazonEC2Client ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		AmazonElasticLoadBalancingClient awsElbClient = EnvironmentSetupForTests.createELBClient(credentialsProvider);
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		AmazonRDSClient awsRdsClient = EnvironmentSetupForTests.createRDSClient(credentialsProvider);
+		AmazonEC2 ec2Client = EnvironmentSetupForTests.createEC2Client();
+		AmazonElasticLoadBalancing awsElbClient = EnvironmentSetupForTests.createELBClient();
+		AmazonCloudFormation cfnClient = EnvironmentSetupForTests.createCFNClient();
+		AmazonRDS awsRdsClient = EnvironmentSetupForTests.createRDSClient();
 
-		CloudClient cloudClient = new CloudClient(ec2Client);	
+		CloudClient cloudClient = new CloudClient(ec2Client, new DefaultAwsRegionProviderChain());
 		LoadBalancerClient elbClient = new LoadBalancerClient(awsElbClient);
 		VpcRepository vpcRepository = new VpcRepository(cloudClient);
 

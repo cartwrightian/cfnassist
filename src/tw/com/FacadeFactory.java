@@ -1,16 +1,23 @@
 package tw.com;
 
-import com.amazonaws.auth.AWSCredentialsProviderChain;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
-import com.amazonaws.services.rds.AmazonRDSClient;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.sns.AmazonSNSClient;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.regions.AwsRegionProvider;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
+import com.amazonaws.services.rds.AmazonRDS;
+import com.amazonaws.services.rds.AmazonRDSClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.AmazonSNSClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.cli.MissingArgumentException;
 import tw.com.commandline.CommandExecutor;
 import tw.com.entity.ProjectAndEnv;
@@ -25,21 +32,18 @@ import tw.com.repository.VpcRepository;
 
 public class FacadeFactory {
 	private boolean snsMonitoring = false;
-	private Region region;
 	private String project;
 	
 	private boolean init;
 
-	// amazon apis
-	private AWSCredentialsProviderChain credentialsProvider;
-	private AmazonCloudFormationClient cfnClient;
-	private AmazonSQSClient sqsClient;
-	private AmazonSNSClient snsClient;
-	private AmazonS3Client s3Client;
-	private AmazonEC2Client ec2Client;
-	private AmazonElasticLoadBalancingClient elbClient;
-	private AmazonRDSClient rdsClient;
-	private AmazonIdentityManagementClient iamClient;
+    private AmazonCloudFormation cfnClient;
+	private AmazonSQS sqsClient;
+	private AmazonSNS snsClient;
+	private AmazonS3 s3Client;
+	private AmazonEC2 ec2Client;
+	private AmazonElasticLoadBalancing elbClient;
+	private AmazonRDS rdsClient;
+	private AmazonIdentityManagement iamClient;
 	
 	// providers
 	private ArtifactUploader artifactUploader;
@@ -62,13 +66,8 @@ public class FacadeFactory {
 	private IdentityProvider identityProvider;
 
     public FacadeFactory() {
-		credentialsProvider = new DefaultAWSCredentialsProviderChain();	
 	}
-	
-	public void setRegion(Region awsRegion) {
-		this.region = awsRegion;
-	}
-	
+
 	public void setProject(String project) {
 		this.project = project;
 	}
@@ -88,7 +87,8 @@ public class FacadeFactory {
 	
 	private void createProviders() {
 		loadBalancerClient = new LoadBalancerClient(elbClient);
-		cloudClient = new CloudClient(ec2Client);
+        AwsRegionProvider regionProvider = new DefaultAwsRegionProviderChain();
+        cloudClient = new CloudClient(ec2Client, regionProvider);
 		formationClient = new CloudFormationClient(cfnClient);
 		datastoreClient = new RDSClient(rdsClient);
 		notificationSender = new SNSNotificationSender(snsClient);
@@ -103,22 +103,14 @@ public class FacadeFactory {
 	}
 
 	private void createAmazonAPIClients() {
-		cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(region);
-		ec2Client = new AmazonEC2Client(credentialsProvider);
-		ec2Client.setRegion(region);
-		snsClient = new AmazonSNSClient(credentialsProvider);
-		snsClient.setRegion(region);
-		sqsClient = new AmazonSQSClient(credentialsProvider);
-		sqsClient.setRegion(region);
-		elbClient = new AmazonElasticLoadBalancingClient(credentialsProvider);
-		elbClient.setRegion(region);
-		s3Client = new AmazonS3Client(credentialsProvider);
-		s3Client.setRegion(region);
-		rdsClient = new AmazonRDSClient(credentialsProvider);
-		rdsClient.setRegion(region);
-		iamClient = new AmazonIdentityManagementClient(credentialsProvider);
-		iamClient.setRegion(region);
+        cfnClient = AmazonCloudFormationClientBuilder.defaultClient();
+        ec2Client = AmazonEC2ClientBuilder.defaultClient();
+        snsClient = AmazonSNSClientBuilder.defaultClient();
+        sqsClient = AmazonSQSClientBuilder.defaultClient();
+        elbClient = AmazonElasticLoadBalancingClientBuilder.defaultClient();
+        s3Client = AmazonS3ClientBuilder.defaultClient();
+        rdsClient = AmazonRDSClientBuilder.defaultClient();
+        iamClient = AmazonIdentityManagementClientBuilder.defaultClient();
 	}
 
 	public AwsFacade createFacade() throws MissingArgumentException, CfnAssistException, InterruptedException {		
@@ -133,8 +125,9 @@ public class FacadeFactory {
 			}
 			
 			monitor.init();
-			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, 
-					cloudRepository, notificationSender, identityProvider, region.getName());
+            AwsRegionProvider regionProvider = new DefaultAwsRegionProviderChain();
+            awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository,
+					cloudRepository, notificationSender, identityProvider);
 		}	
 		return awsFacade;	
 	}

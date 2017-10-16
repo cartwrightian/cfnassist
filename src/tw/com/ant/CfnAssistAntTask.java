@@ -1,24 +1,21 @@
 package tw.com.ant;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.RegionUtils;
-import com.amazonaws.services.cloudformation.model.Parameter;
-
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
 public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 
-	private String awsRegion;
 	private String cfnProject;
 	private Integer cfnBuildNumber = null;
 	private String cfnEnv;
@@ -36,11 +33,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		artifactParams = new LinkedList<>();
 		actionElements = new LinkedList<>();
 	}
-	
-	public void setRegion(String awsRegion) {
-		this.awsRegion = awsRegion;
-	}
-	
+
 	public void setProject(String cfnProject) {
 		this.cfnProject = cfnProject;
 	}
@@ -126,13 +119,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		if (capabilityIAM) {
 			projectAndEnv.setUseCapabilityIAM();
 		}
-		Region region = RegionUtils.getRegion(awsRegion);
 
 		Collection<Parameter> cfnParameters = createParameterList();
 		Collection<Parameter> artifacts = createArtifactList();	
 		
 		FacadeFactory factory = new FacadeFactory();
-		factory.setRegion(region);
 		factory.setProject(cfnProject);
 		if (snsMonitoring) {
 			factory.setSNSMonitoring();

@@ -1,38 +1,24 @@
 package tw.com.providers;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.*;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.MissingArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import tw.com.NotificationProvider;
 import tw.com.entity.StackNotification;
 import tw.com.exceptions.FailedToCreateQueueException;
 import tw.com.exceptions.NotReadyException;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.sns.AmazonSNSClient;
-import com.amazonaws.services.sns.model.CreateTopicRequest;
-import com.amazonaws.services.sns.model.CreateTopicResult;
-import com.amazonaws.services.sns.model.ListSubscriptionsResult;
-import com.amazonaws.services.sns.model.SubscribeRequest;
-import com.amazonaws.services.sns.model.SubscribeResult;
-import com.amazonaws.services.sns.model.Subscription;
-import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
-import com.amazonaws.services.sqs.model.DeleteMessageRequest;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.QueueDeletedRecentlyException;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class SNSEventSource extends QueuePolicyManager implements NotificationProvider {
 	private static final Logger logger = LoggerFactory.getLogger(SNSEventSource.class);
@@ -46,13 +32,13 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	private static final int QUEUE_CREATE_RETRYS = 3;
 	private static final long QUEUE_RETRY_INTERNAL_MILLIS = 70 * 1000;
 	
-	private AmazonSNSClient snsClient;
+	private AmazonSNS snsClient;
 	private String queueURL;
 	private String topicSnsArn;
 	private String queueArn;
 	private boolean init;
 	
-	public SNSEventSource(AmazonSNSClient snsClient,AmazonSQSClient sqsClient) {
+	public SNSEventSource(AmazonSNS snsClient, AmazonSQS sqsClient) {
 		super(sqsClient);
 		this.snsClient = snsClient;
 		
@@ -148,7 +134,8 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 		logger.info("Created new SNS subscription, subscription arn is: " + subscriptionArn);
 		return subscriptionArn;
 	}
-	
+
+	// TODO
 	private String getOrCreateQueue() throws InterruptedException, FailedToCreateQueueException {
 		CreateQueueRequest createQueueRequest = new CreateQueueRequest(SQS_QUEUE_NAME);
 		int attemptsLefts = QUEUE_CREATE_RETRYS;

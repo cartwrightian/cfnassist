@@ -50,9 +50,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		identityProvider = createStrictMock(IdentityProvider.class);
 		user = new User("path", "userName", "userId", "arn", new Date());
 
-		String regionName = EnvironmentSetupForTests.getRegion().getName();
-
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, regionName);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 		
 		deleteFile(THIRD_FILE);
 	}
@@ -61,7 +59,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 	public void shouldApplySimpleTemplateNoParameters() throws IOException, InterruptedException, CfnAssistException {
 		List<File> files = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 
-        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andStubReturn(new HashMap<>());
+        EasyMock.expect(cloudRepository.getZones()).andStubReturn(new HashMap<>());
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("0");
 		setExpectationsForValidationPass(files);
 		// processing pass
@@ -84,7 +82,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		List<File> files = allFiles.subList(1, 2);
 
-        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andReturn(new HashMap<>());
+        EasyMock.expect(cloudRepository.getZones()).andReturn(new HashMap<>());
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("1");
 		setExpectationsForValidationPass(allFiles);
 		// processing pass
@@ -118,7 +116,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 	public void shouldApplyNewFileAsNeeded() throws IOException, InterruptedException, CfnAssistException {
 		List<File> originalFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 
-        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andReturn(new HashMap<>());
+        EasyMock.expect(cloudRepository.getZones()).andReturn(new HashMap<>());
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
 		// validation pass does all files
 		setExpectationsForValidationPass(originalFiles);
@@ -149,7 +147,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
     public void shouldApplyFilesInAFolderWithUpdate() throws CfnAssistException, IOException, InterruptedException {
         List<File> allFiles = loadFiles(FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toFile());
 
-        EasyMock.expect(cloudRepository.getZones("eu-west-1")).andReturn(new HashMap<>());
+        EasyMock.expect(cloudRepository.getZones()).andReturn(new HashMap<>());
         EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("0");
         // first file - no parameters needed
         setExpectationsForValidationPass(allFiles);

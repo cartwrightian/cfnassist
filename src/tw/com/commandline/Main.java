@@ -1,14 +1,14 @@
 package tw.com.commandline;
 
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.RegionUtils;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.FacadeFactory;
 import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.*;
+import tw.com.exceptions.CfnAssistException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -54,10 +54,7 @@ public class Main {
 			flags.populateFlags(commandLine, formatter);
 			CommandLineAction action = commandActions.selectCorrectActionFromArgs(commandLine, formatter,
 					executableName, commandLineOptions );
-			
-			Region awsRegion = populateRegion(flags.getRegion());
-			logger.info("Region set to " + awsRegion);
-			
+
 			ProjectAndEnv projectAndEnv = new ProjectAndEnv(flags.getProject(), flags.getEnv());
 			if (flags.haveBuildNumber()) {
 				projectAndEnv.addBuildNumber(flags.getBuildNumber());
@@ -81,7 +78,6 @@ public class Main {
 			Collection<Parameter> artifacts = flags.getUploadParams();
 			action.validate(projectAndEnv, flags.getAdditionalParameters(), artifacts, argsForAction);
 			
-			factory.setRegion(awsRegion);
 			setFactoryOptionsForAction(factory, action);
 
 			Collection<Parameter> additionalParams = flags.getAdditionalParameters();
@@ -119,15 +115,18 @@ public class Main {
 		}
 	}
 
-	private Region populateRegion(String regionName) throws MissingArgumentException {
+	// TODO CHANGE TO USE DEFAULT REGION PROVIDERS BUILT INTO THE SDK
+	private Regions populateRegion(String regionName) throws MissingArgumentException {
 		logger.info("Check for region using name "+regionName);
-		Region result = RegionUtils.getRegion(regionName);
-		if (result==null) {
-			String msg = "Unable for find region for " + regionName;
-			logger.error(msg);
-			throw new MissingArgumentException(msg);
-		}
-		return result;
+		try {
+            Regions result = Regions.fromName(regionName);
+            return result;
+        }
+        catch(IllegalArgumentException noSuchRegion) {
+            String msg = "Unable for find region for " + regionName;
+            logger.error(msg);
+            throw new MissingArgumentException(msg);
+        }
 	}
 
 }

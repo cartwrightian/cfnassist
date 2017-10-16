@@ -2,7 +2,7 @@ package tw.com.acceptance;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DeleteKeyPairRequest;
 import com.amazonaws.services.ec2.model.DescribeKeyPairsRequest;
 import com.amazonaws.services.ec2.model.DescribeKeyPairsResult;
@@ -28,12 +28,12 @@ import static org.junit.Assert.assertEquals;
 
 public class TestKeyPairCreationAndSave {
 
-    private static AmazonEC2Client ec2Client;
+    private static AmazonEC2 ec2Client;
 
     @BeforeClass
     public static void beforeAllTestsRun() {
         DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-        ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+        ec2Client = EnvironmentSetupForTests.createEC2Client();
     }
 
     @Test

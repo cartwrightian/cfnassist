@@ -5,7 +5,7 @@
 	<target name="cfnTask" >
 		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
 			<classpath>
-				<pathelement location="build/libs/cfnassist-all-1.0.0.jar"/>
+				<pathelement location="build/libs/cfnassist-all-1.1.0.jar"/>
 			</classpath>
 		</taskdef>
 	</target>
@@ -14,13 +14,13 @@
 	<target name="test" depends="testSimpleTemplateAndDelete,testSimpleTemplateBuildNumber,testSimpleTemplateWithParam,testSimpleDir, testSimpleSNS,testELBSwitchOver,testSimpleTemplateWithS3Uploads,testS3,testTidyOldStacks,testCreateDiagrams,testElbAcccessControl" />
 
 	<target name="testInitVpc" depends="cfnTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+		<cfnassist  project="CfnAssist" env="Test">
 			<Init vpcId="someId"></Init>
 		</cfnassist>
 	</target>
 
 	<target name="testAddVpc" depends="cfnTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+		<cfnassist  project="CfnAssist" env="Test">
 			<SetTag name="nameFromAnt" value="valueFromAnt"></SetTag>
 		</cfnassist>
 	</target>
@@ -28,7 +28,7 @@
 	<!-- creates a cfn a cfn stack based on subnet.json, then deletes it again -->	
 	<target name="testSimpleTemplateAndDelete" depends="cfnTask">
 		<sequential>
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<cfnassist  project="CfnAssist" env="Test">
 				<Templates target="src/cfnScripts/subnet.json"/>
 				<Delete target="src/cfnScripts/subnet.json"/>
 			</cfnassist>
@@ -38,7 +38,7 @@
 	<!-- creates a cfn a cfn stack based on subnet.json, then deletes it again -->	
 	<!-- uses SNS to monitoring the stack creation and deletion -->
 	<target name="testSimpleSNS" depends="cfnTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true">
+			<cfnassist  project="CfnAssist" env="Test" sns="true">
 				<Templates target="src/cfnScripts/simpleStack.json"/>
 				<Delete target="src/cfnScripts/simpleStack.json"/>
 			</cfnassist>
@@ -48,21 +48,21 @@
 	<!-- will fail with permission error this if successful, a tw.com.exceptions.MissingCapabilities in case of failure -->
 	<!-- need to manually delete afterward use deleteSimpleIAM below -->
 	<target name="testSimpleIAM" depends="cfnTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true" capabilityIAM="true">
+			<cfnassist  project="CfnAssist" env="Test" sns="true" capabilityIAM="true">
 				<Templates target="src/cfnScripts/simpleIAMStack.json"/>
 			</cfnassist>
 	</target>
 
 	<!-- see above -->
 	<target name="deleteSimpleIAM" depends="cfnTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test" sns="true" capabilityIAM="true">
+			<cfnassist  project="CfnAssist" env="Test" sns="true" capabilityIAM="true">
 				<Delete target="src/cfnScripts/simpleIAMStack.json"/>
 			</cfnassist>
 	</target>
 	
 	<!-- creates a cfn a cfn stack based on subnet.json, then deletes it again. Includes a build number. -->	
 	<target name="testSimpleTemplateBuildNumber" depends="cfnTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" buildNumber="42">
+		<cfnassist  project="CfnAssist" env="Test" buildNumber="42">
 			<Templates target="src/cfnScripts/subnet.json"/>
 			<Delete target="src/cfnScripts/subnet.json"/>
 		</cfnassist>
@@ -70,7 +70,7 @@
 	
 	<!-- creates a cfn a cfn stack based on subnetWithParam.json, then deletes it again. Passes parameters through to the script. -->	
 	<target name="testSimpleTemplateWithParam" depends="cfnTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+		<cfnassist  project="CfnAssist" env="Test">
 			<Templates target="src/cfnScripts/subnetWithParam.json"/>
 			<Param name="zoneA" value="eu-west-1a" />
 			<Param name="zoneB" value="eu-west-1b" />
@@ -80,15 +80,15 @@
 	
 	<!-- applies all the scripts in the orderedScripts directory as appropriate, then it rolls then all back again -->	
 	<target name="testSimpleDir" depends="cfnTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+		<cfnassist  project="CfnAssist" env="Test">
 		    <Templates target="src/cfnScripts/orderedScripts/"/>
-			<Rollback target="src/cfnScripts/orderedScripts/"/>
+			<Purge />
 		</cfnassist>	
 	</target>
 	
 	<!-- create an instance and an ELB and switch over the ELB -->
 	<target name="testELBSwitchOver" depends="cfnTask">
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" buildNumber="742">
+		<cfnassist  project="CfnAssist" env="Test" buildNumber="742">
 			<Templates target="src/cfnScripts/elbAndInstance.json"/>
 			<ELBUpdate typeTag="web"/>
 			<Delete target="src/cfnScripts/elbAndInstance.json"/>
@@ -97,7 +97,7 @@
 	
 
 	<target name="testTidyOldStacks" depends="cfnTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<cfnassist  project="CfnAssist" env="Test">
 				<Templates target="src/cfnScripts/elb.json"/>
 				<Templates target="src/cfnScripts/simpleStack.json"/>
 				<TidyStacks target="src/cfnScripts/simpleStack.json" typeTag="web"/> 
@@ -106,7 +106,7 @@
 	</target>
 
 	<target name="testCreateDiagrams" depends="cfnTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<cfnassist  project="CfnAssist" env="Test">
 				<Diagrams target="."/>
 			</cfnassist>
 	</target>
@@ -114,13 +114,13 @@
 	<target name="testElbAcccessControl" depends="cfnTask,testWhitelist,testBlacklist"/>
 
 	<target name="testWhitelist" depends="cfnTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<cfnassist  project="CfnAssist" env="Test">
 				<WhiteList tag="web" port="8080"/>
 			</cfnassist>
 	</target>
 
 	<target name="testBlacklist" depends="cfnTask">
-			<cfnassist region="eu-west-1" project="CfnAssist" env="Test">
+			<cfnassist  project="CfnAssist" env="Test">
 				<BlackList tag="web" port="8080"/>
 			</cfnassist>
 	</target>
@@ -128,7 +128,7 @@
 	<!-- Upload two files to S3 bucket cfnassists3testbucket prefixed with the build number, invoke subnetWithS3Param.json with the URLs -->
 	<!-- of the now uploaed files automatically populated in parameters urlA and urlB -->
 	<target name="testSimpleTemplateWithS3Uploads" depends="cfnTask" >
-		<cfnassist region="eu-west-1" project="CfnAssist" env="Test" bucketName="cfnassists3testbucket" buildNumber="742">
+		<cfnassist  project="CfnAssist" env="Test" bucketName="cfnassists3testbucket" buildNumber="742">
 			<Templates target="src/cfnScripts/subnetWithS3Param.json"/>
 			<!-- just use these files to test upload -->
 			<Artifact name="urlA" value="src/cfnScripts/acl.json" />
@@ -140,7 +140,7 @@
 	<target name="testS3" depends="testSimpleS3CreateFiles,testSimpleS3DeleteFiles,testSimpleS3CreateDir,testSimpleS3DeleteDirFiles" />
 	
 	<target name="testSimpleS3CreateFiles" depends="cfnTask" >
-		<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
+		<cfnassist  bucketName="cfnassists3testbucket" buildNumber="742">
 			<S3Create/>
 			<Artifact name="fileA" value="src/cfnScripts/acl.json" />
 			<Artifact name="fileB" value="src/cfnScripts/subnet.json" />
@@ -148,7 +148,7 @@
 	</target>
 	
 	<target name="testSimpleS3DeleteFiles" depends="cfnTask" >
-			<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
+			<cfnassist  bucketName="cfnassists3testbucket" buildNumber="742">
 				<S3Delete/>
 				<Artifact name="fileA" value="acl.json" />
 				<Artifact name="fileB" value="subnet.json" />
@@ -156,14 +156,14 @@
 		</target>
 	
 	<target name="testSimpleS3CreateDir" depends="cfnTask" >
-		<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
+		<cfnassist  bucketName="cfnassists3testbucket" buildNumber="742">
 			<S3Create/>
 			<Artifact name="folderA" value="src/cfnScripts/orderedScripts" />
 		</cfnassist>
 	</target>
 	
 	<target name="testSimpleS3DeleteDirFiles" depends="cfnTask" >
-			<cfnassist region="eu-west-1" bucketName="cfnassists3testbucket" buildNumber="742">
+			<cfnassist  bucketName="cfnassists3testbucket" buildNumber="742">
 				<S3Delete/>
 				<Artifact name="fileA" value="01createSubnet.json" />
 				<Artifact name="fileB" value="02createAcls.json" />

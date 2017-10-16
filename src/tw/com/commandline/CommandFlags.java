@@ -19,7 +19,6 @@ public class CommandFlags {
 	
 	private Option projectParam;
 	private Option envParam;
-	private Option regionParam;
 	private Option buildNumberParam;
 	private Option keysValuesParam;
 	private Option snsParam;
@@ -33,7 +32,6 @@ public class CommandFlags {
 
 	private String project;
 	private String env;
-	private String region;
 	private Integer buildNumber = null;
 	private Boolean sns;
 	private Boolean capabilityIAM;
@@ -52,7 +50,6 @@ public class CommandFlags {
 	public void addOptions() {
 		commandLineOptions.addOption(projectParam);
 		commandLineOptions.addOption(envParam);
-		commandLineOptions.addOption(regionParam);
 		commandLineOptions.addOption(keysValuesParam);
 		commandLineOptions.addOption(buildNumberParam);
 		commandLineOptions.addOption(snsParam);
@@ -65,7 +62,6 @@ public class CommandFlags {
 	public void populateFlags(CommandLine commandLine, HelpFormatter formatter) throws MissingArgumentException, InvalidStackParameterException {
 		project = checkForArgument(commandLine, formatter, projectParam, AwsFacade.PROJECT_TAG, false);	
 		env = checkForArgument(commandLine, formatter, envParam, AwsFacade.ENVIRONMENT_TAG, false);
-		region = checkForArgument(commandLine, formatter, regionParam, Main.ENV_VAR_EC2_REGION, true);
 		String buildNumberAsString = checkForArgument(commandLine, formatter, buildNumberParam, AwsFacade.BUILD_TAG, false);
 		if (!buildNumberAsString.isEmpty()) {
 			buildNumber = Integer.parseInt(buildNumberAsString);
@@ -83,7 +79,6 @@ public class CommandFlags {
 	private void createOptions() {
 		projectParam = createParam("project", "Name of the cfnassist project, or use env var: " + AwsFacade.PROJECT_TAG);
 		envParam = createParam("env", "Name of cfnassit environment, or use env var: " + AwsFacade.ENVIRONMENT_TAG);
-        regionParam = createParam("region", "AWS Region name, or use env var: " + Main.ENV_VAR_EC2_REGION);
 
         keysValuesParam = createParamMultiArgs("parameters",
                 "Provide paramters for cfn scripts, format as per cfn commandline tools");
@@ -195,10 +190,6 @@ public class CommandFlags {
 
 	public String getEnv() {
 		return env;
-	}
-
-	public String getRegion() {
-		return region;
 	}
 
 	public Integer getBuildNumber() {

@@ -2,22 +2,30 @@ package tw.com;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
-import com.amazonaws.services.rds.AmazonRDSClient;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
+import com.amazonaws.services.rds.AmazonRDS;
+import com.amazonaws.services.rds.AmazonRDSClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.sns.AmazonSNSClient;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.AmazonSNSClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +48,13 @@ public class EnvironmentSetupForTests {
 
 	///////////////
 	// User/Env specific constants, these will need to change for others running these tests!
-	public static final String AVAILABILITY_ZONE = "eu-west-1c";
-	public static final String AMI_FOR_INSTANCE = "ami-9c7ad8eb"; // eu amazon linux instance
+    public static final String BUCKET_NAME="cfnassists3testbucket";
+    public static final String AVAILABILITY_ZONE = "eu-west-1c";
+    public static final String S3_PREFIX = "https://"+BUCKET_NAME+".s3-eu-west-1.amazonaws.com";
+
+    public static final String AMI_FOR_INSTANCE = "ami-9c7ad8eb"; // eu amazon linux instance
 	public static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
-	public static final String BUCKET_NAME="cfnassists3testbucket";
-	public static final String S3_PREFIX = "https://"+BUCKET_NAME+".s3-eu-west-1.amazonaws.com";
-	private static final Regions AWS_REGION = Regions.EU_WEST_1;
-	//
+    //
 	///////////////
 	
 	public static final String PROJECT = "CfnAssist";
@@ -58,7 +66,7 @@ public class EnvironmentSetupForTests {
 	public static final long DELETE_RETRY_MAX_TIMEOUT_MS = 5000; 
 	public static final int DELETE_RETRY_LIMIT = (5*60000) / 5000; // Try for 5 minutes
 	
-	public static List<Subnet> getSubnetFors(AmazonEC2Client ec2Client, Vpc vpc) {
+	public static List<Subnet> getSubnetFors(AmazonEC2 ec2Client, Vpc vpc) {
 		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
 		Collection<Filter> filters = new HashSet<>();
 		Filter vpcFilter = new Filter().withName("vpc-id").withValues(vpc.getVpcId());
@@ -69,36 +77,23 @@ public class EnvironmentSetupForTests {
 		return results.getSubnets();
 	}
 
-
-
-	public static AmazonEC2Client createEC2Client(AWSCredentialsProvider credentialsProvider) {
-		AmazonEC2Client ec2Client = new AmazonEC2Client(credentialsProvider);
-		ec2Client.setRegion(EnvironmentSetupForTests.getRegion());
-		return ec2Client;
+	public static AmazonEC2 createEC2Client() {
+	    return AmazonEC2ClientBuilder.defaultClient();
 	}
 		
-	public static AmazonCloudFormationClient createCFNClient(AWSCredentialsProvider credentialsProvider) {
-		AmazonCloudFormationClient cfnClient = new AmazonCloudFormationClient(credentialsProvider);
-		cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
-		return cfnClient;
+	public static AmazonCloudFormation createCFNClient() {
+        return AmazonCloudFormationClientBuilder.defaultClient();
 	}
-	
 
-	public static AmazonRDSClient createRDSClient(AWSCredentialsProvider credentialsProvider) {
-		AmazonRDSClient rdsClient = new AmazonRDSClient(credentialsProvider);
-		rdsClient.setRegion(EnvironmentSetupForTests.getRegion());
-		return rdsClient;
+	public static AmazonRDS createRDSClient() {
+        return AmazonRDSClientBuilder.defaultClient();
 	}
 
 	public static Vpc findAltVpc(VpcRepository repository) {
 		return repository.getCopyOfVpc(VPC_ID_FOR_ALT_ENV);
 	}
 
-	public static Region getRegion() {
-		return Region.getRegion(AWS_REGION);
-	}
-
-	public static void clearVpcTags(AmazonEC2Client directClient, Vpc vpc) throws InterruptedException {
+	public static void clearVpcTags(AmazonEC2 directClient, Vpc vpc) throws InterruptedException {
 		List<String> resources = new LinkedList<>();
 		resources.add(vpc.getVpcId());
 		List<Tag> existingTags = vpc.getTags();
@@ -116,7 +111,7 @@ public class EnvironmentSetupForTests {
 		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	}
 	
-	public static StackNameAndId createTemporarySimpleStack(AmazonCloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
+	public static StackNameAndId createTemporarySimpleStack(AmazonCloudFormation cfnClient, String vpcId, String arn) throws IOException {
 		CreateStackRequest createStackRequest = new CreateStackRequest();
 		createStackRequest.setStackName(TEMPORARY_STACK);
 		File file = new File(FilesForTesting.SIMPLE_STACK);
@@ -142,38 +137,26 @@ public class EnvironmentSetupForTests {
 		return p;
 	}
 
-	public static AmazonSNSClient createSNSClient(
-			DefaultAWSCredentialsProviderChain credentialsProvider) {
-		AmazonSNSClient amazonSNSClient = new AmazonSNSClient(credentialsProvider);
-		amazonSNSClient.setRegion(getRegion());
-		return amazonSNSClient;
+	public static AmazonSNS createSNSClient() {
+        return AmazonSNSClientBuilder.defaultClient();
 	}
 	
-	public static AmazonSQSClient createSQSClient(
-			DefaultAWSCredentialsProviderChain credentialsProvider) {
-		AmazonSQSClient sqsClient = new AmazonSQSClient(credentialsProvider);
-		sqsClient.setRegion(getRegion());
-		return sqsClient;
+	public static AmazonSQS createSQSClient() {
+        return AmazonSQSClientBuilder.defaultClient();
 	}
 
-	public static AmazonElasticLoadBalancingClient createELBClient(
-			AWSCredentialsProvider credentialsProvider) {
-		AmazonElasticLoadBalancingClient client = new AmazonElasticLoadBalancingClient(credentialsProvider);
-		client.setRegion(getRegion());
-		return client;
+	public static AmazonElasticLoadBalancing createELBClient() {
+        return AmazonElasticLoadBalancingClientBuilder.defaultClient();
+
 	}
 
-	public static AmazonS3Client createS3Client(DefaultAWSCredentialsProviderChain credentialsProvider) {
-		AmazonS3Client client = new AmazonS3Client(credentialsProvider);
-		client.setRegion(getRegion());
-		return client;
+	public static AmazonS3 createS3Client() {
+        return AmazonS3ClientBuilder.defaultClient();
 	}
 	
-	public static AmazonIdentityManagementClient createIamClient(DefaultAWSCredentialsProviderChain credentialsProvider) {
-		AmazonIdentityManagementClient client = new AmazonIdentityManagementClient(credentialsProvider);
-		client.setRegion(getRegion());
-		return client;
-	}
+	public static AmazonIdentityManagement createIamClient(DefaultAWSCredentialsProviderChain credentialsProvider) {
+        return AmazonIdentityManagementClientBuilder.defaultClient();
+    }
 	
 	public static Boolean isContainedIn(List<S3ObjectSummary> objectSummaries,
 			String key) {
@@ -189,7 +172,7 @@ public class EnvironmentSetupForTests {
 	public static final int FAILURE_STATUS = -1;
 
 
-	public static List<S3ObjectSummary> getBucketObjects(AmazonS3Client s3Client) {
+	public static List<S3ObjectSummary> getBucketObjects(AmazonS3 s3Client) {
 		ObjectListing requestResult = s3Client.listObjects(EnvironmentSetupForTests.BUCKET_NAME);
 		return requestResult.getObjectSummaries();
 	}
@@ -235,7 +218,7 @@ public class EnvironmentSetupForTests {
 		return FileUtils.readFileToString(new File(filename), Charset.defaultCharset());
 	}
 
-	public static Instance createSimpleInstance(AmazonEC2Client ec2Client) {		
+	public static Instance createSimpleInstance(AmazonEC2 ec2Client) {
 		RunInstancesRequest runInstancesRequest = new RunInstancesRequest(EnvironmentSetupForTests.AMI_FOR_INSTANCE, 1, 1).
 				withInstanceType(InstanceType.T1Micro);
 		RunInstancesResult instancesResults = ec2Client.runInstances(runInstancesRequest);

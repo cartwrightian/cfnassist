@@ -1,8 +1,9 @@
 package tw.com.acceptance;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.Vpc;
 import org.junit.*;
 import org.junit.rules.TestName;
@@ -30,15 +31,14 @@ public class TestCommandLineStackOperations {
 	private Vpc altEnvVPC;
 	private VpcRepository vpcRepository;
 	private ProjectAndEnv altProjectAndEnv;
-	private static AmazonEC2Client ec2Client;
-	private static AmazonCloudFormationClient cfnClient;
+	private static AmazonEC2 ec2Client;
+	private static AmazonCloudFormation cfnClient;
 	private DeletesStacks deletesStacks;
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
+		ec2Client = EnvironmentSetupForTests.createEC2Client();
+		cfnClient = EnvironmentSetupForTests.createCFNClient();
 	}
 	
 	@Rule public TestName test = new TestName();
@@ -49,7 +49,7 @@ public class TestCommandLineStackOperations {
 	
 	@Before
 	public void beforeEveryTestRun() {
-		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
 		EnvironmentSetupForTests.getMainProjectAndEnv();
 		
@@ -179,7 +179,6 @@ public class TestCommandLineStackOperations {
 		String[] createELBAndInstance = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-build", buildNumber.toString(),
 				"-file", FilesForTesting.ELB_AND_INSTANCE,
 				"-comment", testName
@@ -320,7 +319,7 @@ public class TestCommandLineStackOperations {
 		
 		//clean up as needed
 		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
-		//cfnClient.setRegion(EnvironmentSetupForTests.getRegion());
+		//cfnClient.setRegions(EnvironmentSetupForTests.getRegion());
 		
 		// check
 		assertEquals("purge failed",0,result);
@@ -334,7 +333,6 @@ public class TestCommandLineStackOperations {
 		String[] argslabelStack = {
 				"-env", EnvironmentSetupForTests.ENV,
 				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-labelstack", "todoNotWorking"
 		};
 		Main main = new Main(argslabelStack);

@@ -48,11 +48,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private IdentityProvider identityProvider;
 	private CloudRepository cloudRepository;
 	private User user;
-	private String regionName;
 
-	@Before
+    @Before
 	public void beforeEachTestRuns() {
-		regionName = EnvironmentSetupForTests.getRegion().toString();
 
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
@@ -61,11 +59,11 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		cloudRepository = createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
-		
-		user = new User("path", "userName", "userId", "arn", new Date());
-		String regionName = EnvironmentSetupForTests.getRegion().getName();
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, regionName);
+		user = new User("path", "userName", "userId", "arn", new Date());
+
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender,
+				identityProvider);
 	}
 	
 	@Test
@@ -201,7 +199,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, new Tagging())).
 		    andReturn(stackNameAndId);
         Map<String, AvailabilityZone> zones = new HashMap<>();
-        EasyMock.expect(cloudRepository.getZones(regionName)).andReturn(zones);
+        EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);	
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
@@ -238,7 +236,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, new Tagging())).
 		andReturn(stackNameAndId);
         Map<String, AvailabilityZone> zones = new HashMap<>();
-        EasyMock.expect(cloudRepository.getZones(regionName)).andReturn(zones);
+        EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
 		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
@@ -402,7 +400,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, new Tagging())).
 			andReturn(stackNameAndId);
         Map<String, AvailabilityZone> zones = new HashMap<>();
-        EasyMock.expect(cloudRepository.getZones(regionName)).andReturn(zones);
+        EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
 		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
@@ -438,7 +436,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, new Tagging())).
 			andReturn(stackNameAndId);
         Map<String, AvailabilityZone> zones = new HashMap<>();
-        EasyMock.expect(cloudRepository.getZones(regionName)).andReturn(zones);
+        EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);	
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
 		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
@@ -545,7 +543,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
         tagging.setCommentTag(comment);
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, tagging)).
 			andReturn(stackNameAndId);
-        EasyMock.expect(cloudRepository.getZones(regionName)).andReturn(zones);
+        EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
 		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);

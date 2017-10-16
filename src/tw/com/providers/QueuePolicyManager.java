@@ -1,37 +1,27 @@
 package tw.com.providers;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
+import com.amazonaws.auth.policy.*;
+import com.amazonaws.auth.policy.actions.SQSActions;
+import com.amazonaws.auth.policy.conditions.ConditionFactory;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
+import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
+import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import org.apache.commons.cli.MissingArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.auth.policy.Action;
-import com.amazonaws.auth.policy.Condition;
-import com.amazonaws.auth.policy.Policy;
-import com.amazonaws.auth.policy.Principal;
-import com.amazonaws.auth.policy.Resource;
-import com.amazonaws.auth.policy.Statement;
-import com.amazonaws.auth.policy.actions.SQSActions;
-import com.amazonaws.auth.policy.conditions.ConditionFactory;
-import com.amazonaws.services.sqs.AmazonSQSClient;
-import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
-import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
-import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
+import java.util.*;
 
 public class QueuePolicyManager {
 	private static final Logger logger = LoggerFactory.getLogger(QueuePolicyManager.class);	
 	private static final String QUEUE_POLICY_KEY = "Policy";
 	public static final String QUEUE_ARN_KEY = "QueueArn";
 
-	protected AmazonSQSClient sqsClient;
+	protected AmazonSQS sqsClient;
 	private Collection<String> attributeNames = new LinkedList<String>();
 
-	public QueuePolicyManager(AmazonSQSClient sqsClient) {
+	public QueuePolicyManager(AmazonSQS sqsClient) {
 		this.sqsClient = sqsClient;
 		attributeNames.add(QUEUE_ARN_KEY);
 		attributeNames.add(QUEUE_POLICY_KEY);

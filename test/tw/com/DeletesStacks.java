@@ -1,6 +1,6 @@
 package tw.com;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
 import com.amazonaws.services.cloudformation.model.Stack;
@@ -17,11 +17,11 @@ public class DeletesStacks {
 
 	private static final Logger logger = LoggerFactory.getLogger(DeletesStacks.class);
 
-	private AmazonCloudFormationClient cfnClient;
+	private AmazonCloudFormation cfnClient;
 	private LinkedList<String> deleteIfPresent;
 	private LinkedList<String> deleteIfPresentNonBlocking;
 
-	public DeletesStacks(AmazonCloudFormationClient cfnClient) {
+	public DeletesStacks(AmazonCloudFormation cfnClient) {
 		this.cfnClient = cfnClient;
 		deleteIfPresent = new LinkedList<>();
 		deleteIfPresentNonBlocking = new LinkedList<>();

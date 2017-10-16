@@ -2,11 +2,11 @@ package tw.com.integration;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.identitymanagement.model.User;
-import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.model.CreateTopicResult;
 import com.amazonaws.services.sns.model.SubscribeRequest;
 import com.amazonaws.services.sns.model.SubscribeResult;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,16 +29,16 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 public class TestSNSNotificationSender {
-	private static AmazonSNSClient snsClient;
-	private static AmazonSQSClient sqsClient;
+	private static AmazonSNS snsClient;
+	private static AmazonSQS sqsClient;
 	private SNSNotificationSender sender;
 	private QueuePolicyManager policyManager;
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
-		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
+		snsClient = EnvironmentSetupForTests.createSNSClient();
+		sqsClient = EnvironmentSetupForTests.createSQSClient();
 	}
 
 	@Before

@@ -2,6 +2,7 @@ package tw.com.integration;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.cloudformation.model.Parameter;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -27,11 +28,11 @@ public class TestArtifactUploader {
 	private static final String KEY_A = BUILD_NUMBER+"/instance.json";
 	private static final String KEY_B = BUILD_NUMBER+"/simpleStack.json";
 	
-	private static AmazonS3Client s3Client;
+	private static AmazonS3 s3Client;
 
 	@BeforeClass 
 	public static void beforeAllTestsRun() {
-		s3Client = EnvironmentSetupForTests.createS3Client(new DefaultAWSCredentialsProviderChain());
+		s3Client = EnvironmentSetupForTests.createS3Client();
 	}
 	
 	@After

@@ -2,15 +2,16 @@ package tw.com.integration;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.model.*;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
 import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Vpc;
-import com.amazonaws.services.sns.AmazonSNSClient;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
@@ -40,9 +41,10 @@ import static org.junit.Assert.*;
 
 public class TestCloudFormationClient {
 	
-	private static AmazonCloudFormationClient cfnClient;
-	private static AmazonEC2Client ec2Client;
-	
+	private static AmazonCloudFormation cfnClient;
+	private static AmazonEC2 ec2Client;
+	private static DefaultAwsRegionProviderChain regionProvider;
+
 	private PollingStackMonitor polligMonitor;
 	private ProjectAndEnv projAndEnv;
 	private static VpcRepository vpcRepository;
@@ -50,15 +52,16 @@ public class TestCloudFormationClient {
 	private CloudFormationClient formationClient;
 	private DeletesStacks deletesStacks;
 	private Vpc mainTestVPC;
-	
+
 	@BeforeClass
 	public static void onceBeforeClassRuns() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
-		AmazonSNSClient snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
-		AmazonSQSClient sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
+		ec2Client = EnvironmentSetupForTests.createEC2Client();
+		regionProvider = new DefaultAwsRegionProviderChain();
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client, regionProvider));
+		cfnClient = EnvironmentSetupForTests.createCFNClient();
+		AmazonSNS snsClient = EnvironmentSetupForTests.createSNSClient();
+		AmazonSQS sqsClient = EnvironmentSetupForTests.createSQSClient();
 		snsNotifProvider = new SNSEventSource(snsClient, sqsClient);
 		
 		new DeletesStacks(cfnClient).ifPresent("queryStackTest").
@@ -72,7 +75,7 @@ public class TestCloudFormationClient {
 	@Before
 	public void beforeEachTestRuns() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		formationClient = new CloudFormationClient(cfnClient);
-		CloudClient cloudClient = new CloudClient(ec2Client);
+		CloudClient cloudClient = new CloudClient(ec2Client, regionProvider);
 		CloudRepository cloudRepository = new CloudRepository(cloudClient);
 		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudRepository, EnvironmentSetupForTests.PROJECT);
 		polligMonitor = new PollingStackMonitor(cfnRepository );

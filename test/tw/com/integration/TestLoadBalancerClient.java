@@ -1,10 +1,10 @@
 package tw.com.integration;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.model.*;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -23,15 +23,15 @@ public class TestLoadBalancerClient  {
 	
 	private static final String LB_NAME = "cfnAssistTest";
 	private LoadBalancerClient client;
-	private static AmazonElasticLoadBalancingClient elbClient;
-	private static AmazonEC2Client ec2Client;
+	private static AmazonElasticLoadBalancing elbClient;
+	private static AmazonEC2 ec2Client;
 	private static Instance instance;
 	
 	@BeforeClass
 	public static void onceBeforeSuiteOfTestsRun() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		elbClient = EnvironmentSetupForTests.createELBClient(credentialsProvider);
-		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
+		elbClient = EnvironmentSetupForTests.createELBClient();
+		ec2Client = EnvironmentSetupForTests.createEC2Client();
 		
 		createLoadBalancer();
 		instance = EnvironmentSetupForTests.createSimpleInstance(ec2Client);

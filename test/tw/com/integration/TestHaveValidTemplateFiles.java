@@ -3,7 +3,7 @@ package tw.com.integration;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,7 @@ public class TestHaveValidTemplateFiles {
 	
 	@Test
 	public void testAllTestCfnFilesAreValid() throws IOException, InterruptedException {
-		AmazonCloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);
+		AmazonCloudFormation cfnClient = EnvironmentSetupForTests.createCFNClient();
 		CloudFormationClient cloudClient = new CloudFormationClient(cfnClient);
 		File folder = new File("src/cfnScripts");
 		

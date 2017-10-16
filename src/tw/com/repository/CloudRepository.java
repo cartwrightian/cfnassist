@@ -1,5 +1,6 @@
 package tw.com.repository;
 
+import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.services.ec2.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -226,14 +227,14 @@ public class CloudRepository {
 		return instance.getTags();
 	}
 
-	public Map<String, AvailabilityZone> getZones(String regionName) {
-		initAvailabilityZones(regionName);
+	public Map<String, AvailabilityZone> getZones() {
+		initAvailabilityZones();
 		return zones;
 	}
 
-	private Map<String, AvailabilityZone> initAvailabilityZones(String regionName) {
+	private Map<String, AvailabilityZone> initAvailabilityZones() {
 		if (zones==null) {
-			zones = cloudClient.getAvailabilityZones(regionName);
+			zones = cloudClient.getAvailabilityZones();
 		}
 		return zones;
 	}

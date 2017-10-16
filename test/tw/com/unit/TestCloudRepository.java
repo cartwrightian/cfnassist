@@ -59,11 +59,11 @@ public class TestCloudRepository extends EasyMockSupport {
 		AvailabilityZone zone = new AvailabilityZone().withRegionName("regionName").withZoneName("regionaNameA");
 		Map<String, AvailabilityZone> zones = new HashMap<>();
 		zones.put("A", zone);
-		EasyMock.expect(cloudClient.getAvailabilityZones("regionName")).andReturn(zones);
+		EasyMock.expect(cloudClient.getAvailabilityZones()).andReturn(zones);
 
 		replayAll();
-		repository.getZones("regionName");
-		Map<String, AvailabilityZone> result = repository.getZones("regionName"); // cached
+		repository.getZones();
+		Map<String, AvailabilityZone> result = repository.getZones(); // cached
 		verifyAll();
 
 		assertEquals(zone, result.get("A"));

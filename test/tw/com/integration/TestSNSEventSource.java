@@ -1,8 +1,8 @@
 package tw.com.integration;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.sns.AmazonSNSClient;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.commons.cli.MissingArgumentException;
@@ -23,16 +23,16 @@ import static org.junit.Assert.fail;
 
 public class TestSNSEventSource {
 	
-	private static AmazonSNSClient snsClient;
-	private static AmazonSQSClient sqsClient;
+	private static AmazonSNS snsClient;
+	private static AmazonSQS sqsClient;
 	
 	SNSEventSource eventSource;
 
 	@BeforeClass
 	public static void beforeAllTestsRun() {
 		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		snsClient = EnvironmentSetupForTests.createSNSClient(credentialsProvider);
-		sqsClient = EnvironmentSetupForTests.createSQSClient(credentialsProvider);
+		snsClient = EnvironmentSetupForTests.createSNSClient();
+		sqsClient = EnvironmentSetupForTests.createSQSClient();
 	}
 	
 	@Before

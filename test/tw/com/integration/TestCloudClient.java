@@ -1,8 +1,9 @@
 package tw.com.integration;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Region;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 import org.junit.After;
 import org.junit.Before;
@@ -24,15 +25,15 @@ import static org.junit.Assert.*;
 public class TestCloudClient {
 	
 	private CloudClient cloudClient;
-	private AmazonEC2Client ec2Client;
+	private AmazonEC2 ec2Client;
 	private String VpcId = EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV;
 	private Tag expectedTag = EnvironmentSetupForTests.createEc2Tag(AwsFacade.ENVIRONMENT_TAG, EnvironmentSetupForTests.ALT_ENV);
 	private com.amazonaws.services.ec2.model.Instance instance;
 	
 	@Before
 	public void beforeEachTestIsRun() {
-		ec2Client = EnvironmentSetupForTests.createEC2Client(new DefaultAWSCredentialsProviderChain());
-		cloudClient = new CloudClient(ec2Client);
+		ec2Client = EnvironmentSetupForTests.createEC2Client();
+		cloudClient = new CloudClient(ec2Client, new DefaultAwsRegionProviderChain());
 	}
 	
 	@After
@@ -94,12 +95,11 @@ public class TestCloudClient {
 
 	@Test
 	public void shouldGetAvailabilityZones() {
-		Region region = EnvironmentSetupForTests.getRegion();
-		String regionName = EnvironmentSetupForTests.getRegion().getName();
-		Map<String, AvailabilityZone> zones = cloudClient.getAvailabilityZones(regionName);
+		String regionName = new DefaultAwsRegionProviderChain().getRegion();
+		Map<String, AvailabilityZone> zones = cloudClient.getAvailabilityZones();
 
 		assertEquals(3, zones.size());
-		zones.forEach((name, zone) -> assertEquals(region.getName(), zone.getRegionName()));
+		zones.forEach((name, zone) -> assertEquals(regionName, zone.getRegionName()));
         assertTrue(zones.containsKey("a"));
         assertTrue(zones.containsKey("b"));
 	}

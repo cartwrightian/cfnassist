@@ -1,12 +1,13 @@
 package tw.com.acceptance;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.Vpc;
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.io.FilenameUtils;
@@ -29,16 +30,15 @@ import static org.junit.Assert.*;
 
 public class TestCommandLineS3Operations {
 	private static final Integer BUILD_NUMBER = 9987;
-	private static AmazonEC2Client ec2Client;
-	private static AmazonCloudFormationClient cfnClient;
-	private static AmazonS3Client s3Client;
+	private static AmazonEC2 ec2Client;
+	private static AmazonCloudFormation cfnClient;
+	private static AmazonS3 s3Client;
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		ec2Client = EnvironmentSetupForTests.createEC2Client(credentialsProvider);
-		s3Client = EnvironmentSetupForTests.createS3Client(credentialsProvider);
-		cfnClient = EnvironmentSetupForTests.createCFNClient(credentialsProvider);	
+		ec2Client = EnvironmentSetupForTests.createEC2Client();
+		s3Client = EnvironmentSetupForTests.createS3Client();
+		cfnClient = EnvironmentSetupForTests.createCFNClient();
 	}
 
 	private VpcRepository vpcRepository;
@@ -54,7 +54,7 @@ public class TestCommandLineS3Operations {
 
 		deleteTestKeysFromBucket();
 		
-		vpcRepository = new VpcRepository(new CloudClient(ec2Client));
+		vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 		
 		deletesStacks = new DeletesStacks(cfnClient);
@@ -134,7 +134,6 @@ public class TestCommandLineS3Operations {
 		String[] argsS3create = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-s3create",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
@@ -155,7 +154,6 @@ public class TestCommandLineS3Operations {
 		String[] argsS3Delete = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,
-				"-region", EnvironmentSetupForTests.getRegion().toString(),
 				"-s3delete",
 				"-artifacts", artifacts,
 				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,

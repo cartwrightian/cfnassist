@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
-import tw.com.providers.SavesFile;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
+import tw.com.providers.SavesFile;
 import tw.com.repository.CloudFormRepository;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
@@ -62,11 +62,9 @@ public class AwsFacade implements ProvidesZones {
 	private MonitorStackEvents monitor;
 	private IdentityProvider identityProvider;
 
-	private String regionName;
-
-	public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository, 
-			ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
-			IdentityProvider identityProvider, String regionName) {
+    public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository,
+                     ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
+                     IdentityProvider identityProvider) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
@@ -74,7 +72,6 @@ public class AwsFacade implements ProvidesZones {
 		this.cloudRepository = cloudRepository;
 		this.notificationSender = notificationSender;
 		this.identityProvider = identityProvider;
-		this.regionName = regionName;
 	}
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
@@ -592,7 +589,7 @@ public class AwsFacade implements ProvidesZones {
 
     @Override
     public Map<String, AvailabilityZone> getZones() {
-       return cloudRepository.getZones(regionName);
+       return cloudRepository.getZones();
     }
 
 	public KeyPair createKeyPair(ProjectAndEnv projAndEnv, SavesFile destination, String filename) throws CfnAssistException {

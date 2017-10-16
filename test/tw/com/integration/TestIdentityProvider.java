@@ -2,6 +2,7 @@ package tw.com.integration;
 
 import static org.junit.Assert.*;
 
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,7 +16,7 @@ import tw.com.providers.IdentityProvider;
 public class TestIdentityProvider {
 
 	private IdentityProvider identityProvider;
-	private AmazonIdentityManagementClient iamClient;
+	private AmazonIdentityManagement iamClient;
 
 	@Before
 	public void shouldRunBeforeEachTest() {

@@ -1,5 +1,6 @@
 package tw.com.providers;
 
+import com.amazonaws.services.sns.AmazonSNS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +20,12 @@ public class SNSNotificationSender implements NotificationSender {
 
 	public static final String TOPIC_NAME = "CFN_ASSIST_NOTIFICATIONS";
 	
-	private AmazonSNSClient snsClient;
+	private AmazonSNS snsClient;
 
 	// stateful to limit number of AWS API calls we make
 	private String topicANR ="";
 
-	public SNSNotificationSender(AmazonSNSClient snsClient) {
+	public SNSNotificationSender(AmazonSNS snsClient) {
 		this.snsClient = snsClient;
 	}
 

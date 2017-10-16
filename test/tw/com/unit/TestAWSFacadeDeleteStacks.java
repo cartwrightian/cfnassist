@@ -54,8 +54,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		
 		user = new User("path", "userName", "userId", "arn", new Date());
 
-		String regionName = EnvironmentSetupForTests.getRegion().getName();
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider,regionName);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
 	}
 	
 	@Test

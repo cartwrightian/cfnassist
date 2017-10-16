@@ -1,5 +1,6 @@
 package tw.com.providers;
 
+import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,9 +12,9 @@ import com.amazonaws.services.identitymanagement.model.User;
 public class IdentityProvider {
 	private static final Logger logger = LoggerFactory.getLogger(IdentityProvider.class);
 
-	private AmazonIdentityManagementClient iamClient;
+	private AmazonIdentityManagement iamClient;
 
-	public IdentityProvider(AmazonIdentityManagementClient iamClient) {
+	public IdentityProvider(AmazonIdentityManagement iamClient) {
 		this.iamClient = iamClient;
 	}
 
