@@ -6,11 +6,13 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Download Current Release version  1.0.140](https://cfnassist-release.s3-eu-west-1.amazonaws.com/140/cfnassist-1.0.140.zip)
+[Current Version 1.1.15](https://github.com/cartwrightian/cfnassist/releases/download/untagged-41a6765804fc7a1bbfaf/cfnassist-1.1.15.zip)
 
 
 Previous Releases
 -----------------
+
+[Version 1.0.140](https://cfnassist-release.s3-eu-west-1.amazonaws.com/140/cfnassist-1.0.140.zip)
 
 [Version 1.0.132](https://cfnassist-release.s3-eu-west-1.amazonaws.com/132/cfnassist-1.0.132.zip)
 
@@ -57,6 +59,7 @@ You need to be familiar with AWS, in particular VPCs and Cloud Formation.
 Notes
 -----
 * The tool uses [DefaultAWSCredentialsProviderChain](http://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/auth/DefaultAWSCredentialsProviderChain.html) to connect to AWS, please read to understand how to authenticate with cfnassist.
+* The tool uses [DefaultAWSCredentialsProviderChain](http://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html) to determine the region to operate in.
 * For certain key parameters the tool checks for environmental variables, for example CFN\_ASSIST\_PROJECT and CFN\_ASSIST\_ENV, this is useful if you use tools like autoenv or are working on a particular project a lot.
 
 Documentation TODOs
@@ -68,7 +71,7 @@ CLI HowTo
 ---------
 
 The example CLIs below assume you have the environmental variable **CFN\_ASSIST\_PROJECT** set to your project, that `cfnassist` 
-is on the PATH and the **EC2\_REGION** environmental variable is set to the appropriate AWS region.
+is on the PATH and the credentials and regions are available via the default AWS mechanisms, see notes above.
 
 >export PATH=${PATH}:somepath/cfnassit-1.0.85/bin
 

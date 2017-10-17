@@ -1,6 +1,5 @@
 package tw.com.commandline;
 
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.*;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.util.Collection;
 
 public class Main {
-	public static final String ENV_VAR_EC2_REGION = "EC2_REGION";
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
 	
 	private Options commandLineOptions;
