@@ -1,6 +1,5 @@
 package tw.com.acceptance;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.ec2.AmazonEC2;
@@ -72,7 +71,7 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWithFile() {
 		String[] args = CLIArgBuilder.createSimpleStack(testName);
 
 		Main main = new Main(args);
@@ -82,7 +81,7 @@ public class TestCommandLineStackOperations {
 	}
 		
 	@Test
-	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWithFileAndBuildNumber() {
 		String[] args = CLIArgBuilder.createSimpleStackWithBuildNumber(testName, "876");
 		Main main = new Main(args);
 		int result = main.parse();
@@ -91,7 +90,7 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testListStacks() throws InterruptedException, TimeoutException {
+	public void testListStacks() {
         PrintStream origStream = System.out;
 
 		String[] create = CLIArgBuilder.createSimpleStack(testName);
@@ -125,7 +124,7 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testDeleteViaCommandLineDeployWithFileAndBuildNumber() throws InterruptedException, TimeoutException {
+	public void testDeleteViaCommandLineDeployWithFileAndBuildNumber() {
 		String buildNumber = "0915";
 		
 		String[] createArgs = CLIArgBuilder.createSimpleStackWithBuildNumber(testName, buildNumber);
@@ -142,7 +141,7 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testDeleteViaCommandLineDeployWithFile() throws InterruptedException, TimeoutException {
+	public void testDeleteViaCommandLineDeployWithFile() {
 		String[] createArgs = CLIArgBuilder.createSimpleStack(testName);
 		Main main = new Main(createArgs);
 		int createResult = main.parse();
@@ -157,7 +156,7 @@ public class TestCommandLineStackOperations {
 	}
 
     @Test
-    public void shouldDeleteViaCommandLineDeployWithName() throws InterruptedException, TimeoutException {
+    public void shouldDeleteViaCommandLineDeployWithName() {
         String[] createArgs = CLIArgBuilder.createSimpleStack(testName);
         Main main = new Main(createArgs);
         int createResult = main.parse();
@@ -172,7 +171,7 @@ public class TestCommandLineStackOperations {
     }
 	
 	@Test
-	public void testInvokeViaCommandLineDeploySwitchELBInstancesAndWhitelistIP() throws InterruptedException, TimeoutException {		
+	public void testInvokeViaCommandLineDeploySwitchELBInstancesAndWhitelistIP() {
 		Integer buildNumber = 876;
 		String typeTag = "web";
 		
@@ -194,12 +193,12 @@ public class TestCommandLineStackOperations {
 		assertEquals(0,result);
 		
 		Integer port = 8080;
-		String[] whitelist = CLIArgBuilder.whitelistCurrentIP(typeTag, port);
+		String[] whitelist = CLIArgBuilder.allowlistCurrentIP(typeTag, port);
 		main = new Main(whitelist);
 		result = main.parse();
 		assertEquals(0,result);
 		
-		String[] blacklist = CLIArgBuilder.blacklistCurrentIP(typeTag, port);
+		String[] blacklist = CLIArgBuilder.blockCurrentIP(typeTag, port);
 		main = new Main(blacklist);
 		result = main.parse();
 		assertEquals(0,result);
@@ -207,7 +206,7 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFileAndSNS() throws InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWithFileAndSNS() {
 		String[] args = CLIArgBuilder.createSimpleStackWithSNS(testName);
 		Main main = new Main(args);
 		int result = main.parse();
@@ -225,7 +224,7 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testUpdateViaCommandLineDeployWithFileAndSNS() throws InterruptedException, TimeoutException {
+	public void testUpdateViaCommandLineDeployWithFileAndSNS() {
 		String[] create = CLIArgBuilder.createSubnetStack(testName); // no sns
 		Main main = new Main(create);
 		main.parse();
@@ -239,7 +238,7 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWithFilePassedInParam() throws InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWithFilePassedInParam() {
 		String[] args = CLIArgBuilder.createSubnetStackWithParams(testName);
 		Main main = new Main(args);
 		int result = main.parse();
@@ -256,25 +255,25 @@ public class TestCommandLineStackOperations {
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWholeDirAndThenRollback() throws CannotFindVpcException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
 		invokeForDirAndThenPurge(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWholeDirAndThenRollbackWithSNS() throws CannotFindVpcException, InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWholeDirAndThenRollbackWithSNS() throws CannotFindVpcException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
 		invokeForDirAndThenPurge(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_FOLDER);
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollback() throws CannotFindVpcException, InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollback() throws CannotFindVpcException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
 		invokeForDirAndThenPurge(projAndEnv, "", FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString());
 	}
 	
 	@Test
-	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollbackWithSNS() throws CannotFindVpcException, InterruptedException, TimeoutException {
+	public void testInvokeViaCommandLineDeployWholeDirDeltasAndThenRollbackWithSNS() throws CannotFindVpcException {
 		ProjectAndEnv projAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);		
 		invokeForDirAndThenPurge(projAndEnv, "-sns", FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString());
 	}

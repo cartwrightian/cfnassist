@@ -7,34 +7,37 @@ import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.providers.ProvidesCurrentIp;
 
-import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Collection;
 
-public class WhitelistAction extends SharedAction {
+public class AllowHostAction extends SharedAction {
 
-	private static final int INDEX_OF_PORT_ARG = 1;
+	private static final int INDEX_OF_PORT_ARG = 2;
 
 	@SuppressWarnings("static-access")
-	public WhitelistAction() {
-		createOptionWithArgs("whitelist",
-				"Whitelist current ip (i.e. add to the security group) for ELB tagged with type tag, supply tag & port",
-				2);
+	public AllowHostAction() {
+		createOptionWithArgs("allowhost",
+				"Allow given host ip's (i.e. add to the security group) for ELB tagged with type tag, supply tag, hostname & port",
+				3);
 	}
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argument) throws
-			IOException, InterruptedException,
+			InterruptedException,
 			CfnAssistException, MissingArgumentException {
 		
 		AwsFacade facade = factory.createFacade();
-		ProvidesCurrentIp hasCurrentIp = factory.getCurrentIpProvider();
-		
+
 		Integer port = Integer.parseInt(argument[INDEX_OF_PORT_ARG]);
-		facade.addCurrentIPWithPortToELB(projectAndEnv, argument[0], hasCurrentIp, port);
+		String hostName = argument[1];
+		try {
+			facade.addHostAndPortToELB(projectAndEnv, argument[0], hostName, port);
+		} catch (UnknownHostException unknownHost) {
+			throw new CfnAssistException("Unable to resolve host "+ hostName, unknownHost);
+		}
 	}
 
 	@Override
@@ -48,7 +51,6 @@ public class WhitelistAction extends SharedAction {
 		catch (NumberFormatException exception) {
 			throw new CommandLineException(exception.getLocalizedMessage());
 		}
-		
 	}
 	
 	@Override

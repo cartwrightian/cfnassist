@@ -111,7 +111,7 @@
 			</cfnassist>
 	</target>
 
-	<target name="testElbAcccessControl" depends="cfnTask,testWhitelist,testBlacklist"/>
+	<target name="testElbAcccessControl" depends="cfnTask,testWhitelist,testBlacklist,testAllowBlockhost"/>
 
 	<target name="testWhitelist" depends="cfnTask">
 			<cfnassist  project="CfnAssist" env="Test">
@@ -124,7 +124,17 @@
 				<BlackList tag="web" port="8080"/>
 			</cfnassist>
 	</target>
-	
+
+	<target name="testAllowBlockhost" depends="cfnTask">
+		<cfnassist  project="CfnAssist" env="Test">
+            <Templates target="src/cfnScripts/elb.json"/>
+            <AllowHost host="nat.travisci.net" tag="web" port="8080"/>
+            <BlockHost host="nat.travisci.net" tag="web" port="8080"/>
+            <Delete target="src/cfnScripts/elb.json"/>
+        </cfnassist>
+	</target>
+
+
 	<!-- Upload two files to S3 bucket cfnassists3testbucket prefixed with the build number, invoke subnetWithS3Param.json with the URLs -->
 	<!-- of the now uploaed files automatically populated in parameters urlA and urlB -->
 	<target name="testSimpleTemplateWithS3Uploads" depends="cfnTask" >

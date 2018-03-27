@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -48,9 +49,9 @@ public class TestCommandLineActions extends EasyMockSupport {
 
 	private ProjectAndEnv projectAndEnv;
 	private StackNameAndId stackNameAndId;
-	Collection<Parameter> params;
+	private Collection<Parameter> params;
 	
-	String comment = "theComment";
+	private String comment = "theComment";
 	private ProvidesCurrentIp ipProvider;
 
 	@Before
@@ -198,7 +199,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
 		Integer buildNumber = 42;
 		String typeTag = "web";
@@ -211,7 +212,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldTidyOldInstances() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+	public void shouldTidyOldInstances() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
 		
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
@@ -234,7 +235,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+	public void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		String stackName = "theStackName";
 		String project = "theProject";
 		String stackId = "theStackId";
@@ -333,7 +334,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUploadArtifacts() throws MissingArgumentException, CfnAssistException, InterruptedException {
+	public void shouldUploadArtifacts() {
 		Integer buildNumber = 9987;
 		Collection<Parameter> arts = new LinkedList<>();
 		arts.add(new Parameter().withParameterKey("art1").withParameterValue(FilesForTesting.ACL));
@@ -350,7 +351,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDeleteArtifacts() throws MissingArgumentException, CfnAssistException, InterruptedException {
+	public void shouldDeleteArtifacts() {
 		Integer buildNumber = 9987;
 		String filenameA = "fileA";
 		String filenameB = "fileB";
@@ -369,7 +370,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRequestCreationOfDiagrams() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {			
+	public void shouldRequestCreationOfDiagrams() throws CfnAssistException, IOException {
 		Recorder recorder = new FileRecorder(Paths.get("./diagrams"));
 		EasyMock.expect(factory.createDiagramCreator()).andReturn(diagramCreator);
 		diagramCreator.createDiagrams(recorder);
@@ -379,30 +380,58 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldWhiteListCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
+	public void testShouldAllowCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
 		String type = "elbTypeTag";
 		Integer port = 8080;
 
 		EasyMock.expect(factory.getCurrentIpProvider()).andReturn(ipProvider);
-		facade.whitelistCurrentIpForPortToElb(projectAndEnv, type, ipProvider, port);
+		facade.addCurrentIPWithPortToELB(projectAndEnv, type, ipProvider, port);
 		EasyMock.expectLastCall();
 		
-		validate(CLIArgBuilder.whitelistCurrentIP(type, port));
+		validate(CLIArgBuilder.allowlistCurrentIP(type, port));
 	}
-	
-	@Test
-	public void testShouldBlackListCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
-		setFactoryExpectations();
-		String type = "elbTypeTag";
-		Integer port = 8080;
 
-		EasyMock.expect(factory.getCurrentIpProvider()).andReturn(ipProvider);
-		facade.blacklistCurrentIpForPortToElb(projectAndEnv, type, ipProvider, port);
-		EasyMock.expectLastCall();
-		
-		validate(CLIArgBuilder.blacklistCurrentIP(type, port));
-	}
+    @Test
+    public void testShouldBlockCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
+        setFactoryExpectations();
+        String type = "elbTypeTag";
+        Integer port = 8080;
+
+        EasyMock.expect(factory.getCurrentIpProvider()).andReturn(ipProvider);
+        facade.removeCurrentIPAndPortFromELB(projectAndEnv, type, ipProvider, port);
+        EasyMock.expectLastCall();
+
+        validate(CLIArgBuilder.blockCurrentIP(type, port));
+    }
+
+    @Test
+    public void testShouldAllowHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
+        setFactoryExpectations();
+        String type = "elbTypeTag";
+        Integer port = 8080;
+
+        String hostname = "www.somehost.com";
+
+        facade.addHostAndPortToELB(projectAndEnv, type, hostname, port);
+        EasyMock.expectLastCall();
+
+        validate(CLIArgBuilder.allowHost(type, hostname, port));
+    }
+
+    @Test
+    public void testShouldBlockHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
+        setFactoryExpectations();
+        String type = "elbTypeTag";
+        Integer port = 8080;
+
+        String hostname = "www.somehost.com";
+
+        facade.removeHostAndPortFromELB(projectAndEnv, type, hostname, port);
+        EasyMock.expectLastCall();
+
+        validate(CLIArgBuilder.blockHost(type, hostname, port));
+    }
 
 	@Test
     public void shouldCreateKeypairWithNoFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
@@ -467,7 +496,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldPurgeAllStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    public void shouldPurgeAllStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
         setFactoryExpectations();
 
         ArrayList<String> stacks = new ArrayList<>();
@@ -487,7 +516,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldPurgeStacks() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    public void shouldPurgeStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
         setFactoryExpectations();
         factory.setSNSMonitoring();
 

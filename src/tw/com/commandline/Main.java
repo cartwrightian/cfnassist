@@ -31,8 +31,7 @@ public class Main {
 		commandActions.addActionsTo(commandLineOptions);
 	}
 	
-	public static void main(String[] args) throws ParseException, IOException,
-			CfnAssistException, InterruptedException {
+	public static void main(String[] args) {
 		Main main = new Main(args);
 		int result = main.parse();
 		System.exit(result);

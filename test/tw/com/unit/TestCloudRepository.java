@@ -205,35 +205,41 @@ public class TestCloudRepository extends EasyMockSupport {
 		assertEquals(1,  result.size());
 		assertEquals(aclId, result.get(0).getNetworkAclId());
 	}
-	
+
 	@Test
-	public void shouldAddIpAndPortToASecurityGroup() throws UnknownHostException {
+	public void shouldAddIpsAndPortToASecurityGroup() throws UnknownHostException {
 		String groupId = "groupId";
 		Integer port = 8081;
-		InetAddress adddress = Inet4Address.getByName("192.168.0.1");
+		InetAddress addressA = Inet4Address.getByName("192.168.0.1");
+        InetAddress addressB = Inet4Address.getByName("192.168.0.2");
+        List<InetAddress> addresses = new LinkedList<>();
+        addresses.add(addressA);
+        addresses.add(addressB);
 
-		
-		cloudClient.addIpToSecGroup(groupId , port, adddress);
+		cloudClient.addIpsToSecGroup(groupId , port, addresses);
 		EasyMock.expectLastCall();
-		
-		replayAll();
-		repository.updateAddIpAndPortToSecGroup(groupId, adddress, port);
-		verifyAll();
 
+		replayAll();
+		repository.updateAddIpsAndPortToSecGroup(groupId, addresses, port);
+		verifyAll();
 	}
 	
 	@Test
 	public void shouldRemoveIpAndPortFromASecurityGroup() throws UnknownHostException {
 		String groupId = "groupId";
 		Integer port = 8081;
-		InetAddress adddress = Inet4Address.getByName("192.168.0.2");
 
-		
-		cloudClient.deleteIpFromSecGroup(groupId , port, adddress);
+        InetAddress addressA = Inet4Address.getByName("192.168.0.1");
+        InetAddress addressB = Inet4Address.getByName("192.168.0.2");
+        List<InetAddress> addresses = new LinkedList<>();
+        addresses.add(addressA);
+        addresses.add(addressB);
+
+		cloudClient.deleteIpFromSecGroup(groupId , port, addresses);
 		EasyMock.expectLastCall();
 		
 		replayAll();
-		repository.updateRemoveIpAndPortFromSecGroup(groupId, adddress, port);
+		repository.updateRemoveIpsAndPortFromSecGroup(groupId, addresses, port);
 		verifyAll();
 	}
 	

@@ -24,14 +24,14 @@ public class BlacklistAction extends SharedAction {
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
 			String... argument) throws
-            IOException, InterruptedException,
+			InterruptedException,
 			CfnAssistException, MissingArgumentException {
 		
 		AwsFacade facade = factory.createFacade();
 		ProvidesCurrentIp hasCurrentIp = factory.getCurrentIpProvider();
 		
 		Integer port = Integer.parseInt(argument[1]);
-		facade.blacklistCurrentIpForPortToElb(projectAndEnv, argument[0], hasCurrentIp, port);	
+		facade.removeCurrentIPAndPortFromELB(projectAndEnv, argument[0], hasCurrentIp, port);
 	}
 
 	@Override

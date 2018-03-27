@@ -44,7 +44,7 @@ public class TestCloudClient {
 	}
 
 	@Test
-	public void testCanSetAnDeleteTagsForResource() throws CannotFindVpcException {
+	public void testCanSetAnDeleteTagsForResource() {
 			
 		List<Tag> tags = new LinkedList<>();
 		Tag tagA = EnvironmentSetupForTests.createEc2Tag("T1", "Value1");

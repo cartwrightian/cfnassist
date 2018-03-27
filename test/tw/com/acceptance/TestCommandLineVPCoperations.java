@@ -28,7 +28,6 @@ public class TestCommandLineVPCoperations {
 
 	@BeforeClass
 	public static void beforeAllTestsOnce() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
 	}
 

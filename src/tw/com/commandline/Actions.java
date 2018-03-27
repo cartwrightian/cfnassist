@@ -69,5 +69,7 @@ public class Actions {
 		actions.add(new SSHCommandAction());
         actions.add(new BackAction());
         actions.add(new PurgeAction());
+        actions.add(new AllowHostAction());
+        actions.add(new BlockHostAction());
 	}
 }

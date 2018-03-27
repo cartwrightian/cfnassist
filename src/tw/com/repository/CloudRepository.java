@@ -214,12 +214,12 @@ public class CloudRepository {
 		}
 	}
 
-	public void updateAddIpAndPortToSecGroup(String groupId, InetAddress address, Integer port) {
-		cloudClient.addIpToSecGroup(groupId, port, address);
-	}
+    public void updateAddIpsAndPortToSecGroup(String groupId, List<InetAddress> addresses, Integer port) {
+        cloudClient.addIpsToSecGroup(groupId, port, addresses);
+    }
 
-	public void updateRemoveIpAndPortFromSecGroup(String groupId, InetAddress address, Integer port) {
-		cloudClient.deleteIpFromSecGroup(groupId, port, address);	
+	public void updateRemoveIpsAndPortFromSecGroup(String groupId, List<InetAddress> addresses, Integer port) {
+		cloudClient.deleteIpFromSecGroup(groupId, port, addresses);
 	}
 
 	public List<Tag> getTagsForInstance(String instanceId) throws WrongNumberOfInstancesException {

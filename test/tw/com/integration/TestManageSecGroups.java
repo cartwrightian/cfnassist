@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
@@ -37,8 +38,7 @@ public class TestManageSecGroups {
 
 	@BeforeClass
 	public static void onceBeforeAllTestsRuns() {
-		AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		ec2Client = EnvironmentSetupForTests.createEC2Client();
+        ec2Client = EnvironmentSetupForTests.createEC2Client();
 	}
 	
 	@Before
@@ -73,13 +73,19 @@ public class TestManageSecGroups {
 	}
 
 	@Test
-	public void testShouldAddAndDeleteAnIpToASecurityGroup() throws UnknownHostException {
+	public void testShouldAddAndDeleteAnIpsToASecurityGroup() throws UnknownHostException {
 		Integer port = 8080;
-		InetAddress adddress = Inet4Address.getByName("192.168.0.1");
-		String cidr = "192.168.0.1/32";
-		
-		//add
-		client.addIpToSecGroup(groupId, port , adddress);
+        List<InetAddress> addresses = new ArrayList<>();
+        InetAddress addressA = Inet4Address.getByName("192.168.0.1");
+        InetAddress addressB = Inet4Address.getByName("192.168.0.2");
+        addresses.add(addressA);
+        addresses.add(addressB);
+
+        String cidrA = "192.168.0.1/32";
+        String cidrB = "192.168.0.2/32";
+
+        //add
+        client.addIpsToSecGroup(groupId, port , addresses);
 		
 		DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest().withGroupIds(groupId);
 		DescribeSecurityGroupsResult result = ec2Client.describeSecurityGroups(request);
@@ -94,11 +100,12 @@ public class TestManageSecGroups {
 		IpPermission ipPermission = perms.get(0);
 		assertEquals(port, ipPermission.getToPort());
 		assertEquals(port, ipPermission.getFromPort());
-		assertEquals(1, ipPermission.getIpv4Ranges().size());
-		assertEquals(cidr, ipPermission.getIpv4Ranges().get(0).getCidrIp());
-		
-		//remove
-		client.deleteIpFromSecGroup(groupId, port, adddress);
+		assertEquals(2, ipPermission.getIpv4Ranges().size());
+		assertEquals(cidrA, ipPermission.getIpv4Ranges().get(0).getCidrIp());
+        assertEquals(cidrB, ipPermission.getIpv4Ranges().get(1).getCidrIp());
+
+        //remove
+		client.deleteIpFromSecGroup(groupId, port, addresses);
 		
 		result = ec2Client.describeSecurityGroups(request);
 		securityGroups = result.getSecurityGroups();

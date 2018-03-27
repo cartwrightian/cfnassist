@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
@@ -27,7 +28,9 @@ import tw.com.repository.VpcRepository;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -528,7 +531,7 @@ public class AwsFacade implements ProvidesZones {
 		return regInstanceIds;
 	}
 	
-	public boolean containsAny(List<String> first, List<String> second) {
+	private boolean containsAny(List<String> first, List<String> second) {
 		for(String candidate : second) {
 			if (first.contains(candidate)) {
 				return true;
@@ -542,20 +545,40 @@ public class AwsFacade implements ProvidesZones {
 		return elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);	
 	}
 
-	public void whitelistCurrentIpForPortToElb(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {		
+	public void addCurrentIPWithPortToELB(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {
 		InetAddress address = hasCurrentIp.getCurrentIp();
 		logger.info(format("Request to add %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
 		String groupId = getSecGroupIdForELB(projectAndEnv, type);
 		logger.info("Found sec group: " + groupId);
-		cloudRepository.updateAddIpAndPortToSecGroup(groupId, address, port);
+        List<InetAddress> addresses = new LinkedList<>();
+        addresses.add(address);
+		cloudRepository.updateAddIpsAndPortToSecGroup(groupId, addresses, port);
 	}
 
-	public void blacklistCurrentIpForPortToElb(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {
+    public void addHostAndPortToELB(ProjectAndEnv projectAndEnv, String type, String host, Integer port) throws UnknownHostException, CfnAssistException {
+        List<InetAddress> addresses = Arrays.asList(Inet4Address.getAllByName(host));
+        logger.info(format("Request to add %s [%s] port:%s for elb on %s of type %s", host, addresses, port, projectAndEnv, type));
+        String groupId = getSecGroupIdForELB(projectAndEnv, type);
+        logger.info("Found sec group: " + groupId);
+        cloudRepository.updateAddIpsAndPortToSecGroup(groupId, addresses, port);
+    }
+
+	public void removeHostAndPortFromELB(ProjectAndEnv projectAndEnv, String type, String hostname, Integer port) throws UnknownHostException, CfnAssistException {
+        List<InetAddress> addresses = Arrays.asList(Inet4Address.getAllByName(hostname));
+        logger.info(format("Request to remove %s [%s] port:%s for elb on %s of type %s", hostname, addresses, port, projectAndEnv, type));
+        String groupId = getSecGroupIdForELB(projectAndEnv, type);
+        logger.info("Found sec group: " + groupId);
+        cloudRepository.updateRemoveIpsAndPortFromSecGroup(groupId, addresses, port);
+	}
+
+	public void removeCurrentIPAndPortFromELB(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {
 		InetAddress address = hasCurrentIp.getCurrentIp();
 		logger.info(format("Request to remove %s port:%s for elb on %s of type %s", address.getHostAddress(), port, projectAndEnv, type));
 		String groupId = getSecGroupIdForELB(projectAndEnv, type);
 		logger.info("Found sec group: " + groupId);
-		cloudRepository.updateRemoveIpAndPortFromSecGroup(groupId, address, port);
+        List<InetAddress> addresses = new LinkedList<>();
+        addresses.add(address);
+        cloudRepository.updateRemoveIpsAndPortFromSecGroup(groupId, addresses, port);
 	}
 	
 	private String getSecGroupIdForELB(ProjectAndEnv projectAndEnv, String type)
@@ -622,4 +645,6 @@ public class AwsFacade implements ProvidesZones {
         command.add(format("%s@%s", user,address));
         return command;
 	}
+
+
 }

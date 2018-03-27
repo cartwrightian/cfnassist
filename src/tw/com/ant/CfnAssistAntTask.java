@@ -1,6 +1,5 @@
 package tw.com.ant;
 
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
@@ -101,9 +100,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		actionElements.add(whitelistElement);
 	}
 	
-	public void addConfiguredBlacklist(BlacklistElement blacklistElement) {
-		actionElements.add(blacklistElement);
-	}
+	public void addConfiguredBlacklist(BlacklistElement blacklistElement) { actionElements.add(blacklistElement); }
+
+	public void addConfiguredAllowHost(AllowhostElement allowhostElement) { actionElements.add(allowhostElement); }
+
+    public void addConfiguredBlockHost(BlockhostElement blockhostElement) { actionElements.add(blockhostElement); }
 	
 	public void execute() {
 		ProjectAndEnv projectAndEnv = new ProjectAndEnv(cfnProject, cfnEnv);

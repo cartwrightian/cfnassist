@@ -275,7 +275,7 @@ public class TestAwsFacade extends EasyMockSupport {
     }
 
 	@Test
-	public void shouldNotCreateKeyPairIfFileAlreadyExists() throws CfnAssistException {
+	public void shouldNotCreateKeyPairIfFileAlreadyExists() {
 		SavesFile destination = createStrictMock(SavesFile.class);
 		String filename = "fileForPem.pem";
 

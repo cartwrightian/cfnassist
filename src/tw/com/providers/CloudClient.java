@@ -6,8 +6,10 @@ import com.amazonaws.event.ProgressListener;
 import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
+import org.apache.http.annotation.Obsolete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 
 import java.net.InetAddress;
@@ -125,32 +127,36 @@ public class CloudClient implements ProgressListener {
         return result.getAddresses();
     }
 
-    public void addIpToSecGroup(String groupId, Integer port, InetAddress address) {
-        logger.info(format("Add address %s for port %s to group %s", address.getHostAddress(), port.toString(), groupId));
+    public void addIpsToSecGroup(String secGroupId, Integer port, List<InetAddress> addresses) {
+        logger.info(format("Add addresses %s for port %s to group %s", addresses, port.toString(), secGroupId));
+
         AuthorizeSecurityGroupIngressRequest request = new AuthorizeSecurityGroupIngressRequest();
-        request.setGroupId(groupId);
-        request.setIpPermissions(createPermissions(port, address));
+        request.setGroupId(secGroupId);
+        request.setIpPermissions(createPermissions(port, addresses));
 
         request.setGeneralProgressListener(this);
         ec2Client.authorizeSecurityGroupIngress(request);
     }
 
-    public void deleteIpFromSecGroup(String groupId, Integer port, InetAddress address) {
-        logger.info(format("Remove address %s for port %s on group %s", address.getHostAddress(), port.toString(), groupId));
+    public void deleteIpFromSecGroup(String groupId, Integer port, List<InetAddress> addresses) {
+        logger.info(format("Remove addresses %s for port %s on group %s", addresses, port.toString(), groupId));
         RevokeSecurityGroupIngressRequest request = new RevokeSecurityGroupIngressRequest();
         request.setGroupId(groupId);
-        request.setIpPermissions(createPermissions(port, address));
+        request.setIpPermissions(createPermissions(port, addresses));
         request.setGeneralProgressListener(this);
         ec2Client.revokeSecurityGroupIngress(request);
     }
 
-    private Collection<IpPermission> createPermissions(Integer port,
-                                                       InetAddress address) {
+    private Collection<IpPermission> createPermissions(Integer port, List<InetAddress> addresses) {
+
         Collection<IpPermission> ipPermissions = new LinkedList<>();
-        IpPermission permission = new IpPermission();
-        IpRange ipRange = new IpRange().withCidrIp(format("%s/32", address.getHostAddress()));
-        permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpv4Ranges(ipRange);
-        ipPermissions.add(permission);
+        addresses.forEach(address ->{
+            IpPermission permission = new IpPermission();
+            IpRange ipRange = new IpRange().withCidrIp(format("%s/32", address.getHostAddress()));
+            permission.withFromPort(port).withToPort(port).withIpProtocol("tcp").withIpv4Ranges(ipRange);
+            ipPermissions.add(permission);
+        });
+
         return ipPermissions;
     }
 
@@ -171,4 +177,5 @@ public class CloudClient implements ProgressListener {
         logger.info(format("Created keypair %s with fingerprint %s", keyPair.getKeyName(), keyPair.getKeyFingerprint()));
         return keyPair;
     }
+
 }

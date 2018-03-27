@@ -202,15 +202,31 @@ public class CLIArgBuilder {
                 };
 	}
 	
-	public static String[] whitelistCurrentIP(String type, Integer port) {
+	public static String[] allowlistCurrentIP(String type, Integer port) {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
                 "-whitelist", type, port.toString()
                 };
 	}
+
+    public static String[] allowHost(String type, String hostname, Integer port) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-allowhost", type, hostname, port.toString()
+        };
+    }
+
+    public static String[] blockHost(String type, String hostname, Integer port) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-blockhost", type, hostname, port.toString()
+        };
+    }
 	
-	public static String[] blacklistCurrentIP(String type, Integer port) {
+	public static String[] blockCurrentIP(String type, Integer port) {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
@@ -314,6 +330,7 @@ public class CLIArgBuilder {
                 "-init", vpcId
         };
     }
+
 
 
 }

@@ -23,6 +23,9 @@ import tw.com.repository.VpcRepository;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 @RunWith(EasyMockRunner.class)
 public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
@@ -32,10 +35,15 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 	private ELBRepository elbRepository;
 	private CloudRepository cloudRepository;
 	private ProvidesCurrentIp providesCurrentIp;
-
+    private LoadBalancerDescription elbDescription;
+    private Integer port = 8080;
+    private InetAddress address;
+    private String type = "elbTypeTag";
+    private List<InetAddress> addresses;
+	private String host = "nat.travisci.net";
 
 	@Before
-	public void beforeEachTestRuns() {
+	public void beforeEachTestRuns() throws UnknownHostException {
 		MonitorStackEvents monitor = createMock(MonitorStackEvents.class);
 		CloudFormRepository cfnRepository = createStrictMock(CloudFormRepository.class);
 		VpcRepository vpcRepository = createStrictMock(VpcRepository.class);
@@ -46,49 +54,68 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+
+        elbDescription = new LoadBalancerDescription().
+                withLoadBalancerName("elbName").
+                withDNSName("dNSName").withSecurityGroups("elbSecGroupId");
+
+        address = Inet4Address.getByName("192.168.0.1");
+        addresses = new LinkedList<>();
+        addresses.add(address);
 	}
 	
 	@Test
-	public void testAddsIpAndPortToELBSecGroup() throws CfnAssistException, UnknownHostException {
-		String type = "elbTypeTag";
-		
-		LoadBalancerDescription elbDescription = new LoadBalancerDescription().
-				withLoadBalancerName("elbName").
-				withDNSName("dNSName").withSecurityGroups("elbSecGroupId");
-		
-		Integer port = 8080;
-		InetAddress address = Inet4Address.getByName("192.168.0.1");
-		
+	public void shouldAddCurrentIpAndPortToELBSecGroup() throws CfnAssistException {
+
 		EasyMock.expect(elbRepository.findELBFor(projectAndEnv, type)).andReturn(elbDescription);
-		cloudRepository.updateAddIpAndPortToSecGroup("elbSecGroupId", address, port);
+		cloudRepository.updateAddIpsAndPortToSecGroup("elbSecGroupId", addresses, port);
 		EasyMock.expectLastCall();
 		EasyMock.expect(providesCurrentIp.getCurrentIp()).andReturn(address);
 		
 		replayAll();
-		aws.whitelistCurrentIpForPortToElb(projectAndEnv, type, providesCurrentIp, port);
+		aws.addCurrentIPWithPortToELB(projectAndEnv, type, providesCurrentIp, port);
 		verifyAll();
-		
 	}
 	
 	@Test
-	public void testRemovesIpAndPortToELBSecGroup() throws CfnAssistException, UnknownHostException {
-		String type = "elbTypeTag";
-		
-		LoadBalancerDescription elbDescription = new LoadBalancerDescription().
-				withLoadBalancerName("elbName").
-				withDNSName("dNSName").
-				withSecurityGroups("elbSecGroupId");
-		
-		Integer port = 8090;
-		InetAddress address = Inet4Address.getByName("192.168.0.2");
-		
+	public void shouldRemoveCurrentIpAndPortFromELBSecGroup() throws CfnAssistException {
+
 		EasyMock.expect(elbRepository.findELBFor(projectAndEnv, type)).andReturn(elbDescription);
-		cloudRepository.updateRemoveIpAndPortFromSecGroup("elbSecGroupId", address, port);
+		cloudRepository.updateRemoveIpsAndPortFromSecGroup("elbSecGroupId", addresses, port);
 		EasyMock.expectLastCall();
 		EasyMock.expect(providesCurrentIp.getCurrentIp()).andReturn(address);
 		
 		replayAll();
-		aws.blacklistCurrentIpForPortToElb(projectAndEnv, type, providesCurrentIp, port);
+		aws.removeCurrentIPAndPortFromELB(projectAndEnv, type, providesCurrentIp, port);
 		verifyAll();		
+	}
+
+	@Test
+    public void shouldAddHostAndPortToELBSecGroup() throws UnknownHostException, CfnAssistException {
+
+        List<InetAddress> addresses = Arrays.asList(Inet4Address.getAllByName(host));
+        EasyMock.expect(elbRepository.findELBFor(projectAndEnv, type)).andReturn(elbDescription);
+
+        cloudRepository.updateRemoveIpsAndPortFromSecGroup("elbSecGroupId", addresses, port);
+        EasyMock.expectLastCall();
+
+        replayAll();
+        aws.removeHostAndPortFromELB(projectAndEnv, type, host, port);
+        verifyAll();
+    }
+
+
+	@Test
+	public void shouldRemoveHostAndPortFromELBSecGroup() throws UnknownHostException, CfnAssistException {
+
+		List<InetAddress> addresses = Arrays.asList(Inet4Address.getAllByName(host));
+		EasyMock.expect(elbRepository.findELBFor(projectAndEnv, type)).andReturn(elbDescription);
+
+		cloudRepository.updateAddIpsAndPortToSecGroup("elbSecGroupId", addresses, port);
+		EasyMock.expectLastCall();
+
+		replayAll();
+		aws.addHostAndPortToELB(projectAndEnv, type, host, port);
+		verifyAll();
 	}
 }

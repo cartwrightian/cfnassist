@@ -125,8 +125,7 @@ public class FacadeFactory {
 			}
 			
 			monitor.init();
-            AwsRegionProvider regionProvider = new DefaultAwsRegionProviderChain();
-            awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository,
+			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository,
 					cloudRepository, notificationSender, identityProvider);
 		}	
 		return awsFacade;	
