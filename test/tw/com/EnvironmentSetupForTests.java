@@ -50,7 +50,7 @@ public class EnvironmentSetupForTests {
 	// User/Env specific constants, these will need to change for others running these tests!
     public static final String BUCKET_NAME="cfnassists3testbucket";
     public static final String AVAILABILITY_ZONE = "eu-west-1c";
-    public static final String S3_PREFIX = "https://"+BUCKET_NAME+".s3-eu-west-1.amazonaws.com";
+    public static final String S3_PREFIX = "https://"+BUCKET_NAME+".s3.eu-west-1.amazonaws.com";
 
     public static final String AMI_FOR_INSTANCE = "ami-9c7ad8eb"; // eu amazon linux instance
 	public static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
