@@ -6,17 +6,15 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Current Version 1.1.15](https://github.com/cartwrightian/cfnassist/releases/download/untagged-41a6765804fc7a1bbfaf/cfnassist-1.1.15.zip)
+[Current Version 1.1.18](https://github.com/cartwrightian/cfnassist/releases/download/untagged-979e268c9ad166324fae/cfnassist-1.1.18.zip)
 
 
 Previous Releases
 -----------------
 
+[Version 1.1.15](https://github.com/cartwrightian/cfnassist/releases/download/untagged-41a6765804fc7a1bbfaf/cfnassist-1.1.15.zip)
+
 [Version 1.0.140](https://cfnassist-release.s3-eu-west-1.amazonaws.com/140/cfnassist-1.0.140.zip)
-
-[Version 1.0.132](https://cfnassist-release.s3-eu-west-1.amazonaws.com/132/cfnassist-1.0.132.zip)
-
-[Version 1.0.125](https://cfnassist-release.s3-eu-west-1.amazonaws.com/125/cfnassist-1.0.125.zip)
 
 Build Status
 ------------
@@ -464,6 +462,12 @@ before leaving a location.
 If more than one ELB is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you 
 give above, if it is the tool will use that ELB, otherwise an error will be thrown. 
 
+`cfnassist -env Dev -allowhost web hostname 80`
+
+This will update the Security Group for the Dev environment's ELB to allow access to port 80 from 
+any of the hosts IPs. To revoke the access use this command
+
+`cfnassist -env Dev -blockhost web hostname 80`
 
 20.Stack Notifications
 ----------------------
