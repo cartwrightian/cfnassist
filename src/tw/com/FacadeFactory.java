@@ -10,6 +10,9 @@ import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
+import com.amazonaws.services.logs.AWSLogs;
+import com.amazonaws.services.logs.AWSLogsClient;
+import com.amazonaws.services.logs.AWSLogsClientBuilder;
 import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.AmazonRDSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -19,18 +22,16 @@ import com.amazonaws.services.sns.AmazonSNSClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.cli.MissingArgumentException;
+import org.joda.time.DateTime;
 import tw.com.commandline.CommandExecutor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
 import tw.com.pictures.DiagramCreator;
 import tw.com.providers.*;
-import tw.com.repository.CfnRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
 
-public class FacadeFactory {
+public class FacadeFactory implements ProvidesNow {
 	private boolean snsMonitoring = false;
 	private String project;
 	
@@ -44,8 +45,10 @@ public class FacadeFactory {
 	private AmazonElasticLoadBalancing elbClient;
 	private AmazonRDS rdsClient;
 	private AmazonIdentityManagement iamClient;
-	
-	// providers
+    private AWSLogs awsLogClient;
+
+
+    // providers
 	private ArtifactUploader artifactUploader;
 	private CloudClient cloudClient;
 	private CloudFormationClient formationClient;
@@ -53,14 +56,16 @@ public class FacadeFactory {
 	private RDSClient datastoreClient;
 	private SNSNotificationSender notificationSender;
     private SavesFile savesFile;
+    private LogClient logClient;
 
     // repo
 	private ELBRepository elbRepository;
 	private CfnRepository cfnRepository;
 	private VpcRepository vpcRepository;
 	private CloudRepository cloudRepository;
-	
-	// controller
+    private LogRepository logRepository;
+
+    // controller
 	private AwsFacade awsFacade;
 	private DiagramCreator diagramCreator;
 	private IdentityProvider identityProvider;
@@ -93,6 +98,7 @@ public class FacadeFactory {
 		datastoreClient = new RDSClient(rdsClient);
 		notificationSender = new SNSNotificationSender(snsClient);
 		identityProvider = new IdentityProvider(iamClient);
+		logClient = new LogClient(awsLogClient);
 	}
 
 	private void createRepo() {	
@@ -100,6 +106,7 @@ public class FacadeFactory {
 		cfnRepository = new CfnRepository(formationClient, cloudRepository, project);
 		vpcRepository = new VpcRepository(cloudClient);
 		elbRepository = new ELBRepository(loadBalancerClient, vpcRepository, cfnRepository);
+		logRepository = new LogRepository(logClient, this);
 	}
 
 	private void createAmazonAPIClients() {
@@ -111,6 +118,7 @@ public class FacadeFactory {
         s3Client = AmazonS3ClientBuilder.defaultClient();
         rdsClient = AmazonRDSClientBuilder.defaultClient();
         iamClient = AmazonIdentityManagementClientBuilder.defaultClient();
+        awsLogClient = AWSLogsClientBuilder.defaultClient();
 	}
 
 	public AwsFacade createFacade() throws MissingArgumentException, CfnAssistException, InterruptedException {		
@@ -126,7 +134,7 @@ public class FacadeFactory {
 			
 			monitor.init();
 			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository,
-					cloudRepository, notificationSender, identityProvider);
+					cloudRepository, notificationSender, identityProvider, logRepository);
 		}	
 		return awsFacade;	
 	}
@@ -163,4 +171,9 @@ public class FacadeFactory {
 	public CommandExecutor getCommandExecutor() {
 		return new CommandExecutor();
 	}
+
+    @Override
+    public DateTime getNow() {
+        return DateTime.now();
+    }
 }

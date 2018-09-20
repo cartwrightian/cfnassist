@@ -23,10 +23,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.DuplicateStackException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
-import tw.com.repository.CloudFormRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,11 +56,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		cloudRepository = createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
+        LogRepository logRepository = createStrictMock(LogRepository.class);
 
 		user = new User("path", "userName", "userId", "arn", new Date());
 
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender,
-				identityProvider);
+				identityProvider, logRepository);
 	}
 	
 	@Test

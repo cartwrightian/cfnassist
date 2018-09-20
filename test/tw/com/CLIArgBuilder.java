@@ -332,5 +332,11 @@ public class CLIArgBuilder {
     }
 
 
-
+    public static String[] tidyCloudWatch(Integer weeks) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-removeLogs", weeks.toString()
+        };
+    }
 }

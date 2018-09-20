@@ -11,10 +11,7 @@ import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
-import tw.com.repository.CloudFormRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(EasyMockRunner.class)
 public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 	private AwsFacade aws;
+	private LogRepository logRepository;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -36,10 +34,11 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		vpcRepository = createMock(VpcRepository.class);
 		ELBRepository elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
+		logRepository = createStrictMock(LogRepository.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
 	}
 	
 	@Test

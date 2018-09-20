@@ -12,7 +12,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
@@ -20,10 +19,7 @@ import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.providers.SavesFile;
-import tw.com.repository.CloudFormRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -32,6 +28,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.*;
 
 import static java.lang.String.format;
@@ -57,17 +54,18 @@ public class AwsFacade implements ProvidesZones {
 	public static final String PARAMETER_STACKNAME = "stackname";
 	public static final String NAT_EIP = "natEip";
 
-	private VpcRepository vpcRepository;
-	private CloudFormRepository cfnRepository;
-	private ELBRepository elbRepository;
-	private CloudRepository cloudRepository;
-	private NotificationSender notificationSender;
-	private MonitorStackEvents monitor;
-	private IdentityProvider identityProvider;
+	private final VpcRepository vpcRepository;
+	private final CloudFormRepository cfnRepository;
+	private final ELBRepository elbRepository;
+	private final CloudRepository cloudRepository;
+	private final NotificationSender notificationSender;
+	private final MonitorStackEvents monitor;
+	private final IdentityProvider identityProvider;
+	private final LogRepository logRepository;
 
     public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository,
                      ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
-                     IdentityProvider identityProvider) {
+                     IdentityProvider identityProvider, LogRepository logRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
@@ -75,7 +73,8 @@ public class AwsFacade implements ProvidesZones {
 		this.cloudRepository = cloudRepository;
 		this.notificationSender = notificationSender;
 		this.identityProvider = identityProvider;
-	}
+        this.logRepository = logRepository;
+    }
 
 	public List<TemplateParameter> validateTemplate(String templateBody) {
 		List<TemplateParameter> parameters = cfnRepository.validateStackTemplate(templateBody);
@@ -646,5 +645,12 @@ public class AwsFacade implements ProvidesZones {
         return command;
 	}
 
+	public void removeCloudWatchLogsOlderThan(ProjectAndEnv projectAndEnv, int days) {
+        List<String> groups = logRepository.logGroupsFor(projectAndEnv);
+        groups.forEach(group -> {
+            logger.info(format("Removing streams over %s days from log group %s", days, group));
+            logRepository.removeOldStreamsFor(group, Duration.ofDays(days));
+        });
 
+	}
 }

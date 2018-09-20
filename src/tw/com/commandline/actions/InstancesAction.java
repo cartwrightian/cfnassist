@@ -24,8 +24,7 @@ public class InstancesAction extends SharedAction {
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws
-            IOException,
-            InterruptedException, CfnAssistException, MissingArgumentException {
+			InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
 		SearchCriteria criteria = new SearchCriteria(projectAndEnv);
 		List<InstanceSummary> results = aws.listInstances(criteria);

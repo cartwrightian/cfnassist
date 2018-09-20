@@ -50,7 +50,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		identityProvider = createStrictMock(IdentityProvider.class);
 		user = new User("path", "userName", "userId", "arn", new Date());
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		LogRepository logRepository = createStrictMock(LogRepository.class);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
 		
 		deleteFile(THIRD_FILE);
 	}

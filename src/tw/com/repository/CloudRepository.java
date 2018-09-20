@@ -1,6 +1,5 @@
 package tw.com.repository;
 
-import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.services.ec2.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,17 +94,6 @@ public class CloudRepository {
 			}
 		}
 		throw new CfnAssistException(format("Failed to find SecurityGroup with id '%s'", groupId));
-	}
-	
-	public List<SecurityGroup> getSecurityGroupsFor(String vpcId) {
-		loadGroups();
-		List<SecurityGroup> groups = new LinkedList<>();
-		for(SecurityGroup group : groupsCache) {
-			if (group.getVpcId().equals(vpcId)) {
-				groups.add(group);
-			}
-		}
-		return groups;
 	}
 
 	public Instance getInstanceById(String instanceId) throws CfnAssistException {
@@ -232,11 +220,10 @@ public class CloudRepository {
 		return zones;
 	}
 
-	private Map<String, AvailabilityZone> initAvailabilityZones() {
+	private void initAvailabilityZones() {
 		if (zones==null) {
 			zones = cloudClient.getAvailabilityZones();
 		}
-		return zones;
 	}
 
 	public KeyPair createKeyPair(String keypairName, SavesFile savesFile, String filename) throws CfnAssistException {

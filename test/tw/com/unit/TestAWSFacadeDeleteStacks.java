@@ -18,10 +18,7 @@ import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
-import tw.com.repository.CloudFormRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
 
 import java.io.File;
 import java.util.Date;
@@ -54,7 +51,8 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		
 		user = new User("path", "userName", "userId", "arn", new Date());
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		LogRepository logRepository = createStrictMock(LogRepository.class);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
 	}
 	
 	@Test

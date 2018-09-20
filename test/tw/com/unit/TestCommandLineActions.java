@@ -9,6 +9,7 @@ import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -417,6 +418,18 @@ public class TestCommandLineActions extends EasyMockSupport {
         EasyMock.expectLastCall();
 
         validate(CLIArgBuilder.allowHost(type, hostname, port));
+    }
+
+    @Test
+    public void shouldTidyOldCloudwatchLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
+	    setFactoryExpectations();
+
+	    int days = 4;
+
+	    facade.removeCloudWatchLogsOlderThan(projectAndEnv, days);
+	    EasyMock.expectLastCall();
+
+	    validate(CLIArgBuilder.tidyCloudWatch(days));
     }
 
     @Test

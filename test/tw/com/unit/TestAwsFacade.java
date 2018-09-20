@@ -9,6 +9,7 @@ import com.amazonaws.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,17 +25,12 @@ import tw.com.exceptions.*;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.SavesFile;
-import tw.com.repository.CloudFormRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.time.Duration;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -46,6 +42,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	private CloudFormRepository cfnRepository;
 	private VpcRepository vpcRepository;
 	private CloudRepository cloudRepository;
+	private LogRepository logRepository;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -54,10 +51,11 @@ public class TestAwsFacade extends EasyMockSupport {
 		vpcRepository = createMock(VpcRepository.class);
 		ELBRepository elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
+        logRepository = createStrictMock(LogRepository.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
 	}
 	
 	@Test
@@ -133,6 +131,22 @@ public class TestAwsFacade extends EasyMockSupport {
 		aws.resetDeltaIndex(projectAndEnv);
 		verifyAll();	
 	}
+
+	@Test
+    public void shouldDeleteLogsOverNWeeksOld() {
+        DateTime timeStamp = DateTime.now();
+
+        List<String> groups = Arrays.asList("groupA","groupB");
+        EasyMock.expect(logRepository.logGroupsFor(projectAndEnv)).andReturn(groups);
+        logRepository.removeOldStreamsFor("groupA", Duration.ofDays(42));
+        EasyMock.expectLastCall();
+        logRepository.removeOldStreamsFor("groupB", Duration.ofDays(42));
+        EasyMock.expectLastCall();
+
+        replayAll();
+        aws.removeCloudWatchLogsOlderThan(projectAndEnv, 42);
+        verifyAll();
+    }
 	
 	@Test
 	public void shouldThrowForUnknownProjectAndEnvCombinationOnDeltaSet() throws CannotFindVpcException {

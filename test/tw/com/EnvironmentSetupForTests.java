@@ -16,6 +16,8 @@ import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
+import com.amazonaws.services.logs.AWSLogs;
+import com.amazonaws.services.logs.AWSLogsClientBuilder;
 import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.AmazonRDSClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -143,6 +145,11 @@ public class EnvironmentSetupForTests {
 	
 	public static AmazonSQS createSQSClient() {
         return AmazonSQSClientBuilder.defaultClient();
+	}
+
+
+	public static AWSLogs createAWSLogsClient() {
+		return AWSLogsClientBuilder.defaultClient();
 	}
 
 	public static AmazonElasticLoadBalancing createELBClient() {

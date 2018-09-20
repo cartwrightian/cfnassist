@@ -71,5 +71,6 @@ public class Actions {
         actions.add(new PurgeAction());
         actions.add(new AllowHostAction());
         actions.add(new BlockHostAction());
+        actions.add(new RemoveLogsAction());
 	}
 }

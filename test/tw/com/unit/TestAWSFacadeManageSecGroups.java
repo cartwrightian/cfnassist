@@ -15,10 +15,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
-import tw.com.repository.CloudFormRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -52,8 +49,9 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 		providesCurrentIp = createStrictMock(ProvidesCurrentIp.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
+		LogRepository logRepository = createStrictMock(LogRepository.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
 
         elbDescription = new LoadBalancerDescription().
                 withLoadBalancerName("elbName").
