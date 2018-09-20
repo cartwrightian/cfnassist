@@ -433,6 +433,16 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
+    public void shouldTagCloudwatchLog() throws InterruptedException, MissingArgumentException, CfnAssistException {
+	    setFactoryExpectations();
+
+	    facade.tagCloudWatchLog(projectAndEnv, "logGroupName");
+	    EasyMock.expectLastCall();
+
+	    validate(CLIArgBuilder.tagCloudWatchLog("logGroupName"));
+    }
+
+    @Test
     public void testShouldBlockHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
         setFactoryExpectations();
         String type = "elbTypeTag";

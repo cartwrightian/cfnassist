@@ -43,19 +43,7 @@ public class TestLogRepository  extends EasyMockSupport {
     @Test
     public void shouldFilterGroupsByTags() {
         Map<String, Map<String, String>> groups = new HashMap<>();
-        Map<String, String> groupATags = new HashMap<>();
-        Map<String, String> groupBTags = new HashMap<>();
-        Map<String, String> groupCTags = new HashMap<>();
-
-        groupATags.put("X", "value");
-        groupBTags.put(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv());
-        groupBTags.put(AwsFacade.PROJECT_TAG, projectAndEnv.getProject());
-        groupCTags.put(AwsFacade.ENVIRONMENT_TAG, "wrongEnv");
-        groupCTags.put(AwsFacade.PROJECT_TAG, "wrongProject");
-
-        groups.put("groupA", groupATags);
-        groups.put("groupB", groupBTags);
-        groups.put("groupC", groupCTags);
+        createExistingGroups(groups);
         EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
 
         replayAll();
@@ -83,7 +71,47 @@ public class TestLogRepository  extends EasyMockSupport {
         verifyAll();
     }
 
+    @Test
+    public void shouldTagGroupWithEnvAndProject() {
+        Map<String, Map<String, String>> groups = new HashMap<>();
+        createExistingGroups(groups);
+        EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
+        logClient.tagGroupFor(projectAndEnv, "groupA");
+        EasyMock.expectLastCall();
+
+        replayAll();
+        logRepository.tagCloudWatchLog(projectAndEnv, "groupA");
+        verifyAll();
+    }
+
+    @Test
+    public void shouldNotTagIfAlreadyDoneAndMatches() {
+        Map<String, Map<String, String>> groups = new HashMap<>();
+        createExistingGroups(groups);
+        EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
+
+        replayAll();
+        logRepository.tagCloudWatchLog(projectAndEnv, "groupB");
+        verifyAll();
+    }
+
     private LogStream createStream(long offset, String streamName) {
         return new LogStream().withLogStreamName(streamName).withLastEventTimestamp(offset);
+    }
+
+    private void createExistingGroups(Map<String, Map<String, String>> groups) {
+        Map<String, String> groupATags = new HashMap<>();
+        Map<String, String> groupBTags = new HashMap<>();
+        Map<String, String> groupCTags = new HashMap<>();
+
+        groupATags.put("X", "value");
+        groupBTags.put(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv());
+        groupBTags.put(AwsFacade.PROJECT_TAG, projectAndEnv.getProject());
+        groupCTags.put(AwsFacade.ENVIRONMENT_TAG, "wrongEnv");
+        groupCTags.put(AwsFacade.PROJECT_TAG, "wrongProject");
+
+        groups.put("groupA", groupATags);
+        groups.put("groupB", groupBTags);
+        groups.put("groupC", groupCTags);
     }
 }

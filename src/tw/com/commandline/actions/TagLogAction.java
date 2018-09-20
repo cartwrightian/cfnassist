@@ -13,25 +13,20 @@ import tw.com.exceptions.CfnAssistException;
 
 import java.util.Collection;
 
-public class RemoveLogsAction extends SharedAction {
-	private static final Logger logger = LoggerFactory.getLogger(RemoveLogsAction.class);
+public class TagLogAction extends SharedAction {
+	private static final Logger logger = LoggerFactory.getLogger(TagLogAction.class);
 
 	@SuppressWarnings("static-access")
-	public RemoveLogsAction() {
-        createOptionWithArgs("removeLogs", "Warning: Deletes cloudwatch logs older than N days", 1);
+	public TagLogAction() {
+        createOptionWithArgs("tagLog", "Tags the named group with current project and env", 1);
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused, 
 			Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
 		logger.info("Invoking removeLogs for " + projectAndEnv + " and " + args[0]);
 		AwsFacade aws = factory.createFacade();
-		try {
-            int days = Integer.parseInt(args[0]);
-			aws.removeCloudWatchLogsOlderThan(projectAndEnv, days);
-        }
-        catch (NumberFormatException parseFailed) {
-		    throw new CfnAssistException("Unable to parse number of weeks " + args[0]);
-        }
+		String groupName = args[0];
+		aws.tagCloudWatchLog(projectAndEnv, groupName);
 	}
 
 	@Override

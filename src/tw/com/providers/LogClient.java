@@ -4,6 +4,8 @@ import com.amazonaws.services.logs.AWSLogs;
 import com.amazonaws.services.logs.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tw.com.AwsFacade;
+import tw.com.entity.ProjectAndEnv;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,5 +54,15 @@ public class LogClient {
     private List<LogGroup> getLogGroups() {
         DescribeLogGroupsResult result = theClient.describeLogGroups();
         return result.getLogGroups();
+    }
+
+    public void tagGroupFor(ProjectAndEnv projectAndEnv, String groupToTag) {
+        logger.info(format("Tag log group %s with %s", groupToTag, projectAndEnv));
+
+        TagLogGroupRequest request = new TagLogGroupRequest().withLogGroupName(groupToTag);
+        request.addTagsEntry(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv());
+        request.addTagsEntry(AwsFacade.PROJECT_TAG, projectAndEnv.getProject());
+        theClient.tagLogGroup(request);
+
     }
 }

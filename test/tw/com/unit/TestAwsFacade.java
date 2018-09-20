@@ -134,9 +134,8 @@ public class TestAwsFacade extends EasyMockSupport {
 
 	@Test
     public void shouldDeleteLogsOverNWeeksOld() {
-        DateTime timeStamp = DateTime.now();
 
-        List<String> groups = Arrays.asList("groupA","groupB");
+		List<String> groups = Arrays.asList("groupA","groupB");
         EasyMock.expect(logRepository.logGroupsFor(projectAndEnv)).andReturn(groups);
         logRepository.removeOldStreamsFor("groupA", Duration.ofDays(42));
         EasyMock.expectLastCall();
@@ -146,6 +145,17 @@ public class TestAwsFacade extends EasyMockSupport {
         replayAll();
         aws.removeCloudWatchLogsOlderThan(projectAndEnv, 42);
         verifyAll();
+    }
+
+    @Test
+    public void shouldTagCloudWatchLogWithEnvAndProject() {
+
+	    logRepository.tagCloudWatchLog(projectAndEnv, "groupToTag");
+	    EasyMock.expectLastCall();
+
+	    replayAll();
+	    aws.tagCloudWatchLog(projectAndEnv, "groupToTag");
+	    verifyAll();
     }
 	
 	@Test

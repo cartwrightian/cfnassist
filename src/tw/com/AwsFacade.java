@@ -653,4 +653,8 @@ public class AwsFacade implements ProvidesZones {
         });
 
 	}
+
+	public void tagCloudWatchLog(ProjectAndEnv projectAndEnv, String groupName) {
+		logRepository.tagCloudWatchLog(projectAndEnv, groupName);
+	}
 }

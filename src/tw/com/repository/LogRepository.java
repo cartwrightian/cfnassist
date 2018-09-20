@@ -58,10 +58,20 @@ public class LogRepository {
 
         streams.stream().filter(logStream -> (logStream.getLastEventTimestamp()<when))
                 .forEach(oldStream -> {
+                    DateTime last = new DateTime(oldStream.getLastEventTimestamp());
                     logger.info(format("Deleting stream %s from group %s, last event was %s", oldStream.getLogStreamName(),
-                            groupName, oldStream.getLastEventTimestamp()));
+                            groupName, last));
                     logClient.deleteLogStream(groupName, oldStream.getLogStreamName());
         });
 
+    }
+
+    public void tagCloudWatchLog(ProjectAndEnv projectAndEnv, String groupToTag) {
+        List<String> currnet = logGroupsFor(projectAndEnv);
+        if (currnet.contains(groupToTag)) {
+            logger.warn(format("Group %s is already tagged for %s", groupToTag, projectAndEnv));
+            return;
+        }
+        logClient.tagGroupFor(projectAndEnv, groupToTag);
     }
 }

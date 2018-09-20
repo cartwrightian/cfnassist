@@ -339,4 +339,12 @@ public class CLIArgBuilder {
                 "-removeLogs", weeks.toString()
         };
     }
+
+    public static String[] tagCloudWatchLog(String logGroupName) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-tagLog", logGroupName
+        };
+    }
 }

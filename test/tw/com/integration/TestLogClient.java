@@ -3,7 +3,9 @@ package tw.com.integration;
 import com.amazonaws.services.logs.AWSLogs;
 import com.amazonaws.services.logs.model.*;
 import org.junit.*;
+import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
+import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
 
 import java.util.HashMap;
@@ -70,5 +72,22 @@ public class TestLogClient {
         DescribeLogStreamsResult actual = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
         List<String> names = actual.getLogStreams().stream().map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
         assertFalse(names.contains(streamName));
+    }
+
+    @Test
+    public void shouldTagAGroupWithProjectAndEnv() {
+        ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
+
+        logClient.tagGroupFor(projectAndEnv, TEST_LOG_GROUP);
+
+        ListTagsLogGroupResult actual = awsLogs.listTagsLogGroup(new ListTagsLogGroupRequest().withLogGroupName(TEST_LOG_GROUP));
+
+        Map<String, String> result = actual.getTags();
+        assertTrue(result.containsKey(AwsFacade.PROJECT_TAG));
+        assertTrue(result.containsKey(AwsFacade.ENVIRONMENT_TAG));
+
+        assertEquals(projectAndEnv.getProject(), result.get(AwsFacade.PROJECT_TAG));
+        assertEquals(projectAndEnv.getEnv(), result.get(AwsFacade.ENVIRONMENT_TAG));
+
     }
 }
