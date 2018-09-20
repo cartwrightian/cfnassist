@@ -22,3 +22,4 @@ security_diagramvpc*.dot
 cfnassist.iml
 cfnassist.ipr
 cfnassist.iws
+.envrc
