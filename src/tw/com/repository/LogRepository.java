@@ -42,6 +42,7 @@ public class LogRepository {
                 }
             }
         });
+        logger.info(format("Matched %s out of %s groups to %s", matched.size(), groupsWithTags.size(), projectAndEnv));
         return matched;
     }
 

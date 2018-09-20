@@ -23,14 +23,15 @@ public class LogClient {
         Map<String, Map<String,String>> groupsWithTags = new HashMap<>(); // GroupName -> Tags for grouop
 
         List<LogGroup> groups = getLogGroups();
+        logger.info(format("Found %s groups", groups.size()));
         groups.forEach(group->{
-            ListTagsLogGroupResult tagResult = theClient.listTagsLogGroup(new ListTagsLogGroupRequest().withLogGroupName(group.getLogGroupName()));
-
+            String logGroupName = group.getLogGroupName();
+            logger.info("Group name: " + logGroupName);
+            ListTagsLogGroupResult tagResult = theClient.listTagsLogGroup(new ListTagsLogGroupRequest().withLogGroupName(logGroupName));
             Map<String, String> tags = tagResult.getTags(); // TAG -> Value
-            groupsWithTags.put(group.getLogGroupName(), tags);
+            groupsWithTags.put(logGroupName, tags);
 
         });
-        logger.info(format("Found %s groups matching out of %s in total", groupsWithTags.size(), groups.size()));
 
         return groupsWithTags;
     }
