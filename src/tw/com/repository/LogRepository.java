@@ -1,6 +1,7 @@
 package tw.com.repository;
 
 import com.amazonaws.services.logs.model.LogStream;
+import com.amazonaws.services.logs.model.OutputLogEvent;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -63,7 +66,6 @@ public class LogRepository {
                             groupName, last));
                     logClient.deleteLogStream(groupName, oldStream.getLogStreamName());
         });
-
     }
 
     public void tagCloudWatchLog(ProjectAndEnv projectAndEnv, String groupToTag) {
@@ -73,5 +75,44 @@ public class LogRepository {
             return;
         }
         logClient.tagGroupFor(projectAndEnv, groupToTag);
+    }
+
+    public Stream<String> fetchLogs(ProjectAndEnv projectAndEnv, Duration duration) {
+        DateTime timestamp = providesNow.getNow();
+        long durationInMillis = duration.toMillis();
+        long when = timestamp.getMillis()- durationInMillis;
+
+        // TODO expose the streams and do a time ordered merge
+
+        List<String> groupNames = this.logGroupsFor(projectAndEnv);
+        if (groupNames.isEmpty()) {
+            return Stream.empty();
+        }
+
+        List<Stream<OutputLogEvent>> groupSteams = new LinkedList<>();
+        groupNames.forEach(group -> {
+            List<LogStream> logStreams = logClient.getStreamsFor(group);
+            List<String> streamNames = logStreams.stream().map(s -> s.getLogStreamName()).collect(Collectors.toList());
+            groupSteams.add(logClient.fetchLogs(group,streamNames,  when));
+        });
+
+        if (groupSteams.isEmpty()) {
+            return Stream.empty();
+        }
+
+        // TODO likely need to expose individual streams from fetchLogs to allow time ordering accross groups
+        Stream<String> consolidated = mapStream(groupNames.get(0), groupSteams.get(0));
+        for (int i = 1; i < groupSteams.size(); i++) {
+            consolidated = Stream.concat(consolidated,mapStream(groupNames.get(i),groupSteams.get(i)));
+        }
+        return consolidated;
+    }
+
+    private Stream<String> mapStream(String groupName, Stream<OutputLogEvent> outputLogEventStream) {
+        return outputLogEventStream.
+                map(entry -> {
+                    DateTime timestamp = new DateTime((entry.getTimestamp()));
+                    return String.format("%s %s %s", groupName, timestamp, entry.getMessage());
+                });
     }
 }

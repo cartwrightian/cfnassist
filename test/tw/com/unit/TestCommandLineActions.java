@@ -443,6 +443,16 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
+    public void shouldGetLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
+	    setFactoryExpectations();
+        Integer days = 42;
+        facade.fetchLogs(projectAndEnv, days);
+	    EasyMock.expectLastCall();
+
+	    validate(CLIArgBuilder.getLogs(days));
+    }
+
+    @Test
     public void testShouldBlockHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
         setFactoryExpectations();
         String type = "elbTypeTag";

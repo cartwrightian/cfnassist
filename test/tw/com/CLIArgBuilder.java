@@ -347,4 +347,12 @@ public class CLIArgBuilder {
                 "-tagLog", logGroupName
         };
     }
+
+    public static String[] getLogs(Integer days) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-logs", days.toString()
+        };
+    }
 }

@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -150,12 +151,22 @@ public class TestAwsFacade extends EasyMockSupport {
     @Test
     public void shouldTagCloudWatchLogWithEnvAndProject() {
 
-	    logRepository.tagCloudWatchLog(projectAndEnv, "groupToTag");
-	    EasyMock.expectLastCall();
+        logRepository.tagCloudWatchLog(projectAndEnv, "groupToTag");
+        EasyMock.expectLastCall();
 
-	    replayAll();
-	    aws.tagCloudWatchLog(projectAndEnv, "groupToTag");
-	    verifyAll();
+        replayAll();
+        aws.tagCloudWatchLog(projectAndEnv, "groupToTag");
+        verifyAll();
+    }
+
+    @Test
+    public void shouldFetchLogs() {
+
+        EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofDays(42))).andReturn(Stream.empty());
+
+        replayAll();
+        aws.fetchLogs(projectAndEnv, 42);
+        verifyAll();
     }
 	
 	@Test

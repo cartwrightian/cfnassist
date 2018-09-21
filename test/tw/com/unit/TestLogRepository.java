@@ -1,6 +1,7 @@
 package tw.com.unit;
 
 import com.amazonaws.services.logs.model.LogStream;
+import com.amazonaws.services.logs.model.OutputLogEvent;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -12,17 +13,15 @@ import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
-import tw.com.providers.ProvidesNow;
 import tw.com.repository.LogRepository;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.format;
 
 @RunWith(EasyMockRunner.class)
 public class TestLogRepository  extends EasyMockSupport {
@@ -93,6 +92,35 @@ public class TestLogRepository  extends EasyMockSupport {
         replayAll();
         logRepository.tagCloudWatchLog(projectAndEnv, "groupB");
         verifyAll();
+    }
+
+    @Test
+    public void shouldFetchLogs() {
+        List<LogStream> logStreams = new LinkedList<>();
+
+        String groupName = "groupB";
+        List<String> streamNames = Arrays.asList("streamA", "streamB");
+        int days = 42;
+
+        Long epoch = timestamp.minusDays(days).getMillis();
+
+        Stream<OutputLogEvent> stream = Stream.of(new OutputLogEvent().withMessage("TEST").withTimestamp(epoch));
+        streamNames.forEach(name -> logStreams.add(createStream(epoch, name)));
+
+        Map<String, Map<String, String>> groups = new HashMap<>();
+        createExistingGroups(groups);
+
+        EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
+        EasyMock.expect(logClient.getStreamsFor(groupName)).andReturn(logStreams);
+        EasyMock.expect(logClient.fetchLogs(groupName, streamNames, epoch)).andReturn(stream);
+
+        replayAll();
+        Stream<String> result = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
+        verifyAll();
+
+        Optional<String> entry = result.findFirst();
+        assertTrue(entry.isPresent());
+        assertEquals(String.format("groupB %s TEST", timestamp.minusDays(days)), entry.get());
     }
 
     private LogStream createStream(long offset, String streamName) {
