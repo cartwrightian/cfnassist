@@ -13,6 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -97,48 +98,88 @@ public class TestLogClient {
     }
 
     @Test
-    public void SPIKE_shouldStreamLogEntries() throws InterruptedException {
-        // multiple streams to test out interleaving
+    public void shouldTestWithLogStreams() throws InterruptedException {
+        //
+        // For large numbers of log entires hard to anticipate how long it takes from end of API call to the
+        // log events being available, so for now restrict number even if this does test out the paging behaviours
+        //
         List<String> streamNames = Arrays.asList("streamA", "streamB", "streamC");
-        int numberOfEventPerStream = 2000;
+        int numberOfEventsPerUpload = 200;
+        int numberOfUploads = 6;
+
+        DescribeLogStreamsResult existing = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
+        List<String> present = existing.getLogStreams().stream().map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
 
         streamNames.forEach(streamName -> {
-            awsLogs.createLogStream(new CreateLogStreamRequest().
-                    withLogGroupName(TEST_LOG_GROUP).
-                    withLogStreamName(streamName));
-        });
+                if (!present.contains(streamName))
+                awsLogs.createLogStream(new CreateLogStreamRequest().
+                withLogGroupName(TEST_LOG_GROUP).
+                withLogStreamName(streamName));}
+                );
 
         DateTime beginInsert = DateTime.now();
-        int expectedSize = streamNames.size() * numberOfEventPerStream;
+        int expectedSize = streamNames.size() * numberOfEventsPerUpload * numberOfUploads;
 
-        streamNames.forEach(streamName -> {
-            // responses split by token when size of one response >1MB
-            PutLogEventsRequest putEventsRequest = new PutLogEventsRequest();
-            Collection<InputLogEvent> events = createTestLogEvents(numberOfEventPerStream, beginInsert.getMillis());
-            putEventsRequest.withLogGroupName(TEST_LOG_GROUP).withLogStreamName(streamName).withLogEvents(events);
-            awsLogs.putLogEvents(putEventsRequest);
-        });
+        uploadTestEvents(streamNames, numberOfEventsPerUpload, numberOfUploads, beginInsert);
 
-        Thread.sleep(6000);
+        Thread.sleep(2000);
         // inserted log events are not immediately available for consumption
 
         Long epoch = beginInsert.getMillis();
         Stream<OutputLogEvent> resultStream = logClient.fetchLogs(TEST_LOG_GROUP, streamNames, epoch);
-        List<OutputLogEvent> result = resultStream.collect(Collectors.toList());
+        long result = resultStream.count();
 
         // no asserts until after tidy up streams
         streamNames.forEach(streamName -> awsLogs.deleteLogStream(new DeleteLogStreamRequest().
                 withLogGroupName(TEST_LOG_GROUP).
                 withLogStreamName(streamName)));
 
-        assertEquals(expectedSize, result.size());
+        assertEquals(expectedSize, result);
+    }
 
+    private void uploadTestEvents(List<String> streamNames, int numberOfEventsPerUpload, int numberOfUploads, DateTime beginInsert) {
+        List<String> nextSeqToken = new LinkedList<>();
+        for (int i = 0; i <numberOfUploads; i++) {
+            streamNames.forEach(streamName -> {
+                // responses split by token when size of one response >1MB
+                PutLogEventsRequest putEventsRequest = new PutLogEventsRequest();
+                Collection<InputLogEvent> events = createTestLogEvents(numberOfEventsPerUpload, beginInsert.getMillis());
+                putEventsRequest.withLogGroupName(TEST_LOG_GROUP).withLogStreamName(streamName).withLogEvents(events);
+                nextSeqToken.forEach(token -> putEventsRequest.setSequenceToken(token));
+                try {
+                    awsLogs.putLogEvents(putEventsRequest);
+                }
+                catch(DataAlreadyAcceptedException alreadyExcepted) {
+                    String token = alreadyExcepted.getExpectedSequenceToken();
+                    putEventsRequest.setSequenceToken(token);
+                    awsLogs.putLogEvents(putEventsRequest);
+
+                    nextSeqToken.clear();
+                    nextSeqToken.add(token);
+                }
+                catch (InvalidSequenceTokenException invalidToken) {
+                    String token = invalidToken.getExpectedSequenceToken();
+                    putEventsRequest.setSequenceToken(token);
+                    awsLogs.putLogEvents(putEventsRequest);
+
+                    nextSeqToken.clear();
+                    nextSeqToken.add(token);
+                }
+
+            });
+        }
     }
 
     private Collection<InputLogEvent> createTestLogEvents(int number, Long epoch) {
         List<InputLogEvent> events = new LinkedList<>();
+        StringBuilder builder = new StringBuilder();
+        builder.append("XXXXXXXXX");
+        for (int m = 0; m < 5; m++) {
+            builder.append(builder.toString());
+        }
         for (int i = 0; i < number; i++) {
-            InputLogEvent logEvent = new InputLogEvent().withMessage("This is log message number "+i).
+            InputLogEvent logEvent = new InputLogEvent().
+                    withMessage("This is log message number "+i+" "+builder.toString()).
                     withTimestamp(epoch);
             events.add(logEvent);
         }

@@ -87,6 +87,7 @@ public class LogClient {
         return result;
     }
 
+    // class to wrap the API 'paging' behavior for a single log stream
     private class LogIterator implements Iterable<OutputLogEvent>  {
         private final String groupName;
         private final String streamName;
