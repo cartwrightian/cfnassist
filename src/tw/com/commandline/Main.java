@@ -1,5 +1,6 @@
 package tw.com.commandline;
 
+import ch.qos.logback.classic.util.ContextInitializer;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.*;
@@ -13,7 +14,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 public class Main {
-	private static final Logger logger = LoggerFactory.getLogger(Main.class);
+	private static Logger logger = null;//
 	
 	private Options commandLineOptions;
 	private String[] args;
@@ -23,7 +24,11 @@ public class Main {
 	private Actions commandActions;
 
 	public Main(String[] args) {
-		this.args = args;
+
+		System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, "logback.xml");
+        logger = LoggerFactory.getLogger(Main.class);
+
+        this.args = args;
 		executableName = "cfnassist";
 		commandLineOptions = new Options();
 		flags = new CommandFlags(executableName, commandLineOptions);

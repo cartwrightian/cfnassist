@@ -60,12 +60,13 @@ public class LogRepository {
 
         List<LogStream> streams = logClient.getStreamsFor(groupName);
 
-        streams.stream().filter(logStream -> (logStream.getLastEventTimestamp()<when))
+        streams.stream().
+                filter(logStream -> (logStream.getLastEventTimestamp()<when))
                 .forEach(oldStream -> {
                     DateTime last = new DateTime(oldStream.getLastEventTimestamp());
-                    logger.info(format("Deleting stream %s from group %s, last event was %s", oldStream.getLogStreamName(),
-                            groupName, last));
-                    logClient.deleteLogStream(groupName, oldStream.getLogStreamName());
+                    String streamName = oldStream.getLogStreamName();
+                    logger.info(format("Deleting stream %s from group %s, last event was %s", streamName, groupName, last));
+                    logClient.deleteLogStream(groupName, streamName);
         });
     }
 
@@ -95,7 +96,10 @@ public class LogRepository {
         List<Stream<OutputLogEventDecorator>> groupSteams = new LinkedList<>();
         groupNames.forEach(group -> {
             List<LogStream> awsLogStreams = logClient.getStreamsFor(group);
-            List<String> streamNames = awsLogStreams.stream().map(s -> s.getLogStreamName()).collect(Collectors.toList());
+            List<String> streamNames = awsLogStreams.stream().
+                    filter(stream -> stream.getLastEventTimestamp()>=when).
+                    map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
+            logger.info(format("Got %s streams with events in scope", streamNames.size()));
             List<Stream<OutputLogEventDecorator>> fetchLogs = logClient.fetchLogs(group, streamNames, when);
             groupSteams.addAll(fetchLogs);
         });
@@ -117,10 +121,6 @@ public class LogRepository {
     }
 
     private Stream<String> mapStream(Stream<OutputLogEventDecorator> outputLogEventStream) {
-        return outputLogEventStream.
-                map(entry -> {
-                    DateTime timestamp = new DateTime((entry.getTimestamp()));
-                    return String.format("%s %s %s", entry.getGroupName(), timestamp, entry.getMessage());
-                });
+        return outputLogEventStream.map(entry ->  entry.toString());
     }
 }

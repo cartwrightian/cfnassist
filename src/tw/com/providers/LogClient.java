@@ -42,10 +42,25 @@ public class LogClient {
     }
 
     public List<LogStream> getStreamsFor(String groupName) {
-        logger.info("Get log streams for group " + groupName);
+        List<LogStream> accum = new LinkedList<>();
+        getStreamsFor(accum, groupName, "");
+        return accum;
+    }
+
+    public void getStreamsFor(List<LogStream> accum, String groupName, String token) {
         DescribeLogStreamsRequest request = new DescribeLogStreamsRequest().withLogGroupName(groupName);
-        DescribeLogStreamsResult result = theClient.describeLogStreams(request);
-        return result.getLogStreams();
+        if (!token.isEmpty()) {
+            request.setNextToken(token);
+        }
+        DescribeLogStreamsResult describeResult = theClient.describeLogStreams(request);
+        String nextToken = describeResult.getNextToken();
+        List<LogStream> logStreams = describeResult.getLogStreams();
+
+        logger.info(format("Got %s log streams for group %s and token: %s ", logStreams.size(), groupName, nextToken));
+        accum.addAll(logStreams);
+        if (!(nextToken==null) || token.equals(nextToken)) {
+            getStreamsFor(accum, groupName, nextToken);
+        }
     }
 
     public void deleteLogStream(String groupdName, String streamName) {

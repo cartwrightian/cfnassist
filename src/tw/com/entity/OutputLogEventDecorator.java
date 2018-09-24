@@ -14,15 +14,10 @@ public class OutputLogEventDecorator {
         this.streamName = streamName;
     }
 
-    public long getTimestamp() {
-        return outputLogEvent.getTimestamp();
-    }
-
-    public String getMessage() {
-        return outputLogEvent.getMessage();
-    }
-
     public String getGroupName() {
         return groupName;
+    }
+    public String toString() {
+        return String.format("%s %s", groupName, outputLogEvent.getMessage());
     }
 }

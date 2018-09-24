@@ -125,7 +125,8 @@ public class TestLogRepository  extends EasyMockSupport {
 
         Optional<String> entry = result.findFirst();
         assertTrue(entry.isPresent());
-        assertEquals(String.format("groupB %s TEST", timestamp.minusDays(days)), entry.get());
+        //assertEquals(String.format("groupB %s TEST", timestamp.minusDays(days)), entry.get());
+        assertEquals("groupB TEST", entry.get());
     }
 
     private LogStream createStream(long offset, String streamName) {
