@@ -161,12 +161,16 @@ public class TestAwsFacade extends EasyMockSupport {
 
     @Test
     public void shouldFetchLogs() {
-
-        EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofDays(42))).andReturn(Stream.empty());
+        Stream<String> stream = Stream.of("TestMessage");
+        EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofDays(42))).andReturn(stream);
 
         replayAll();
-        aws.fetchLogs(projectAndEnv, 42);
+        Stream<String> result = aws.fetchLogs(projectAndEnv, 42);
         verifyAll();
+
+        Optional<String> message = result.findFirst();
+        assertTrue(message.isPresent());
+        assertEquals("TestMessage", message.get());
     }
 	
 	@Test

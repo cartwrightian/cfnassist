@@ -6,6 +6,7 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
+import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
 import tw.com.providers.ProvidesNow;
@@ -81,38 +82,45 @@ public class LogRepository {
         DateTime timestamp = providesNow.getNow();
         long durationInMillis = duration.toMillis();
         long when = timestamp.getMillis()- durationInMillis;
+        logger.info(format("Fetching all log entries for %s in %s", projectAndEnv,duration));
 
         // TODO expose the streams and do a time ordered merge
-
         List<String> groupNames = this.logGroupsFor(projectAndEnv);
         if (groupNames.isEmpty()) {
+            logger.info("No matching group streams found");
             return Stream.empty();
         }
 
-        List<Stream<OutputLogEvent>> groupSteams = new LinkedList<>();
+        logger.info("Matched groups "+groupNames);
+        List<Stream<OutputLogEventDecorator>> groupSteams = new LinkedList<>();
         groupNames.forEach(group -> {
-            List<LogStream> logStreams = logClient.getStreamsFor(group);
-            List<String> streamNames = logStreams.stream().map(s -> s.getLogStreamName()).collect(Collectors.toList());
-            groupSteams.add(logClient.fetchLogs(group,streamNames,  when));
+            List<LogStream> awsLogStreams = logClient.getStreamsFor(group);
+            List<String> streamNames = awsLogStreams.stream().map(s -> s.getLogStreamName()).collect(Collectors.toList());
+            List<Stream<OutputLogEventDecorator>> fetchLogs = logClient.fetchLogs(group, streamNames, when);
+            groupSteams.addAll(fetchLogs);
         });
 
         if (groupSteams.isEmpty()) {
+            logger.info("No group streams found");
             return Stream.empty();
         }
 
+        logger.info("Consolidating group streams");
+        // TODO put into the about loop as we want to know group name? Or create decorator for OutputLogEvent
+        // that holds the group name and stream name
         // TODO likely need to expose individual streams from fetchLogs to allow time ordering accross groups
-        Stream<String> consolidated = mapStream(groupNames.get(0), groupSteams.get(0));
+        Stream<String> consolidated = mapStream(groupSteams.get(0));
         for (int i = 1; i < groupSteams.size(); i++) {
-            consolidated = Stream.concat(consolidated,mapStream(groupNames.get(i),groupSteams.get(i)));
+            consolidated = Stream.concat(consolidated,mapStream(groupSteams.get(i)));
         }
         return consolidated;
     }
 
-    private Stream<String> mapStream(String groupName, Stream<OutputLogEvent> outputLogEventStream) {
+    private Stream<String> mapStream(Stream<OutputLogEventDecorator> outputLogEventStream) {
         return outputLogEventStream.
                 map(entry -> {
                     DateTime timestamp = new DateTime((entry.getTimestamp()));
-                    return String.format("%s %s %s", groupName, timestamp, entry.getMessage());
+                    return String.format("%s %s %s", entry.getGroupName(), timestamp, entry.getMessage());
                 });
     }
 }

@@ -11,6 +11,8 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 public class FetchLogsAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(FetchLogsAction.class);
@@ -25,8 +27,17 @@ public class FetchLogsAction extends SharedAction {
 		logger.info("Invoking get logs for " + projectAndEnv + " and " + args[0]);
 		AwsFacade aws = factory.createFacade();
 		int days = Integer.parseInt(args[0]);
-		aws.fetchLogs(projectAndEnv, days);
-	}
+		Stream<String> lines = aws.fetchLogs(projectAndEnv, days);
+		System.out.println("Logs for " + projectAndEnv);
+		AtomicInteger count = new AtomicInteger();
+		lines.forEach(line -> {
+		    System.out.println(line);
+		    logger.info(line);
+		    count.getAndIncrement();
+        });
+		System.out.println("==== lines:"+count.toString());
+        System.out.flush();
+    }
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,

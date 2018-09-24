@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -446,8 +447,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     public void shouldGetLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
 	    setFactoryExpectations();
         Integer days = 42;
-        facade.fetchLogs(projectAndEnv, days);
-	    EasyMock.expectLastCall();
+        EasyMock.expect(facade.fetchLogs(projectAndEnv, days)).andReturn(Stream.empty());
 
 	    validate(CLIArgBuilder.getLogs(days));
     }

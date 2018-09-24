@@ -2,10 +2,10 @@ package tw.com.providers;
 
 import com.amazonaws.services.logs.AWSLogs;
 import com.amazonaws.services.logs.model.*;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
+import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
 
 import java.util.*;
@@ -68,46 +68,69 @@ public class LogClient {
         theClient.tagLogGroup(request);
     }
 
-    public Stream<OutputLogEvent> fetchLogs(String groupName, List<String> streamNames, Long endEpoch) {
+    public List<Stream<OutputLogEventDecorator>> fetchLogs(String groupName, List<String> streamNames, Long endEpoch) {
+        List<Stream<OutputLogEventDecorator>> outputStreams = new LinkedList<>();
+
         if (streamNames.isEmpty()) {
-            return Stream.empty();
+            return outputStreams;
         }
-        List<Stream<OutputLogEvent>> outputStreams = new LinkedList<>();
 
         streamNames.forEach(streamName -> {
-            Iterable<OutputLogEvent> iterator = new LogIterator(groupName, streamName, endEpoch);
-            Spliterator<OutputLogEvent> spliterator = Spliterators.spliteratorUnknownSize(iterator.iterator(), IMMUTABLE | ORDERED );
+            TokenStrategy currentToken = new TokenStrategy();
+            Iterable<OutputLogEventDecorator> iterator = new LogIterator(groupName, streamName, endEpoch, currentToken);
+            Spliterator<OutputLogEventDecorator> spliterator = Spliterators.spliteratorUnknownSize(iterator.iterator(), IMMUTABLE | ORDERED );
             outputStreams.add(StreamSupport.stream(spliterator, false));
         });
 
-        Stream<OutputLogEvent> result = outputStreams.get(0);
-        for (int i = 1; i < outputStreams.size(); i++) {
-            result = Stream.concat(result,outputStreams.get(i));
+        return outputStreams;
+    }
+
+    // control shared token or token per stream
+    private class TokenStrategy {
+            private String token = "";
+
+            public void set(GetLogEventsResult result) {
+                this.token = result.getNextForwardToken();
+            }
+
+            public boolean isEmpty() {
+                return token.isEmpty();
+            }
+
+            public String get() {
+                return token;
+            }
+
+            public String toString() {
+                return "token:"+ token;
+            }
+
+        public boolean tokenMatch(GetLogEventsResult result) {
+            return token.equals(result.getNextForwardToken());
         }
-        return result;
     }
 
     // class to facade the AWS API 'paging' behavior for a single log stream
-    private class LogIterator implements Iterable<OutputLogEvent>  {
+    private class LogIterator implements Iterable<OutputLogEventDecorator>  {
         private final String groupName;
         private final String streamName;
         private final Long endEpoch;
 
         private Iterator<OutputLogEvent> inProgress;
-        private String currentToken;
+        private TokenStrategy currentToken;
 
-        private LogIterator(String groupName, String streamName, Long endEpoch) {
+        private LogIterator(String groupName, String streamName, Long endEpoch, TokenStrategy currentToken) {
             this.groupName = groupName;
             this.streamName = streamName;
             this.endEpoch = endEpoch;
-            currentToken = "";
-            // initial load
-            loadNextResult();
+            this.currentToken = currentToken;
+            // initially empty
+            inProgress = new LinkedList<OutputLogEvent>().iterator();
         }
 
         @Override
-        public Iterator<OutputLogEvent> iterator() {
-            return new Iterator<OutputLogEvent>() {
+        public Iterator<OutputLogEventDecorator> iterator() {
+            return new Iterator<OutputLogEventDecorator>() {
                 @Override
                 public boolean hasNext() {
                     if (inProgress.hasNext()) {
@@ -117,9 +140,9 @@ public class LogClient {
                 }
 
                 @Override
-                public OutputLogEvent next() {
+                public OutputLogEventDecorator next() {
                     if (inProgress.hasNext()) {
-                        return inProgress.next();
+                        return new OutputLogEventDecorator(inProgress.next(), groupName, streamName);
                     }
                     throw new NoSuchElementException();
                 }
@@ -127,30 +150,33 @@ public class LogClient {
         }
 
         private boolean loadNextResult() {
-            GetLogEventsResult nextResult = getLogEventsUnFiltered();
-            if (currentToken.equals(nextResult.getNextForwardToken())) {
+            GetLogEventsResult nextResult = getLogEvents();
+            if (nextResult.getEvents().isEmpty()) {
+                return false;
+            }
+            if (currentToken.tokenMatch(nextResult)) {
                 logger.info("Next token matches previous, no more results for stream " + streamName);
                 return false;
             }
-            currentToken = nextResult.getNextForwardToken();
+            currentToken.set(nextResult);
             inProgress = nextResult.getEvents().iterator();
             return true;
         }
 
-        private GetLogEventsResult getLogEventsUnFiltered() {
+        private GetLogEventsResult getLogEvents() {
             logger.info(format("Getting events for %s stream %s and epoch %s", groupName, streamName, endEpoch));
             GetLogEventsRequest request = new GetLogEventsRequest().
                     withLogGroupName(groupName).
-                    withLogStreamName(streamName).
-                    withStartTime(endEpoch);
+                    withLogStreamName(streamName).withStartTime(endEpoch);
 
             if (!currentToken.isEmpty()) {
                 logger.info(format("Setting nextToken on stream %s request to %s", streamName, currentToken));
-                request.setNextToken(currentToken);
+                request.setNextToken(currentToken.get());
             }
 
             GetLogEventsResult currentResult = theClient.getLogEvents(request);
-            logger.info(format("Got nextToken on stream %s request as %s", streamName, currentToken));
+            logger.info(format("Got %s entries for stream %s", currentResult.getEvents().size(), streamName));
+            logger.info(format("Got nextToken on stream %s token: %s", streamName, currentResult.getNextForwardToken()));
             return currentResult;
         }
 

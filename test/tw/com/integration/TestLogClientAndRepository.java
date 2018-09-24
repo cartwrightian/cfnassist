@@ -6,19 +6,20 @@ import org.joda.time.DateTime;
 import org.junit.*;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
+import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
+import tw.com.providers.ProvidesNow;
+import tw.com.repository.LogRepository;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.*;
 
-public class TestLogClient {
+public class TestLogClientAndRepository {
 
     public static final String TEST_LOG_GROUP = "testLogGroup";
     private static AWSLogs awsLogs;
@@ -47,6 +48,16 @@ public class TestLogClient {
     @Before
     public void beforeEachTestRuns() {
         logClient = new LogClient(awsLogs);
+    }
+
+    @After
+    public void afterEachTestRuns() {
+        // delete all streams for group TEST_LOG_GROUP
+        DescribeLogStreamsResult existing = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
+        List<String> streamNames = existing.getLogStreams().stream().map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
+        streamNames.forEach(streamName -> awsLogs.deleteLogStream(new DeleteLogStreamRequest().
+                withLogGroupName(TEST_LOG_GROUP).
+                withLogStreamName(streamName)));
     }
 
     @Test
@@ -118,23 +129,45 @@ public class TestLogClient {
                 );
 
         DateTime beginInsert = DateTime.now();
-        int expectedSize = streamNames.size() * numberOfEventsPerUpload * numberOfUploads;
 
         uploadTestEvents(streamNames, numberOfEventsPerUpload, numberOfUploads, beginInsert);
 
-        Thread.sleep(2000);
-        // inserted log events are not immediately available for consumption
+        Thread.sleep(2000); // inserted log events are not immediately available for consumption
 
         Long epoch = beginInsert.getMillis();
-        Stream<OutputLogEvent> resultStream = logClient.fetchLogs(TEST_LOG_GROUP, streamNames, epoch);
-        long result = resultStream.count();
+        List<Stream<OutputLogEventDecorator>> resultStream = logClient.fetchLogs(TEST_LOG_GROUP, streamNames, epoch);
 
-        // no asserts until after tidy up streams
-        streamNames.forEach(streamName -> awsLogs.deleteLogStream(new DeleteLogStreamRequest().
+        assertEquals(3, resultStream.size());
+
+        int expectedSize = numberOfEventsPerUpload * numberOfUploads;
+        assertEquals(expectedSize, resultStream.get(0).count());
+        assertEquals(expectedSize, resultStream.get(1).count());
+        assertEquals(expectedSize, resultStream.get(2).count());
+    }
+
+    @Test
+    public void shouldFetchLogResultsViaLogRepository() {
+        DateTime timeStamp = DateTime.now();
+
+        ProvidesNow providesNow = () -> timeStamp;
+        LogRepository logRepository = new LogRepository(logClient, providesNow);
+
+        ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
+
+        logClient.tagGroupFor(projectAndEnv, TEST_LOG_GROUP);
+        awsLogs.createLogStream(new CreateLogStreamRequest().
                 withLogGroupName(TEST_LOG_GROUP).
-                withLogStreamName(streamName)));
+                withLogStreamName("repoTestStream"));
 
-        assertEquals(expectedSize, result);
+        uploadTestEvents(Arrays.asList("repoTestStream"), 200, 10, timeStamp);
+
+        Stream<String> resultStream = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(1));
+
+        List<String> resultList = resultStream.collect(Collectors.toList());
+        assertEquals(200*10, resultList.size());
+
+        resultList.forEach(line -> assertTrue(line.contains("This is log message number ")));
+
     }
 
     private void uploadTestEvents(List<String> streamNames, int numberOfEventsPerUpload, int numberOfUploads, DateTime beginInsert) {

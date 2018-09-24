@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
+import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
 import tw.com.repository.LogRepository;
@@ -21,7 +22,6 @@ import java.util.stream.Stream;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.format;
 
 @RunWith(EasyMockRunner.class)
 public class TestLogRepository  extends EasyMockSupport {
@@ -102,17 +102,22 @@ public class TestLogRepository  extends EasyMockSupport {
         List<String> streamNames = Arrays.asList("streamA", "streamB");
         int days = 42;
 
-        Long epoch = timestamp.minusDays(days).getMillis();
+        long epoch = timestamp.minusDays(days).getMillis();
 
-        Stream<OutputLogEvent> stream = Stream.of(new OutputLogEvent().withMessage("TEST").withTimestamp(epoch));
-        streamNames.forEach(name -> logStreams.add(createStream(epoch, name)));
+        OutputLogEvent logEvent = new OutputLogEvent().withMessage("TEST").withTimestamp(epoch);
+
+        LinkedList<Stream<OutputLogEventDecorator>> streamList = new LinkedList<>();
+        streamNames.forEach(name -> {
+            Stream<OutputLogEventDecorator> stream = Stream.of(new OutputLogEventDecorator(logEvent, groupName, name));
+            streamList.add(stream);
+            logStreams.add(createStream(epoch, name));});
 
         Map<String, Map<String, String>> groups = new HashMap<>();
         createExistingGroups(groups);
 
         EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
         EasyMock.expect(logClient.getStreamsFor(groupName)).andReturn(logStreams);
-        EasyMock.expect(logClient.fetchLogs(groupName, streamNames, epoch)).andReturn(stream);
+        EasyMock.expect(logClient.fetchLogs(groupName, streamNames, epoch)).andReturn(streamList);
 
         replayAll();
         Stream<String> result = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));

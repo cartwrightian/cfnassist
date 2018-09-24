@@ -30,6 +30,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -658,7 +659,7 @@ public class AwsFacade implements ProvidesZones {
 		logRepository.tagCloudWatchLog(projectAndEnv, groupName);
 	}
 
-	public void fetchLogs(ProjectAndEnv projectAndEnv, Integer days) {
-		logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
+	public Stream<String> fetchLogs(ProjectAndEnv projectAndEnv, Integer days) {
+		return logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
 	}
 }
