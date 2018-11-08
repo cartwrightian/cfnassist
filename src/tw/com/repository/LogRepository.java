@@ -1,7 +1,6 @@
 package tw.com.repository;
 
 import com.amazonaws.services.logs.model.LogStream;
-import com.amazonaws.services.logs.model.OutputLogEvent;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,14 +11,14 @@ import tw.com.providers.LogClient;
 import tw.com.providers.ProvidesNow;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
+import static java.util.Spliterator.IMMUTABLE;
+import static java.util.Spliterator.ORDERED;
 
 public class LogRepository {
     private static final Logger logger = LoggerFactory.getLogger(LogRepository.class);
@@ -52,13 +51,12 @@ public class LogRepository {
 
     public void removeOldStreamsFor(String groupName, Duration duration) {
         DateTime timestamp = providesNow.getNow();
-        long durationInMillis = duration.toMillis();
-        long when = timestamp.getMillis()- durationInMillis;
+        long when = timestampFromDuration(duration, timestamp);
 
         logger.info(format("Remove streams from group %s if older than %s (%s)", groupName,
-                timestamp.minus(durationInMillis), when));
+                timestamp.minus(duration.toMillis()), when));
 
-        List<LogStream> streams = logClient.getStreamsFor(groupName);
+        List<LogStream> streams = logClient.getStreamsFor(groupName, when);
 
         streams.stream().
                 filter(logStream -> (logStream.getLastEventTimestamp()<when))
@@ -81,11 +79,11 @@ public class LogRepository {
 
     public Stream<String> fetchLogs(ProjectAndEnv projectAndEnv, Duration duration) {
         DateTime timestamp = providesNow.getNow();
-        long durationInMillis = duration.toMillis();
-        long when = timestamp.getMillis()- durationInMillis;
-        logger.info(format("Fetching all log entries for %s in %s", projectAndEnv,duration));
+        long when = timestampFromDuration(duration, timestamp);
 
-        // TODO expose the streams and do a time ordered merge
+        logger.info(format("Fetching all log entries for %s within %s days", projectAndEnv, duration.toDays()));
+
+        // get names of all applicable log groups
         List<String> groupNames = this.logGroupsFor(projectAndEnv);
         if (groupNames.isEmpty()) {
             logger.info("No matching group streams found");
@@ -93,31 +91,39 @@ public class LogRepository {
         }
 
         logger.info("Matched groups "+groupNames);
-        List<Stream<OutputLogEventDecorator>> groupSteams = new LinkedList<>();
-        groupNames.forEach(group -> {
-            List<LogStream> awsLogStreams = logClient.getStreamsFor(group);
-            List<String> streamNames = awsLogStreams.stream().
-                    filter(stream -> stream.getLastEventTimestamp()>=when).
-                    map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
-            logger.info(format("Got %s streams with events in scope", streamNames.size()));
-            List<Stream<OutputLogEventDecorator>> fetchLogs = logClient.fetchLogs(group, streamNames, when);
-            groupSteams.addAll(fetchLogs);
+        List<Stream<OutputLogEventDecorator>> groupStreams = new LinkedList<>();
+        groupNames.forEach(groupName -> {
+            List<LogStream> streamsForGroup = logClient.getStreamsFor(groupName, when);
+
+            List<String> streamNames = streamsForGroup.stream().
+                    filter(stream -> stream.getLastEventTimestamp()>=when).         // if within time
+                    sorted(Comparator.comparing(LogStream::getLastEventTimestamp))  // and in time order
+                    .map(stream -> stream.getLogStreamName()).
+                    collect(Collectors.toList());
+
+            logger.info(format("Got %s streams with events in scope for group %s", streamNames.size(), groupName));
+
+            List<Stream<OutputLogEventDecorator>> fetchLogs = logClient.fetchLogs(groupName, streamNames, when);
+
+            groupStreams.addAll(fetchLogs); // => earliest streams should be first
         });
 
-        if (groupSteams.isEmpty()) {
+        if (groupStreams.isEmpty()) {
             logger.info("No group streams found");
             return Stream.empty();
         }
 
-        logger.info("Consolidating group streams");
-        // TODO put into the about loop as we want to know group name? Or create decorator for OutputLogEvent
-        // that holds the group name and stream name
-        // TODO likely need to expose individual streams from fetchLogs to allow time ordering accross groups
-        Stream<String> consolidated = mapStream(groupSteams.get(0));
-        for (int i = 1; i < groupSteams.size(); i++) {
-            consolidated = Stream.concat(consolidated,mapStream(groupSteams.get(i)));
-        }
-        return consolidated;
+        logger.info(format("Consolidating %s group streams", groupStreams.size()));
+        LogStreamInterleaver logStreamInterleaver = new LogStreamInterleaver(groupStreams);
+
+        Spliterator<OutputLogEventDecorator> spliterator =
+                Spliterators.spliteratorUnknownSize(logStreamInterleaver.iterator(), IMMUTABLE | ORDERED );
+        return StreamSupport.stream(spliterator,false).map(stream->stream.toString());
+    }
+
+    private long timestampFromDuration(Duration duration, DateTime timestamp) {
+        long durationInMillis = duration.toMillis();
+        return timestamp.getMillis()- durationInMillis;
     }
 
     private Stream<String> mapStream(Stream<OutputLogEventDecorator> outputLogEventStream) {

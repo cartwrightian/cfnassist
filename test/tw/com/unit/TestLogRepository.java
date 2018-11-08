@@ -33,6 +33,7 @@ public class TestLogRepository  extends EasyMockSupport {
     @Before
     public void beforeEachTestRuns() {
         timestamp = DateTime.now();
+        timestamp = timestamp.minusMinutes(timestamp.getMinuteOfDay()); // use midnight
 
         projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
         logClient = createStrictMock(LogClient.class);
@@ -55,18 +56,21 @@ public class TestLogRepository  extends EasyMockSupport {
 
     @Test
     public void shouldRemoveOldStreamsForGroupList() {
+        int days = 28;
 
         LogStream streamA = createStream(timestamp.minusDays(20).getMillis(), "streamA");
         LogStream streamB = createStream(timestamp.minusDays(29).getMillis(), "streamB");
-        LogStream streamC = createStream(timestamp.minusDays(28).getMillis(), "streamC");
+        LogStream streamC = createStream(timestamp.minusDays(27).getMillis(), "streamC");
         List<LogStream> streams = Arrays.asList(streamA, streamB, streamC);
 
-        EasyMock.expect(logClient.getStreamsFor("groupName")).andReturn(streams);
+        long queryTime = timestamp.minus(Duration.ofDays(days).toMillis()).getMillis();
+
+        EasyMock.expect(logClient.getStreamsFor("groupName", queryTime)).andReturn(streams);
         logClient.deleteLogStream("groupName", "streamB");
         EasyMock.expectLastCall();
 
         replayAll();
-        logRepository.removeOldStreamsFor("groupName", Duration.ofDays(28));
+        logRepository.removeOldStreamsFor("groupName", Duration.ofDays(days));
         verifyAll();
     }
 
@@ -100,24 +104,25 @@ public class TestLogRepository  extends EasyMockSupport {
 
         String groupName = "groupB";
         List<String> streamNames = Arrays.asList("streamA", "streamB");
+
         int days = 42;
+        long queryTime = timestamp.minus(Duration.ofDays(days).toMillis()).getMillis();
+        long eventTime = timestamp.minusDays(days-1).getMillis();
 
-        long epoch = timestamp.minusDays(days).getMillis();
-
-        OutputLogEvent logEvent = new OutputLogEvent().withMessage("TEST").withTimestamp(epoch);
+        OutputLogEvent logEvent = new OutputLogEvent().withMessage("TEST").withTimestamp(eventTime);
 
         LinkedList<Stream<OutputLogEventDecorator>> streamList = new LinkedList<>();
         streamNames.forEach(name -> {
             Stream<OutputLogEventDecorator> stream = Stream.of(new OutputLogEventDecorator(logEvent, groupName, name));
             streamList.add(stream);
-            logStreams.add(createStream(epoch, name));});
+            logStreams.add(createStream(eventTime, name));});
 
         Map<String, Map<String, String>> groups = new HashMap<>();
         createExistingGroups(groups);
 
         EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
-        EasyMock.expect(logClient.getStreamsFor(groupName)).andReturn(logStreams);
-        EasyMock.expect(logClient.fetchLogs(groupName, streamNames, epoch)).andReturn(streamList);
+        EasyMock.expect(logClient.getStreamsFor(groupName, queryTime)).andReturn(logStreams);
+        EasyMock.expect(logClient.fetchLogs(groupName, streamNames, queryTime)).andReturn(streamList);
 
         replayAll();
         Stream<String> result = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
@@ -126,7 +131,7 @@ public class TestLogRepository  extends EasyMockSupport {
         Optional<String> entry = result.findFirst();
         assertTrue(entry.isPresent());
         //assertEquals(String.format("groupB %s TEST", timestamp.minusDays(days)), entry.get());
-        assertEquals("groupB TEST", entry.get());
+        assertEquals("streamA TEST", entry.get());
     }
 
     private LogStream createStream(long offset, String streamName) {

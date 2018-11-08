@@ -2,6 +2,7 @@ package tw.com.providers;
 
 import com.amazonaws.services.logs.AWSLogs;
 import com.amazonaws.services.logs.model.*;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
@@ -31,9 +32,11 @@ public class LogClient {
         logger.info(format("Found %s groups", groups.size()));
         groups.forEach(group->{
             String logGroupName = group.getLogGroupName();
-            logger.info("Group name: " + logGroupName);
             ListTagsLogGroupResult tagResult = theClient.listTagsLogGroup(new ListTagsLogGroupRequest().withLogGroupName(logGroupName));
-            Map<String, String> tags = tagResult.getTags(); // TAG -> Value
+            Map<String, String> resultTags = tagResult.getTags();
+
+            logger.info(format("Group name: %s has tags '%s'", logGroupName, resultTags));
+            Map<String, String> tags = resultTags; // TAG -> Value
             groupsWithTags.put(logGroupName, tags);
 
         });
@@ -41,26 +44,52 @@ public class LogClient {
         return groupsWithTags;
     }
 
-    public List<LogStream> getStreamsFor(String groupName) {
-        List<LogStream> accum = new LinkedList<>();
-        getStreamsFor(accum, groupName, "");
-        return accum;
+    public List<LogStream> getStreamsFor(String groupName, long when) {
+        String initialPagingToken = "";
+        return getStreamsFor(groupName, initialPagingToken, when);
     }
 
-    public void getStreamsFor(List<LogStream> accum, String groupName, String token) {
-        DescribeLogStreamsRequest request = new DescribeLogStreamsRequest().withLogGroupName(groupName);
+    private List<LogStream> getStreamsFor(String groupName, String token, long when) {
+        List<LogStream> streamsForGroup = new LinkedList<>();
+
+        DescribeLogStreamsRequest request = new DescribeLogStreamsRequest().
+                withLogGroupName(groupName).
+                withOrderBy(OrderBy.LastEventTime).
+                // withLimit(200). // defauls to 50 and causes error if set higher..
+                withDescending(true); // newest first
+
         if (!token.isEmpty()) {
             request.setNextToken(token);
         }
         DescribeLogStreamsResult describeResult = theClient.describeLogStreams(request);
         String nextToken = describeResult.getNextToken();
-        List<LogStream> logStreams = describeResult.getLogStreams();
 
-        logger.info(format("Got %s log streams for group %s and token: %s ", logStreams.size(), groupName, nextToken));
-        accum.addAll(logStreams);
-        if (!(nextToken==null) || token.equals(nextToken)) {
-            getStreamsFor(accum, groupName, nextToken);
+        List<LogStream> logStreams = describeResult.getLogStreams();
+        logger.info(format("Got %s log streams for group %s", logStreams.size(), groupName));
+        logger.debug("Next token was: " + nextToken);
+        boolean tooOld = false;
+        for (LogStream stream : logStreams) {
+            Long firstEvent = stream.getFirstEventTimestamp()==null ? Long.MAX_VALUE : stream.getFirstEventTimestamp();
+            Long lastEvent = stream.getLastEventTimestamp()==null ? Long.MAX_VALUE : stream.getLastEventTimestamp();
+            DateTime firstDate = new DateTime(firstEvent);
+            DateTime lastDate = new DateTime(lastEvent);
+            String streamName = stream.getLogStreamName();
+            if (firstEvent>when || lastEvent>when) {
+                logger.info(format("Adding Name: %s first:%s last:%s", streamName, firstDate, lastDate));
+                streamsForGroup.add(stream);
+            } else {
+                logger.info(format("Log stream '%s' is too old, spanned %s to %s", streamName, firstDate, lastDate));
+                tooOld = true;
+                break;
+            }
         }
+
+        // TODO optimise based on ordering of the streams above?
+        if (! ((nextToken==null) || token.equals(nextToken) || tooOld)) {
+            // recursive call with nextToken, needed as with large number of streams
+            streamsForGroup.addAll(getStreamsFor(groupName, nextToken, when));
+        }
+        return streamsForGroup;
     }
 
     public void deleteLogStream(String groupdName, String streamName) {
@@ -94,6 +123,7 @@ public class LogClient {
             TokenStrategy currentToken = new TokenStrategy();
             Iterable<OutputLogEventDecorator> iterator = new LogIterator(groupName, streamName, endEpoch, currentToken);
             Spliterator<OutputLogEventDecorator> spliterator = Spliterators.spliteratorUnknownSize(iterator.iterator(), IMMUTABLE | ORDERED );
+
             outputStreams.add(StreamSupport.stream(spliterator, false));
         });
 
@@ -170,7 +200,7 @@ public class LogClient {
                 return false;
             }
             if (currentToken.tokenMatch(nextResult)) {
-                logger.info("Next token matches previous, no more results for stream " + streamName);
+                logger.debug("LogIterator: Next token matches previous, no more results for stream " + streamName);
                 return false;
             }
             currentToken.set(nextResult);
@@ -179,19 +209,21 @@ public class LogClient {
         }
 
         private GetLogEventsResult getLogEvents() {
-            logger.info(format("Getting events for %s stream %s and epoch %s", groupName, streamName, endEpoch));
+            logger.debug(format("LogIterator: Getting events for %s stream %s and epoch %s", groupName, streamName, endEpoch));
             GetLogEventsRequest request = new GetLogEventsRequest().
                     withLogGroupName(groupName).
-                    withLogStreamName(streamName).withStartTime(endEpoch);
+                    withLogStreamName(streamName).
+                    withStartTime(endEpoch). // do we need this if have already selected stream(name)s that are in scope?
+                    withStartFromHead(true); // earlier events come first
 
             if (!currentToken.isEmpty()) {
-                logger.info(format("Setting nextToken on stream %s request to %s", streamName, currentToken));
+                logger.debug(format("LogIterator: Setting nextToken on stream %s request to %s", streamName, currentToken));
                 request.setNextToken(currentToken.get());
             }
 
             GetLogEventsResult currentResult = theClient.getLogEvents(request);
-            logger.info(format("Got %s entries for stream %s", currentResult.getEvents().size(), streamName));
-            logger.info(format("Got nextToken on stream %s token: %s", streamName, currentResult.getNextForwardToken()));
+            logger.debug(format("LogIterator: Got %s entries for stream %s", currentResult.getEvents().size(), streamName));
+            logger.debug(format("LogIterator: Got nextToken on stream %s token: %s", streamName, currentResult.getNextForwardToken()));
             return currentResult;
         }
 

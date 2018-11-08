@@ -21,7 +21,7 @@ import static junit.framework.TestCase.*;
 
 public class TestLogClientAndRepository {
 
-    public static final String TEST_LOG_GROUP = "testLogGroup";
+    private static final String TEST_LOG_GROUP = "testLogGroup";
     private static AWSLogs awsLogs;
     private LogClient logClient;
 
@@ -54,7 +54,7 @@ public class TestLogClientAndRepository {
     public void afterEachTestRuns() {
         // delete all streams for group TEST_LOG_GROUP
         DescribeLogStreamsResult existing = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
-        List<String> streamNames = existing.getLogStreams().stream().map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
+        List<String> streamNames = existing.getLogStreams().stream().map(LogStream::getLogStreamName).collect(Collectors.toList());
         streamNames.forEach(streamName -> awsLogs.deleteLogStream(new DeleteLogStreamRequest().
                 withLogGroupName(TEST_LOG_GROUP).
                 withLogStreamName(streamName)));
@@ -82,13 +82,13 @@ public class TestLogClientAndRepository {
                 withLogGroupName(TEST_LOG_GROUP).
                 withLogStreamName(streamName));
 
-        List<LogStream> streams = logClient.getStreamsFor(TEST_LOG_GROUP);
+        List<LogStream> streams = logClient.getStreamsFor(TEST_LOG_GROUP, Long.MIN_VALUE); // MIN_VALUE=all
         assertEquals(1, streams.size());
         assertEquals(streamName, streams.get(0).getLogStreamName());
         logClient.deleteLogStream(TEST_LOG_GROUP, streamName);
 
         DescribeLogStreamsResult actual = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
-        List<String> names = actual.getLogStreams().stream().map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
+        List<String> names = actual.getLogStreams().stream().map(LogStream::getLogStreamName).collect(Collectors.toList());
         assertFalse(names.contains(streamName));
     }
 
@@ -119,7 +119,7 @@ public class TestLogClientAndRepository {
         int numberOfUploads = 6;
 
         DescribeLogStreamsResult existing = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
-        List<String> present = existing.getLogStreams().stream().map(stream -> stream.getLogStreamName()).collect(Collectors.toList());
+        List<String> present = existing.getLogStreams().stream().map(LogStream::getLogStreamName).collect(Collectors.toList());
 
         streamNames.forEach(streamName -> {
                 if (!present.contains(streamName))
@@ -159,6 +159,7 @@ public class TestLogClientAndRepository {
                 withLogGroupName(TEST_LOG_GROUP).
                 withLogStreamName("repoTestStream"));
 
+        // TODO sleep after this if upload not completed
         uploadTestEvents(Arrays.asList("repoTestStream"), 200, 10, timeStamp);
 
         Stream<String> resultStream = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(1));
@@ -167,7 +168,6 @@ public class TestLogClientAndRepository {
         assertEquals(200*10, resultList.size());
 
         resultList.forEach(line -> assertTrue(line.contains("This is log message number ")));
-
     }
 
     private void uploadTestEvents(List<String> streamNames, int numberOfEventsPerUpload, int numberOfUploads, DateTime beginInsert) {

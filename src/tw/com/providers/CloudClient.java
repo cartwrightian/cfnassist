@@ -6,10 +6,8 @@ import com.amazonaws.event.ProgressListener;
 import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
-import org.apache.http.annotation.Obsolete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 
 import java.net.InetAddress;
