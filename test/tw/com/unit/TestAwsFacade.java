@@ -28,6 +28,8 @@ import tw.com.repository.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Stream;
@@ -160,16 +162,16 @@ public class TestAwsFacade extends EasyMockSupport {
 
     @Test
     public void shouldFetchLogs() {
-        Stream<String> stream = Stream.of("TestMessage");
-        EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofDays(42))).andReturn(stream);
+        Path filename = Paths.get("filename.log");
+        EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofDays(42))).
+				andReturn(Collections.singletonList(filename));
 
         replayAll();
-        Stream<String> result = aws.fetchLogs(projectAndEnv, 42);
+        List<Path> result = aws.fetchLogs(projectAndEnv, 42);
         verifyAll();
 
-        Optional<String> message = result.findFirst();
-        assertTrue(message.isPresent());
-        assertEquals("TestMessage", message.get());
+        assertFalse(result.isEmpty());
+        assertEquals(filename, result.get(0));
     }
 	
 	@Test

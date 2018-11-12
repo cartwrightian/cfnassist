@@ -3,6 +3,7 @@ package tw.com.integration;
 import com.amazonaws.services.logs.AWSLogs;
 import com.amazonaws.services.logs.model.*;
 import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
 import org.junit.*;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
@@ -10,8 +11,13 @@ import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
 import tw.com.providers.ProvidesNow;
+import tw.com.providers.SavesFile;
 import tw.com.repository.LogRepository;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -146,11 +152,12 @@ public class TestLogClientAndRepository {
     }
 
     @Test
-    public void shouldFetchLogResultsViaLogRepository() {
+    public void shouldFetchLogResultsViaLogRepository() throws IOException {
         DateTime timeStamp = DateTime.now();
 
         ProvidesNow providesNow = () -> timeStamp;
-        LogRepository logRepository = new LogRepository(logClient, providesNow);
+        SavesFile savesFile = new SavesFile();
+        LogRepository logRepository = new LogRepository(logClient, providesNow, savesFile);
 
         ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 
@@ -159,15 +166,27 @@ public class TestLogClientAndRepository {
                 withLogGroupName(TEST_LOG_GROUP).
                 withLogStreamName("repoTestStream"));
 
+        Path expectedFilename = Paths.get(String.format("%s_%s.log",TEST_LOG_GROUP,
+                timeStamp.toString(ISODateTimeFormat.basicDateTime())));
+        Files.deleteIfExists(expectedFilename);
+
         // TODO sleep after this if upload not completed
         uploadTestEvents(Arrays.asList("repoTestStream"), 200, 10, timeStamp);
 
-        Stream<String> resultStream = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(1));
+        List<Path> filenames = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(1));
 
-        List<String> resultList = resultStream.collect(Collectors.toList());
-        assertEquals(200*10, resultList.size());
+        assertEquals(1, filenames.size());
+        Path result = filenames.get(0);
 
-        resultList.forEach(line -> assertTrue(line.contains("This is log message number ")));
+        boolean present = Files.exists(expectedFilename);
+        List<String> lines = Files.readAllLines(result);
+
+        Files.deleteIfExists(result); // in case mismatch
+        Files.deleteIfExists(expectedFilename);
+
+        assertEquals(expectedFilename.toAbsolutePath().toString(), result.toAbsolutePath().toString());
+        assertTrue(present);
+        assertEquals(2000, lines.size());
     }
 
     private void uploadTestEvents(List<String> streamNames, int numberOfEventsPerUpload, int numberOfUploads, DateTime beginInsert) {

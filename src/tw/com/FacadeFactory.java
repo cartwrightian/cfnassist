@@ -105,7 +105,7 @@ public class FacadeFactory implements ProvidesNow {
 		cfnRepository = new CfnRepository(formationClient, cloudRepository, project);
 		vpcRepository = new VpcRepository(cloudClient);
 		elbRepository = new ELBRepository(loadBalancerClient, vpcRepository, cfnRepository);
-		logRepository = new LogRepository(logClient, this, savesFile);
+		logRepository = new LogRepository(logClient, this, getSavesFile());
 	}
 
 	private void createAmazonAPIClients() {

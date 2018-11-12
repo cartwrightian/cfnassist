@@ -6,6 +6,7 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,13 +15,18 @@ import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
+import tw.com.providers.SavesFile;
 import tw.com.repository.LogRepository;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(EasyMockRunner.class)
@@ -29,6 +35,7 @@ public class TestLogRepository  extends EasyMockSupport {
     private ProjectAndEnv projectAndEnv;
     private LogRepository logRepository;
     private DateTime timestamp;
+    private SavesFile savesFile;
 
     @Before
     public void beforeEachTestRuns() {
@@ -37,7 +44,9 @@ public class TestLogRepository  extends EasyMockSupport {
 
         projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
         logClient = createStrictMock(LogClient.class);
-        logRepository = new LogRepository(logClient, () -> timestamp);
+        savesFile = createStrictMock(SavesFile.class);
+
+        logRepository = new LogRepository(logClient, () -> timestamp, savesFile);
     }
 
     @Test
@@ -109,6 +118,8 @@ public class TestLogRepository  extends EasyMockSupport {
         long queryTime = timestamp.minus(Duration.ofDays(days).toMillis()).getMillis();
         long eventTime = timestamp.minusDays(days-1).getMillis();
 
+        Path expectedPath = Paths.get(format("%s_%s.log",groupName, timestamp.toString(ISODateTimeFormat.basicDateTime())));
+
         OutputLogEvent logEvent = new OutputLogEvent().withMessage("TEST").withTimestamp(eventTime);
 
         LinkedList<Stream<OutputLogEventDecorator>> streamList = new LinkedList<>();
@@ -123,15 +134,14 @@ public class TestLogRepository  extends EasyMockSupport {
         EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
         EasyMock.expect(logClient.getStreamsFor(groupName, queryTime)).andReturn(logStreams);
         EasyMock.expect(logClient.fetchLogs(groupName, streamNames, queryTime)).andReturn(streamList);
+        savesFile.save(expectedPath, streamList);
 
         replayAll();
-        Stream<String> result = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
+        List<Path> filenames = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
         verifyAll();
 
-        Optional<String> entry = result.findFirst();
-        assertTrue(entry.isPresent());
-        //assertEquals(String.format("groupB %s TEST", timestamp.minusDays(days)), entry.get());
-        assertEquals("streamA TEST", entry.get());
+        Path entry = filenames.get(0);
+        assertEquals(expectedPath.toAbsolutePath().toString(), entry.toAbsolutePath().toString());
     }
 
     private LogStream createStream(long offset, String streamName) {
