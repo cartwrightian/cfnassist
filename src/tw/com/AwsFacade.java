@@ -28,6 +28,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Stream;
@@ -659,7 +660,7 @@ public class AwsFacade implements ProvidesZones {
 		logRepository.tagCloudWatchLog(projectAndEnv, groupName);
 	}
 
-	public Stream<String> fetchLogs(ProjectAndEnv projectAndEnv, Integer days) {
+	public List<Path> fetchLogs(ProjectAndEnv projectAndEnv, Integer days) {
 		return logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
 	}
 }

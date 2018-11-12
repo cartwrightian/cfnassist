@@ -10,9 +10,10 @@ import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 
+import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 public class FetchLogsAction extends SharedAction {
 	private static final Logger logger = LoggerFactory.getLogger(FetchLogsAction.class);
@@ -27,15 +28,12 @@ public class FetchLogsAction extends SharedAction {
 		logger.info("Invoking get logs for " + projectAndEnv + " and " + args[0]);
 		AwsFacade aws = factory.createFacade();
 		int days = Integer.parseInt(args[0]);
-		Stream<String> lines = aws.fetchLogs(projectAndEnv, days);
+
+		List<Path> filenames = aws.fetchLogs(projectAndEnv, days);
 		System.out.println("Logs for " + projectAndEnv);
-		AtomicInteger count = new AtomicInteger();
-		lines.forEach(line -> {
-		    System.out.println(line);
-		    logger.info(line);
-		    count.getAndIncrement();
+		filenames.forEach(filename -> {
+		    System.out.println(String.format("Saved file '%s'", filename.toAbsolutePath().toString()));;
         });
-		System.out.println("==== lines:"+count.toString());
         System.out.flush();
     }
 

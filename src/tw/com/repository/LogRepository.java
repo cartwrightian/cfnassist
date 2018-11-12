@@ -2,6 +2,8 @@ package tw.com.repository;
 
 import com.amazonaws.services.logs.model.LogStream;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.AwsFacade;
@@ -9,28 +11,30 @@ import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.providers.LogClient;
 import tw.com.providers.ProvidesNow;
+import tw.com.providers.SavesFile;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
-import static java.util.Spliterator.IMMUTABLE;
-import static java.util.Spliterator.ORDERED;
 
 public class LogRepository {
     private static final Logger logger = LoggerFactory.getLogger(LogRepository.class);
 
     private final LogClient logClient;
     private final ProvidesNow providesNow;
+    private final SavesFile savesFile;
 
     List<String> required = Arrays.asList(new String[] {AwsFacade.ENVIRONMENT_TAG, AwsFacade.PROJECT_TAG});
 
-    public LogRepository(LogClient logClient, ProvidesNow providesNow) {
+    public LogRepository(LogClient logClient, ProvidesNow providesNow, SavesFile savesFile) {
         this.logClient = logClient;
         this.providesNow = providesNow;
+        this.savesFile = savesFile;
     }
 
     public List<String> logGroupsFor(ProjectAndEnv projectAndEnv) {
@@ -77,7 +81,8 @@ public class LogRepository {
         logClient.tagGroupFor(projectAndEnv, groupToTag);
     }
 
-    public Stream<String> fetchLogs(ProjectAndEnv projectAndEnv, Duration duration) {
+    public List<Path> fetchLogs(ProjectAndEnv projectAndEnv, Duration duration) {
+        List<Path> filenames = new LinkedList<>();
         DateTime timestamp = providesNow.getNow();
         long when = timestampFromDuration(duration, timestamp);
 
@@ -87,7 +92,7 @@ public class LogRepository {
         List<String> groupNames = this.logGroupsFor(projectAndEnv);
         if (groupNames.isEmpty()) {
             logger.info("No matching group streams found");
-            return Stream.empty();
+            return filenames;
         }
 
         logger.info("Matched groups "+groupNames);
@@ -98,27 +103,36 @@ public class LogRepository {
             List<String> streamNames = streamsForGroup.stream().
                     filter(stream -> stream.getLastEventTimestamp()>=when).         // if within time
                     sorted(Comparator.comparing(LogStream::getLastEventTimestamp))  // and in time order
-                    .map(stream -> stream.getLogStreamName()).
+                    .map(LogStream::getLogStreamName).
                     collect(Collectors.toList());
 
             logger.info(format("Got %s streams with events in scope for group %s", streamNames.size(), groupName));
 
             List<Stream<OutputLogEventDecorator>> fetchLogs = logClient.fetchLogs(groupName, streamNames, when);
 
-            groupStreams.addAll(fetchLogs); // => earliest streams should be first
+            Path path = formFilenameFor(groupName,timestamp);
+            filenames.add(path);
+            savesFile.save(path, fetchLogs);
+
+            //groupStreams.addAll(fetchLogs); // => earliest streams should be first
         });
 
         if (groupStreams.isEmpty()) {
-            logger.info("No group streams found");
-            return Stream.empty();
+            logger.info("No streams found with events in scope");
         }
 
-        logger.info(format("Consolidating %s group streams", groupStreams.size()));
-        LogStreamInterleaver logStreamInterleaver = new LogStreamInterleaver(groupStreams);
+        return filenames;
 
-        Spliterator<OutputLogEventDecorator> spliterator =
-                Spliterators.spliteratorUnknownSize(logStreamInterleaver.iterator(), IMMUTABLE | ORDERED );
-        return StreamSupport.stream(spliterator,false).map(stream->stream.toString());
+//        logger.info(format("Consolidating %s group streams", groupStreams.size()));
+//        LogStreamInterleaver logStreamInterleaver = new LogStreamInterleaver(groupStreams);
+//
+//        Spliterator<OutputLogEventDecorator> spliterator =
+//                Spliterators.spliteratorUnknownSize(logStreamInterleaver.iterator(), IMMUTABLE | ORDERED );
+//        return StreamSupport.stream(spliterator,false).map(stream->stream.toString());
+    }
+
+    private Path formFilenameFor(String groupName, DateTime timestamp) {
+        return Paths.get(format("%s_%s.log", groupName, timestamp.toString(ISODateTimeFormat.basicDateTime())));
     }
 
     private long timestampFromDuration(Duration duration, DateTime timestamp) {
@@ -126,7 +140,4 @@ public class LogRepository {
         return timestamp.getMillis()- durationInMillis;
     }
 
-    private Stream<String> mapStream(Stream<OutputLogEventDecorator> outputLogEventStream) {
-        return outputLogEventStream.map(entry ->  entry.toString());
-    }
 }

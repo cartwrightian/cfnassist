@@ -11,7 +11,6 @@ import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingCli
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
 import com.amazonaws.services.logs.AWSLogs;
-import com.amazonaws.services.logs.AWSLogsClient;
 import com.amazonaws.services.logs.AWSLogsClientBuilder;
 import com.amazonaws.services.rds.AmazonRDS;
 import com.amazonaws.services.rds.AmazonRDSClientBuilder;
@@ -106,7 +105,7 @@ public class FacadeFactory implements ProvidesNow {
 		cfnRepository = new CfnRepository(formationClient, cloudRepository, project);
 		vpcRepository = new VpcRepository(cloudClient);
 		elbRepository = new ELBRepository(loadBalancerClient, vpcRepository, cfnRepository);
-		logRepository = new LogRepository(logClient, this);
+		logRepository = new LogRepository(logClient, this, savesFile);
 	}
 
 	private void createAmazonAPIClients() {
