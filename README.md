@@ -509,3 +509,22 @@ give a filename the key will be saved in `$HOME/.ssh/<projectName>_<env name>.pe
 **NOTE**
 ALWAYS Keep your private keys safe
 
+23.Manage cloudwatch logs
+-------------------------
+
+`cfnassist -env Dev -logs 6`
+
+Down and save in files (named after cloudwatch log groups) the log events form the last N hours. 
+The log groups need to be tagged with the appropriate CFN_ASSIST_ENV and CNF_ASSIST_PROJECT tags, see below.
+
+`cfnassist -env Dev -removeLogs 1`
+
+Delete cloudwatch log events/streams older than N Days.
+
+**NOTE**
+Use with care, this is permanently delete the events
+
+`cfnassist -env UAT -tagLog logGroupName`
+
+Tags the given log group with CFN_ASSIST_ENV and CNF_ASSIST_PROJECT using the given values.
+
