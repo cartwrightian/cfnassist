@@ -69,16 +69,25 @@ public class LogClient {
         logger.debug("Next token was: " + nextToken);
         boolean tooOld = false;
         for (LogStream stream : logStreams) {
-            long firstEvent = stream.getFirstEventTimestamp()==null ? Long.MAX_VALUE : stream.getFirstEventTimestamp();
-            long lastEvent = stream.getLastEventTimestamp()==null ? Long.MAX_VALUE : stream.getLastEventTimestamp();
-            DateTime firstDate = new DateTime(firstEvent);
-            DateTime lastDate = new DateTime(lastEvent);
-            String streamName = stream.getLogStreamName();
+            String logStreamName = stream.getLogStreamName();
+            logger.debug(format("Processing stream '%s' for group '%s", logStreamName, groupName));
+            Long firstEvent = stream.getFirstEventTimestamp();
+            Long lastEvent = stream.getLastEventTimestamp();
+
+            if (firstEvent==null) {
+                logger.warn(format("Group '%s' stream '%s' has null start event, assume in scope", groupName, logStreamName));
+                firstEvent = when + 1;
+            }
+            if (lastEvent==null) {
+                logger.warn(format("Group '%s' stream '%s' has null last event, assume in scope", groupName, logStreamName));
+                lastEvent = when + 1;
+            }
+
             if (firstEvent>when || lastEvent>when) {
-                logger.info(format("Adding stream: %s first:%s last:%s", streamName, firstDate, lastDate));
+                logger.info(format("Adding stream: %s", logStreamName));
                 streamsForGroup.add(stream);
             } else {
-                logger.info(format("Log stream '%s' is too old, spanned %s to %s", streamName, firstDate, lastDate));
+                logger.info(format("Log stream '%s' is too old", logStreamName));
                 tooOld = true;
                 break;
             }
