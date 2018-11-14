@@ -163,7 +163,7 @@ public class TestAwsFacade extends EasyMockSupport {
     @Test
     public void shouldFetchLogs() {
         Path filename = Paths.get("filename.log");
-        EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofDays(42))).
+        EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofHours(42))).
 				andReturn(Collections.singletonList(filename));
 
         replayAll();

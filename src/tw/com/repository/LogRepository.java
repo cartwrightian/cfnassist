@@ -2,7 +2,6 @@ package tw.com.repository;
 
 import com.amazonaws.services.logs.model.LogStream;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +12,7 @@ import tw.com.providers.LogClient;
 import tw.com.providers.ProvidesNow;
 import tw.com.providers.SavesFile;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -30,11 +30,13 @@ public class LogRepository {
     private final SavesFile savesFile;
 
     List<String> required = Arrays.asList(new String[] {AwsFacade.ENVIRONMENT_TAG, AwsFacade.PROJECT_TAG});
+    private String fileSeperator;
 
     public LogRepository(LogClient logClient, ProvidesNow providesNow, SavesFile savesFile) {
         this.logClient = logClient;
         this.providesNow = providesNow;
         this.savesFile = savesFile;
+        fileSeperator = File.separator;
     }
 
     public List<String> logGroupsFor(ProjectAndEnv projectAndEnv) {
@@ -95,13 +97,14 @@ public class LogRepository {
             return filenames;
         }
 
-        logger.info("Matched groups "+groupNames);
-        List<Stream<OutputLogEventDecorator>> groupStreams = new LinkedList<>();
+        logger.info("Matched groups " + groupNames);
+
         groupNames.forEach(groupName -> {
             List<LogStream> streamsForGroup = logClient.getStreamsFor(groupName, when);
 
+            // todo is comparing needed, should be in time order already?
             List<String> streamNames = streamsForGroup.stream().
-                    filter(stream -> stream.getLastEventTimestamp()>=when).         // if within time
+                    filter(stream -> stream.getLastEventTimestamp()>=when).         // if within time window
                     sorted(Comparator.comparing(LogStream::getLastEventTimestamp))  // and in time order
                     .map(LogStream::getLogStreamName).
                     collect(Collectors.toList());
@@ -112,26 +115,20 @@ public class LogRepository {
 
             Path path = formFilenameFor(groupName,timestamp);
             filenames.add(path);
-            savesFile.save(path, fetchLogs);
+            if (!savesFile.save(path, fetchLogs)) {
+                logger.error(format("Unable to save file '%s' for groupname '%s'", path.toAbsolutePath().toString(), groupName));
+            }
 
-            //groupStreams.addAll(fetchLogs); // => earliest streams should be first
         });
 
-        if (groupStreams.isEmpty()) {
-            logger.info("No streams found with events in scope");
-        }
-
         return filenames;
-
-//        logger.info(format("Consolidating %s group streams", groupStreams.size()));
-//        LogStreamInterleaver logStreamInterleaver = new LogStreamInterleaver(groupStreams);
-//
-//        Spliterator<OutputLogEventDecorator> spliterator =
-//                Spliterators.spliteratorUnknownSize(logStreamInterleaver.iterator(), IMMUTABLE | ORDERED );
-//        return StreamSupport.stream(spliterator,false).map(stream->stream.toString());
     }
 
-    private Path formFilenameFor(String groupName, DateTime timestamp) {
+    public Path formFilenameFor(String groupName, DateTime timestamp) {
+        // group names can contain paths....
+        if (groupName.contains(fileSeperator)) {
+            groupName = groupName.replace(File.separatorChar, '_');
+        }
         return Paths.get(format("%s_%s.log", groupName, timestamp.toString(ISODateTimeFormat.basicDateTime())));
     }
 

@@ -446,10 +446,10 @@ public class TestCommandLineActions extends EasyMockSupport {
     @Test
     public void shouldGetLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
 	    setFactoryExpectations();
-        Integer days = 42;
-        EasyMock.expect(facade.fetchLogs(projectAndEnv, days)).andReturn(new LinkedList<>());
+        Integer hours = 42;
+        EasyMock.expect(facade.fetchLogs(projectAndEnv, hours)).andReturn(new LinkedList<>());
 
-	    validate(CLIArgBuilder.getLogs(days));
+	    validate(CLIArgBuilder.getLogs(hours));
     }
 
     @Test

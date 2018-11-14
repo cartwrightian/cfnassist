@@ -660,7 +660,7 @@ public class AwsFacade implements ProvidesZones {
 		logRepository.tagCloudWatchLog(projectAndEnv, groupName);
 	}
 
-	public List<Path> fetchLogs(ProjectAndEnv projectAndEnv, Integer days) {
-		return logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
+	public List<Path> fetchLogs(ProjectAndEnv projectAndEnv, Integer hours) {
+		return logRepository.fetchLogs(projectAndEnv, Duration.ofHours(hours));
 	}
 }

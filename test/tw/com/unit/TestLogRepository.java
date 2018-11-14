@@ -134,7 +134,7 @@ public class TestLogRepository  extends EasyMockSupport {
         EasyMock.expect(logClient.getGroupsWithTags()).andReturn(groups);
         EasyMock.expect(logClient.getStreamsFor(groupName, queryTime)).andReturn(logStreams);
         EasyMock.expect(logClient.fetchLogs(groupName, streamNames, queryTime)).andReturn(streamList);
-        savesFile.save(expectedPath, streamList);
+        EasyMock.expect(savesFile.save(expectedPath, streamList)).andReturn(true);
 
         replayAll();
         List<Path> filenames = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(days));
@@ -142,6 +142,15 @@ public class TestLogRepository  extends EasyMockSupport {
 
         Path entry = filenames.get(0);
         assertEquals(expectedPath.toAbsolutePath().toString(), entry.toAbsolutePath().toString());
+    }
+
+    @Test
+    public void shouldCorrectFormFilenameEvenIfGroupNameIsPath() {
+        String exampleGroupName = "/var/log/syslog_20181114T141219.117Z.log";
+
+        Path result = logRepository.formFilenameFor(exampleGroupName, timestamp);
+        // make sure file sep chars removed
+        assertFalse(result.toAbsolutePath().toString().contains(exampleGroupName));
     }
 
     private LogStream createStream(long offset, String streamName) {

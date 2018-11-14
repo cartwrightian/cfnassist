@@ -69,13 +69,13 @@ public class LogClient {
         logger.debug("Next token was: " + nextToken);
         boolean tooOld = false;
         for (LogStream stream : logStreams) {
-            Long firstEvent = stream.getFirstEventTimestamp()==null ? Long.MAX_VALUE : stream.getFirstEventTimestamp();
-            Long lastEvent = stream.getLastEventTimestamp()==null ? Long.MAX_VALUE : stream.getLastEventTimestamp();
+            long firstEvent = stream.getFirstEventTimestamp()==null ? Long.MAX_VALUE : stream.getFirstEventTimestamp();
+            long lastEvent = stream.getLastEventTimestamp()==null ? Long.MAX_VALUE : stream.getLastEventTimestamp();
             DateTime firstDate = new DateTime(firstEvent);
             DateTime lastDate = new DateTime(lastEvent);
             String streamName = stream.getLogStreamName();
             if (firstEvent>when || lastEvent>when) {
-                logger.info(format("Adding Name: %s first:%s last:%s", streamName, firstDate, lastDate));
+                logger.info(format("Adding stream: %s first:%s last:%s", streamName, firstDate, lastDate));
                 streamsForGroup.add(stream);
             } else {
                 logger.info(format("Log stream '%s' is too old, spanned %s to %s", streamName, firstDate, lastDate));
@@ -89,6 +89,7 @@ public class LogClient {
             // recursive call with nextToken, needed as with large number of streams
             streamsForGroup.addAll(getStreamsFor(groupName, nextToken, when));
         }
+        logger.info(format("Added %s streams for group %s", streamsForGroup.size(), groupName));
         return streamsForGroup;
     }
 
@@ -120,6 +121,7 @@ public class LogClient {
         }
 
         streamNames.forEach(streamName -> {
+            logger.info(format("Fetching output streams for '%s'", streamName));
             TokenStrategy currentToken = new TokenStrategy();
             Iterable<OutputLogEventDecorator> iterator = new LogIterator(groupName, streamName, endEpoch, currentToken);
             Spliterator<OutputLogEventDecorator> spliterator = Spliterators.spliteratorUnknownSize(iterator.iterator(), IMMUTABLE | ORDERED );
