@@ -6,15 +6,15 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Current Version 1.1.18](https://github.com/cartwrightian/cfnassist/releases/download/untagged-979e268c9ad166324fae/cfnassist-1.1.18.zip)
+[Current Version 1.1,29](https://github.com/cartwrightian/cfnassist/releases/download/untagged-e048b83902023b5a7a56/cfnassist-1.1.29.zip)
 
 
 Previous Releases
 -----------------
 
-[Version 1.1.15](https://github.com/cartwrightian/cfnassist/releases/download/untagged-41a6765804fc7a1bbfaf/cfnassist-1.1.15.zip)
+[Version 1.1.18](https://github.com/cartwrightian/cfnassist/releases/download/untagged-979e268c9ad166324fae/cfnassist-1.1.18.zip)
 
-[Version 1.0.140](https://cfnassist-release.s3-eu-west-1.amazonaws.com/140/cfnassist-1.0.140.zip)
+[Version 1.1.15](https://github.com/cartwrightian/cfnassist/releases/download/untagged-41a6765804fc7a1bbfaf/cfnassist-1.1.15.zip)
 
 Build Status
 ------------
