@@ -1,17 +1,14 @@
 package tw.com;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
 import com.amazonaws.services.cloudformation.model.CreateStackResult;
 import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.*;
+
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.*;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
@@ -65,22 +62,22 @@ public class EnvironmentSetupForTests {
 	
 	public static final String TEMPORARY_STACK = "temporaryStack";
 
-	public static final long DELETE_RETRY_MAX_TIMEOUT_MS = 5000; 
-	public static final int DELETE_RETRY_LIMIT = (5*60000) / 5000; // Try for 5 minutes
+	static final long DELETE_RETRY_MAX_TIMEOUT_MS = 5000;
+	static final int DELETE_RETRY_LIMIT = (5*60000) / 5000; // Try for 5 minutes
 	
-	public static List<Subnet> getSubnetFors(AmazonEC2 ec2Client, Vpc vpc) {
-		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
-		Collection<Filter> filters = new HashSet<>();
-		Filter vpcFilter = new Filter().withName("vpc-id").withValues(vpc.getVpcId());
-		filters.add(vpcFilter);
-		describeSubnetsRequest.setFilters(filters);
-		
-		DescribeSubnetsResult results = ec2Client.describeSubnets(describeSubnetsRequest );
-		return results.getSubnets();
+	public static List<Subnet> getSubnetFors(Ec2Client ec2Client, Vpc vpc) {
+		Filter vpcFilter = Filter.builder().name("vpc-id").values(vpc.vpcId()).build();
+
+		DescribeSubnetsRequest describeSubnetsRequest = DescribeSubnetsRequest.
+				builder().filters(vpcFilter).build();
+
+
+		DescribeSubnetsResponse results = ec2Client.describeSubnets(describeSubnetsRequest);
+		return results.subnets();
 	}
 
-	public static AmazonEC2 createEC2Client() {
-	    return AmazonEC2ClientBuilder.defaultClient();
+	public static Ec2Client createEC2Client() {
+	    return Ec2Client.create();
 	}
 		
 	public static AmazonCloudFormation createCFNClient() {
@@ -95,13 +92,13 @@ public class EnvironmentSetupForTests {
 		return repository.getCopyOfVpc(VPC_ID_FOR_ALT_ENV);
 	}
 
-	public static void clearVpcTags(AmazonEC2 directClient, Vpc vpc) throws InterruptedException {
+	public static void clearVpcTags(Ec2Client directClient, Vpc vpc) {
 		List<String> resources = new LinkedList<>();
-		resources.add(vpc.getVpcId());
-		List<Tag> existingTags = vpc.getTags();
+		resources.add(vpc.vpcId());
+		List<Tag> existingTags = vpc.tags();
 		
-		DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest(resources);
-		deleteTagsRequest.setTags(existingTags);
+		DeleteTagsRequest deleteTagsRequest = DeleteTagsRequest.builder().
+				resources(resources).tags(existingTags).build();
 		directClient.deleteTags(deleteTagsRequest);
 	}
 
@@ -204,8 +201,8 @@ public class EnvironmentSetupForTests {
 		return tag;
 	}
 
-	public static List<com.amazonaws.services.ec2.model.Tag> createExpectedEc2Tags(ProjectAndEnv projAndEnv, String comment) {
-		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<>();
+	public static List<Tag> createExpectedEc2Tags(ProjectAndEnv projAndEnv, String comment) {
+		List<Tag> tags = new LinkedList<>();
 		tags.add(createEc2Tag("TagEnv",projAndEnv.getEnv()));
 		tags.add(createEc2Tag("Name", "testSubnet"));
 		// stack tags appear to be inherited
@@ -217,19 +214,21 @@ public class EnvironmentSetupForTests {
 		return tags;
 	}
 
-	public static com.amazonaws.services.ec2.model.Tag createEc2Tag(String key, String value) {
-		return new com.amazonaws.services.ec2.model.Tag().withKey(key).withValue(value);
+	public static Tag createEc2Tag(String key, String value) {
+		return Tag.builder().key(key).value(value).build();
 	}
 
 	public static String loadFile(String filename) throws IOException {
 		return FileUtils.readFileToString(new File(filename), Charset.defaultCharset());
 	}
 
-	public static Instance createSimpleInstance(AmazonEC2 ec2Client) {
-		RunInstancesRequest runInstancesRequest = new RunInstancesRequest(EnvironmentSetupForTests.AMI_FOR_INSTANCE, 1, 1).
-				withInstanceType(InstanceType.T1Micro);
-		RunInstancesResult instancesResults = ec2Client.runInstances(runInstancesRequest);
-		List<Instance> instances = instancesResults.getReservation().getInstances();	
+	public static Instance createSimpleInstance(Ec2Client ec2Client) {
+		RunInstancesRequest runInstancesRequest = RunInstancesRequest.builder().
+				instanceType(InstanceType.T1_MICRO).imageId(AMI_FOR_INSTANCE).
+				minCount(1).maxCount(1).build();
+
+		RunInstancesResponse instancesResults = ec2Client.runInstances(runInstancesRequest);
+		List<Instance> instances = instancesResults.instances();
 		return instances.get(0);
 	}
 

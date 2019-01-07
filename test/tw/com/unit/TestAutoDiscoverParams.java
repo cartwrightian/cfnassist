@@ -3,7 +3,7 @@ package tw.com.unit;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
@@ -76,7 +76,7 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
     @Override
     public Map<String, AvailabilityZone> getZones() {
         Map<String, AvailabilityZone> zones = new HashMap<>();
-        zones.put("a", new AvailabilityZone().withZoneName("aviailabilityZoneA"));
+        zones.put("a", AvailabilityZone.builder().zoneName("aviailabilityZoneA").build());
         return zones;
 
     }

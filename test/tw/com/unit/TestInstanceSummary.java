@@ -10,7 +10,7 @@ import org.junit.Test;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.InstanceSummary;
 
-import com.amazonaws.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Tag;
 
 public class TestInstanceSummary {
 

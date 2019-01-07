@@ -2,7 +2,7 @@ package tw.com.repository;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.cloudformation.model.*;
-import com.amazonaws.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Tag;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -312,8 +312,8 @@ public class CfnRepository implements CloudFormRepository {
 	private boolean instanceHasCorrectType(String type, String id) throws WrongNumberOfInstancesException {
 		List<Tag> tags = cloudRepository.getTagsForInstance(id);
 		for(Tag tag : tags) {
-			if (tag.getKey().equals(AwsFacade.TYPE_TAG)) {
-				return tag.getValue().equals(type);
+			if (tag.key().equals(AwsFacade.TYPE_TAG)) {
+				return tag.value().equals(type);
 			}
 		}
 		return false;

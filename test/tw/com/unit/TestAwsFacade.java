@@ -3,9 +3,9 @@ package tw.com.unit;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.KeyPair;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Instance;
+import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -21,6 +21,7 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 import tw.com.exceptions.*;
+import tw.com.providers.CloudClient;
 import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.SavesFile;
@@ -30,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyPair;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Stream;
@@ -83,7 +85,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	
 	@Test
 	public void shouldInitTagsOnVpcThrowIfAlreadyExists() throws CfnAssistException {
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId("existingId"));
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(Vpc.builder().vpcId("existingId").build());
 		
 		replayAll();
 		try {
@@ -211,10 +213,10 @@ public class TestAwsFacade extends EasyMockSupport {
 		List<Tag> tagsB = new LinkedList<>();
 		tagsB.add(EnvironmentSetupForTests.createEc2Tag("TAG", "value"));
 
-		com.amazonaws.services.ec2.model.Instance instanceA = new com.amazonaws.services.ec2.model.Instance().
-				withInstanceId(idA).withPrivateIpAddress("10.1.2.3").withTags(tagsA);
-		com.amazonaws.services.ec2.model.Instance instanceB = new com.amazonaws.services.ec2.model.Instance().
-				withInstanceId(idB).withPrivateIpAddress("10.8.7.6").withTags(tagsB);
+		software.amazon.awssdk.services.ec2.model.Instance instanceA = Instance.builder().
+				instanceId(idA).privateIpAddress("10.1.2.3").tags(tagsA).build();
+		software.amazon.awssdk.services.ec2.model.Instance instanceB = Instance.builder().
+				instanceId(idB).privateIpAddress("10.8.7.6").tags(tagsB).build();
 
 		List<String> instanceList = new LinkedList<>();
 		instanceList.add(idA);
@@ -296,19 +298,20 @@ public class TestAwsFacade extends EasyMockSupport {
 
 	@Test
     public void shouldCreateKeyPairAndTagVPC() throws CfnAssistException {
-        String filename = "fileForPem.pem";
+		Path filename = Paths.get("fileForPem.pem");
 
         SavesFile destination = createStrictMock(SavesFile.class);
-		KeyPair keypair = new KeyPair().withKeyName("CfnAssist_Test");
+		//KeyPair keypair = new KeyPair().withKeyName("CfnAssist_Test");
         EasyMock.expect(destination.exists(filename)).andReturn(false);
 
+		CloudClient.AWSPrivateKey keypair = new CloudClient.AWSPrivateKey("CfnAssist_Test", "material");
 		EasyMock.expect(cloudRepository.createKeyPair("CfnAssist_Test", destination, filename)).
 				andReturn(keypair);
         vpcRepository.setVpcTag(projectAndEnv, "keypairname", "CfnAssist_Test");
         EasyMock.expectLastCall();
 
         replayAll();
-		KeyPair result = aws.createKeyPair(projectAndEnv, destination, filename);
+		CloudClient.AWSPrivateKey result = aws.createKeyPair(projectAndEnv, destination, filename);
         verifyAll();
 
 		assertEquals("CfnAssist_Test", result.getKeyName());
@@ -317,7 +320,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	@Test
 	public void shouldNotCreateKeyPairIfFileAlreadyExists() {
 		SavesFile destination = createStrictMock(SavesFile.class);
-		String filename = "fileForPem.pem";
+		Path filename = Paths.get("fileForPem.pem");
 
 		EasyMock.expect(destination.exists(filename)).andReturn(true);
 

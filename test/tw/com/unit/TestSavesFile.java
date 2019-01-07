@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
@@ -20,15 +21,15 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 public class TestSavesFile {
-    File testFile = new File("testFile");
+    private File testFile = new File("testFile");
     private SavesFile savesFile;
-    private String filename;
+    private Path filename;
 
     @Before
     public void beforeEachTestRuns() {
         FileUtils.deleteQuietly(testFile);
         savesFile = new SavesFile();
-        filename = testFile.getAbsolutePath();
+        filename = Paths.get(testFile.getAbsolutePath());
     }
 
     @After
@@ -59,7 +60,7 @@ public class TestSavesFile {
         savesFile.save(filename, "someText");
         savesFile.ownerOnlyPermisssion(filename);
 
-        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(Paths.get(filename), LinkOption.NOFOLLOW_LINKS);
+        Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(filename, LinkOption.NOFOLLOW_LINKS);
 
         EnvironmentSetupForTests.checkKeyPairFilePermissions(permissions);
     }

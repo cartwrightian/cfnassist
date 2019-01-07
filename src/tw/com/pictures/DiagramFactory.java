@@ -1,7 +1,7 @@
 package tw.com.pictures;
 
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Subnet;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.GraphFacade;

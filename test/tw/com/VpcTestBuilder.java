@@ -1,6 +1,6 @@
 package tw.com;
 
-import com.amazonaws.services.ec2.model.*;
+import software.amazon.awssdk.services.ec2.model.*;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
@@ -48,7 +48,7 @@ public class VpcTestBuilder {
 	private IpPermission ipElbPermsOutbound;
 	private SecurityGroup elbSecurityGroup;
 
-	IpRange range = new IpRange().withCidrIp("ipRanges");
+	IpRange range = IpRange.builder().cidrIp("ipRanges").build();
 
 	public VpcTestBuilder(String vpcId) {
 		this.vpcId = vpcId;
@@ -66,89 +66,91 @@ public class VpcTestBuilder {
 	}
 	
 	private void createVPC() {
-		vpc = new Vpc().withVpcId(vpcId);
-		insSubnet = new Subnet().
-				withSubnetId("subnetIdA").
-				withCidrBlock("10.1.0.0/16");
-		dbSubnet = new Subnet().
-				withSubnetId("subnetIdDB").
-				withCidrBlock("10.2.0.0/16");
-		subnetId = insSubnet.getSubnetId();
-		instance = new Instance().
-				withInstanceId("instanceId").
-				withTags(CreateNameTag("instanceName")).
-				withPrivateIpAddress("privateIp");
-		String instanceId = instance.getInstanceId();
-		RouteTableAssociation routeTableAssociationA = new RouteTableAssociation().
-				withRouteTableAssociationId("assocId").
-				withSubnetId(subnetId);
-		RouteTableAssociation routeTableAssociationB = new RouteTableAssociation().
-				withRouteTableAssociationId("assocId").
-				withSubnetId(dbSubnet.getSubnetId());
-		add(new Route().withDestinationCidrBlock("10.1.0.11/32").withGatewayId("igwId").withState(RouteState.Active));
-		add(new Route().withDestinationCidrBlock("10.1.0.12/32").withInstanceId("instanceId").withState(RouteState.Active));
-		add(new Route().withDestinationCidrBlock("10.1.0.13/32").withState(RouteState.Blackhole));
-		routeTable = new RouteTable().
-				withRouteTableId("routeTableId").
-				withAssociations(routeTableAssociationA, routeTableAssociationB).
-				withRoutes(routes);
-		eip = new Address().
-				withAllocationId("eipAllocId").
-				withInstanceId(instanceId).
-				withPublicIp("publicIP");
+		vpc = Vpc.builder().vpcId(vpcId).build();
+		insSubnet = Subnet.builder().
+				subnetId("subnetIdA").
+				cidrBlock("10.1.0.0/16").build();
+		dbSubnet = Subnet.builder().
+				subnetId("subnetIdDB").
+				cidrBlock("10.2.0.0/16").build();
+		subnetId = insSubnet.subnetId();
+		GroupIdentifier secGroupId = GroupIdentifier.builder().groupId("secGroupId").build();
+		instance = Instance.builder().
+				instanceId("instanceId").
+				tags(CreateNameTag("instanceName")).
+				privateIpAddress("privateIp").securityGroups(secGroupId).
+				build();
+		RouteTableAssociation routeTableAssociationA = RouteTableAssociation.builder().
+				routeTableAssociationId("assocId").
+				subnetId(subnetId).build();
+		RouteTableAssociation routeTableAssociationB = RouteTableAssociation.builder().
+				routeTableAssociationId("assocId").
+				subnetId(dbSubnet.subnetId()).build();
+		add(Route.builder().destinationCidrBlock("10.1.0.11/32").gatewayId("igwId").state(RouteState.ACTIVE).build());
+		add(Route.builder().destinationCidrBlock("10.1.0.12/32").instanceId("instanceId").state(RouteState.ACTIVE).build());
+		add(Route.builder().destinationCidrBlock("10.1.0.13/32").state(RouteState.BLACKHOLE).build());
+		routeTable = RouteTable.builder().
+				routeTableId("routeTableId").
+				associations(routeTableAssociationA, routeTableAssociationB).
+				routes(routes).build();
+		eip = Address.builder().
+				allocationId("eipAllocId").
+				instanceId(instance.instanceId()).
+				publicIp("publicIP").build();
 
-		ipElbPermsInbound = new IpPermission().withFromPort(20).withToPort(29).withIpProtocol("tcp").withIpv4Ranges(range);
-		ipElbPermsOutbound = new IpPermission().withFromPort(200).withToPort(300).withIpProtocol("tcp").withIpv4Ranges(range);
-		elbSecurityGroup = new SecurityGroup().
-				withGroupId("secElbGroupId").
-				withGroupName("secElbGroupName").
-				withIpPermissions(ipElbPermsInbound).
-				withIpPermissionsEgress(ipElbPermsOutbound);
+		ipElbPermsInbound = IpPermission.builder().fromPort(20).toPort(29).ipProtocol("tcp").ipRanges(range).build();
+		ipElbPermsOutbound = IpPermission.builder().fromPort(200).toPort(300).ipProtocol("tcp").ipRanges(range).build();
+		elbSecurityGroup = SecurityGroup.builder().
+				groupId("secElbGroupId").
+				groupName("secElbGroupName").
+				ipPermissions(ipElbPermsInbound).
+				ipPermissionsEgress(ipElbPermsOutbound).build();
 		
 		elb = new LoadBalancerDescription().
 				withLoadBalancerName("loadBalancerName").
 				withDNSName("lbDNSName").
-				withSecurityGroups(elbSecurityGroup.getGroupId());
+				withSecurityGroups(elbSecurityGroup.groupId());
 		dbInstance = new DBInstance().
 				withDBInstanceIdentifier("dbInstanceId").
 				withDBName("dbName");
-		NetworkAclAssociation aclAssoc = new NetworkAclAssociation().
-				withSubnetId(subnetId);
-		PortRange portRange = new PortRange().
-				withFrom(1024).
-				withTo(2048);
-		outboundAclEntry = new NetworkAclEntry().
-				withEgress(true).
-				withCidrBlock("cidrBlockOut").
-				withPortRange(portRange).
-				withRuleAction("allow").
-				withProtocol("6").
-				withRuleNumber(42);
-		inboundAclEntry = new NetworkAclEntry().
-				withEgress(false).
-				withCidrBlock("cidrBlockIn").
-				withPortRange(portRange).
-				withRuleAction("allow").
-				withProtocol("6").
-				withRuleNumber(43);
-		acl = new NetworkAcl().withAssociations(aclAssoc).
-				withEntries(outboundAclEntry, inboundAclEntry).
-				withNetworkAclId("aclId");
-		ipPermsInbound = new IpPermission().withFromPort(80).withToPort(89).withIpProtocol("tcp").withIpv4Ranges(range);
-		ipPermsOutbound = new IpPermission().withFromPort(600).withToPort(700).withIpProtocol("tcp").withIpv4Ranges(range);
-		instSecurityGroup = new SecurityGroup().
-				withGroupId("secGroupId").
-				withGroupName("secGroupName").
-				withIpPermissions(ipPermsInbound).
-				withIpPermissionsEgress(ipPermsOutbound);
-		
-		ipDbPermsInbound = new IpPermission().withFromPort(90).withToPort(99).withIpProtocol("tcp").withIpv4Ranges(range);
-		ipDbPermsOutbound = new IpPermission().withFromPort(700).withToPort(800).withIpProtocol("tcp").withIpv4Ranges(range);
-		dbSecurityGroup = new SecurityGroup().
-				withGroupId("secDbGroupId").
-				withGroupName("secDbGroupName").
-				withIpPermissions(ipDbPermsInbound).
-				withIpPermissionsEgress(ipDbPermsOutbound);
+		NetworkAclAssociation aclAssoc = NetworkAclAssociation.builder().
+				subnetId(subnetId).build();
+		PortRange portRange = PortRange.builder().
+				from(1024).
+				to(2048).build();
+		outboundAclEntry = NetworkAclEntry.builder().
+				egress(true).
+				cidrBlock("cidrBlockOut").
+				portRange(portRange).
+				ruleAction("allow").
+				protocol("6").
+				ruleNumber(42).build();
+		inboundAclEntry = NetworkAclEntry.builder().
+				egress(false).
+				cidrBlock("cidrBlockIn").
+				portRange(portRange).
+				ruleAction("allow").
+				protocol("6").
+				ruleNumber(43).build();
+		acl = NetworkAcl.builder().associations(aclAssoc).
+				entries(outboundAclEntry, inboundAclEntry).
+				networkAclId("aclId").build();
+		ipPermsInbound = IpPermission.builder().fromPort(80).toPort(89).ipProtocol("tcp").ipRanges(range).build();
+		ipPermsOutbound = IpPermission.builder().fromPort(600).toPort(700).ipProtocol("tcp").ipRanges(range).build();
+		instSecurityGroup = SecurityGroup.builder().
+				groupId("secGroupId").
+				groupName("secGroupName").
+				ipPermissions(ipPermsInbound).
+				ipPermissionsEgress(ipPermsOutbound).build();
+		securityGroups.add(instSecurityGroup);
+
+		ipDbPermsInbound = IpPermission.builder().fromPort(90).toPort(99).ipProtocol("tcp").ipRanges(range).build();
+		ipDbPermsOutbound = IpPermission.builder().fromPort(700).toPort(800).ipProtocol("tcp").ipRanges(range).build();
+		dbSecurityGroup = SecurityGroup.builder().
+				groupId("secDbGroupId").
+				groupName("secDbGroupName").
+				ipPermissions(ipDbPermsInbound).
+				ipPermissionsEgress(ipDbPermsOutbound).build();
 		AddItemsToVpc();
 	}
 	
@@ -161,8 +163,7 @@ public class VpcTestBuilder {
 		addAndAssociate(elb);
 		addAndAssociate(dbInstance);
 		add(acl);
-		addAndAssociateWithInstances(instSecurityGroup);
-		addAndAssociateWithDBs(dbSecurityGroup);	
+		addAndAssociateWithDBs(dbSecurityGroup);
 	}
 
 	private void add(Route route) {
@@ -175,7 +176,7 @@ public class VpcTestBuilder {
 
 	private void addAndAssociateWithDBs(SecurityGroup securityGroup) {
 		for(DBInstance db  : databases) {
-			DBSecurityGroupMembership groupMembership = new DBSecurityGroupMembership().withDBSecurityGroupName(securityGroup.getGroupName());
+			DBSecurityGroupMembership groupMembership = new DBSecurityGroupMembership().withDBSecurityGroupName(securityGroup.groupName());
 			db.withDBSecurityGroups(groupMembership);
 		}	
 	}
@@ -201,13 +202,13 @@ public class VpcTestBuilder {
 		// instances
 		Collection<com.amazonaws.services.elasticloadbalancing.model.Instance> list = new LinkedList<>();
 		for(Instance i : instances) {
-			list.add(new com.amazonaws.services.elasticloadbalancing.model.Instance().withInstanceId(i.getInstanceId()));
+			list.add(new com.amazonaws.services.elasticloadbalancing.model.Instance().withInstanceId(i.instanceId()));
 		}
 		elb.setInstances(list);
 		// subnets
 		List<String> subnetIds = new LinkedList<>();
 		for(Subnet s : subnets) {
-			subnetIds.add(s.getSubnetId());
+			subnetIds.add(s.subnetId());
 		}
 		elb.setSubnets(subnetIds);
 	}
@@ -216,7 +217,7 @@ public class VpcTestBuilder {
 		databases.add(dbInstance);
 		
 		List<com.amazonaws.services.rds.model.Subnet> rdsSubnets = new LinkedList<>();
-		rdsSubnets.add(new com.amazonaws.services.rds.model.Subnet().withSubnetIdentifier(dbSubnet.getSubnetId()));
+		rdsSubnets.add(new com.amazonaws.services.rds.model.Subnet().withSubnetIdentifier(dbSubnet.subnetId()));
 		DBSubnetGroup dBSubnetGroup = new DBSubnetGroup();
 		dBSubnetGroup.setSubnets(rdsSubnets);
 		dbInstance.withDBSubnetGroup(dBSubnetGroup);
@@ -225,29 +226,21 @@ public class VpcTestBuilder {
 	private void add(NetworkAcl acl) {
 		acls.add(acl);	
 	}
-	
-	private void addAndAssociateWithInstances(SecurityGroup securityGroup) {
-		securityGroups.add(securityGroup);
-		GroupIdentifier groupId = new GroupIdentifier().withGroupId(securityGroup.getGroupId()).withGroupName(securityGroup.getGroupName());
-		for(Instance i : instances) {
-			i.withSecurityGroups(groupId);
-		}
-	}
 
 	public Vpc setFacadeVisitExpections(AmazonVPCFacade awsFacade) throws CfnAssistException {
 		EasyMock.expect(awsFacade.getSubnetFors(vpcId)).andStubReturn(subnets);
 		EasyMock.expect(awsFacade.getInstancesFor(subnetId)).andStubReturn(instances);
-		EasyMock.expect(awsFacade.getInstancesFor(dbSubnet.getSubnetId())).andStubReturn(new LinkedList<>());
+		EasyMock.expect(awsFacade.getInstancesFor(dbSubnet.subnetId())).andStubReturn(new LinkedList<>());
 
 		EasyMock.expect(awsFacade.getRouteTablesFor(vpcId)).andReturn(routeTables);
 		EasyMock.expect(awsFacade.getEIPFor(vpcId)).andReturn(eips);
 		EasyMock.expect(awsFacade.getLBsFor(vpcId)).andReturn(loadBalancers);
-		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(elbSecurityGroup.getGroupId())).andReturn(elbSecurityGroup);
+		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(elbSecurityGroup.groupId())).andReturn(elbSecurityGroup);
 		EasyMock.expect(awsFacade.getRDSFor(vpcId)).andReturn(databases);
-		EasyMock.expect(awsFacade.getSecurityGroupDetailsByName(dbSecurityGroup.getGroupName())).andReturn(dbSecurityGroup);
+		EasyMock.expect(awsFacade.getSecurityGroupDetailsByName(dbSecurityGroup.groupName())).andReturn(dbSecurityGroup);
 		EasyMock.expect(awsFacade.getACLs(vpcId)).andReturn(acls);
 		SecurityGroup instanceSecurityGroup = securityGroups.get(0); // TODO more than one
-		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(instanceSecurityGroup.getGroupId())).andReturn(instanceSecurityGroup);
+		EasyMock.expect(awsFacade.getSecurityGroupDetailsById(instanceSecurityGroup.groupId())).andReturn(instanceSecurityGroup);
 		return vpc;	
 	}
 	
@@ -258,7 +251,7 @@ public class VpcTestBuilder {
 	}
 	
 	public static Tag CreateNameTag(String name) {
-		return new Tag().withKey("Name").withValue(name);
+		return Tag.builder().key("Name").value(name).build();
 	}
 
 	public Subnet getSubnet() {
@@ -318,7 +311,7 @@ public class VpcTestBuilder {
 	}
 
 	public String getDbSubnetId() {
-		return dbSubnet.getSubnetId();
+		return dbSubnet.subnetId();
 	}
 
 	public IpPermission getDbIpPermsInbound() {

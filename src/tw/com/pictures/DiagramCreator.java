@@ -5,7 +5,7 @@ import java.util.List;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 
 public class DiagramCreator {
 	

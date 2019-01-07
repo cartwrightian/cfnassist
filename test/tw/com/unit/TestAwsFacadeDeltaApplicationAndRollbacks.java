@@ -4,7 +4,7 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.identitymanagement.model.User;
 import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMock;
@@ -286,7 +286,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		String stackName = aws.createStackName(file, projectAndEnv);
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, count.toString());
 
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc());
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(Vpc.builder().build());
 		EasyMock.expect(cfnRepository.validateStackTemplate(templateContents)).andReturn(templateParameters);
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");
 		// tagging

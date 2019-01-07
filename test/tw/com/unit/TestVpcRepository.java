@@ -1,7 +1,7 @@
 package tw.com.unit;
 
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -33,33 +33,37 @@ public class TestVpcRepository extends EasyMockSupport {
 		repository = new VpcRepository(cloudClient);
 		projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	}
+
+	private Vpc.Builder createVpc(String id) {
+		return Vpc.builder().vpcId(id);
+	}
 	
 	@Test
 	public void shouldGetVpcByProjectAndEnvironmentTags() {
 		List<Vpc> vpcs = new LinkedList<>();
 	
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
-		vpcs.add(new Vpc().withVpcId("firstWrongId"));
-		vpcs.add(new Vpc().withVpcId("correctId").withTags(tags));
+		vpcs.add(createVpc("firstWrongId").build());
+		vpcs.add(createVpc("correctId").tags(tags).build());
 		List<Tag>  wrongTags = EnvironmentSetupForTests.createExpectedEc2Tags(EnvironmentSetupForTests.getAltProjectAndEnv(), "");
-		vpcs.add(new Vpc().withVpcId("wrongId").withTags(wrongTags));
+		vpcs.add(createVpc("wrongId").tags(wrongTags).build());
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);
 
 		replayAll();
 		Vpc result = repository.getCopyOfVpc(projectAndEnv);
-		assertEquals("correctId", result.getVpcId());
+		assertEquals("correctId", result.vpcId());
 		verifyAll();
 	}
 	
 	@Test
 	public void shouldTestFindVpcAndThenDeleteATag() {
 		List<Vpc> vpcs = new LinkedList<>();
-		vpcs.add(new Vpc().withVpcId("correctId").withTags(EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"")));
+		vpcs.add(createVpc("correctId").tags(EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"")).build());
 		List<String> resources = new LinkedList<>();
 		resources.add("correctId");
 		
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);	
-		Tag tag = new Tag().withKey("TheKey");
+		Tag tag = Tag.builder().key("TheKey").build();
 		cloudClient.deleteTagsFromResources(resources, tag);
 		
 		replayAll();
@@ -69,10 +73,10 @@ public class TestVpcRepository extends EasyMockSupport {
 	
 	@Test
 	public void shouldGetVPCById() {		
-		EasyMock.expect(cloudClient.describeVpc("correctId")).andReturn(new Vpc().withCidrBlock("cidrBlock"));
+		EasyMock.expect(cloudClient.describeVpc("correctId")).andReturn(createVpc("id").cidrBlock("cidrBlock").build());
 		replayAll();
 		Vpc result = repository.getCopyOfVpc("correctId");
-		assertEquals("cidrBlock",result.getCidrBlock());
+		assertEquals("cidrBlock",result.cidrBlock());
 		verifyAll();
 	}
 	
@@ -85,8 +89,8 @@ public class TestVpcRepository extends EasyMockSupport {
 		List<Tag>  wrongTags = EnvironmentSetupForTests.createExpectedEc2Tags(EnvironmentSetupForTests.getAltProjectAndEnv(), "");
 		wrongTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA","005555"));
 		
-		vpcs.add(new Vpc().withVpcId("correctId").withTags(matchingTags));
-		vpcs.add(new Vpc().withVpcId("firstWrongId").withTags(wrongTags));
+		vpcs.add(createVpc("correctId").tags(matchingTags).build());
+		vpcs.add(createVpc("firstWrongId").tags(wrongTags).build());
 		
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);
 				
@@ -105,8 +109,8 @@ public class TestVpcRepository extends EasyMockSupport {
 		List<Tag>  wrongTags = EnvironmentSetupForTests.createExpectedEc2Tags(EnvironmentSetupForTests.getAltProjectAndEnv(), "");
 		wrongTags.add(EnvironmentSetupForTests.createEc2Tag("tagName","wrongValue"));
 		
-		vpcs.add(new Vpc().withVpcId("correctId").withTags(matchingTags));
-		vpcs.add(new Vpc().withVpcId("firstWrongId").withTags(wrongTags));
+		vpcs.add(createVpc("correctId").tags(matchingTags).build());
+		vpcs.add(createVpc("firstWrongId").tags(wrongTags).build());
 		
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);
 				
@@ -123,7 +127,7 @@ public class TestVpcRepository extends EasyMockSupport {
 		expectedTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_PROJECT", "CfnAssist"));
 		expectedTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_ENV", "Test"));
 			
-		EasyMock.expect(cloudClient.describeVpc("vpcID11")).andReturn(new Vpc().withCidrBlock("cidrBlock"));
+		EasyMock.expect(cloudClient.describeVpc("vpcID11")).andReturn(createVpc("id").cidrBlock("cidrBlock").build());
 		List<String> resources = new LinkedList<>();
 		resources.add("vpcID11");
 		cloudClient.addTagsToResources(resources, expectedTags);
@@ -140,7 +144,7 @@ public class TestVpcRepository extends EasyMockSupport {
 		List<Tag> initialTags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
 		initialTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA","initialValue"));
 		
-		vpcs.add(new Vpc().withVpcId("correctId").withTags(initialTags));
+		vpcs.add(createVpc("correctId").tags(initialTags).build());
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);
 		
 		List<String> resources = new LinkedList<>();
@@ -161,7 +165,7 @@ public class TestVpcRepository extends EasyMockSupport {
 		List<Tag> initialTags = EnvironmentSetupForTests.createExpectedEc2Tags(projectAndEnv,"");
 		initialTags.add(EnvironmentSetupForTests.createEc2Tag("CFN_ASSIST_DELTA","initialValue"));
 		
-		vpcs.add(new Vpc().withVpcId("correctId").withTags(initialTags));
+		vpcs.add(createVpc("correctId").tags(initialTags).build());
 		EasyMock.expect(cloudClient.describeVpcs()).andReturn(vpcs);
 		
 		List<Tag> tags = new LinkedList<>();

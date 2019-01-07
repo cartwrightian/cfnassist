@@ -3,13 +3,11 @@ package tw.com.unit;
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.ec2.model.KeyPair;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +20,7 @@ import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
 import tw.com.providers.ArtifactUploader;
+import tw.com.providers.CloudClient;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.providers.SavesFile;
 
@@ -31,12 +30,13 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -469,31 +469,33 @@ public class TestCommandLineActions extends EasyMockSupport {
 	@Test
     public void shouldCreateKeypairWithNoFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
         String home = System.getenv("HOME");
-        String filename = format("%s/.ssh/CfnAssist_Test.pem",home);
-        KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
+        Path filename = Paths.get(format("%s/.ssh/CfnAssist_Test.pem",home));
+
+        //KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
+		CloudClient.AWSPrivateKey keyPair = new CloudClient.AWSPrivateKey("keyName", "material");
 
         SavesFile savesFile = EasyMock.createMock(SavesFile.class);
 
         setFactoryExpectations();
 
         EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
-        EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
+		EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
 
         validate((CLIArgBuilder.createKeyPair("")));
     }
 
     @Test
     public void shouldCreateKeypairWithFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
-        String filename = "someFilename";
+        Path filename = Paths.get("someFilename");
         SavesFile savesFile = EasyMock.createMock(SavesFile.class);
-        KeyPair keyPair = new KeyPair().withKeyFingerprint("fingerprint").withKeyName("keyName");
+		CloudClient.AWSPrivateKey keyPair = new CloudClient.AWSPrivateKey("keyName", "material");
 
         setFactoryExpectations();
 
         EasyMock.expect(factory.getSavesFile()).andReturn(savesFile);
         EasyMock.expect(facade.createKeyPair(projectAndEnv, savesFile, filename)).andReturn(keyPair);
 
-        validate(CLIArgBuilder.createKeyPair(filename));
+        validate(CLIArgBuilder.createKeyPair(filename.toString()));
     }
 
 	@Test

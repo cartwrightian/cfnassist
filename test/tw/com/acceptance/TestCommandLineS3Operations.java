@@ -1,12 +1,11 @@
 package tw.com.acceptance;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.Subnet;
+import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -30,7 +29,7 @@ import static org.junit.Assert.*;
 
 public class TestCommandLineS3Operations {
 	private static final Integer BUILD_NUMBER = 9987;
-	private static AmazonEC2 ec2Client;
+	private static Ec2Client ec2Client;
 	private static AmazonCloudFormation cfnClient;
 	private static AmazonS3 s3Client;
 	
@@ -100,11 +99,11 @@ public class TestCommandLineS3Operations {
 		Vpc vpcId = vpcRepository.getCopyOfVpc(projectAndEnv);
 		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpcId);
 		assertEquals(1, subnets.size());
-		List<Tag> tags = subnets.get(0).getTags();
+		List<Tag> tags = subnets.get(0).tags();
 
 		List<Tag> expectedTags = new LinkedList<>();
-		expectedTags.add(new Tag().withKey("urlATag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A));
-		expectedTags.add(new Tag().withKey("urlBTag").withValue(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B));
+		expectedTags.add(Tag.builder().key("urlATag").value(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A).build());
+		expectedTags.add(Tag.builder().key("urlBTag").value(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B).build());
 		assertTrue(tags.containsAll(expectedTags));
 	}
 	

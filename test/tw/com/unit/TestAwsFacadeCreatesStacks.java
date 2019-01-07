@@ -2,8 +2,8 @@ package tw.com.unit;
 
 import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.identitymanagement.model.User;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -36,6 +36,7 @@ import static tw.com.EnvironmentSetupForTests.getMainProjectAndEnv;
 public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private static final String CREATE_COMP_STATUS = StackStatus.CREATE_COMPLETE.toString();
 	private static final String VPC_ID = "vpcId";
+	private final Vpc vpc = Vpc.builder().vpcId(VPC_ID).build();
 	private AwsFacade aws;
 	private ProjectAndEnv projectAndEnv = getMainProjectAndEnv();
 	private CloudFormRepository cfnRepository;
@@ -46,7 +47,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private CloudRepository cloudRepository;
 	private User user;
 
-    @Before
+	@Before
 	public void beforeEachTestRuns() {
 
 		monitor = createMock(MonitorStackEvents.class);
@@ -158,7 +159,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
 		List<TemplateParameter> templateParameters = new LinkedList<>();
 		
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId(VPC_ID));
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(CREATE_COMP_STATUS);	
@@ -186,7 +187,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		List<TemplateParameter> templateParameters = new LinkedList<>();
 		Stack stack = new Stack().withStackId(stackId);
 		
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId(VPC_ID));
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_COMPLETE.toString());	
@@ -222,7 +223,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		List<TemplateParameter> templateParameters = new LinkedList<>();
 		Stack stack = new Stack().withStackId(stackId);
 		
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId(VPC_ID));
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_IN_PROGRESS.toString());	
@@ -295,9 +296,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		addParam(creationParameters, "zoneC", "eu-west-1c");
 
         Map<String, AvailabilityZone> zones = new HashMap<>();
-        zones.put("a", new AvailabilityZone().withRegionName("eu-west-1").withZoneName("eu-west-1a"));
-        zones.put("b", new AvailabilityZone().withRegionName("eu-west-1").withZoneName("eu-west-1b"));
-        zones.put("c", new AvailabilityZone().withRegionName("eu-west-1").withZoneName("eu-west-1c"));
+        zones.put("a", AvailabilityZone.builder().regionName("eu-west-1").zoneName("eu-west-1a").build());
+        zones.put("b", AvailabilityZone.builder().regionName("eu-west-1").zoneName("eu-west-1b").build());
+        zones.put("c", AvailabilityZone.builder().regionName("eu-west-1").zoneName("eu-west-1c").build());
 		StackNameAndId stackNameAndId = SetCreateExpectations(stackName, contents, templateParameters, creationParameters, zones);
 
 		replayAll();
@@ -390,7 +391,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, "stackId");
 		Stack stack = new Stack().withStackId("stackId");
 		
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId(VPC_ID));
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");	
 		// search for the logical id, return the found id
@@ -426,7 +427,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, "stackId");
 		Stack stack = new Stack().withStackId("stackId");
 		
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId(VPC_ID));
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");	
 		// get the tag from the VPC
@@ -534,7 +535,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 			stack.setOutputs(outputs);
 		}
 		
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId(VPC_ID));
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");
         Tagging tagging = new Tagging();

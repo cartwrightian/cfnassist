@@ -2,7 +2,7 @@ package tw.com.parameters;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.entity.EnvironmentTag;
@@ -96,7 +96,7 @@ public class AutoDiscoverParams extends PopulatesParameters {
 		String target = parameterDescription.replaceFirst(PopulatesParameters.CFN_TAG_ZONE, "").toLowerCase();
 		logger.debug("Check for zone " + target);
 		if (zones.containsKey(target)) {
-			String zoneName = zones.get(target).getZoneName();
+			String zoneName = zones.get(target).zoneName();
 			declaredParameters.stream().filter(declaredParameter -> declaredParameter.getParameterKey().equals(parameterName)).
 					forEach(declaredParameter -> {
 						addParameterTo(results, declaredParameters, parameterName, zoneName);

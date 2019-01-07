@@ -2,7 +2,7 @@ package tw.com.pictures.dot;
 
 import java.io.IOException;
 
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 
 public interface Recorder {
 

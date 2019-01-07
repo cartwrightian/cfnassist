@@ -2,7 +2,7 @@ package tw.com.entity;
 
 import java.util.List;
 
-import com.amazonaws.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Tag;
 
 public class InstanceSummary {
 
@@ -69,7 +69,7 @@ public class InstanceSummary {
 			if (builder.length()!=0) {
 				builder.append(",");
 			}
-			builder.append(String.format("%s=%s",tag.getKey(),tag.getValue()));
+			builder.append(String.format("%s=%s",tag.key(),tag.value()));
 		}
 		return builder.toString();
 	}

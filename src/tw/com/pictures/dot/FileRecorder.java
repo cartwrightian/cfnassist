@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 
 public class FileRecorder implements Recorder {
 	private static final Logger logger = LoggerFactory.getLogger(FileRecorder.class);
@@ -64,7 +64,7 @@ public class FileRecorder implements Recorder {
 	@Override
 	public void beginFor(Vpc vpc, String prefix) throws IOException {
 		builder = new StringBuilder();
-		String diagramFilename = prefix+vpc.getVpcId()+".dot";
+		String diagramFilename = prefix+vpc.vpcId()+".dot";
 		Path target = Paths.get(folder.toString(), diagramFilename);
 		logger.info(">>>>> Saving to " + target.toAbsolutePath());
 		if (!Files.exists(folder)) {

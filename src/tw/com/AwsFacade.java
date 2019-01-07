@@ -1,10 +1,7 @@
 package tw.com;
 
-import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
-import com.amazonaws.services.ec2.model.KeyPair;
-import com.amazonaws.services.ec2.model.Vpc;
+import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.identitymanagement.model.User;
@@ -12,13 +9,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
-import tw.com.providers.IdentityProvider;
-import tw.com.providers.NotificationSender;
-import tw.com.providers.ProvidesCurrentIp;
-import tw.com.providers.SavesFile;
+import tw.com.providers.*;
 import tw.com.repository.*;
 
 import java.io.File;
@@ -31,7 +27,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -84,7 +79,7 @@ public class AwsFacade implements ProvidesZones {
 		return parameters;
 	}
 
-	public List<TemplateParameter> validateTemplate(File file) throws IOException {
+	private List<TemplateParameter> validateTemplate(File file) throws IOException {
 		logger.info("Validating template and discovering parameters for file " + file.getAbsolutePath());
 		String contents = loadFileContents(file);
 		return validateTemplate(contents);
@@ -95,7 +90,7 @@ public class AwsFacade implements ProvidesZones {
 		return applyTemplate(file, projAndEnv);
 	}
 	
-	public StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv)
+	private StackNameAndId applyTemplate(File file, ProjectAndEnv projAndEnv)
 			throws IOException, InterruptedException, CfnAssistException {
 		return applyTemplate(file, projAndEnv, new HashSet<>());
 	}
@@ -113,7 +108,7 @@ public class AwsFacade implements ProvidesZones {
         List<TemplateParameter> declaredParameters = validateTemplate(file);
 
         List<PopulatesParameters> populators = new LinkedList<>();
-        populators.add(new CfnBuiltInParams(vpcForEnv.getVpcId()));
+        populators.add(new CfnBuiltInParams(vpcForEnv.vpcId()));
         populators.add(new AutoDiscoverParams(file, vpcRepository, cfnRepository));
         populators.add(new EnvVarParams());
         ParameterFactory parameterFactory = new ParameterFactory(populators);
@@ -258,7 +253,7 @@ public class AwsFacade implements ProvidesZones {
 			logger.error("Unable to find VPC tagged as environment:" + projAndEnv);
 			throw new InvalidStackParameterException(projAndEnv.toString());
 		}
-		logger.info(format("Found VPC %s corresponding to %s", vpcForEnv.getVpcId(), projAndEnv));
+		logger.info(format("Found VPC %s corresponding to %s", vpcForEnv.vpcId(), projAndEnv));
 		return vpcForEnv;
 	}
 
@@ -456,7 +451,8 @@ public class AwsFacade implements ProvidesZones {
 	public void initEnvAndProjectForVPC(String targetVpcId, ProjectAndEnv projectAndEnvToSet) throws CfnAssistException {
 		Vpc result = vpcRepository.getCopyOfVpc(projectAndEnvToSet);
 		if (result!=null) {
-			logger.error(format("Managed to find vpc already present with tags %s and id %s", projectAndEnvToSet, result.getVpcId()));
+			logger.error(format("Managed to find vpc already present with tags %s and id %s", projectAndEnvToSet,
+					result.vpcId()));
 			throw new TagsAlreadyInit(targetVpcId);
 		}	
 		vpcRepository.initAllTags(targetVpcId, projectAndEnvToSet);	
@@ -603,8 +599,8 @@ public class AwsFacade implements ProvidesZones {
 		List<String> instanceIds = cfnRepository.getAllInstancesFor(searchCriteria);
 		
 		for(String id: instanceIds) {
-			com.amazonaws.services.ec2.model.Instance instance = cloudRepository.getInstanceById(id);
-			InstanceSummary summary = new InstanceSummary(id, instance.getPrivateIpAddress(), instance.getTags());
+			software.amazon.awssdk.services.ec2.model.Instance instance = cloudRepository.getInstanceById(id);
+			InstanceSummary summary = new InstanceSummary(id, instance.privateIpAddress(), instance.tags());
 			result.add(summary);
 		}
 		
@@ -616,16 +612,16 @@ public class AwsFacade implements ProvidesZones {
        return cloudRepository.getZones();
     }
 
-	public KeyPair createKeyPair(ProjectAndEnv projAndEnv, SavesFile destination, String filename) throws CfnAssistException {
+	public CloudClient.AWSPrivateKey createKeyPair(ProjectAndEnv projAndEnv, SavesFile destination, Path filename) throws CfnAssistException {
 		if (destination.exists(filename)) {
-            throw new CfnAssistException(format("File '%s' already exists", filename));
+            throw new CfnAssistException(format("File '%s' already exists", filename.toAbsolutePath()));
         }
 
 		String env = projAndEnv.getEnv();
         String project = projAndEnv.getProject();
 		String keypairName = format("%s_%s", project,env);
         logger.info("Create key pair with name " + keypairName);
-		KeyPair result = cloudRepository.createKeyPair(keypairName, destination, filename);
+		CloudClient.AWSPrivateKey result = cloudRepository.createKeyPair(keypairName, destination, filename);
 		vpcRepository.setVpcTag(projAndEnv,KEYNAME_TAG, result.getKeyName());
 		return result;
 	}

@@ -13,8 +13,8 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.providers.CloudClient;
 
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 
 public class VpcRepository {
 	private static final Logger logger = LoggerFactory.getLogger(VpcRepository.class);
@@ -39,7 +39,7 @@ public class VpcRepository {
 			if (result==null) {	
 				logger.error("Could not find VPC for " + projectAndEnv);
 			} else {
-				idCache.put(projectAndEnv, result.getVpcId());
+				idCache.put(projectAndEnv, result.vpcId());
 			}
 			return result;
 		}	
@@ -57,7 +57,7 @@ public class VpcRepository {
 		List<Vpc> vpcs = cloudClient.describeVpcs();
 
 		for(Vpc vpc : vpcs) {
-			String vpcId = vpc.getVpcId();
+			String vpcId = vpc.vpcId();
 			String possibleProject = getTagByName(vpc, AwsFacade.PROJECT_TAG);
 			if (key.getProject().equals(possibleProject)) {	
 				logger.debug(String.format("Found Possible VPC with %s:%s ID is %s", AwsFacade.PROJECT_TAG, possibleProject, vpcId));
@@ -73,10 +73,10 @@ public class VpcRepository {
 	}
 
 	private String getTagByName(Vpc vpc, String tagName) {
-		List<Tag> tags = vpc.getTags();
+		List<Tag> tags = vpc.tags();
 		for(Tag tag : tags) {	
-			if (tag.getKey().equals(tagName)) {
-				return tag.getValue();
+			if (tag.key().equals(tagName)) {
+				return tag.value();
 			}
 		}
 		return null;
@@ -96,10 +96,10 @@ public class VpcRepository {
 	}
 
 	private void setTag(Vpc vpc, String key, String value) {
-		List<Tag> tags = new LinkedList<Tag>();	
-		Tag newTag = new Tag(key, value);
+		List<Tag> tags = new LinkedList<>();
+		Tag newTag = Tag.builder().key(key).value(value).build();
 		tags.add(newTag);
-		String vpcId = vpc.getVpcId();
+		String vpcId = vpc.vpcId();
 		
 		logger.info(String.format("Set Tag Key:'%s' Value:'%s' on VPC %s", key, value, vpcId));
 		setTags(vpcId, tags);
@@ -123,11 +123,11 @@ public class VpcRepository {
 	
 	public void deleteVpcTag(ProjectAndEnv projectAndEnv, String key) {
 		Vpc vpc = getCopyOfVpc(projectAndEnv);
-		List<String> resources = createResourceList(vpc.getVpcId());
-		Tag tag = new Tag().withKey(key);
+		List<String> resources = createResourceList(vpc.vpcId());
+		Tag tag = Tag.builder().key(key).build();
 		cloudClient.deleteTagsFromResources(resources, tag);
 				
-		logger.info(String.format("Delete Tag Key'%s' on VPC:%s", key, vpc.getVpcId()));
+		logger.info(String.format("Delete Tag Key'%s' on VPC:%s", key, vpc.vpcId()));
 	}
 
 	public String getVpcIndexTag(ProjectAndEnv projAndEnv) throws CannotFindVpcException {
@@ -144,10 +144,10 @@ public class VpcRepository {
 			throw new CannotFindVpcException(vpcId);
 		}
 		logger.info("Initialise tags for VPC " + vpcId);
-		List<Tag> tags = new LinkedList<Tag>();	
-		Tag indexTag = new Tag(AwsFacade.INDEX_TAG, "0");
-		Tag projectTag = new Tag(AwsFacade.PROJECT_TAG, projectAndEnv.getProject());
-		Tag envTag = new Tag(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv());
+		List<Tag> tags = new LinkedList<>();
+		Tag indexTag = Tag.builder().key(AwsFacade.INDEX_TAG).value("0").build();
+		Tag projectTag = Tag.builder().key(AwsFacade.PROJECT_TAG).value(projectAndEnv.getProject()).build();
+		Tag envTag = Tag.builder().key(AwsFacade.ENVIRONMENT_TAG).value(projectAndEnv.getEnv()).build();
 		tags.add(indexTag);
 		tags.add(projectTag);
 		tags.add(envTag);

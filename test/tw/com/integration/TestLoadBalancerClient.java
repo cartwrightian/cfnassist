@@ -1,9 +1,9 @@
 package tw.com.integration;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.Instance;
+import software.amazon.awssdk.services.ec2.model.TerminateInstancesRequest;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.model.*;
 import org.junit.AfterClass;
@@ -24,7 +24,7 @@ public class TestLoadBalancerClient  {
 	private static final String LB_NAME = "cfnAssistTest";
 	private LoadBalancerClient client;
 	private static AmazonElasticLoadBalancing elbClient;
-	private static AmazonEC2 ec2Client;
+	private static Ec2Client ec2Client;
 	private static Instance instance;
 	
 	@BeforeClass
@@ -69,9 +69,9 @@ public class TestLoadBalancerClient  {
 	}
 	
 	@Test
-	public void shouldRegisterAndDeregisterInstances() throws InterruptedException {
+	public void shouldRegisterAndDeregisterInstances() {
 		List<com.amazonaws.services.elasticloadbalancing.model.Instance> instances = new LinkedList<>();
-		instances.add(new com.amazonaws.services.elasticloadbalancing.model.Instance(instance.getInstanceId()));
+		instances.add(new com.amazonaws.services.elasticloadbalancing.model.Instance(instance.instanceId()));
 		
 		client.registerInstances(instances, LB_NAME);
 		LoadBalancerDescription lbDescription = getUpToDateLBDescription();
@@ -79,7 +79,7 @@ public class TestLoadBalancerClient  {
 		boolean found = false;
 		List<com.amazonaws.services.elasticloadbalancing.model.Instance> results = lbDescription.getInstances();
 		for(com.amazonaws.services.elasticloadbalancing.model.Instance candidate : results) {
-			if (candidate.getInstanceId().equals(instance.getInstanceId())) {
+			if (candidate.getInstanceId().equals(instance.instanceId())) {
 				found = true;
 				break;
 			}
@@ -123,7 +123,7 @@ public class TestLoadBalancerClient  {
 
 	private static void deleteInstance() {
 		if (instance!=null) {
-			ec2Client.terminateInstances(new TerminateInstancesRequest().withInstanceIds(instance.getInstanceId()));
+			ec2Client.terminateInstances(TerminateInstancesRequest.builder().instanceIds(instance.instanceId()).build());
 		}	
 	}
 	

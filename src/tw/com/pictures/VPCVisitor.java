@@ -5,19 +5,19 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.GroupIdentifier;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.NetworkAclAssociation;
-import com.amazonaws.services.ec2.model.NetworkAclEntry;
-import com.amazonaws.services.ec2.model.Route;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.RouteTableAssociation;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Address;
+import software.amazon.awssdk.services.ec2.model.GroupIdentifier;
+import software.amazon.awssdk.services.ec2.model.Instance;
+import software.amazon.awssdk.services.ec2.model.IpPermission;
+import software.amazon.awssdk.services.ec2.model.NetworkAcl;
+import software.amazon.awssdk.services.ec2.model.NetworkAclAssociation;
+import software.amazon.awssdk.services.ec2.model.NetworkAclEntry;
+import software.amazon.awssdk.services.ec2.model.Route;
+import software.amazon.awssdk.services.ec2.model.RouteTable;
+import software.amazon.awssdk.services.ec2.model.RouteTableAssociation;
+import software.amazon.awssdk.services.ec2.model.SecurityGroup;
+import software.amazon.awssdk.services.ec2.model.Subnet;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
@@ -41,7 +41,7 @@ public class VPCVisitor {
 
 	public void visit(Vpc vpc) throws CfnAssistException {	
 		VPCDiagramBuilder vpcDiagram = factory.createVPCDiagramBuilder(vpc);
-		String vpcId = vpc.getVpcId();
+		String vpcId = vpc.vpcId();
 		///
 		for (Subnet subnet : facade.getSubnetFors(vpcId)) {
 			visitSubnet(vpcDiagram, subnet);
@@ -94,14 +94,14 @@ public class VPCVisitor {
 		for(DBSecurityGroupMembership secGroupMember : rds.getDBSecurityGroups()) {
 			String groupName = secGroupMember.getDBSecurityGroupName();
 			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsByName(groupName);
-			logger.debug("visit rds secgroup " + dbSecGroup.getGroupId());
+			logger.debug("visit rds secgroup " + dbSecGroup.groupId());
 			addSecGroupToDiagram(vpcDiagram, dbInstanceIdentifier, dbSecGroup);
 		}
 		//
 		for(VpcSecurityGroupMembership secGroupMember : rds.getVpcSecurityGroups()) {
 			String groupId = secGroupMember.getVpcSecurityGroupId();
 			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsById(groupId);
-			logger.debug("visit rds vpc secgroup " + dbSecGroup.getGroupId());
+			logger.debug("visit rds vpc secgroup " + dbSecGroup.groupId());
 			addSecGroupToDiagram(vpcDiagram, dbInstanceIdentifier, dbSecGroup);
 		}
 	}
@@ -109,11 +109,11 @@ public class VPCVisitor {
 	private void addSecGroupToDiagram(VPCDiagramBuilder vpcDiagram, String instanceId, SecurityGroup dbSecGroup) throws CfnAssistException {
 		vpcDiagram.addSecurityGroup(dbSecGroup);
 		vpcDiagram.associateInstanceWithSecGroup(instanceId, dbSecGroup);
-		String groupId = dbSecGroup.getGroupId();
-		for(IpPermission perm : dbSecGroup.getIpPermissions()) {
+		String groupId = dbSecGroup.groupId();
+		for(IpPermission perm : dbSecGroup.ipPermissions()) {
 			vpcDiagram.addSecGroupInboundPerms(groupId, perm);
 		}
-		for(IpPermission perm : dbSecGroup.getIpPermissionsEgress()) {
+		for(IpPermission perm : dbSecGroup.ipPermissionsEgress()) {
 			vpcDiagram.addSecGroupOutboundPerms(groupId, perm);
 		}
 	}
@@ -135,15 +135,15 @@ public class VPCVisitor {
 	}
 	
 	private void visitSubnetForInstancesAndSecGroups(VPCDiagramBuilder vpcDiagramBuilder, Subnet subnet) throws CfnAssistException {
-		String subnetId = subnet.getSubnetId();
+		String subnetId = subnet.subnetId();
 		logger.debug("visit subnet (for sec groups) " + subnetId); 
 		for(Instance instance : facade.getInstancesFor(subnetId)) {
-			for(GroupIdentifier groupId : instance.getSecurityGroups()) {
-				logger.debug("visit securitygroup " + groupId.getGroupId() + " for instance " + instance.getInstanceId());
+			for(GroupIdentifier groupId : instance.securityGroups()) {
+				logger.debug("visit securitygroup " + groupId.groupId() + " for instance " + instance.instanceId());
 
-				SecurityGroup group = facade.getSecurityGroupDetailsById(groupId.getGroupId());
+				SecurityGroup group = facade.getSecurityGroupDetailsById(groupId.groupId());
 				vpcDiagramBuilder.addSecurityGroup(group, subnetId);
-				vpcDiagramBuilder.associateInstanceWithSecGroup(instance.getInstanceId(), group);
+				vpcDiagramBuilder.associateInstanceWithSecGroup(instance.instanceId(), group);
 				visitInboundSecGroupPerms(vpcDiagramBuilder, group, subnetId);
 				visitOutboundSecGroupPerms(vpcDiagramBuilder, group, subnetId);
 			}
@@ -151,28 +151,28 @@ public class VPCVisitor {
 	}
 	
 	private void visitOutboundSecGroupPerms(VPCDiagramBuilder vpcDiagramBuilder, SecurityGroup group, String subnetId) throws CfnAssistException {
-		for(IpPermission perm : group.getIpPermissionsEgress()) {
-			vpcDiagramBuilder.addSecGroupOutboundPerms(group.getGroupId(), perm, subnetId);
+		for(IpPermission perm : group.ipPermissionsEgress()) {
+			vpcDiagramBuilder.addSecGroupOutboundPerms(group.groupId(), perm, subnetId);
 		}	
 	}
 
 	private void visitInboundSecGroupPerms(VPCDiagramBuilder vpcDiagramBuilder, SecurityGroup group, String subnetId) throws CfnAssistException {
-		for(IpPermission perm : group.getIpPermissions()) {
-			vpcDiagramBuilder.addSecGroupInboundPerms(group.getGroupId(), perm, subnetId);
+		for(IpPermission perm : group.ipPermissions()) {
+			vpcDiagramBuilder.addSecGroupInboundPerms(group.groupId(), perm, subnetId);
 		}	
 	}
 
 	private void visitNetworkAcl(VPCDiagramBuilder vpcDiagramBuilder, NetworkAcl acl) throws CfnAssistException {
 		vpcDiagramBuilder.addAcl(acl);
-		String networkAclId = acl.getNetworkAclId();
+		String networkAclId = acl.networkAclId();
 		logger.debug("visit acl " + networkAclId);
 
-		for(NetworkAclAssociation assoc : acl.getAssociations()) {
-			String subnetId = assoc.getSubnetId();
+		for(NetworkAclAssociation assoc : acl.associations()) {
+			String subnetId = assoc.subnetId();
 			vpcDiagramBuilder.associateAclWithSubnet(acl, subnetId);
 			
-			for(NetworkAclEntry entry : acl.getEntries()) {
-				if (entry.getEgress()) {
+			for(NetworkAclEntry entry : acl.entries()) {
+				if (entry.egress()) {
 					vpcDiagramBuilder.addACLOutbound(networkAclId, entry, subnetId);
 				} else {
 					vpcDiagramBuilder.addACLInbound(networkAclId, entry, subnetId);
@@ -182,20 +182,20 @@ public class VPCVisitor {
 	}
 
 	private void visitEIP(VPCDiagramBuilder vpcDiagram, Address eip) throws CfnAssistException {
-		logger.debug("visit eip " + eip.getAllocationId());
+		logger.debug("visit eip " + eip.allocationId());
 
 		vpcDiagram.addEIP(eip);
 
-		String instanceId = eip.getInstanceId();
+		String instanceId = eip.instanceId();
 		if (instanceId!=null) {
-			vpcDiagram.linkEIPToInstance(eip.getPublicIp(), instanceId);
+			vpcDiagram.linkEIPToInstance(eip.publicIp(), instanceId);
 		}	
 	}
 
 	private void visitSubnet(VPCDiagramBuilder parent, Subnet subnet) throws CfnAssistException {
 		SubnetDiagramBuilder subnetDiagram = factory.createSubnetDiagramBuilder(parent, subnet);
 		
-		String subnetId = subnet.getSubnetId();
+		String subnetId = subnet.subnetId();
 		logger.debug("visit subnet " + subnetId);
 
 		List<Instance> instances = facade.getInstancesFor(subnetId);
@@ -206,23 +206,23 @@ public class VPCVisitor {
 	}
 	
 	private void visitRouteTable(VPCDiagramBuilder vpcDiagram, RouteTable routeTable) throws CfnAssistException {
-		logger.debug("visit routetable " + routeTable.getRouteTableId());
-		List<Route> routes = routeTable.getRoutes();
-		List<RouteTableAssociation> usersOfTable = routeTable.getAssociations();
+		logger.debug("visit routetable " + routeTable.routeTableId());
+		List<Route> routes = routeTable.routes();
+		List<RouteTableAssociation> usersOfTable = routeTable.associations();
 		for (RouteTableAssociation usedBy : usersOfTable) {
-			String subnetId = usedBy.getSubnetId(); // can subnet ever be null in an association?
+			String subnetId = usedBy.subnetId(); // can subnet ever be null in an association?
 			
 			if (subnetId!=null) {
 				vpcDiagram.addAsssociatedRouteTable(routeTable, subnetId); // possible duplication if route table reused?
 				for (Route route : routes) {
-					vpcDiagram.addRoute(routeTable.getRouteTableId(), subnetId, route);
+					vpcDiagram.addRoute(routeTable.routeTableId(), subnetId, route);
 				}
 			} 
 		}
  	}
 
 	private void visit(SubnetDiagramBuilder subnetDiagram, Instance instance) throws CfnAssistException {
-		logger.debug("visit instance " + instance.getInstanceId());
+		logger.debug("visit instance " + instance.instanceId());
 		subnetDiagram.add(instance);
 	}
 

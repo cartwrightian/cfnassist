@@ -7,18 +7,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.NetworkAclEntry;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 
+import software.amazon.awssdk.services.ec2.model.*;
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
@@ -67,7 +59,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		LoadBalancerDescription elb = vpcBuilder.getElb();
 		DBInstance dbInstance = vpcBuilder.getDbInstance();
 		Instance instance = vpcBuilder.getInstance();
-		String instanceId = instance.getInstanceId();
+		String instanceId = instance.instanceId();
 		RouteTable routeTable = vpcBuilder.getRouteTable();
 		NetworkAcl acl = vpcBuilder.getAcl();
 		NetworkAclEntry outboundEntry = vpcBuilder.getOutboundEntry();
@@ -89,16 +81,16 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagramBuilder.add(dbSubnetId, dbSubnetDiagramBuilder);
 		// route table & routes
 		vpcDiagramBuilder.addAsssociatedRouteTable(routeTable, instanceSubnetId);
-		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), instanceSubnetId, vpcBuilder.getRouteA());
-		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), instanceSubnetId, vpcBuilder.getRouteB());
-		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), instanceSubnetId, vpcBuilder.getRouteC());
+		vpcDiagramBuilder.addRoute(routeTable.routeTableId(), instanceSubnetId, vpcBuilder.getRouteA());
+		vpcDiagramBuilder.addRoute(routeTable.routeTableId(), instanceSubnetId, vpcBuilder.getRouteB());
+		vpcDiagramBuilder.addRoute(routeTable.routeTableId(), instanceSubnetId, vpcBuilder.getRouteC());
 		vpcDiagramBuilder.addAsssociatedRouteTable(routeTable, dbSubnetId);
-		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), dbSubnetId, vpcBuilder.getRouteA());
-		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), dbSubnetId, vpcBuilder.getRouteB());
-		vpcDiagramBuilder.addRoute(routeTable.getRouteTableId(), dbSubnetId, vpcBuilder.getRouteC());
+		vpcDiagramBuilder.addRoute(routeTable.routeTableId(), dbSubnetId, vpcBuilder.getRouteA());
+		vpcDiagramBuilder.addRoute(routeTable.routeTableId(), dbSubnetId, vpcBuilder.getRouteB());
+		vpcDiagramBuilder.addRoute(routeTable.routeTableId(), dbSubnetId, vpcBuilder.getRouteC());
 		// eip
 		vpcDiagramBuilder.addEIP(eip);
-		vpcDiagramBuilder.linkEIPToInstance(eip.getPublicIp(), instanceId);
+		vpcDiagramBuilder.linkEIPToInstance(eip.publicIp(), instanceId);
 		// elb
 		vpcDiagramBuilder.addELB(elb);
 		vpcDiagramBuilder.associateELBToInstance(elb, instanceId);

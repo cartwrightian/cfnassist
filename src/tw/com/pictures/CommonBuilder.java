@@ -4,11 +4,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.amazonaws.services.ec2.model.IpRange;
+import software.amazon.awssdk.services.ec2.model.IpRange;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.CommonElements;
 
-import com.amazonaws.services.ec2.model.IpPermission;
+import software.amazon.awssdk.services.ec2.model.IpPermission;
 
 public class CommonBuilder {
 	private Set<String> addedIpPerms;
@@ -44,8 +44,8 @@ public class CommonBuilder {
 	}
 		
 	private String createRange(IpPermission perms) {
-		Integer to = perms.getToPort();
-		Integer from = perms.getFromPort();
+		Integer to = perms.toPort();
+		Integer from = perms.fromPort();
 		if (to==null) {
 			if (from==null) {
 				return "all";
@@ -62,12 +62,12 @@ public class CommonBuilder {
 	}
 	
 	private String createUniqueId(String groupId, IpPermission perms, String range, String dir) {
-		return String.format("%s_%s_%s_%s", groupId, perms.getIpProtocol(), range, dir);
+		return String.format("%s_%s_%s_%s", groupId, perms.ipProtocol(), range, dir);
 	}
 	
 	private String createLabel(IpPermission perms) {
-		List<IpRange> ipRanges = perms.getIpv4Ranges();
-		String ipProtocol = perms.getIpProtocol();
+		List<IpRange> ipRanges = perms.ipRanges();
+		String ipProtocol = perms.ipProtocol();
 		if (ipProtocol.equals("-1")) {
 			ipProtocol = "all";
 		}
@@ -85,10 +85,10 @@ public class CommonBuilder {
 			if (rangesPart.length()!=0) {
 				rangesPart.append(",\n");
 			}
-			if (range.getCidrIp().equals("0.0.0.0/0")) {
+			if (range.cidrIp().equals("0.0.0.0/0")) {
                 rangesPart.append("all");
 			} else {
-                rangesPart.append(range.getCidrIp());
+                rangesPart.append(range.cidrIp());
             }
 		}
 		return rangesPart.toString();

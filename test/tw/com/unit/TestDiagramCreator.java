@@ -57,7 +57,7 @@ public class TestDiagramCreator extends EasyMockSupport {
 		creator.createDiagrams(recorder);
 		verifyAll();
 	}
-	
+
 	@Test
 	public void invokeDiagramCreationWithRealRecorder() throws IOException, CfnAssistException {
 		

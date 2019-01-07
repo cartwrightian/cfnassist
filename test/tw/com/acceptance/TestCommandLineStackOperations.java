@@ -2,11 +2,11 @@ package tw.com.acceptance;
 
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.Vpc;
 import org.junit.*;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.CLIArgBuilder;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,7 +29,7 @@ public class TestCommandLineStackOperations {
 	private Vpc altEnvVPC;
 	private VpcRepository vpcRepository;
 	private ProjectAndEnv altProjectAndEnv;
-	private static AmazonEC2 ec2Client;
+	private static Ec2Client ec2Client;
 	private static AmazonCloudFormation cfnClient;
 	private DeletesStacks deletesStacks;
 	
@@ -297,7 +296,7 @@ public class TestCommandLineStackOperations {
 		main = new Main(stepback);
 		int resultB = main.parse();
 		
-		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
+		vpcRepository.initAllTags(altEnvVPC.vpcId(), altProjectAndEnv);
 		
 		assertEquals("first back failed",0,resultA);
 		assertEquals("second back failed",0,resultB);
@@ -317,7 +316,7 @@ public class TestCommandLineStackOperations {
 		result = main.parse();
 		
 		//clean up as needed
-		vpcRepository.initAllTags(altEnvVPC.getVpcId(), altProjectAndEnv);
+		vpcRepository.initAllTags(altEnvVPC.vpcId(), altProjectAndEnv);
 		//cfnClient.setRegions(EnvironmentSetupForTests.getRegion());
 		
 		// check
@@ -327,7 +326,7 @@ public class TestCommandLineStackOperations {
 	@Ignore("cant find way to label at existing stack via apis")
 	@Test
 	public void testInvokeViaCommandLineTagExistingStack() throws IOException {
-		EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, altEnvVPC.getVpcId(),"");
+		EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, altEnvVPC.vpcId(),"");
 		
 		String[] argslabelStack = {
 				"-env", EnvironmentSetupForTests.ENV,

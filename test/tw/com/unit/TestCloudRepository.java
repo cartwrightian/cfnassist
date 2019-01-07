@@ -1,12 +1,13 @@
 package tw.com.unit;
 
-import com.amazonaws.services.ec2.model.*;
+import software.amazon.awssdk.services.ec2.model.*;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import tw.com.EnvironmentSetupForTests;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
@@ -17,6 +18,8 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,12 +54,12 @@ public class TestCloudRepository extends EasyMockSupport {
 		List<Subnet> result = repository.getSubnetsForVpc(vpcId); // cached
 		verifyAll();
 		assertEquals(1, result.size());
-		assertEquals(subnetId, result.get(0).getSubnetId());
+		assertEquals(subnetId, result.get(0).subnetId());
 	}
 
 	@Test
 	public void shouldReturnAvailabilityZones() {
-		AvailabilityZone zone = new AvailabilityZone().withRegionName("regionName").withZoneName("regionaNameA");
+		AvailabilityZone zone = AvailabilityZone.builder().regionName("regionName").zoneName("regionaNameA").build();
 		Map<String, AvailabilityZone> zones = new HashMap<>();
 		zones.put("A", zone);
 		EasyMock.expect(cloudClient.getAvailabilityZones()).andReturn(zones);
@@ -81,7 +84,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		Subnet result = repository.getSubnetById(subnetId); // cached
 		verifyAll();
 
-		assertEquals(subnetId, result.getSubnetId());
+		assertEquals(subnetId, result.subnetId());
 	}
 	
 	@Test
@@ -91,13 +94,13 @@ public class TestCloudRepository extends EasyMockSupport {
 		List<Address> addresses = new LinkedList<>();
 		List<Instance> instances = new LinkedList<>();
 
-		Instance instanceA = new Instance().withInstanceId("ins123").withVpcId(vpcId);
-		Instance instanceB = new Instance().withInstanceId("ins456").withVpcId("someOtherId");
+		Instance instanceA = Instance.builder().instanceId("ins123").vpcId(vpcId).build();
+		Instance instanceB = Instance.builder().instanceId("ins456").vpcId("someOtherId").build();
 		instances.add(instanceA);
 		instances.add(instanceB);
 
-		addresses.add(new Address().withPrivateIpAddress(matchingAddress).withInstanceId(instanceA.getInstanceId()));
-		addresses.add(new Address().withPrivateIpAddress("10.9.8.7").withInstanceId(instanceB.getInstanceId()));
+		addresses.add(Address.builder().privateIpAddress(matchingAddress).instanceId(instanceA.instanceId()).build());
+		addresses.add(Address.builder().privateIpAddress("10.9.8.7").instanceId(instanceB.instanceId()).build());
 		
 		EasyMock.expect(cloudClient.getEIPs()).andReturn(addresses);
 		EasyMock.expect(cloudClient.getInstances()).andReturn(instances);
@@ -108,7 +111,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		verifyAll();
 		
 		assertEquals(1, result.size());
-		assertEquals(matchingAddress, result.get(0).getPrivateIpAddress());
+		assertEquals(matchingAddress, result.get(0).privateIpAddress());
 	}
 	
 	@Test
@@ -117,9 +120,9 @@ public class TestCloudRepository extends EasyMockSupport {
 		String groupName = "groupName";
 		
 		List<SecurityGroup> groups = new LinkedList<>();
-		groups.add(new SecurityGroup().withGroupId("xxxx1").withGroupName("abcgc"));
-		groups.add(new SecurityGroup().withGroupId(groupId).withGroupName(groupName));
-		groups.add(new SecurityGroup().withGroupId("xxxx2").withGroupName("zzzhdh"));
+		groups.add(SecurityGroup.builder().groupId("xxxx1").groupName("abcgc").build());
+		groups.add(SecurityGroup.builder().groupId(groupId).groupName(groupName).build());
+		groups.add(SecurityGroup.builder().groupId("xxxx2").groupName("zzzhdh").build());
 		
 		EasyMock.expect(cloudClient.getSecurityGroups()).andReturn(groups);
 
@@ -129,8 +132,8 @@ public class TestCloudRepository extends EasyMockSupport {
 		repository.getSecurityGroupById(groupId); //cached
 		verifyAll();
 		
-		assertEquals(groupName, resultById.getGroupName());
-		assertEquals(groupId, resultByName.getGroupId());
+		assertEquals(groupName, resultById.groupName());
+		assertEquals(groupId, resultByName.groupId());
 	}
 	
 	@Test
@@ -145,7 +148,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		Instance result = repository.getInstanceById(instanceId);
 		repository.getInstanceById(instanceId); // cached
 		verifyAll();
-		assertEquals(instanceId, result.getInstanceId());
+		assertEquals(instanceId, result.instanceId());
 	}
 	
 	@Test
@@ -155,7 +158,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		String instanceIdB = "instanceId1";
 
 		List<Instance> instances = createInstances(instanceId,subnetId);
-		instances.add(new Instance().withInstanceId(instanceIdB).withSubnetId(subnetId));
+		instances.add(Instance.builder().instanceId(instanceIdB).subnetId(subnetId).build());
 	
 		EasyMock.expect(cloudClient.getInstances()).andReturn(instances);
 		
@@ -172,9 +175,9 @@ public class TestCloudRepository extends EasyMockSupport {
 		String tableId = "tableId";
 
 		List<RouteTable> tables = new LinkedList<>();
-		tables.add(new RouteTable().withRouteTableId("someId").withVpcId("someVpcID"));
-		tables.add(new RouteTable().withRouteTableId(tableId).withVpcId(vpcId));
-		tables.add(new RouteTable().withRouteTableId("someOtherId").withVpcId("someOtherVpcID"));
+		tables.add(RouteTable.builder().routeTableId("someId").vpcId("someVpcID").build());
+		tables.add(RouteTable.builder().routeTableId(tableId).vpcId(vpcId).build());
+		tables.add(RouteTable.builder().routeTableId("someOtherId").vpcId("someOtherVpcID").build());
 	
 		EasyMock.expect(cloudClient.getRouteTables()).andReturn(tables);
 		
@@ -183,7 +186,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		repository.getRouteTablesForVPC(vpcId); //cached
 		verifyAll();
 		assertEquals(1,  result.size());
-		assertEquals(tableId, result.get(0).getRouteTableId());
+		assertEquals(tableId, result.get(0).routeTableId());
 	}
 	
 	@Test
@@ -192,9 +195,9 @@ public class TestCloudRepository extends EasyMockSupport {
 		String aclId = "aclId";
 
 		List<NetworkAcl> acls = new LinkedList<>();
-		acls.add(new NetworkAcl().withNetworkAclId("someId").withVpcId("someVpcID"));
-		acls.add(new NetworkAcl().withNetworkAclId(aclId).withVpcId(vpcId));
-		acls.add(new NetworkAcl().withNetworkAclId("someOtherId").withVpcId("someOtherVpcID"));
+		acls.add(NetworkAcl.builder().networkAclId("someId").vpcId("someVpcID").build());
+		acls.add(NetworkAcl.builder().networkAclId(aclId).vpcId(vpcId).build());
+		acls.add(NetworkAcl.builder().networkAclId("someOtherId").vpcId("someOtherVpcID").build());
 	
 		EasyMock.expect(cloudClient.getACLs()).andReturn(acls);
 		
@@ -203,7 +206,7 @@ public class TestCloudRepository extends EasyMockSupport {
 		repository.getALCsForVPC(vpcId); //cached
 		verifyAll();
 		assertEquals(1,  result.size());
-		assertEquals(aclId, result.get(0).getNetworkAclId());
+		assertEquals(aclId, result.get(0).networkAclId());
 	}
 
 	@Test
@@ -247,8 +250,8 @@ public class TestCloudRepository extends EasyMockSupport {
 	public void shouldGetTagsForAnInstance() throws WrongNumberOfInstancesException {
 		String instanceId = "someId";
 		
-		Tag tag = new Tag().withKey("theKey").withValue("theValue");
-		Instance theInstance = new Instance().withInstanceId(instanceId).withTags(tag);
+		Tag tag = EnvironmentSetupForTests.createEc2Tag("theKey","theValue");
+		Instance theInstance = Instance.builder().instanceId(instanceId).tags(tag).build();
 		EasyMock.expect(cloudClient.getInstanceById(instanceId)).andReturn(theInstance);
 		
 		replayAll();
@@ -257,19 +260,19 @@ public class TestCloudRepository extends EasyMockSupport {
 		
 		assertEquals(1, results.size());
 		Tag result = results.get(0);
-		assertEquals("theKey", result.getKey());
-		assertEquals("theValue", result.getValue());
+		assertEquals("theKey", result.key());
+		assertEquals("theValue", result.value());
 	}
 
 	@Test
 	public void shouldCreateKeyPairAndSaveToFile() throws CfnAssistException, IOException {
         SavesFile savesFile = createStrictMock(SavesFile.class);
 
-        String filename = format("%s/.ssh/keyName.pem", home);
+        Path filename = Paths.get(format("%s/.ssh/keyName.pem", home));
 
         String material = "somePem";
-        EasyMock.expect(cloudClient.createKeyPair("keyName")).
-                andReturn(new KeyPair().withKeyFingerprint("fingerprint").withKeyMaterial(material));
+		CloudClient.AWSPrivateKey key = new CloudClient.AWSPrivateKey("name", material);
+		EasyMock.expect(cloudClient.createKeyPair("keyName")).andReturn(key);
         EasyMock.expect(savesFile.save(filename, material)).andReturn(true);
         savesFile.ownerOnlyPermisssion(filename);
         EasyMock.expectLastCall();
@@ -282,7 +285,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	@Test
     public void shouldGetIPForAnEIPAllocationId() {
         List<Address> addresses = new LinkedList<>();
-        addresses.add(new Address().withAllocationId("allocationId").withPublicIp("10.1.2.3"));
+        addresses.add(Address.builder().allocationId("allocationId").publicIp("10.1.2.3").build());
         EasyMock.expect(cloudClient.getEIPs()).andReturn(addresses);
 
         replayAll();
@@ -293,20 +296,20 @@ public class TestCloudRepository extends EasyMockSupport {
     }
 
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {
-		Subnet matchingSubnet = new Subnet().withVpcId(vpcId).withSubnetId(subnetId);
+		Subnet matchingSubnet = Subnet.builder().vpcId(vpcId).subnetId(subnetId).build();
 		
 		List<Subnet> subnets = new LinkedList<>();
-		subnets.add(new Subnet().withVpcId("anotherId"));	
+		subnets.add(Subnet.builder().vpcId("anotherId").build());
 		subnets.add(matchingSubnet);
-		subnets.add(new Subnet().withVpcId("anotherId"));
+		subnets.add(Subnet.builder().vpcId("anotherId").build());
 		return subnets;
 	}
 	
 	private List<Instance> createInstances(String instanceId, String subnetId) {
 		List<Instance> instances = new LinkedList<>();
-		instances.add(new Instance().withInstanceId("anotherID1").withSubnetId("subnetAAAAXXX"));
-		instances.add(new Instance().withInstanceId(instanceId).withSubnetId(subnetId));
-		instances.add(new Instance().withInstanceId("anotherID2").withSubnetId("subnetBBBBYYY"));
+		instances.add(Instance.builder().instanceId("anotherID1").subnetId("subnetAAAAXXX").build());
+		instances.add(Instance.builder().instanceId(instanceId).subnetId(subnetId).build());
+		instances.add(Instance.builder().instanceId("anotherID2").subnetId("subnetBBBBYYY").build());
 		return instances;
 	}
 }

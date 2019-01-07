@@ -1,21 +1,20 @@
 package tw.com.integration;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.model.*;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.DescribeSubnetsRequest;
-import com.amazonaws.services.ec2.model.DescribeSubnetsResult;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Vpc;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
 import org.junit.rules.TestName;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.DescribeSubnetsRequest;
+import software.amazon.awssdk.services.ec2.model.DescribeSubnetsResponse;
+import software.amazon.awssdk.services.ec2.model.Subnet;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.*;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
@@ -42,7 +41,7 @@ import static org.junit.Assert.*;
 public class TestCloudFormationClient {
 	
 	private static AmazonCloudFormation cfnClient;
-	private static AmazonEC2 ec2Client;
+	private static Ec2Client ec2Client;
 	private static DefaultAwsRegionProviderChain regionProvider;
 
 	private PollingStackMonitor polligMonitor;
@@ -55,7 +54,6 @@ public class TestCloudFormationClient {
 
 	@BeforeClass
 	public static void onceBeforeClassRuns() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
 		regionProvider = new DefaultAwsRegionProviderChain();
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client, regionProvider));
@@ -180,7 +178,7 @@ public class TestCloudFormationClient {
 
 	@Test
 	public void shouldQueryCreatedStack() throws IOException, CfnAssistException, InterruptedException {
-		String vpcId = mainTestVPC.getVpcId();
+		String vpcId = mainTestVPC.vpcId();
 		String cidr = "10.0.10.0/24";
 		
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_CIDR_PARAM), Charset.defaultCharset());
@@ -221,7 +219,7 @@ public class TestCloudFormationClient {
 	
 	@Test
 	public void shouldCreateAndThenUpdateAStack() throws IOException, CfnAssistException, InterruptedException {
-		String vpcId = mainTestVPC.getVpcId();
+		String vpcId = mainTestVPC.vpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
@@ -253,7 +251,7 @@ public class TestCloudFormationClient {
 	
 	@Test
 	public void shouldCreateAndThenUpdateAStackAddingSNS() throws IOException, CfnAssistException, InterruptedException {
-		String vpcId = mainTestVPC.getVpcId();
+		String vpcId = mainTestVPC.vpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
@@ -308,19 +306,19 @@ public class TestCloudFormationClient {
 		assertEquals(1, resultResources.size());
 		String subnetId = resultResources.get(0).getPhysicalResourceId();
 		Subnet subnet = getSubnetDetails(subnetId);	
-		assertEquals(initialCidr, subnet.getCidrBlock());
-		assertEquals(vpcId, subnet.getVpcId());		
+		assertEquals(initialCidr, subnet.cidrBlock());
+		assertEquals(vpcId, subnet.vpcId());
 	}
 	
 	private Subnet getSubnetDetails(String physicalId) {
-		DescribeSubnetsRequest describeSubnetsRequest = new DescribeSubnetsRequest();
-		Collection<String> subnetIds = new LinkedList<>();
-		subnetIds.add(physicalId);
-		describeSubnetsRequest.setSubnetIds(subnetIds);
-		DescribeSubnetsResult result = ec2Client.describeSubnets(describeSubnetsRequest);
-		assertEquals(1, result.getSubnets().size());	
-		
-		return result.getSubnets().get(0);
+		DescribeSubnetsRequest describeSubnetsRequest = DescribeSubnetsRequest.builder().subnetIds(physicalId).build();
+//		Collection<String> subnetIds = new LinkedList<>();
+//		subnetIds.add(physicalId);
+//		describeSubnetsRequest.setSubnetIds(subnetIds);
+
+		DescribeSubnetsResponse result = ec2Client.describeSubnets(describeSubnetsRequest);
+		assertEquals(1, result.subnets().size());
+		return result.subnets().get(0);
 	}
 	
 	private Collection<Parameter> createStandardParameters(String vpcId) {

@@ -4,8 +4,6 @@ import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
@@ -22,6 +20,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.cli.MissingArgumentException;
 import org.joda.time.DateTime;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import tw.com.commandline.CommandExecutor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
@@ -40,7 +39,7 @@ public class FacadeFactory implements ProvidesNow {
 	private AmazonSQS sqsClient;
 	private AmazonSNS snsClient;
 	private AmazonS3 s3Client;
-	private AmazonEC2 ec2Client;
+	private Ec2Client ec2Client;
 	private AmazonElasticLoadBalancing elbClient;
 	private AmazonRDS rdsClient;
 	private AmazonIdentityManagement iamClient;
@@ -110,7 +109,7 @@ public class FacadeFactory implements ProvidesNow {
 
 	private void createAmazonAPIClients() {
         cfnClient = AmazonCloudFormationClientBuilder.defaultClient();
-        ec2Client = AmazonEC2ClientBuilder.defaultClient();
+        ec2Client = Ec2Client.builder().build();
         snsClient = AmazonSNSClientBuilder.defaultClient();
         sqsClient = AmazonSQSClientBuilder.defaultClient();
         elbClient = AmazonElasticLoadBalancingClientBuilder.defaultClient();

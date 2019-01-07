@@ -2,7 +2,7 @@ package tw.com.parameters;
 
 import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 
 import java.util.Map;
 

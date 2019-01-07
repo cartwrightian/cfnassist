@@ -300,7 +300,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void emptyStatusIfNoSuchStack() throws WrongNumberOfStacksException, NotReadyException, IOException, InvalidStackParameterException, InterruptedException {
+	public void emptyStatusIfNoSuchStack() {
 		List<Stack> stacks = new LinkedList<>();
 		stacks.add(new Stack().withStackName("ThisIsNotTheStackYouAreLookingFor"));
 			
@@ -541,10 +541,10 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	
-	private List<com.amazonaws.services.ec2.model.Tag> withTags(String buidNumber, String typeTag) {
-		List<com.amazonaws.services.ec2.model.Tag> tags = new LinkedList<>();
-		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(AwsFacade.BUILD_TAG).withValue(buidNumber));
-		tags.add(new com.amazonaws.services.ec2.model.Tag().withKey(AwsFacade.TYPE_TAG).withValue(typeTag));
+	private List<software.amazon.awssdk.services.ec2.model.Tag> withTags(String buildNumber, String typeTag) {
+		List<software.amazon.awssdk.services.ec2.model.Tag> tags = new LinkedList<>();
+		tags.add(EnvironmentSetupForTests.createEc2Tag(AwsFacade.BUILD_TAG,buildNumber));
+		tags.add(EnvironmentSetupForTests.createEc2Tag(AwsFacade.TYPE_TAG, typeTag));
 		return tags;
 	}
 		

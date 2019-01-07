@@ -1,6 +1,6 @@
 package tw.com.unit;
 
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.elasticloadbalancing.model.Tag;
@@ -58,7 +58,7 @@ public class TestELBRepository extends EasyMockSupport {
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
 		
-		Vpc vpc = new Vpc().withVpcId("vpcId");
+		Vpc vpc = Vpc.builder().vpcId("vpcId").build();
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
 		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(lb1Tags);
@@ -79,8 +79,8 @@ public class TestELBRepository extends EasyMockSupport {
 		List<LoadBalancerDescription> lbs = new LinkedList<>();
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
-		
-		Vpc vpc = new Vpc().withVpcId("vpcId");
+
+		Vpc vpc = Vpc.builder().vpcId("vpcId").build();
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
 		EasyMock.expect(elbClient.getTagsFor("lb1Name")).andReturn(new LinkedList<>());
@@ -103,7 +103,7 @@ public class TestELBRepository extends EasyMockSupport {
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("someId"));
 		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
 
-		Vpc vpc = new Vpc().withVpcId("vpcId");
+		Vpc vpc = Vpc.builder().vpcId("vpcId").build();
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(lbs);
 		
@@ -147,8 +147,10 @@ public class TestELBRepository extends EasyMockSupport {
 		updatedLoadBalancers.add(new LoadBalancerDescription().withVPCId(vpcId).
 				withInstances(insA1, insA2, insB1, insB2).
 				withLoadBalancerName("lbName").withDNSName("dnsName"));
-	
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(new Vpc().withVpcId(vpcId));
+
+		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
+
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(initalLoadBalancers);
 		SearchCriteria criteria = new SearchCriteria(projAndEnv);
 		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(criteria, "typeTag")).andReturn(instancesThatMatch);
@@ -174,9 +176,12 @@ public class TestELBRepository extends EasyMockSupport {
 		List<LoadBalancerDescription> theLB = new LinkedList<>();
 		theLB.add(new LoadBalancerDescription().withVPCId(vpcId).
 				withInstances(insA).
-				withLoadBalancerName("lbName").withDNSName("dnsName"));
+				withLoadBalancerName("lbName").
+				withDNSName("dnsName"));
 
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(new Vpc().withVpcId(vpcId));
+		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
+
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(theLB);
 		
 		replayAll();

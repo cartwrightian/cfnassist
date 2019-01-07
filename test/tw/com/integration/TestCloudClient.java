@@ -1,16 +1,13 @@
 package tw.com.integration;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.*;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 import tw.com.providers.CloudClient;
 
@@ -25,10 +22,10 @@ import static org.junit.Assert.*;
 public class TestCloudClient {
 	
 	private CloudClient cloudClient;
-	private AmazonEC2 ec2Client;
+	private Ec2Client ec2Client;
 	private String VpcId = EnvironmentSetupForTests.VPC_ID_FOR_ALT_ENV;
 	private Tag expectedTag = EnvironmentSetupForTests.createEc2Tag(AwsFacade.ENVIRONMENT_TAG, EnvironmentSetupForTests.ALT_ENV);
-	private com.amazonaws.services.ec2.model.Instance instance;
+	private software.amazon.awssdk.services.ec2.model.Instance instance;
 	
 	@Before
 	public void beforeEachTestIsRun() {
@@ -39,7 +36,7 @@ public class TestCloudClient {
 	@After
 	public void afterEachTestIsRun() {
 		if (instance!=null) {
-			ec2Client.terminateInstances(new TerminateInstancesRequest().withInstanceIds(instance.getInstanceId()));
+			ec2Client.terminateInstances(TerminateInstancesRequest.builder().instanceIds(instance.instanceId()).build());
 		}
 	}
 
@@ -55,9 +52,9 @@ public class TestCloudClient {
 		List<String> resources = new LinkedList<>();
 		resources.add(VpcId);
 		cloudClient.addTagsToResources(resources, tags);
-		
-		DescribeVpcsResult queryResult = ec2Client.describeVpcs(new DescribeVpcsRequest().withVpcIds(VpcId));
-		List<Tag> results = queryResult.getVpcs().get(0).getTags();
+
+		DescribeVpcsResponse queryResult = ec2Client.describeVpcs(DescribeVpcsRequest.builder().vpcIds(VpcId).build());
+		List<Tag> results = queryResult.vpcs().get(0).tags();
 		
 		assertTrue(results.contains(tagA));
 		assertTrue(results.contains(tagB));	
@@ -67,8 +64,8 @@ public class TestCloudClient {
 		cloudClient.deleteTagsFromResources(resources, tagA);
 		cloudClient.deleteTagsFromResources(resources, tagB);
 		
-		queryResult = ec2Client.describeVpcs(new DescribeVpcsRequest().withVpcIds(VpcId));
-		List<Tag> deleteResults = queryResult.getVpcs().get(0).getTags();
+		queryResult = ec2Client.describeVpcs(DescribeVpcsRequest.builder().vpcIds(VpcId).build());
+		List<Tag> deleteResults = queryResult.vpcs().get(0).tags();
 		
 		assertFalse(deleteResults.contains(tagA));
 		assertFalse(deleteResults.contains(tagB));	
@@ -77,7 +74,7 @@ public class TestCloudClient {
 	@Test
 	public void testCanQueryVpcById() {
 		Vpc result = cloudClient.describeVpc(VpcId);
-		List<Tag> tags = result.getTags();
+		List<Tag> tags = result.tags();
 		assertTrue(tags.contains(expectedTag));		
 	}
 	
@@ -87,7 +84,7 @@ public class TestCloudClient {
 		
 		boolean matched = false;
 		for(Vpc candidate : results) {
-			matched = candidate.getTags().contains(expectedTag);
+			matched = candidate.tags().contains(expectedTag);
 			if (matched) break;
 		}
 		assertTrue(matched);
@@ -99,7 +96,7 @@ public class TestCloudClient {
 		Map<String, AvailabilityZone> zones = cloudClient.getAvailabilityZones();
 
 		assertEquals(3, zones.size());
-		zones.forEach((name, zone) -> assertEquals(regionName, zone.getRegionName()));
+		zones.forEach((name, zone) -> assertEquals(regionName, zone.regionName()));
         assertTrue(zones.containsKey("a"));
         assertTrue(zones.containsKey("b"));
 	}
@@ -108,24 +105,24 @@ public class TestCloudClient {
 	public void testShouldBeAbleToGetInstanceById() throws WrongNumberOfInstancesException {
 		instance = EnvironmentSetupForTests.createSimpleInstance(ec2Client);
 
-		String instanceId = instance.getInstanceId();
+		String instanceId = instance.instanceId();
 		
 		Instance result = cloudClient.getInstanceById(instanceId);
-		assertEquals(instanceId, result.getInstanceId());
+		assertEquals(instanceId, result.instanceId());
 	}
 
 	@Test
 	public void shouldCreateKeyPair() {
         String testKeypairName = "testKeyPairName";
 
-        KeyPair keyPair = cloudClient.createKeyPair(testKeypairName);
+		CloudClient.AWSPrivateKey keyPair = cloudClient.createKeyPair(testKeypairName);
 
-        DeleteKeyPairRequest deleteRequest = new DeleteKeyPairRequest().withKeyName(testKeypairName);
+        DeleteKeyPairRequest deleteRequest = DeleteKeyPairRequest.builder().keyName(testKeypairName).build();
         ec2Client.deleteKeyPair(deleteRequest);
 
         assertEquals(testKeypairName, keyPair.getKeyName());
-        assertThat(keyPair.getKeyMaterial(), startsWith("-----BEGIN RSA PRIVATE KEY-----"));
-        assertThat(keyPair.getKeyMaterial(), endsWith("-----END RSA PRIVATE KEY-----"));
+        assertThat(keyPair.getMaterial(), startsWith("-----BEGIN RSA PRIVATE KEY-----"));
+        assertThat(keyPair.getMaterial(), endsWith("-----END RSA PRIVATE KEY-----"));
 	}
 
 }

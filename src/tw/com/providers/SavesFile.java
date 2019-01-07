@@ -5,33 +5,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.entity.OutputLogEventDecorator;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 
 public class SavesFile {
     private static final Logger logger = LoggerFactory.getLogger(SavesFile.class);
     private Set<PosixFilePermission> permissionSet = new HashSet<>();
-    OpenOption[] options = new OpenOption[] {StandardOpenOption.CREATE, StandardOpenOption.APPEND,
+    private OpenOption[] options = new OpenOption[] {StandardOpenOption.CREATE, StandardOpenOption.APPEND,
             StandardOpenOption.WRITE};
 
     public SavesFile() {
         permissionSet.add(PosixFilePermission.OWNER_READ);
         permissionSet.add(PosixFilePermission.OWNER_WRITE);
-    }
-
-    // use version that takes a Path
-    @Deprecated
-    public boolean save(String destination, String contents) {
-        return save(Paths.get(destination),contents);
     }
 
     public boolean save(Path destination, String contents) {
@@ -45,12 +43,12 @@ public class SavesFile {
         }
     }
 
-    public boolean exists(String savesFile) {
-        return new File(savesFile).exists();
+    public boolean exists(Path savesFile) {
+        return savesFile.toFile().exists();
     }
 
-    public void ownerOnlyPermisssion(String filename) throws IOException {
-        Files.setPosixFilePermissions(Paths.get(filename), permissionSet);
+    public void ownerOnlyPermisssion(Path filename) throws IOException {
+        Files.setPosixFilePermissions(filename, permissionSet);
     }
 
     public boolean save(Path path, List<Stream<OutputLogEventDecorator>> fetchLogs) {

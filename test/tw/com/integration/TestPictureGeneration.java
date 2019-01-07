@@ -1,20 +1,12 @@
 package tw.com.integration;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.rds.AmazonRDS;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
@@ -25,11 +17,11 @@ import tw.com.providers.CloudClient;
 import tw.com.providers.CloudFormationClient;
 import tw.com.providers.LoadBalancerClient;
 import tw.com.providers.RDSClient;
-import tw.com.repository.CfnRepository;
-import tw.com.repository.CloudRepository;
-import tw.com.repository.ELBRepository;
-import tw.com.repository.ResourceRepository;
-import tw.com.repository.VpcRepository;
+import tw.com.repository.*;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class TestPictureGeneration {
 
@@ -39,8 +31,7 @@ public class TestPictureGeneration {
 	
 	@Before
 	public void beforeEachTestRuns() {
-		AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
-		AmazonEC2 ec2Client = EnvironmentSetupForTests.createEC2Client();
+		Ec2Client ec2Client = EnvironmentSetupForTests.createEC2Client();
 		AmazonElasticLoadBalancing awsElbClient = EnvironmentSetupForTests.createELBClient();
 		AmazonCloudFormation cfnClient = EnvironmentSetupForTests.createCFNClient();
 		AmazonRDS awsRdsClient = EnvironmentSetupForTests.createRDSClient();

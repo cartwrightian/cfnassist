@@ -5,11 +5,11 @@ import java.util.Map;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
+import software.amazon.awssdk.services.ec2.model.Instance;
+import software.amazon.awssdk.services.ec2.model.IpPermission;
+import software.amazon.awssdk.services.ec2.model.RouteTable;
+import software.amazon.awssdk.services.ec2.model.SecurityGroup;
+import software.amazon.awssdk.services.ec2.model.Subnet;
 
 public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId  {
 	private Map<String, String> instanceNames = new HashMap<String,String>(); // id -> name
@@ -21,11 +21,11 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 		instanceNames = new HashMap<String, String>();
 		this.networkChildDiagram = networkChildDiagram;
 		this.securityChildDiagram = securityDiagram;
-		this.id = subnet.getSubnetId();
+		this.id = subnet.subnetId();
 	}
 
 	public void add(Instance instance) throws CfnAssistException {
-		String instanceId = instance.getInstanceId();
+		String instanceId = instance.instanceId();
 		String label = createInstanceLabel(instance);
 		networkChildDiagram.addInstance(instanceId, label);
 		securityChildDiagram.addInstance(instanceId, label);
@@ -33,8 +33,8 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 	
 	public String createInstanceLabel(Instance instance) {
 		String name = getNameForInstance(instance);
-		String privateIp = instance.getPrivateIpAddress();
-		String id = instance.getInstanceId();
+		String privateIp = instance.privateIpAddress();
+		String id = instance.instanceId();
 		String label;
 		if (!name.isEmpty()) {
 			label = String.format("%s\n[%s]\n(%s)", name, id, privateIp);
@@ -45,12 +45,12 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 	}
 	
 	private String getNameForInstance(Instance instance) {
-		String instanceId = instance.getInstanceId();
+		String instanceId = instance.instanceId();
 		if  (instanceNames.containsKey(instanceId)) {
 			return instanceNames.get(instanceId);
 		}
 
-		String name = AmazonVPCFacade.getNameFromTags(instance.getTags());
+		String name = AmazonVPCFacade.getNameFromTags(instance.tags());
 		if (!name.isEmpty()) {
 			instanceNames.put(instanceId, name);
 		}
@@ -58,7 +58,7 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 	}
 
 	public void addSecurityGroup(SecurityGroup group) throws CfnAssistException {
-		String groupId = group.getGroupId();
+		String groupId = group.groupId();
 		String label = AmazonVPCFacade.labelForSecGroup(group);
 		securityChildDiagram.addSecurityGroup(groupId, label);
 	}
@@ -68,16 +68,16 @@ public class SubnetDiagramBuilder extends CommonBuilder implements HasDiagramId 
 	}
 	
 	public static String formSubnetLabel(Subnet subnet, String tagName) {
-		String name = subnet.getSubnetId();
+		String name = subnet.subnetId();
 		if (!tagName.isEmpty()) {
 			name = tagName;
 		} 
-		return String.format("%s [%s]\n(%s)", name, subnet.getSubnetId(), subnet.getCidrBlock());
+		return String.format("%s [%s]\n(%s)", name, subnet.subnetId(), subnet.cidrBlock());
 	}
 
 	public void addRouteTable(RouteTable routeTable) throws CfnAssistException {
-		String name = AmazonVPCFacade.getNameFromTags(routeTable.getTags());
-		String routeTableId = routeTable.getRouteTableId();
+		String name = AmazonVPCFacade.getNameFromTags(routeTable.tags());
+		String routeTableId = routeTable.routeTableId();
 		String label = AmazonVPCFacade.createLabelFromNameAndID(routeTableId, name);
 		
 		String diagramIdForTable = formRouteTableIdForDiagram(id, routeTableId);

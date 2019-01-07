@@ -1,22 +1,14 @@
 package tw.com.pictures;
 
-import java.util.List;
+import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
+import com.amazonaws.services.rds.model.DBInstance;
+import software.amazon.awssdk.services.ec2.model.*;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.RDSClient;
 import tw.com.repository.CloudRepository;
 import tw.com.repository.ELBRepository;
 
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.GroupIdentifier;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.amazonaws.services.rds.model.DBInstance;
+import java.util.List;
 
 public class AmazonVPCFacade {
 
@@ -80,8 +72,8 @@ public class AmazonVPCFacade {
 
 	public static String getValueFromTag(List<Tag> tags, String nameOfTag) {
 		for(Tag tag : tags) {
-			if (tag.getKey().equals(nameOfTag)) {
-				return tag.getValue();
+			if (tag.key().equals(nameOfTag)) {
+				return tag.value();
 			}
 		}
 		return "";
@@ -92,11 +84,11 @@ public class AmazonVPCFacade {
 	}
 
 	public static String labelForSecGroup(SecurityGroup group) {
-		String name = getNameFromTags(group.getTags());
+		String name = getNameFromTags(group.tags());
 		if (name.isEmpty()) {
-			name = group.getGroupName();
+			name = group.groupName();
 		}
-		return createLabelFromNameAndID(group.getGroupId(), name);
+		return createLabelFromNameAndID(group.groupId(), name);
 	}
 
 }

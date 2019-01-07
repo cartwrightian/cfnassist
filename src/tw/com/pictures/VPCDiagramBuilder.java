@@ -13,27 +13,24 @@ import tw.com.entity.Cidr;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.dot.Recorder;
 
-import com.amazonaws.services.ec2.model.Address;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.NetworkAcl;
-import com.amazonaws.services.ec2.model.NetworkAclEntry;
-import com.amazonaws.services.ec2.model.PortRange;
-import com.amazonaws.services.ec2.model.Route;
-import com.amazonaws.services.ec2.model.RouteState;
-import com.amazonaws.services.ec2.model.RouteTable;
-import com.amazonaws.services.ec2.model.RuleAction;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-import com.amazonaws.services.ec2.model.Subnet;
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Address;
+import software.amazon.awssdk.services.ec2.model.IpPermission;
+import software.amazon.awssdk.services.ec2.model.NetworkAcl;
+import software.amazon.awssdk.services.ec2.model.NetworkAclEntry;
+import software.amazon.awssdk.services.ec2.model.PortRange;
+import software.amazon.awssdk.services.ec2.model.Route;
+import software.amazon.awssdk.services.ec2.model.RouteState;
+import software.amazon.awssdk.services.ec2.model.RouteTable;
+import software.amazon.awssdk.services.ec2.model.RuleAction;
+import software.amazon.awssdk.services.ec2.model.SecurityGroup;
+import software.amazon.awssdk.services.ec2.model.Subnet;
+import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 
 public class VPCDiagramBuilder extends CommonBuilder {
 	private static final Logger logger = LoggerFactory.getLogger(VPCDiagramBuilder.class);
-
-	private static final String ROUTE_BLACKHOLE = RouteState.Blackhole.toString();
-	private static final String ROUTE_ACTIVE = RouteState.Active.toString();
 
 	private static final String CIDR_ANY = "any";
 	private Diagram networkDiagram;
@@ -46,12 +43,12 @@ public class VPCDiagramBuilder extends CommonBuilder {
 		this.vpc = vpc;
 		this.networkDiagram = networkDiagram;
 		this.securityDiagram = securityDiagram;
-		subnetDiagramBuilders = new HashMap<String, SubnetDiagramBuilder>();
+		subnetDiagramBuilders = new HashMap<>();
 	}
 
 	private void addTitle(Vpc vpc, Diagram diagram) {
-		String title = vpc.getVpcId();
-		List<Tag> tags = vpc.getTags();
+		String title = vpc.vpcId();
+		List<Tag> tags = vpc.tags();
 		String name = AmazonVPCFacade.getNameFromTags(tags);
 		if (!name.isEmpty()) {
 			title = title + String.format(" (%s)", name);
@@ -85,15 +82,15 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	public NetworkChildDiagram createNetworkDiagramForSubnet(Subnet subnet) throws CfnAssistException {
-		String subnetName = AmazonVPCFacade.getNameFromTags(subnet.getTags());
+		String subnetName = AmazonVPCFacade.getNameFromTags(subnet.tags());
 		String label = SubnetDiagramBuilder.formSubnetLabel(subnet, subnetName);
-		return new NetworkChildDiagram(networkDiagram.createSubDiagram(subnet.getSubnetId(), label));
+		return new NetworkChildDiagram(networkDiagram.createSubDiagram(subnet.subnetId(), label));
 	}
 	
 	public SecurityChildDiagram createSecurityDiagramForSubnet(Subnet subnet) throws CfnAssistException {
-		String subnetName = AmazonVPCFacade.getNameFromTags(subnet.getTags());
+		String subnetName = AmazonVPCFacade.getNameFromTags(subnet.tags());
 		String label = SubnetDiagramBuilder.formSubnetLabel(subnet, subnetName);
-		return new SecurityChildDiagram(securityDiagram.createSubDiagram(subnet.getSubnetId(), label));
+		return new SecurityChildDiagram(securityDiagram.createSubDiagram(subnet.subnetId(), label));
 	}
 
 	public void addAsssociatedRouteTable(RouteTable routeTable, String subnetId) throws CfnAssistException {
@@ -102,8 +99,8 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	public void addEIP(Address eip) throws CfnAssistException {
-		String label = AmazonVPCFacade.createLabelFromNameAndID(eip.getAllocationId() ,eip.getPublicIp());
-		networkDiagram.addPublicIPAddress(eip.getPublicIp(), label);	
+		String label = AmazonVPCFacade.createLabelFromNameAndID(eip.allocationId() ,eip.publicIp());
+		networkDiagram.addPublicIPAddress(eip.publicIp(), label);
 	}
 
 	public void linkEIPToInstance(String publicIp, String instanceId) {
@@ -136,8 +133,8 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 	
 	public void addAcl(NetworkAcl acl) throws CfnAssistException {
-		String aclId = acl.getNetworkAclId();
-		String name = AmazonVPCFacade.getNameFromTags(acl.getTags());
+		String aclId = acl.networkAclId();
+		String name = AmazonVPCFacade.getNameFromTags(acl.tags());
 		String label = AmazonVPCFacade.createLabelFromNameAndID(aclId,name);
 		securityDiagram.addACL(aclId, label);
 	}
@@ -165,7 +162,7 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 	
 	public void addSecurityGroup(SecurityGroup dbSecurityGroup) throws CfnAssistException {
-		String groupId = dbSecurityGroup.getGroupId();
+		String groupId = dbSecurityGroup.groupId();
 		String label = AmazonVPCFacade.labelForSecGroup(dbSecurityGroup);
 		securityDiagram.addSecurityGroup(groupId, label);	
 	}
@@ -179,20 +176,21 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 	
 	public void associateInstanceWithSecGroup(String instanceId, SecurityGroup securityGroup) {
-		securityDiagram.associate(instanceId, securityGroup.getGroupId());		
+		securityDiagram.associate(instanceId, securityGroup.groupId());
 	}
 
 	// this is relying on the subnet ID being the same on both diagrams (network & security)
 	public void addRoute(String routeTableId, String subnetId, Route route) throws CfnAssistException {
-		String string = route.getDestinationCidrBlock();
+		String string = route.destinationCidrBlock();
 		Cidr subnet = parseCidr(string);
-		
-		String state = route.getState();
-		if (ROUTE_ACTIVE.equals(state)) {
+
+		RouteState state = route.state();
+		if (RouteState.ACTIVE.equals(state)) {
 			addActiveRoute(routeTableId, subnetId, route, subnet);
-		} else if (ROUTE_BLACKHOLE.equals(state)){
-			logger.warn("Route state is not active, cidr block is " + route.getDestinationCidrBlock());
-			networkDiagram.addConnectionFromSubDiagram(ROUTE_BLACKHOLE, subnetId, subnetDiagramBuilders.get(subnetId), string);
+		} else if (RouteState.BLACKHOLE.equals(state)){
+			logger.warn("Route state is not active, cidr block is " + route.destinationCidrBlock());
+			networkDiagram.addConnectionFromSubDiagram(RouteState.BLACKHOLE.toString(),
+					subnetId, subnetDiagramBuilders.get(subnetId), string);
 		} else {
 			throw new CfnAssistException(String.format("Unexpected state for route with cidr %s, state was %s", string, state));
 		}
@@ -232,23 +230,23 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 		
 	private String getDestination(Route route) {
-		String dest = route.getGatewayId();
+		String dest = route.gatewayId();
 		if (dest==null) {
-			dest = route.getInstanceId(); // api docs say this is a NAT instance, but could it be any instance?
+			dest = route.instanceId(); // api docs say this is a NAT instance, but could it be any instance?
 		}
 		return dest;
 	}
 
 	// this is relying on the ID being the same on both diagrams (network & security)
 	public void associateAclWithSubnet(NetworkAcl acl, String subnetId) {
-		securityDiagram.associateWithSubDiagram(acl.getNetworkAclId(), subnetId, subnetDiagramBuilders.get(subnetId));	
+		securityDiagram.associateWithSubDiagram(acl.networkAclId(), subnetId, subnetDiagramBuilders.get(subnetId));
 	}
 
 	public void addACLOutbound(String aclId, NetworkAclEntry entry, String subnetId) throws CfnAssistException {
 		String cidrUniqueId = createCidrUniqueId("out", aclId, entry);
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
-		if (entry.getRuleAction().equals(RuleAction.Allow.toString())) {
+		if (entry.ruleAction().equals(RuleAction.ALLOW)) {
 			securityDiagram.addConnectionFromSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
 		} else {
 			securityDiagram.addBlockedConnectionFromSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
@@ -260,7 +258,7 @@ public class VPCDiagramBuilder extends CommonBuilder {
 		String labelForEdge = labelFromEntry(entry);
 		securityDiagram.addCidr(cidrUniqueId, getLabelFromCidr(entry));
 		//  associate subnet with port range and port range with cidr
-		if (entry.getRuleAction().equals(RuleAction.Allow.toString())) {
+		if (entry.ruleAction().equals(RuleAction.ALLOW)) {
 			securityDiagram.addConnectionToSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
 		} else {
 			securityDiagram.addBlockedConnectionToSubDiagram(cidrUniqueId, subnetId, subnetDiagramBuilders.get(subnetId), labelForEdge);
@@ -275,7 +273,7 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	private String getRuleName(NetworkAclEntry entry) {
-		Integer number = entry.getRuleNumber();
+		Integer number = entry.ruleNumber();
 		if (number==32767) {
 			return "default";
 		}
@@ -283,18 +281,18 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	private String getRangeFrom(NetworkAclEntry entry) {
-		PortRange portRange = entry.getPortRange();
+		PortRange portRange = entry.portRange();
 		if (portRange==null) {
 			return("all");
 		}
-		if (portRange.getFrom().toString().equals(portRange.getTo().toString())) {
-			return String.format("%s", portRange.getFrom());
+		if (portRange.from().toString().equals(portRange.to().toString())) {
+			return String.format("%s", portRange.from());
 		}
-		return String.format("%s-%s", portRange.getFrom(), portRange.getTo());
+		return String.format("%s-%s", portRange.from(), portRange.to());
 	}
 
 	private String getProtoFrom(NetworkAclEntry entry) {
-		Integer protoNum = Integer.parseInt(entry.getProtocol());
+		Integer protoNum = Integer.parseInt(entry.protocol());
 		switch(protoNum) {
 			case -1: return "all";
 			case 1: return "icmp";
@@ -305,7 +303,7 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	private String getLabelFromCidr(NetworkAclEntry entry) {
-		String cidrBlock = entry.getCidrBlock();
+		String cidrBlock = entry.cidrBlock();
 		if (cidrBlock.equals("0.0.0.0/0")) {
 			return CIDR_ANY;
 		} 
@@ -313,7 +311,7 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	private String createCidrUniqueId(String direction, String aclId, NetworkAclEntry entry) {
-		String uniqueId = String.format("%s_%s_%s", direction, entry.getCidrBlock(), aclId);
+		String uniqueId = String.format("%s_%s_%s", direction, entry.cidrBlock(), aclId);
 		return uniqueId;
 	}
 

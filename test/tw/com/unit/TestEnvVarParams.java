@@ -2,7 +2,7 @@ package tw.com.unit;
 
 import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import org.junit.Before;
 import org.junit.Test;
 import tw.com.entity.ProjectAndEnv;

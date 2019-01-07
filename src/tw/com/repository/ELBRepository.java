@@ -14,7 +14,7 @@ import tw.com.exceptions.TooManyELBException;
 import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.providers.LoadBalancerClient;
 
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.elasticloadbalancing.model.Tag;
@@ -95,7 +95,7 @@ public class ELBRepository {
 
 	private String getVpcId(ProjectAndEnv projAndEnv) {
 		Vpc vpc = vpcRepository.getCopyOfVpc(projAndEnv);
-		String vpcID = vpc.getVpcId();
+		String vpcID = vpc.vpcId();
 		return vpcID;
 	}
 

@@ -1,12 +1,11 @@
 package tw.com.acceptance;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.Vpc;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.CLIArgBuilder;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.commandline.Main;
@@ -17,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TestCommandLineVPCoperations {
 	
-	private static AmazonEC2 ec2Client;
+	private static Ec2Client ec2Client;
 	private Vpc altEnvVPC;
 	
 	@Before
@@ -34,7 +33,7 @@ public class TestCommandLineVPCoperations {
 	@Test
 	public void testInvokeInitViaCommandLine() throws InterruptedException {	
 		EnvironmentSetupForTests.clearVpcTags(ec2Client, altEnvVPC);
-		String[] args = CLIArgBuilder.initVPC(EnvironmentSetupForTests.ALT_ENV, EnvironmentSetupForTests.PROJECT, altEnvVPC.getVpcId());
+		String[] args = CLIArgBuilder.initVPC(EnvironmentSetupForTests.ALT_ENV, EnvironmentSetupForTests.PROJECT, altEnvVPC.vpcId());
 
 		Main main = new Main(args);
 		int result = main.parse();

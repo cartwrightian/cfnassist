@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.*;
 
-import com.amazonaws.services.ec2.model.Subnet;
+import software.amazon.awssdk.services.ec2.model.Subnet;
 
 @RunWith(EasyMockRunner.class)
 public class TestDiagramFactory extends EasyMockSupport {
@@ -34,7 +34,7 @@ public class TestDiagramFactory extends EasyMockSupport {
 	@Test
 	public void shouldAddSubnetDiagrm() throws CfnAssistException {
 		
-		Subnet subnet = new Subnet().withSubnetId("subnetId").withCidrBlock("cidrBlock");
+		Subnet subnet = Subnet.builder().subnetId("subnetId").cidrBlock("cidrBlock").build();
 		EasyMock.expect(parentDiagramBuilder.createNetworkDiagramForSubnet(subnet)).andReturn(childNetworkDiagram);
 		EasyMock.expect(parentDiagramBuilder.createSecurityDiagramForSubnet(subnet)).andReturn(childSecurityDiagram);
 		

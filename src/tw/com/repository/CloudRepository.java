@@ -1,6 +1,6 @@
 package tw.com.repository;
 
-import com.amazonaws.services.ec2.model.*;
+import software.amazon.awssdk.services.ec2.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tw.com.exceptions.CfnAssistException;
@@ -10,6 +10,8 @@ import tw.com.providers.SavesFile;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Path;
+import java.security.KeyPair;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -41,7 +43,7 @@ public class CloudRepository {
 		loadSubnets();	
 		List<Subnet> filtered = new LinkedList<>();
 		for (Subnet subnet : subnetsCache.values()) {
-			String subnetVpcId = subnet.getVpcId();
+			String subnetVpcId = subnet.vpcId();
 			if (subnetVpcId!=null) {
 				if (subnetVpcId.equals(vpcId)) {
 					filtered.add(subnet);
@@ -66,7 +68,7 @@ public class CloudRepository {
 		List<Instance> result = new LinkedList<>();
 
 		for(Instance i : instancesCache) {	
-			String instanceSubnetId = i.getSubnetId();
+			String instanceSubnetId = i.subnetId();
 			if (instanceSubnetId!=null) {
 				if (instanceSubnetId.equals(subnetId)) {
 					result.add(i);
@@ -79,7 +81,7 @@ public class CloudRepository {
 	public SecurityGroup getSecurityGroupByName(String groupName) throws CfnAssistException {
 		loadGroups();
 		for(SecurityGroup group : groupsCache) {
-			if (group.getGroupName().equals(groupName)) {
+			if (group.groupName().equals(groupName)) {
 				return group;
 			}
 		}
@@ -89,7 +91,7 @@ public class CloudRepository {
 	public SecurityGroup getSecurityGroupById(String groupId) throws CfnAssistException {
 		loadGroups();
 		for(SecurityGroup group : groupsCache) {
-			if (group.getGroupId().equals(groupId)) {
+			if (group.groupId().equals(groupId)) {
 				return group;
 			}
 		}
@@ -99,7 +101,7 @@ public class CloudRepository {
 	public Instance getInstanceById(String instanceId) throws CfnAssistException {
 		loadInstances();
 		for(Instance i : instancesCache) {
-			if (i.getInstanceId().equals(instanceId)) {
+			if (i.instanceId().equals(instanceId)) {
 				return i;
 			}
 		}
@@ -112,7 +114,7 @@ public class CloudRepository {
 		// find the instance each address is associated with and then check the VPC ID on the instance
 		List<Address> filtered = new LinkedList<>();
 		for(Address address : addressCache) {
-			String instanceId = address.getInstanceId();
+			String instanceId = address.instanceId();
 			if (instanceId!=null) {
 				String instanceVpcId = getVpcIdForInstance(instanceId);
 				if (instanceVpcId.equals(vpcId)) {
@@ -127,7 +129,7 @@ public class CloudRepository {
 	private String getVpcIdForInstance(String instanceId) throws CfnAssistException {
 		if (!instanceToVpc.containsKey(instanceId)) {
 			Instance instance = getInstanceById(instanceId);
-			String instanceVpc = instance.getVpcId();
+			String instanceVpc = instance.vpcId();
 			//String instanceVpc = getVpcForSubnet(instance.getSubnetId());
 			instanceToVpc.put(instanceId, instanceVpc);	
 		}			
@@ -138,7 +140,7 @@ public class CloudRepository {
 		loadACLs();
 		List<NetworkAcl> result = new LinkedList<>();
 		for (NetworkAcl acl : aclsCache) {
-			if (acl.getVpcId().equals(vpcId)) {
+			if (acl.vpcId().equals(vpcId)) {
 				result.add(acl);
 			}
 		}
@@ -150,7 +152,7 @@ public class CloudRepository {
 		List<RouteTable> result = new LinkedList<>();
 
 		for(RouteTable table : routeTableCache) {
-			if (table.getVpcId().equals(vpcId)) {
+			if (table.vpcId().equals(vpcId)) {
 				result.add(table);
 			}
 		}
@@ -193,10 +195,10 @@ public class CloudRepository {
 			List<Subnet> results = cloudClient.getAllSubnets();
 			subnetsCache = new HashMap<>();
 			for(Subnet subnet : results) {
-				subnetsCache.put(subnet.getSubnetId(), subnet);
-				String vpc = subnet.getVpcId();
+				subnetsCache.put(subnet.subnetId(), subnet);
+				String vpc = subnet.vpcId();
 				if (vpc!=null) {
-					subnetToVpc.put(subnet.getSubnetId(), vpc);
+					subnetToVpc.put(subnet.subnetId(), vpc);
 				}
 			}
 		}
@@ -212,7 +214,7 @@ public class CloudRepository {
 
 	public List<Tag> getTagsForInstance(String instanceId) throws WrongNumberOfInstancesException {
 		Instance instance = cloudClient.getInstanceById(instanceId);
-		return instance.getTags();
+		return instance.tags();
 	}
 
 	public Map<String, AvailabilityZone> getZones() {
@@ -226,25 +228,25 @@ public class CloudRepository {
 		}
 	}
 
-	public KeyPair createKeyPair(String keypairName, SavesFile savesFile, String filename) throws CfnAssistException {
-        KeyPair pair = cloudClient.createKeyPair(keypairName);
+	public CloudClient.AWSPrivateKey createKeyPair(String keypairName, SavesFile savesFile, Path filename) throws CfnAssistException {
+        CloudClient.AWSPrivateKey privateKey = cloudClient.createKeyPair(keypairName);
         logger.info("Saving private key to " + filename);
-        savesFile.save(filename, pair.getKeyMaterial());
+        savesFile.save(filename, privateKey.getMaterial());
         try {
             savesFile.ownerOnlyPermisssion(filename);
         } catch (IOException ioException) {
             throw new CfnAssistException("Unable to change permission on file "+ filename, ioException);
         }
-        return pair;
+        return privateKey;
 	}
 
 	public String getIpFor(String eipAllocationId) {
         logger.info("Find EIP for " + eipAllocationId);
 		List<Address> addresses = cloudClient.getEIPs();
 		logger.info(format("Found %s addresses", addresses.size()));
-        Stream<Address> filtered = addresses.stream().filter(address -> eipAllocationId.equals(address.getAllocationId()));
+        Stream<Address> filtered = addresses.stream().filter(address -> eipAllocationId.equals(address.allocationId()));
         Optional<Address> result = filtered.findFirst();
         result.ifPresent(found -> logger.info("Found address "+found));
-        return result.isPresent() ? result.get().getPublicIp() : "";
+        return result.isPresent() ? result.get().publicIp() : "";
 	}
 }

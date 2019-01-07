@@ -1,6 +1,15 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.*;
+import tw.com.EnvironmentSetupForTests;
+import tw.com.providers.CloudClient;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -8,33 +17,14 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.ec2.AmazonEC2;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.ec2.model.CreateSecurityGroupRequest;
-import com.amazonaws.services.ec2.model.CreateSecurityGroupResult;
-import com.amazonaws.services.ec2.model.DeleteSecurityGroupRequest;
-import com.amazonaws.services.ec2.model.DescribeSecurityGroupsRequest;
-import com.amazonaws.services.ec2.model.DescribeSecurityGroupsResult;
-import com.amazonaws.services.ec2.model.IpPermission;
-import com.amazonaws.services.ec2.model.SecurityGroup;
-
-import tw.com.EnvironmentSetupForTests;
-import tw.com.providers.CloudClient;
+import static org.junit.Assert.assertEquals;
 
 public class TestManageSecGroups {
 	
 	private static final String GROUP_NAME = "TestManageSecGroups";
 	private CloudClient client;
 	private static String groupId = "";
-	private static AmazonEC2 ec2Client;
+	private static Ec2Client ec2Client;
 
 	@BeforeClass
 	public static void onceBeforeAllTestsRuns() {
@@ -47,19 +37,21 @@ public class TestManageSecGroups {
 		
 		deleteGroupIfPresent();
 		
-		CreateSecurityGroupRequest createRequest = new CreateSecurityGroupRequest().
-				withDescription("test group").
-				withGroupName(GROUP_NAME);
-		CreateSecurityGroupResult result = ec2Client.createSecurityGroup(createRequest);
-		groupId = result.getGroupId();
+		CreateSecurityGroupRequest createRequest = CreateSecurityGroupRequest.builder().
+				description("test group").
+				groupName(GROUP_NAME).build();
+		CreateSecurityGroupResponse result = ec2Client.createSecurityGroup(createRequest);
+		groupId = result.groupId();
 	}
 
 	private static void deleteGroupIfPresent() {
 		try {	
-			DescribeSecurityGroupsRequest describeSecurityGroupsRequest = new DescribeSecurityGroupsRequest().withGroupNames(GROUP_NAME);
-			DescribeSecurityGroupsResult existing = ec2Client.describeSecurityGroups(describeSecurityGroupsRequest);
-			if (existing.getSecurityGroups().size()>0) {
-				DeleteSecurityGroupRequest deleteGroup = new DeleteSecurityGroupRequest().withGroupName(GROUP_NAME);
+			DescribeSecurityGroupsRequest describeSecurityGroupsRequest = DescribeSecurityGroupsRequest.
+					builder().groupNames(GROUP_NAME).build();
+
+			DescribeSecurityGroupsResponse existing = ec2Client.describeSecurityGroups(describeSecurityGroupsRequest);
+			if (existing.securityGroups().size()>0) {
+				DeleteSecurityGroupRequest deleteGroup = DeleteSecurityGroupRequest.builder().groupName(GROUP_NAME).build();
 				ec2Client.deleteSecurityGroup(deleteGroup);	
 			}
 		} catch (AmazonServiceException exception) {
@@ -87,31 +79,32 @@ public class TestManageSecGroups {
         //add
         client.addIpsToSecGroup(groupId, port , addresses);
 		
-		DescribeSecurityGroupsRequest request = new DescribeSecurityGroupsRequest().withGroupIds(groupId);
-		DescribeSecurityGroupsResult result = ec2Client.describeSecurityGroups(request);
+		DescribeSecurityGroupsRequest request = DescribeSecurityGroupsRequest.builder().groupIds(groupId).build();
+		DescribeSecurityGroupsResponse result = ec2Client.describeSecurityGroups(request);
 		
-		List<SecurityGroup> securityGroups = result.getSecurityGroups();
+		List<SecurityGroup> securityGroups = result.securityGroups();
 		assertEquals(1, securityGroups.size());
 		SecurityGroup group = securityGroups.get(0);
 		
-		List<IpPermission> perms = group.getIpPermissions();
+		List<IpPermission> perms = group.ipPermissions();
 		assertEquals(1, perms.size());
 		
 		IpPermission ipPermission = perms.get(0);
-		assertEquals(port, ipPermission.getToPort());
-		assertEquals(port, ipPermission.getFromPort());
-		assertEquals(2, ipPermission.getIpv4Ranges().size());
-		assertEquals(cidrA, ipPermission.getIpv4Ranges().get(0).getCidrIp());
-        assertEquals(cidrB, ipPermission.getIpv4Ranges().get(1).getCidrIp());
+		assertEquals(port, ipPermission.toPort());
+		assertEquals(port, ipPermission.fromPort());
+		List<IpRange> ipRanges = ipPermission.ipRanges();
+		assertEquals(2, ipRanges.size());
+		assertEquals(cidrA, ipRanges.get(0).cidrIp());
+        assertEquals(cidrB, ipRanges.get(1).cidrIp());
 
         //remove
 		client.deleteIpFromSecGroup(groupId, port, addresses);
 		
 		result = ec2Client.describeSecurityGroups(request);
-		securityGroups = result.getSecurityGroups();
+		securityGroups = result.securityGroups();
 		assertEquals(1, securityGroups.size());
 		group = securityGroups.get(0);
-		perms = group.getIpPermissions();
+		perms = group.ipPermissions();
 		assertEquals(0, perms.size());
 	}
 	

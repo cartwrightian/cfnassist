@@ -1,12 +1,13 @@
 package tw.com.unit;
 
-import com.amazonaws.services.ec2.model.*;
+import software.amazon.awssdk.services.ec2.model.*;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import tw.com.EnvironmentSetupForTests;
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.*;
@@ -23,16 +24,16 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 		networkDiagram = createStrictMock(NetworkChildDiagram.class);
 		securityDiagram = createStrictMock(tw.com.pictures.SecurityChildDiagram.class);
 		createStrictMock(VPCDiagramBuilder.class);
-		Subnet subnet = new Subnet().withSubnetId("subnetId").withCidrBlock("cidrBlock");
+		Subnet subnet = Subnet.builder().subnetId("subnetId").cidrBlock("cidrBlock").build();
 		subnetDiagramBuilder = new SubnetDiagramBuilder(networkDiagram, securityDiagram, subnet);
 	}
 
 	@Test
 	public void shouldAddInstanceToDiagram() throws CfnAssistException {
-		Instance instance = new Instance().
-				withInstanceId("instacneId").
-				withPrivateIpAddress("privateIp").
-				withTags(new Tag().withKey("Name").withValue("instanceName"));
+		Instance instance = Instance.builder().
+				instanceId("instacneId").
+				privateIpAddress("privateIp").
+				tags(EnvironmentSetupForTests.createEc2Tag("Name","instanceName")).build();
 
 		networkDiagram.addInstance("instacneId", "instanceName\n[instacneId]\n(privateIp)");
 		securityDiagram.addInstance("instacneId", "instanceName\n[instacneId]\n(privateIp)");
@@ -44,9 +45,9 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddRouteTable() throws CfnAssistException {
-		RouteTable routeTable = new RouteTable().
-				withRouteTableId("routeTableId").
-				withTags(new Tag().withKey("Name").withValue("routeTableName"));
+		RouteTable routeTable = RouteTable.builder().
+				routeTableId("routeTableId").
+				tags(EnvironmentSetupForTests.createEc2Tag("Name","routeTableName")).build();
 
 		networkDiagram.addRouteTable("subnetId_routeTableId", "routeTableName [routeTableId]");
 		
@@ -57,7 +58,7 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddSecurityGroupToDiagram() throws CfnAssistException {
-		SecurityGroup group = setupSecurityGroup();
+		SecurityGroup group = setupSecurityGroup().build();
 		
 		securityDiagram.addSecurityGroup("groupId","name [groupId]");
 		
@@ -68,9 +69,9 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddSecurityGroupInboundPermsDiagram() throws CfnAssistException {
-		SecurityGroup group = setupSecurityGroup();
+		//SecurityGroup group = setupSecurityGroup().build();
 		IpPermission ipPerms = setupIpPerms();
-		group.withIpPermissions(ipPerms);
+		//group.ipPermissions(ipPerms);
 		
 		securityDiagram.addPortRange("groupId_tcp_80-100_in", "80-100");
 		securityDiagram.connectWithLabel("groupId_tcp_80-100_in", "groupId", "(ipRanges)\n[tcp]");
@@ -82,9 +83,9 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddSecurityGroupInboundPermsDiagramDedup() throws CfnAssistException {
-		SecurityGroup group = setupSecurityGroup();
+		//SecurityGroup group = setupSecurityGroup();
 		IpPermission ipPerms = setupIpPerms();
-		group.withIpPermissions(ipPerms);
+		//group.withIpPermissions(ipPerms);
 		
 		securityDiagram.addPortRange("groupId_tcp_80-100_in", "80-100");
 		securityDiagram.connectWithLabel("groupId_tcp_80-100_in", "groupId", "(ipRanges)\n[tcp]");
@@ -97,9 +98,9 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 
 	@Test
 	public void shouldAddOutboundIpPermissions() throws CfnAssistException {
-		SecurityGroup group = setupSecurityGroup();
+		//SecurityGroup.Builder group = setupSecurityGroup();
 		IpPermission ipPerms = setupIpPerms();
-		group.withIpPermissionsEgress(ipPerms);
+		//group.ipPermissions(ipPerms);
 		
 		securityDiagram.addPortRange("groupId_tcp_80-100_out", "80-100");
 		securityDiagram.connectWithLabel("groupId", "groupId_tcp_80-100_out", "(ipRanges)\n[tcp]");
@@ -111,9 +112,9 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddOutboundIpPermissionsDedupConnections() throws CfnAssistException {
-		SecurityGroup group = setupSecurityGroup();
+		//SecurityGroup.Builder group = setupSecurityGroup();
 		IpPermission ipPerms = setupIpPerms();
-		group.withIpPermissionsEgress(ipPerms);
+		//group.ipPermissions(ipPerms);
 		
 		securityDiagram.addPortRange("groupId_tcp_80-100_out", "80-100");
 		securityDiagram.connectWithLabel("groupId", "groupId_tcp_80-100_out", "(ipRanges)\n[tcp]");
@@ -124,19 +125,19 @@ public class TestSubnetDiagramBuilder extends EasyMockSupport {
 		verifyAll();	
 	}
 	
-	public static SecurityGroup setupSecurityGroup() {
-		return new SecurityGroup().
-				withGroupId("groupId").
-				withGroupName("fullGroupName").
-				withTags(VpcTestBuilder.CreateNameTag("name"));
+	public static SecurityGroup.Builder setupSecurityGroup() {
+		return SecurityGroup.builder().
+				groupId("groupId").
+				groupName("fullGroupName").
+				tags(VpcTestBuilder.CreateNameTag("name"));
 	}
 	
 	public static IpPermission setupIpPerms() {
-		return new IpPermission().
-				withFromPort(80).
-				withToPort(100).
-				withIpProtocol("tcp").
-				withIpv4Ranges(new IpRange().withCidrIp("ipRanges"));
+		return IpPermission.builder().
+				fromPort(80).
+				toPort(100).
+				ipProtocol("tcp").
+				ipRanges(IpRange.builder().cidrIp("ipRanges").build()).build();
 	}
 
 }

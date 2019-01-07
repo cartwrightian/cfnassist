@@ -4,8 +4,8 @@ import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.cloudformation.model.Stack;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
-import com.amazonaws.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import tw.com.entity.ProjectAndEnv;
@@ -41,7 +41,7 @@ public class UpdateStackExpectations extends EasyMockSupport {
         StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
 
         String contents = EnvironmentSetupForTests.loadFile(filename);
-        EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(new Vpc().withVpcId(VPC_ID));
+        EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(Vpc.builder().vpcId(VPC_ID).build());
         EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 
         EasyMock.expect(cfnRepository.updateStack(contents, parameters, monitor, stackName)).andReturn(stackNameAndId);
