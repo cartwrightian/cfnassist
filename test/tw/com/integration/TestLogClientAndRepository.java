@@ -152,7 +152,7 @@ public class TestLogClientAndRepository {
     }
 
     @Test
-    public void shouldFetchLogResultsViaLogRepository() throws IOException {
+    public void shouldFetchLogResultsViaLogRepository() throws IOException, InterruptedException {
         DateTime timeStamp = DateTime.now();
 
         ProvidesNow providesNow = () -> timeStamp;
@@ -172,6 +172,8 @@ public class TestLogClientAndRepository {
 
         // TODO sleep after this if upload not completed
         uploadTestEvents(Arrays.asList("repoTestStream"), 200, 10, timeStamp);
+
+        Thread.sleep(2000); // inserted log events are not immediately available for consumption
 
         List<Path> filenames = logRepository.fetchLogs(projectAndEnv, Duration.ofDays(1));
 
