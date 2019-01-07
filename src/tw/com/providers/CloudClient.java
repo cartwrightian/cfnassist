@@ -4,16 +4,13 @@ import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
 import com.amazonaws.event.ProgressListener;
 import com.amazonaws.regions.AwsRegionProvider;
-import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.security.rsa.RSAPrivateKeyImpl;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.*;
 import tw.com.exceptions.WrongNumberOfInstancesException;
 
 import java.net.InetAddress;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.util.*;
 
 import static java.lang.String.format;
