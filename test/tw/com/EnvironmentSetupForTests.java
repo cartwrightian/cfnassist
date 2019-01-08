@@ -9,8 +9,6 @@ import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
 import com.amazonaws.services.logs.AWSLogs;
@@ -28,6 +26,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.repository.VpcRepository;
@@ -147,9 +146,8 @@ public class EnvironmentSetupForTests {
 		return AWSLogsClientBuilder.defaultClient();
 	}
 
-	public static AmazonElasticLoadBalancing createELBClient() {
-        return AmazonElasticLoadBalancingClientBuilder.defaultClient();
-
+	public static ElasticLoadBalancingClient createELBClient() {
+        return ElasticLoadBalancingClient.create();
 	}
 
 	public static AmazonS3 createS3Client() {

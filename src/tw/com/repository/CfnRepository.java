@@ -3,9 +3,9 @@ package tw.com.repository;
 import com.amazonaws.AmazonServiceException;
 import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.ec2.model.Tag;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.StackCache;
@@ -278,7 +278,7 @@ public class CfnRepository implements CloudFormRepository {
 		for (String id : instancesIds) {
 			if (instanceHasCorrectType(typeTag, id)) {
 				logger.info(String.format("Adding instance %s as it matched %s %s",id, AwsFacade.TYPE_TAG, typeTag));
-				instances.add(new Instance(id));
+				instances.add(Instance.builder().instanceId(id).build());
 			} else {
 				logger.info(String.format("Not adding instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, typeTag));
 			}	

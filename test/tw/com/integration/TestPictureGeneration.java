@@ -1,11 +1,11 @@
 package tw.com.integration;
 
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.rds.AmazonRDS;
 import org.junit.Before;
 import org.junit.Test;
 import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
@@ -31,7 +31,7 @@ public class TestPictureGeneration {
 	@Before
 	public void beforeEachTestRuns() {
 		Ec2Client ec2Client = EnvironmentSetupForTests.createEC2Client();
-		AmazonElasticLoadBalancing awsElbClient = EnvironmentSetupForTests.createELBClient();
+		ElasticLoadBalancingClient awsElbClient = EnvironmentSetupForTests.createELBClient();
 		software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient();
 		AmazonRDS awsRdsClient = EnvironmentSetupForTests.createRDSClient();
 

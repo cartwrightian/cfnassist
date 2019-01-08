@@ -2,8 +2,6 @@ package tw.com;
 
 import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
 import com.amazonaws.services.logs.AWSLogs;
@@ -20,6 +18,7 @@ import org.apache.commons.cli.MissingArgumentException;
 import org.joda.time.DateTime;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
 import tw.com.commandline.CommandExecutor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
@@ -39,11 +38,10 @@ public class FacadeFactory implements ProvidesNow {
 	private AmazonSNS snsClient;
 	private AmazonS3 s3Client;
 	private Ec2Client ec2Client;
-	private AmazonElasticLoadBalancing elbClient;
+	private ElasticLoadBalancingClient elbClient;
 	private AmazonRDS rdsClient;
 	private AmazonIdentityManagement iamClient;
     private AWSLogs awsLogClient;
-
 
     // providers
 	private ArtifactUploader artifactUploader;
@@ -111,7 +109,7 @@ public class FacadeFactory implements ProvidesNow {
         ec2Client = Ec2Client.builder().build();
         snsClient = AmazonSNSClientBuilder.defaultClient();
         sqsClient = AmazonSQSClientBuilder.defaultClient();
-        elbClient = AmazonElasticLoadBalancingClientBuilder.defaultClient();
+        elbClient = ElasticLoadBalancingClient.create();
         s3Client = AmazonS3ClientBuilder.defaultClient();
         rdsClient = AmazonRDSClientBuilder.defaultClient();
         iamClient = AmazonIdentityManagementClientBuilder.defaultClient();

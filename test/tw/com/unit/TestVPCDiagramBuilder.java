@@ -1,7 +1,6 @@
 package tw.com.unit;
 
 import software.amazon.awssdk.services.ec2.model.*;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -9,6 +8,7 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
@@ -124,7 +124,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddELB() throws CfnAssistException {
-		LoadBalancerDescription elb = new LoadBalancerDescription().withDNSName("dnsName").withLoadBalancerName("lbName");
+		LoadBalancerDescription elb = createELB();
 		networkDiagram.addLoadBalancer("dnsName", "lbName");
 		securityDiagram.addLoadBalancer("dnsName", "lbName");
 		
@@ -132,10 +132,14 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 		builder.addELB(elb);
 		verifyAll();
 	}
-	
+
+	private LoadBalancerDescription createELB() {
+		return LoadBalancerDescription.builder().dnsName("dnsName").loadBalancerName("lbName").build();
+	}
+
 	@Test
 	public void shouldAssociateELBWithSubnet() {
-		LoadBalancerDescription elb = new LoadBalancerDescription().withDNSName("dnsName").withLoadBalancerName("lbName");	
+		LoadBalancerDescription elb = createELB();
 		
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		
@@ -149,7 +153,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAssociateELBWithInstance() {
-		LoadBalancerDescription elb = new LoadBalancerDescription().withDNSName("dnsName").withLoadBalancerName("lbName");	
+		LoadBalancerDescription elb = createELB();
 		networkDiagram.addConnectionBetween("dnsName", "instanceId");
 		
 		replayAll();

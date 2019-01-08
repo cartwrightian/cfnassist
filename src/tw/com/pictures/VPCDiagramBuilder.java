@@ -8,6 +8,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import tw.com.AwsFacade;
 import tw.com.entity.Cidr;
 import tw.com.exceptions.CfnAssistException;
@@ -26,7 +27,6 @@ import software.amazon.awssdk.services.ec2.model.SecurityGroup;
 import software.amazon.awssdk.services.ec2.model.Subnet;
 import software.amazon.awssdk.services.ec2.model.Tag;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 
 public class VPCDiagramBuilder extends CommonBuilder {
@@ -108,21 +108,21 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	public void addELB(LoadBalancerDescription elb) throws CfnAssistException {
-		String label = elb.getLoadBalancerName();
-		String id = elb.getDNSName();
+		String label = elb.loadBalancerName();
+		String id = elb.dnsName();
 		networkDiagram.addLoadBalancer(id, label);
 		securityDiagram.addLoadBalancer(id, label);
 	}
 
 	public void associateELBToInstance(LoadBalancerDescription elb,
 			String instanceId) {
-		networkDiagram.addConnectionBetween(elb.getDNSName(), instanceId);
+		networkDiagram.addConnectionBetween(elb.dnsName(), instanceId);
 	}
 
 	public void associateELBToSubnet(LoadBalancerDescription elb,
 			String subnetId) {
-		networkDiagram.associateWithSubDiagram(elb.getDNSName(), subnetId, subnetDiagramBuilders.get(subnetId));
-		securityDiagram.associateWithSubDiagram(elb.getDNSName(), subnetId, subnetDiagramBuilders.get(subnetId));
+		networkDiagram.associateWithSubDiagram(elb.dnsName(), subnetId, subnetDiagramBuilders.get(subnetId));
+		securityDiagram.associateWithSubDiagram(elb.dnsName(), subnetId, subnetDiagramBuilders.get(subnetId));
 	}
 
 	public void addDBInstance(DBInstance rds) throws CfnAssistException {
@@ -311,8 +311,7 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	private String createCidrUniqueId(String direction, String aclId, NetworkAclEntry entry) {
-		String uniqueId = String.format("%s_%s_%s", direction, entry.cidrBlock(), aclId);
-		return uniqueId;
+		return String.format("%s_%s_%s", direction, entry.cidrBlock(), aclId);
 	}
 
 }

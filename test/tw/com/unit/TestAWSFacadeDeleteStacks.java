@@ -1,6 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.identitymanagement.model.User;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -10,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -128,7 +128,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
 		List<Instance> elbInstances = new LinkedList<>();
 		
-		elbInstances.add(new Instance().withInstanceId("matchingInstanceId"));
+		elbInstances.add(Instance.builder().instanceId("matchingInstanceId").build());
 		
 		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
@@ -163,7 +163,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
 		List<Instance> elbInstances = new LinkedList<>();
 		
-		elbInstances.add(new Instance().withInstanceId("matchingInstanceId"));
+		elbInstances.add(Instance.builder().instanceId("matchingInstanceId").build());
 		
 		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	

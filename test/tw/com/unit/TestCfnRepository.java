@@ -1,6 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -8,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.*;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.*;
 import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
@@ -382,7 +382,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		result = repository.getAllInstancesMatchingType(criteria, typeTag); // cached call
 		assertEquals(result.size(),1);
 
-		assertEquals(instanceIdA, result.get(0).getInstanceId());
+		assertEquals(instanceIdA, result.get(0).instanceId());
 		verifyAll();
 	}
 	

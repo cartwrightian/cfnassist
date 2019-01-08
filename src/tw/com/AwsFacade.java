@@ -1,7 +1,5 @@
 package tw.com;
 
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.identitymanagement.model.User;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -11,6 +9,8 @@ import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import software.amazon.awssdk.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
@@ -525,7 +525,7 @@ public class AwsFacade implements ProvidesZones {
 			logger.warn("No instances associated with ELB");
 		} else {
 			for(Instance ins : registeredInstances) {
-				regInstanceIds.add(ins.getInstanceId());
+				regInstanceIds.add(ins.instanceId());
 			}
 		}
 		return regInstanceIds;
@@ -588,10 +588,10 @@ public class AwsFacade implements ProvidesZones {
 			throw new CfnAssistException("Did not find ELB for current vpc");
 		}
 		
-		List<String> groups = elb.getSecurityGroups();
+		List<String> groups = elb.securityGroups();
 		
 		if (groups.size()>1) {
-			throw new CfnAssistException("Found multiple security groups associated with elb " + elb.getDNSName());
+			throw new CfnAssistException("Found multiple security groups associated with elb " + elb.dnsName());
 		}
 
 		return groups.get(0);

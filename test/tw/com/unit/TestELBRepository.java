@@ -1,15 +1,15 @@
 package tw.com.unit;
 
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.amazonaws.services.elasticloadbalancing.model.Tag;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Tag;
 import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.SearchCriteria;
@@ -49,14 +49,14 @@ public class TestELBRepository extends EasyMockSupport {
 		String typeTag = "expectedType";
 		
 		List<Tag> lb1Tags = new LinkedList<>();
-		lb1Tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue("someNonMatchingTag"));
+		lb1Tags.add(createTag(AwsFacade.TYPE_TAG, "someNonMatchingTag"));
 
 		List<Tag> lb2Tags = new LinkedList<>();
-		lb2Tags.add(new Tag().withKey(AwsFacade.TYPE_TAG).withValue(typeTag));
+		lb2Tags.add(createTag(AwsFacade.TYPE_TAG, typeTag));
 		
 		List<LoadBalancerDescription> lbs = new LinkedList<>();
-		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
-		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
+		lbs.add(createELBDesc("lb1Name"));
+		lbs.add(createELBDesc("lb2Name"));
 		
 		Vpc vpc = Vpc.builder().vpcId("vpcId").build();
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
@@ -68,17 +68,25 @@ public class TestELBRepository extends EasyMockSupport {
 		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv, typeTag);
 		verifyAll();
 		
-		assertEquals("lb2Name", result.getLoadBalancerName());
+		assertEquals("lb2Name", result.loadBalancerName());
 	}
-	
+
+	private LoadBalancerDescription createELBDesc(String loadBalancerName) {
+		return LoadBalancerDescription.builder().loadBalancerName(loadBalancerName).vpcId("vpcId").build();
+	}
+
+	private Tag createTag(String key, String value) {
+		return Tag.builder().key(key).value(value).build();
+	}
+
 	@Test
 	public void ShouldThrowIfMoreThanOneELBAndNoMatchingTags() {
 		List<Tag> tags = new LinkedList<>();
-		tags.add(new Tag().withKey("someOtherTag").withValue("someOtherValue"));
+		tags.add(createTag("someOtherTag","someOtherValue"));
 		
 		List<LoadBalancerDescription> lbs = new LinkedList<>();
-		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("vpcId"));
-		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
+		lbs.add(createELBDesc("lb1Name"));
+		lbs.add(createELBDesc("lb2Name"));
 
 		Vpc vpc = Vpc.builder().vpcId("vpcId").build();
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
@@ -100,8 +108,8 @@ public class TestELBRepository extends EasyMockSupport {
 	@Test
 	public void shouldFetchELBsForTheVPC() throws TooManyELBException {
 		List<LoadBalancerDescription> lbs = new LinkedList<>();
-		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb1Name").withVPCId("someId"));
-		lbs.add(new LoadBalancerDescription().withLoadBalancerName("lb2Name").withVPCId("vpcId"));
+		lbs.add(LoadBalancerDescription.builder().loadBalancerName("lb1Name").vpcId("someId").build());
+		lbs.add(createELBDesc("lb2Name"));
 
 		Vpc vpc = Vpc.builder().vpcId("vpcId").build();
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andReturn(vpc);
@@ -109,16 +117,16 @@ public class TestELBRepository extends EasyMockSupport {
 		
 		replayAll();
 		LoadBalancerDescription result = elbRepository.findELBFor(projAndEnv,"ignoredWhenOnlyOneMatchingLB");
-		assertEquals("lb2Name", result.getLoadBalancerName());
+		assertEquals("lb2Name", result.loadBalancerName());
 		verifyAll();
 	}
 	
 	@Test
 	public void shouldRegisterELBs() throws CfnAssistException {			
-		Instance insA1 = new Instance().withInstanceId("instanceA1"); // initial
-		Instance insA2 = new Instance().withInstanceId("instanceA2"); // initial
-		Instance insB1 = new Instance().withInstanceId("instanceB1"); // new
-		Instance insB2 = new Instance().withInstanceId("instanceB2"); // new
+		Instance insA1 = createInstance("instanceA1"); // initial
+		Instance insA2 = createInstance("instanceA2"); // initial
+		Instance insB1 = createInstance("instanceB1"); // new
+		Instance insB2 = createInstance("instanceB2"); // new
 
 		List<Instance> instancesThatMatch = new LinkedList<>();
 		instancesThatMatch.add(insA1);
@@ -139,15 +147,10 @@ public class TestELBRepository extends EasyMockSupport {
 		projAndEnv.addBuildNumber(newBuildNumber);
 
 		List<LoadBalancerDescription> initalLoadBalancers = new LinkedList<>();
-		initalLoadBalancers.add(new LoadBalancerDescription().withVPCId(vpcId).
-				withInstances(insA1,insA2).
-				withLoadBalancerName("lbName").withDNSName("dnsName"));
+		initalLoadBalancers.add(createElbDescriptionWithInstances(vpcId, insA1, insA2));
 		
 		List<LoadBalancerDescription> updatedLoadBalancers = new LinkedList<>();
-		updatedLoadBalancers.add(new LoadBalancerDescription().withVPCId(vpcId).
-				withInstances(insA1, insA2, insB1, insB2).
-				withLoadBalancerName("lbName").withDNSName("dnsName"));
-
+		updatedLoadBalancers.add( createElbDescriptionWithInstances(vpcId,insA1, insA2, insB1, insB2));
 		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
 
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
@@ -163,21 +166,29 @@ public class TestELBRepository extends EasyMockSupport {
 		replayAll();
 		List<Instance> result = elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag");
 		assertEquals(2, result.size());
-		assertEquals(insB1.getInstanceId(), result.get(0).getInstanceId());
-		assertEquals(insB2.getInstanceId(), result.get(1).getInstanceId());
+		assertEquals(insB1.instanceId(), result.get(0).instanceId());
+		assertEquals(insB2.instanceId(), result.get(1).instanceId());
 		verifyAll();			
 	}
-	
+
+	private LoadBalancerDescription createElbDescriptionWithInstances(String vpcId, Instance... instances) {
+		return LoadBalancerDescription.builder().
+				vpcId(vpcId).
+				instances(instances).
+				loadBalancerName("lbName").dnsName("dnsName").build();
+	}
+
+	private Instance createInstance(String instanceId) {
+		return Instance.builder().instanceId(instanceId).build();
+	}
+
 	@Test
 	public void shouldGetInstancesForTheLB() throws TooManyELBException {
 		String vpcId = "myVPC";
-		Instance insA = new Instance().withInstanceId("instanceA"); // associated
+		Instance insA = createInstance("instanceA"); // associated
 		
 		List<LoadBalancerDescription> theLB = new LinkedList<>();
-		theLB.add(new LoadBalancerDescription().withVPCId(vpcId).
-				withInstances(insA).
-				withLoadBalancerName("lbName").
-				withDNSName("dnsName"));
+		theLB.add(createElbDescriptionWithInstances(vpcId,insA));
 
 		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
 
@@ -189,7 +200,7 @@ public class TestELBRepository extends EasyMockSupport {
 		verifyAll();
 		
 		assertEquals(1,  result.size());
-		assertEquals("instanceA", result.get(0).getInstanceId());
+		assertEquals("instanceA", result.get(0).instanceId());
 	}
 	
 	@Test

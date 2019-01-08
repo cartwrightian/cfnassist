@@ -1,6 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -11,6 +10,7 @@ import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.*;
 import tw.com.commandline.CommandExecutor;
 import tw.com.commandline.Main;

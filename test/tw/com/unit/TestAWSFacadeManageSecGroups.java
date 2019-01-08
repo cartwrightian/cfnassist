@@ -1,12 +1,12 @@
 package tw.com.unit;
 
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
@@ -53,9 +53,9 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
 
-        elbDescription = new LoadBalancerDescription().
-                withLoadBalancerName("elbName").
-                withDNSName("dNSName").withSecurityGroups("elbSecGroupId");
+        elbDescription = LoadBalancerDescription.builder().
+                loadBalancerName("elbName").
+                dnsName("dNSName").securityGroups("elbSecGroupId").build();
 
         address = Inet4Address.getByName("192.168.0.1");
         addresses = new LinkedList<>();

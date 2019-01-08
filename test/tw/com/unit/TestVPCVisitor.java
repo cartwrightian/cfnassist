@@ -7,10 +7,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 
 import software.amazon.awssdk.services.ec2.model.*;
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
@@ -97,7 +97,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 		vpcDiagramBuilder.associateELBToSubnet(elb, instanceSubnetId);
 		vpcDiagramBuilder.associateELBToSubnet(elb, dbSubnetId);
 		vpcDiagramBuilder.addSecurityGroup(elbSecurityGroup);
-		vpcDiagramBuilder.associateInstanceWithSecGroup(elb.getDNSName(), elbSecurityGroup);
+		vpcDiagramBuilder.associateInstanceWithSecGroup(elb.dnsName(), elbSecurityGroup);
 		vpcDiagramBuilder.addSecGroupInboundPerms("secElbGroupId", vpcBuilder.getElbIpPermsInbound());
 		vpcDiagramBuilder.addSecGroupOutboundPerms("secElbGroupId", vpcBuilder.getElbIpPermsOutbound());
 		// db

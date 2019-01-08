@@ -1,11 +1,11 @@
 package tw.com;
 
 import software.amazon.awssdk.services.ec2.model.*;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
 import org.easymock.EasyMock;
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
 
@@ -105,11 +105,11 @@ public class VpcTestBuilder {
 				groupName("secElbGroupName").
 				ipPermissions(ipElbPermsInbound).
 				ipPermissionsEgress(ipElbPermsOutbound).build();
-		
-		elb = new LoadBalancerDescription().
-				withLoadBalancerName("loadBalancerName").
-				withDNSName("lbDNSName").
-				withSecurityGroups(elbSecurityGroup.groupId());
+
+		LoadBalancerDescription.Builder elbBuilder = LoadBalancerDescription.builder().
+				loadBalancerName("loadBalancerName").
+				dnsName("lbDNSName").
+				securityGroups(elbSecurityGroup.groupId());
 		dbInstance = new DBInstance().
 				withDBInstanceIdentifier("dbInstanceId").
 				withDBName("dbName");
@@ -151,16 +151,16 @@ public class VpcTestBuilder {
 				groupName("secDbGroupName").
 				ipPermissions(ipDbPermsInbound).
 				ipPermissionsEgress(ipDbPermsOutbound).build();
-		AddItemsToVpc();
+		AddItemsToVpc(elbBuilder);
 	}
 	
-	private void AddItemsToVpc() {
+	private void AddItemsToVpc(LoadBalancerDescription.Builder elbBuilder) {
 		add(insSubnet);
 		add(dbSubnet);
 		add(instance);
 		add(routeTable);
 		add(eip);
-		addAndAssociate(elb);
+		elb = addAndAssociate(elbBuilder);
 		addAndAssociate(dbInstance);
 		add(acl);
 		addAndAssociateWithDBs(dbSecurityGroup);
@@ -197,20 +197,24 @@ public class VpcTestBuilder {
 		eips.add(address);
 	}
 	
-	private void addAndAssociate(LoadBalancerDescription elb) {
-		loadBalancers.add(elb);	
+	private LoadBalancerDescription addAndAssociate(LoadBalancerDescription.Builder builder) {
 		// instances
-		Collection<com.amazonaws.services.elasticloadbalancing.model.Instance> list = new LinkedList<>();
+		Collection<software.amazon.awssdk.services.elasticloadbalancing.model.Instance> list = new LinkedList<>();
 		for(Instance i : instances) {
-			list.add(new com.amazonaws.services.elasticloadbalancing.model.Instance().withInstanceId(i.instanceId()));
+			list.add(software.amazon.awssdk.services.elasticloadbalancing.model.Instance.builder().
+					instanceId(i.instanceId()).build());
 		}
-		elb.setInstances(list);
+		builder.instances(list);
 		// subnets
 		List<String> subnetIds = new LinkedList<>();
 		for(Subnet s : subnets) {
 			subnetIds.add(s.subnetId());
 		}
-		elb.setSubnets(subnetIds);
+		builder.subnets(subnetIds);
+
+		LoadBalancerDescription balancerDescription = builder.build();
+		loadBalancers.add(balancerDescription);
+		return balancerDescription;
 	}
 	
 	private void addAndAssociate(DBInstance dbInstance) {

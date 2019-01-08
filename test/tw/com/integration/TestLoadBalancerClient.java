@@ -1,15 +1,14 @@
 package tw.com.integration;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.TerminateInstancesRequest;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
-import com.amazonaws.services.elasticloadbalancing.model.*;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
+import software.amazon.awssdk.services.elasticloadbalancing.model.*;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.LoadBalancerClient;
@@ -23,13 +22,12 @@ public class TestLoadBalancerClient  {
 	
 	private static final String LB_NAME = "cfnAssistTest";
 	private LoadBalancerClient client;
-	private static AmazonElasticLoadBalancing elbClient;
+	private static ElasticLoadBalancingClient elbClient;
 	private static Ec2Client ec2Client;
 	private static Instance instance;
 	
 	@BeforeClass
 	public static void onceBeforeSuiteOfTestsRun() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		elbClient = EnvironmentSetupForTests.createELBClient();
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
 		
@@ -55,7 +53,7 @@ public class TestLoadBalancerClient  {
 		List<Tag> tags = null;
 		boolean found = false;
 		for(LoadBalancerDescription candidate : results) {
-			if (candidate.getLoadBalancerName().equals(LB_NAME)) {
+			if (candidate.loadBalancerName().equals(LB_NAME)) {
 				tags = client.getTagsFor(LB_NAME);
 				found = true;
 				break;
@@ -64,22 +62,22 @@ public class TestLoadBalancerClient  {
 		assertTrue(found);
 		assertEquals(1, tags.size());
 		Tag theTag = tags.get(0);
-		assertEquals(AwsFacade.TYPE_TAG, theTag.getKey());
-		assertEquals("tagValue", theTag.getValue());
+		assertEquals(AwsFacade.TYPE_TAG, theTag.key());
+		assertEquals("tagValue", theTag.value());
 	}
 	
 	@Test
 	public void shouldRegisterAndDeregisterInstances() {
-		List<com.amazonaws.services.elasticloadbalancing.model.Instance> instances = new LinkedList<>();
-		instances.add(new com.amazonaws.services.elasticloadbalancing.model.Instance(instance.instanceId()));
+		List<software.amazon.awssdk.services.elasticloadbalancing.model.Instance> instances = new LinkedList<>();
+		instances.add(software.amazon.awssdk.services.elasticloadbalancing.model.Instance.builder().instanceId(instance.instanceId()).build());
 		
 		client.registerInstances(instances, LB_NAME);
 		LoadBalancerDescription lbDescription = getUpToDateLBDescription();
 		
 		boolean found = false;
-		List<com.amazonaws.services.elasticloadbalancing.model.Instance> results = lbDescription.getInstances();
-		for(com.amazonaws.services.elasticloadbalancing.model.Instance candidate : results) {
-			if (candidate.getInstanceId().equals(instance.instanceId())) {
+		List<software.amazon.awssdk.services.elasticloadbalancing.model.Instance> results = lbDescription.instances();
+		for(software.amazon.awssdk.services.elasticloadbalancing.model.Instance candidate : results) {
+			if (candidate.instanceId().equals(instance.instanceId())) {
 				found = true;
 				break;
 			}
@@ -89,15 +87,15 @@ public class TestLoadBalancerClient  {
 		client.degisterInstancesFromLB(instances, LB_NAME);		
 		
 		lbDescription = getUpToDateLBDescription();
-		results = lbDescription.getInstances();
+		results = lbDescription.instances();
 		assertEquals(0, results.size());
 	}
 
 	private LoadBalancerDescription getUpToDateLBDescription() {
-		DescribeLoadBalancersResult result = elbClient.describeLoadBalancers();
-		List<LoadBalancerDescription> lbDesc = result.getLoadBalancerDescriptions();
+		DescribeLoadBalancersResponse result = elbClient.describeLoadBalancers();
+		List<LoadBalancerDescription> lbDesc = result.loadBalancerDescriptions();
 		for(LoadBalancerDescription candidate : lbDesc) {
-			if (candidate.getLoadBalancerName().equals(LB_NAME)) {
+			if (candidate.loadBalancerName().equals(LB_NAME)) {
 				return candidate;
 			}
 		}
@@ -106,19 +104,21 @@ public class TestLoadBalancerClient  {
 	}
 	
 	private static void createLoadBalancer() {
-		CreateLoadBalancerRequest createLoadBalancerRequest = new CreateLoadBalancerRequest().
-				withLoadBalancerName(LB_NAME).
-				withListeners(new Listener("HTTP",8000,8000)).
-				withAvailabilityZones(EnvironmentSetupForTests.AVAILABILITY_ZONE).withTags(createTags());
+		Listener listener = Listener.builder().protocol("HTTP").instancePort(8000).loadBalancerPort(8000).build();
+		CreateLoadBalancerRequest createLoadBalancerRequest = CreateLoadBalancerRequest.builder().
+				loadBalancerName(LB_NAME).
+				listeners(listener).
+				availabilityZones(EnvironmentSetupForTests.AVAILABILITY_ZONE).tags(createTags()).build();
 		elbClient.createLoadBalancer(createLoadBalancerRequest);
 	}
 	
 	private static Tag createTags() {
-		return new Tag().withKey(AwsFacade.TYPE_TAG).withValue("tagValue");
+		return Tag.builder().key(AwsFacade.TYPE_TAG).value("tagValue").build();
 	}
 
 	private static void deleteLoadBalancer() {
-		elbClient.deleteLoadBalancer(new DeleteLoadBalancerRequest(LB_NAME));
+		elbClient.deleteLoadBalancer(
+				DeleteLoadBalancerRequest.builder().loadBalancerName(LB_NAME).build());
 	}
 
 	private static void deleteInstance() {

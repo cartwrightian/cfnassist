@@ -2,8 +2,8 @@ package tw.com.repository;
 
 import java.util.List;
 
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
 
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.SearchCriteria;
 import tw.com.exceptions.CfnAssistException;

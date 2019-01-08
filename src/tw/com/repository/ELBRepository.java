@@ -6,6 +6,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Tag;
 import tw.com.AwsFacade;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.SearchCriteria;
@@ -15,15 +18,13 @@ import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.providers.LoadBalancerClient;
 
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.Instance;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
-import com.amazonaws.services.elasticloadbalancing.model.Tag;
 
 public class ELBRepository {
 	private static final Logger logger = LoggerFactory.getLogger(ELBRepository.class);
-	LoadBalancerClient elbClient;
-	VpcRepository vpcRepository;
-	ResourceRepository cfnRepository;
+
+	private LoadBalancerClient elbClient;
+	private VpcRepository vpcRepository;
+	private ResourceRepository cfnRepository;
 	
 	public ELBRepository(LoadBalancerClient elbClient, VpcRepository vpcRepository, ResourceRepository cfnRepository) {
 		this.elbClient = elbClient;
@@ -33,14 +34,14 @@ public class ELBRepository {
 
 	public LoadBalancerDescription findELBFor(ProjectAndEnv projAndEnv, String type) throws TooManyELBException {
 		String vpcID = getVpcId(projAndEnv);
-		List<LoadBalancerDescription> foundELBForVPC = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> foundELBForVPC = new LinkedList<>();
 		
 		logger.info(String.format("Searching for load balancers for %s (will use tag %s:%s if >1 found)", vpcID, AwsFacade.TYPE_TAG,type));
 		List<LoadBalancerDescription> elbs = elbClient.describeLoadBalancers();
 		for (LoadBalancerDescription elb : elbs) {
-			String dnsName = elb.getDNSName();
+			String dnsName = elb.dnsName();
 			logger.debug("Found an ELB: " + dnsName);
-			String possible = elb.getVPCId();
+			String possible = elb.vpcId();
 			if (possible!=null) {
 				if (possible.equals(vpcID)) {
 					logger.info(String.format("Matched ELB %s for VPC: %s", dnsName, vpcID));
@@ -64,10 +65,10 @@ public class ELBRepository {
 
 	private LoadBalancerDescription checkForMatchingTag(
 			List<LoadBalancerDescription> descriptions, String vpcID, String type) throws TooManyELBException {
-		List<LoadBalancerDescription> found = new LinkedList<LoadBalancerDescription>();
+		List<LoadBalancerDescription> found = new LinkedList<>();
 		
 		for(LoadBalancerDescription desc : descriptions) {
-			String loadBalancerName = desc.getLoadBalancerName();
+			String loadBalancerName = desc.loadBalancerName();
 			logger.info(String.format("Checking LB for tag %s:%s, ELB name is %s", AwsFacade.TYPE_TAG, type, loadBalancerName));
 			List<Tag> tags = elbClient.getTagsFor(loadBalancerName);
 			if (containsCorrectTag(tags, type)) {
@@ -86,8 +87,8 @@ public class ELBRepository {
 
 	private boolean containsCorrectTag(List<Tag> tags, String type) {
 		for(Tag tag : tags) {
-			if (tag.getKey().equals(AwsFacade.TYPE_TAG)) {
-				return tag.getValue().equals(type);
+			if (tag.key().equals(AwsFacade.TYPE_TAG)) {
+				return tag.value().equals(type);
 			}
 		}
 		return false;
@@ -95,8 +96,7 @@ public class ELBRepository {
 
 	private String getVpcId(ProjectAndEnv projAndEnv) {
 		Vpc vpc = vpcRepository.getCopyOfVpc(projAndEnv);
-		String vpcID = vpc.vpcId();
-		return vpcID;
+		return vpc.vpcId();
 	}
 
 	private List<Instance> addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String typeTag) throws CfnAssistException {
@@ -104,8 +104,8 @@ public class ELBRepository {
 			throw new MustHaveBuildNumber();
 		}
 		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);	
-		List<Instance> currentInstances = elb.getInstances();
-		String lbName = elb.getLoadBalancerName();
+		List<Instance> currentInstances = elb.instances();
+		String lbName = elb.loadBalancerName();
 		
 		SearchCriteria criteria = new SearchCriteria(projAndEnv);
 		List<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(criteria, typeTag);
@@ -121,7 +121,7 @@ public class ELBRepository {
 
 	private List<Instance> filterBy(List<Instance> currentInstances,
 			List<Instance> allMatchingInstances) {
-		List<Instance> result = new LinkedList<Instance>();
+		List<Instance> result = new LinkedList<>();
 		for(Instance candidate : allMatchingInstances) {
 			if (!currentInstances.contains(candidate)) {
 				result.add(candidate);
@@ -133,36 +133,36 @@ public class ELBRepository {
 	public List<Instance> findInstancesAssociatedWithLB(
 			ProjectAndEnv projAndEnv, String typeTag) throws TooManyELBException {
 		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);
-		return elb.getInstances();
+		return elb.instances();
 	}
 
 	// returns remaining instances
-	private List<Instance> removeInstancesNotMatching(ProjectAndEnv projAndEnv, List<Instance> matchingInstances, String typeTag) throws MustHaveBuildNumber, TooManyELBException {	
+	private List<Instance> removeInstancesNotMatching(ProjectAndEnv projAndEnv, List<Instance> matchingInstances, String typeTag) throws TooManyELBException {
 		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);
-		logger.info("Checking if instances should be removed from ELB " + elb.getLoadBalancerName());
-		List<Instance> currentInstances = elb.getInstances();	
+		logger.info("Checking if instances should be removed from ELB " + elb.loadBalancerName());
+		List<Instance> currentInstances = elb.instances();
 				
-		List<Instance> toRemove = new LinkedList<Instance>();
+		List<Instance> toRemove = new LinkedList<>();
 		for(Instance current : currentInstances) {
-			String instanceId = current.getInstanceId();
+			String instanceId = current.instanceId();
 			if (matchingInstances.contains(current)) {
 				logger.info("Instance matched project/env/build/type, will not be removed " + instanceId);
 			} else {
 				logger.info("Instance did not match, will be removed from ELB " +instanceId);
-				toRemove.add(new Instance(instanceId));
+				toRemove.add(Instance.builder().instanceId(instanceId).build());
 			}
 		}
 		
 		if (toRemove.isEmpty()) {
-			logger.info("No instances to remove from ELB " + elb.getLoadBalancerName());
-			return new LinkedList<Instance>();
+			logger.info("No instances to remove from ELB " + elb.loadBalancerName());
+			return new LinkedList<>();
 		}
 		return removeInstances(elb,toRemove);	
 	}
 
 	private List<Instance> removeInstances(LoadBalancerDescription elb,
-			List<Instance> toRemove) {
-		String loadBalancerName = elb.getLoadBalancerName();
+										   List<Instance> toRemove) {
+		String loadBalancerName = elb.loadBalancerName();
 		logger.info("Removing instances from ELB " + loadBalancerName);
 
 		return elbClient.degisterInstancesFromLB(toRemove,loadBalancerName);
@@ -175,13 +175,13 @@ public class ELBRepository {
 	}
 
 	// TODO filter on the request, but api does not seeem to support that currently
-	public List<LoadBalancerDescription> findELBForVPC(String vpcId) {	
+	public List<LoadBalancerDescription> findELBForVPC(String vpcId) {
 		List<LoadBalancerDescription> result = elbClient.describeLoadBalancers(); // seems to be no filter for vpc on elbs
 		
-		List<LoadBalancerDescription> filtered = new LinkedList<LoadBalancerDescription>();	
+		List<LoadBalancerDescription> filtered = new LinkedList<>();
 		for(LoadBalancerDescription lb : result) {
-			if (lb.getVPCId()!=null) {
-				if (lb.getVPCId().equals(vpcId)) {
+			if (lb.vpcId()!=null) {
+				if (lb.vpcId().equals(vpcId)) {
 					filtered.add(lb);
 				}
 			}

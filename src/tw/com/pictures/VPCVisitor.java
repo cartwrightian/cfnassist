@@ -18,12 +18,12 @@ import software.amazon.awssdk.services.ec2.model.RouteTableAssociation;
 import software.amazon.awssdk.services.ec2.model.SecurityGroup;
 import software.amazon.awssdk.services.ec2.model.Subnet;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.rds.model.DBInstance;
 import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
 import com.amazonaws.services.rds.model.DBSubnetGroup;
 import com.amazonaws.services.rds.model.VpcSecurityGroupMembership;
 
+import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import tw.com.exceptions.CfnAssistException;
 
 public class VPCVisitor {
@@ -119,18 +119,18 @@ public class VPCVisitor {
 	}
 
 	private void visitELB(VPCDiagramBuilder vpcDiagramBuilder, LoadBalancerDescription elb) throws CfnAssistException {
-		logger.debug("visit elb " + elb.getLoadBalancerName()); 
+		logger.debug("visit elb " + elb.loadBalancerName());
 
 		vpcDiagramBuilder.addELB(elb);
-		for(com.amazonaws.services.elasticloadbalancing.model.Instance instance : elb.getInstances()) {
-			vpcDiagramBuilder.associateELBToInstance(elb, instance.getInstanceId());
+		for(software.amazon.awssdk.services.elasticloadbalancing.model.Instance instance : elb.instances()) {
+			vpcDiagramBuilder.associateELBToInstance(elb, instance.instanceId());
 		}
-		for(String subnetId : elb.getSubnets()) {
+		for(String subnetId : elb.subnets()) {
 			vpcDiagramBuilder.associateELBToSubnet(elb, subnetId);
 		}
-		for(String groupId : elb.getSecurityGroups()) {
+		for(String groupId : elb.securityGroups()) {
 			SecurityGroup group = facade.getSecurityGroupDetailsById(groupId);
-			addSecGroupToDiagram(vpcDiagramBuilder, elb.getDNSName(), group);
+			addSecGroupToDiagram(vpcDiagramBuilder, elb.dnsName(), group);
 		}
 	}
 	
