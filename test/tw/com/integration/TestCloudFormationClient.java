@@ -2,14 +2,13 @@ package tw.com.integration;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
 import org.junit.rules.TestName;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.DescribeSubnetsRequest;
 import software.amazon.awssdk.services.ec2.model.DescribeSubnetsResponse;
@@ -40,7 +39,7 @@ import static org.junit.Assert.*;
 
 public class TestCloudFormationClient {
 	
-	private static AmazonCloudFormation cfnClient;
+	private static software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 	private static Ec2Client ec2Client;
 	private static DefaultAwsRegionProviderChain regionProvider;
 
@@ -104,15 +103,16 @@ public class TestCloudFormationClient {
 		
 		assertEquals(stackName, nameAndId.getStackName());
 		
-		String status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
+		assertEquals(StackStatus.CREATE_COMPLETE, status);
+
+		DescribeStacksResponse queryResult = cfnClient.describeStacks(DescribeStacksRequest.builder().
+				stackName(stackName).build());
+		assertEquals(1, queryResult.stacks().size());
+		Stack stack = queryResult.stacks().get(0);
+		assertEquals(stack.stackId(), nameAndId.getStackId());
 		
-		DescribeStacksResult queryResult = cfnClient.describeStacks(new DescribeStacksRequest().withStackName(stackName));
-		assertEquals(1, queryResult.getStacks().size());
-		Stack stack = queryResult.getStacks().get(0);
-		assertEquals(stack.getStackId(), nameAndId.getStackId());
-		
-		List<Tag> stackTags = stack.getTags();
+		List<Tag> stackTags = stack.tags();
 		assertEquals(expectedTags.size(), stackTags.size());
 		assert(stackTags.containsAll(expectedTags));
 		
@@ -120,14 +120,17 @@ public class TestCloudFormationClient {
 		// now delete
 		formationClient.deleteStack(stackName);
 		status = polligMonitor.waitForDeleteFinished(nameAndId);
-		assertEquals(StackStatus.DELETE_COMPLETE.toString(), status);
+		assertEquals(StackStatus.DELETE_COMPLETE, status);
+
+		status = formationClient.currentStatus(stackName);
+		assertEquals(StackStatus.DELETE_COMPLETE, status);
 		
 		try {
-			cfnClient.describeStacks(new DescribeStacksRequest().withStackName(stackName));
+			cfnClient.describeStacks(DescribeStacksRequest.builder().stackName(stackName).build());
 			fail("throws if stack does not exist");
 		}
-		catch(AmazonServiceException expectedException) {
-			assertEquals(400, expectedException.getStatusCode());
+		catch(CloudFormationException expectedException) {
+			assertEquals(400, expectedException.statusCode());
 		}	
 	}
 
@@ -184,21 +187,26 @@ public class TestCloudFormationClient {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_CIDR_PARAM), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
-		parameters.add(new Parameter().withParameterKey("cidr").withParameterValue(cidr));
+		parameters.add(Parameter.builder().parameterKey("cidr").parameterValue(cidr).build());
 		String stackName = "queryStackTest";
+
+		deletesStacks.ifPresent(stackName);
+
+		assertFalse(formationClient.stackExists(stackName));
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
 				polligMonitor, createTagging(test.getMethodName()));
-		deletesStacks.ifPresent(nameAndId);
-		
-		String status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+
+
+		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
+		assertEquals(StackStatus.CREATE_COMPLETE, status);
+		assertTrue(formationClient.stackExists(stackName));
 		
 		// query all stacks
 		List<Stack> resultStacks = formationClient.describeAllStacks();
 		assertTrue(resultStacks.size()>0);
 		boolean seen = false;
 		for(Stack candidate : resultStacks) {
-			if (candidate.getStackName().equals("queryStackTest")) {
+			if (candidate.stackName().equals("queryStackTest")) {
 				seen = true;
 				break;
 			}
@@ -207,7 +215,7 @@ public class TestCloudFormationClient {
 		
 		// query single stack
 		Stack resultStack = formationClient.describeStack("queryStackTest");
-		assertEquals("queryStackTest", resultStack.getStackName());
+		assertEquals("queryStackTest", resultStack.stackName());
 		
 		// query events
 		List<StackEvent> resultEvents = formationClient.describeStackEvents("queryStackTest");
@@ -230,8 +238,8 @@ public class TestCloudFormationClient {
 		
 		assertEquals(stackName, nameAndId.getStackName());
 		
-		String status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
+		assertEquals(StackStatus.CREATE_COMPLETE, status);
 		
 		assertCIDR(nameAndId, "10.0.10.0/24", vpcId);
 		
@@ -244,7 +252,7 @@ public class TestCloudFormationClient {
 		assertEquals(stackName, nameAndId.getStackName());
 		
 		status = polligMonitor.waitForUpdateFinished(nameAndId);
-		assertEquals(StackStatus.UPDATE_COMPLETE.toString(), status);
+		assertEquals(StackStatus.UPDATE_COMPLETE, status);
 
 		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);
 	}
@@ -262,8 +270,8 @@ public class TestCloudFormationClient {
 		
 		assertEquals(stackName, nameAndId.getStackName());
 		
-		String status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE.toString(), status);
+		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
+		assertEquals(StackStatus.CREATE_COMPLETE, status);
 		
 		assertCIDR(nameAndId, "10.0.10.0/24", vpcId);
 		
@@ -276,7 +284,7 @@ public class TestCloudFormationClient {
 		assertEquals(stackName, nameAndId.getStackName());
 		
 		status = snsMonitor.waitForUpdateFinished(nameAndId);
-		assertEquals(StackStatus.UPDATE_COMPLETE.toString(), status);
+		assertEquals(StackStatus.UPDATE_COMPLETE, status);
 
 		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);	
 		
@@ -292,19 +300,19 @@ public class TestCloudFormationClient {
 		int i;
 		for(i=0; i<4; i++) {
 			TemplateParameter parameter = result.get(i);
-			if (parameter.getParameterKey().equals("zoneA")) break;		
+			if (parameter.parameterKey().equals("zoneA")) break;
 		}
 		TemplateParameter zoneAParameter = result.get(i);
 		
-		assertEquals("zoneA", zoneAParameter.getParameterKey());
-		assertEquals("eu-west-1a", zoneAParameter.getDefaultValue());
-		assertEquals("zoneADescription", zoneAParameter.getDescription());
+		assertEquals("zoneA", zoneAParameter.parameterKey());
+		assertEquals("eu-west-1a", zoneAParameter.defaultValue());
+		assertEquals("zoneADescription", zoneAParameter.description());
 	}
 
 	private void assertCIDR(StackNameAndId nameAndId, String initialCidr, String vpcId) {
 		List<StackResource> resultResources = formationClient.describeStackResources(nameAndId.getStackName());
 		assertEquals(1, resultResources.size());
-		String subnetId = resultResources.get(0).getPhysicalResourceId();
+		String subnetId = resultResources.get(0).physicalResourceId();
 		Subnet subnet = getSubnetDetails(subnetId);	
 		assertEquals(initialCidr, subnet.cidrBlock());
 		assertEquals(vpcId, subnet.vpcId());
@@ -323,8 +331,8 @@ public class TestCloudFormationClient {
 	
 	private Collection<Parameter> createStandardParameters(String vpcId) {
 		Collection<Parameter> parameters = new LinkedList<>();
-		parameters.add(new Parameter().withParameterKey("env").withParameterValue("Test"));
-		parameters.add(new Parameter().withParameterKey("vpc").withParameterValue(vpcId));
+		parameters.add(Parameter.builder().parameterKey("env").parameterValue("Test").build());
+		parameters.add(Parameter.builder().parameterKey("vpc").parameterValue(vpcId).build());
 		return parameters;
 	}
 	

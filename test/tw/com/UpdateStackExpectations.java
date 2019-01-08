@@ -1,9 +1,9 @@
 package tw.com;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
@@ -37,7 +37,7 @@ public class UpdateStackExpectations extends EasyMockSupport {
                                                    Collection<Parameter> parameters)
             throws CfnAssistException, InterruptedException, IOException {
         String stackId = "stackId";
-        Stack stack = new Stack().withStackId(stackId);
+        Stack stack = Stack.builder().stackId(stackId).build();
         StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
 
         String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -45,7 +45,7 @@ public class UpdateStackExpectations extends EasyMockSupport {
         EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 
         EasyMock.expect(cfnRepository.updateStack(contents, parameters, monitor, stackName)).andReturn(stackNameAndId);
-        EasyMock.expect(monitor.waitForUpdateFinished(stackNameAndId)).andReturn(StackStatus.UPDATE_COMPLETE.toString());
+        EasyMock.expect(monitor.waitForUpdateFinished(stackNameAndId)).andReturn(StackStatus.UPDATE_COMPLETE);
         EasyMock.expect(cfnRepository.updateSuccess(stackNameAndId)).andReturn(stack);
         EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
         return stackNameAndId;

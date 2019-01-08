@@ -1,10 +1,10 @@
 package tw.com.acceptance;
 
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import org.junit.*;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.CLIArgBuilder;
@@ -30,7 +30,7 @@ public class TestCommandLineStackOperations {
 	private VpcRepository vpcRepository;
 	private ProjectAndEnv altProjectAndEnv;
 	private static Ec2Client ec2Client;
-	private static AmazonCloudFormation cfnClient;
+	private static CloudFormationClient cfnClient;
 	private DeletesStacks deletesStacks;
 	
 	@BeforeClass

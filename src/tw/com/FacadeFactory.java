@@ -2,8 +2,6 @@ package tw.com;
 
 import com.amazonaws.regions.AwsRegionProvider;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
@@ -35,7 +33,7 @@ public class FacadeFactory implements ProvidesNow {
 	
 	private boolean init;
 
-    private AmazonCloudFormation cfnClient;
+    private software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 	private AmazonSQS sqsClient;
 	private AmazonSNS snsClient;
 	private AmazonS3 s3Client;
@@ -108,7 +106,7 @@ public class FacadeFactory implements ProvidesNow {
 	}
 
 	private void createAmazonAPIClients() {
-        cfnClient = AmazonCloudFormationClientBuilder.defaultClient();
+        cfnClient = software.amazon.awssdk.services.cloudformation.CloudFormationClient.create();
         ec2Client = Ec2Client.builder().build();
         snsClient = AmazonSNSClientBuilder.defaultClient();
         sqsClient = AmazonSQSClientBuilder.defaultClient();

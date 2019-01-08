@@ -1,9 +1,9 @@
 package tw.com.commandline.actions;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;

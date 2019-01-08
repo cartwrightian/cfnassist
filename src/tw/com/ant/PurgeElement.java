@@ -1,7 +1,7 @@
 package tw.com.ant;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
@@ -17,7 +17,7 @@ public class PurgeElement implements ActionElement {
 	public PurgeElement() {
 	}
 
-	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) 
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
 			throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
 
 		CommandLineAction actionToInvoke = new PurgeAction();

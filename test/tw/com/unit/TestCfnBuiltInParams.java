@@ -1,19 +1,16 @@
 package tw.com.unit;
 
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import org.junit.Before;
 import org.junit.Test;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.CannotFindVpcException;
-import tw.com.exceptions.InvalidStackParameterException;
 import tw.com.parameters.CfnBuiltInParams;
 import tw.com.parameters.ProvidesZones;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -40,7 +37,7 @@ public class TestCfnBuiltInParams implements ProvidesZones {
     }
 
     @Test
-    public void shouldNotPopulateEnvAndEpvParametersIfNotDeclared() throws InvalidStackParameterException, CannotFindVpcException, IOException {
+    public void shouldNotPopulateEnvAndEpvParametersIfNotDeclared() {
 
         parameters.addParameters(results, declaredParameters, EnvironmentSetupForTests.getMainProjectAndEnv(), this);
 
@@ -48,9 +45,9 @@ public class TestCfnBuiltInParams implements ProvidesZones {
     }
 
     @Test
-    public void shouldPopulateEnvAndVPCIfDeclared() throws InvalidStackParameterException, CannotFindVpcException, IOException {
-        declaredParameters.add(new TemplateParameter().withParameterKey("env"));
-        declaredParameters.add(new TemplateParameter().withParameterKey("vpc"));
+    public void shouldPopulateEnvAndVPCIfDeclared() {
+        declaredParameters.add(createParam("env"));
+        declaredParameters.add(createParam("vpc"));
 
         ProjectAndEnv projAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
         parameters.addParameters(results, declaredParameters, projAndEnv, this);
@@ -61,11 +58,15 @@ public class TestCfnBuiltInParams implements ProvidesZones {
 
     }
 
+    private TemplateParameter createParam(String key) {
+        return TemplateParameter.builder().parameterKey(key).build();
+    }
+
     @Test
-    public void shouldPopulateEnvVpcAndBuildIfDeclared() throws InvalidStackParameterException, CannotFindVpcException, IOException {
-        declaredParameters.add(new TemplateParameter().withParameterKey("env"));
-        declaredParameters.add(new TemplateParameter().withParameterKey("vpc"));
-        declaredParameters.add(new TemplateParameter().withParameterKey("build"));
+    public void shouldPopulateEnvVpcAndBuildIfDeclared()  {
+        declaredParameters.add(createParam("env"));
+        declaredParameters.add(createParam("vpc"));
+        declaredParameters.add(createParam("build"));
 
         ProjectAndEnv projAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
         projAndEnv.addBuildNumber(5426);
@@ -79,9 +80,9 @@ public class TestCfnBuiltInParams implements ProvidesZones {
     }
 
     @Test
-    public void shouldPopulateEnvVpcIfDeclaredButBuildNotDeclared() throws InvalidStackParameterException, CannotFindVpcException, IOException {
-        declaredParameters.add(new TemplateParameter().withParameterKey("env"));
-        declaredParameters.add(new TemplateParameter().withParameterKey("vpc"));
+    public void shouldPopulateEnvVpcIfDeclaredButBuildNotDeclared() {
+        declaredParameters.add(createParam("env"));
+        declaredParameters.add(createParam("vpc"));
 
         ProjectAndEnv projAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
         projAndEnv.addBuildNumber(5426);
@@ -94,7 +95,7 @@ public class TestCfnBuiltInParams implements ProvidesZones {
 
     private boolean isPresentIn(Collection<Parameter> results, String key, String value) {
         for(Parameter candidate : results) {
-            if (candidate.getParameterKey().equals(key) && (candidate.getParameterValue().equals(value))) {
+            if (candidate.parameterKey().equals(key) && (candidate.parameterValue().equals(value))) {
                 return true;
             }
         }

@@ -1,9 +1,8 @@
 package tw.com.providers;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.cloudformation.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.ProjectAndEnv;
@@ -21,18 +20,17 @@ import java.util.List;
 public class CloudFormationClient {
 	private static final Logger logger = LoggerFactory.getLogger(CloudFormationClient.class);
 
-	private AmazonCloudFormation cfnClient;
+	private software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 
-	public CloudFormationClient(AmazonCloudFormation cfnClient) {
+	public CloudFormationClient(software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient) {
 		this.cfnClient = cfnClient;
 	}
 
 	public Stack describeStack(String stackName) throws WrongNumberOfStacksException {
-		DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
-		describeStacksRequest.setStackName(stackName);
-		
-		DescribeStacksResult result = cfnClient.describeStacks(describeStacksRequest);
-		List<Stack> stacks = result.getStacks();
+		DescribeStacksRequest describeStacksRequest = DescribeStacksRequest.builder().stackName(stackName).build();
+
+		DescribeStacksResponse result = cfnClient.describeStacks(describeStacksRequest);
+		List<Stack> stacks = result.stacks();
 		
 		int numberOfStacks = stacks.size();
 		if (numberOfStacks != 1) {
@@ -42,37 +40,74 @@ public class CloudFormationClient {
 		return stacks.get(0);
 	}
 
+	public boolean stackExists(String stackName) {
+		ListStacksRequest request = ListStacksRequest.builder().stackStatusFilters(
+				StackStatus.CREATE_COMPLETE,
+				StackStatus.ROLLBACK_COMPLETE,
+				StackStatus.UPDATE_COMPLETE,
+				StackStatus.UPDATE_ROLLBACK_COMPLETE,
+
+				StackStatus.CREATE_IN_PROGRESS,
+				StackStatus.UPDATE_IN_PROGRESS,
+				StackStatus.ROLLBACK_IN_PROGRESS,
+				StackStatus.UPDATE_ROLLBACK_IN_PROGRESS,
+				StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS,
+
+				StackStatus.CREATE_FAILED,
+				StackStatus.DELETE_FAILED,
+				StackStatus.ROLLBACK_FAILED,
+				StackStatus.UPDATE_ROLLBACK_FAILED
+
+		).build();
+		ListStacksResponse result = cfnClient.listStacks(request);
+		for (StackSummary summary : result.stackSummaries()) {
+			if (summary.stackName().equals(stackName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public StackStatus currentStatus(String stackName) throws WrongNumberOfStacksException {
+		ListStacksResponse result = cfnClient.listStacks();
+		for(StackSummary summary : result.stackSummaries()) {
+			if (summary.stackName().equals(stackName)) {
+				return summary.stackStatus();
+			}
+		}
+		throw new WrongNumberOfStacksException(0,1);
+	}
+
 	public List<StackEvent> describeStackEvents(String stackName) {
-		DescribeStackEventsRequest request = new DescribeStackEventsRequest();
-		request.setStackName(stackName);
-		DescribeStackEventsResult result = cfnClient.describeStackEvents(request);
-		return result.getStackEvents();
+		DescribeStackEventsRequest request = DescribeStackEventsRequest.builder().stackName(stackName).build();
+
+		DescribeStackEventsResponse result = cfnClient.describeStackEvents(request);
+		return result.stackEvents();
 	}
 
 	public List<TemplateParameter> validateTemplate(String contents) {
-		ValidateTemplateRequest validateTemplateRequest = new ValidateTemplateRequest();
-		validateTemplateRequest.setTemplateBody(contents);
-		return cfnClient.validateTemplate(validateTemplateRequest).getParameters();
+		ValidateTemplateRequest validateTemplateRequest = ValidateTemplateRequest.builder().templateBody(contents).build();
+
+		return cfnClient.validateTemplate(validateTemplateRequest).parameters();
 	}
 
 	public void deleteStack(String stackName) {
-		DeleteStackRequest deleteStackRequest = new DeleteStackRequest();
-		deleteStackRequest.setStackName(stackName);
+		DeleteStackRequest deleteStackRequest = DeleteStackRequest.builder().stackName(stackName).build();
 		logger.info("Requesting deletion of stack " + stackName);
-		cfnClient.deleteStack(deleteStackRequest);	
+
+		cfnClient.deleteStack(deleteStackRequest);
 	}
 
 	public List<StackResource> describeStackResources(String stackName) {
-		DescribeStackResourcesRequest request = new DescribeStackResourcesRequest();
-		request.setStackName(stackName);
-		DescribeStackResourcesResult results = cfnClient.describeStackResources(request);
-		return results.getStackResources();
+		DescribeStackResourcesRequest request = DescribeStackResourcesRequest.builder().stackName(stackName).build();
+
+		DescribeStackResourcesResponse results = cfnClient.describeStackResources(request);
+		return results.stackResources();
 	}
 
 	public List<Stack> describeAllStacks() {
-		DescribeStacksResult results = cfnClient.describeStacks();
-
-		return results.getStacks();
+		DescribeStacksResponse results = cfnClient.describeStacks();
+		return results.stacks();
 	}
 
 	private Collection<Tag> createTagsForStack(ProjectAndEnv projectAndEnv, Tagging tagging) {
@@ -89,9 +124,7 @@ public class CloudFormationClient {
 	}
 	
 	private Tag createTag(String key, String value) {
-		Tag tag = new Tag();
-		tag.setKey(key);
-		tag.setValue(value);
+		Tag tag = Tag.builder().key(key).value(value).build();
 		return tag;
 	}
 
@@ -99,46 +132,46 @@ public class CloudFormationClient {
 			String contents, String stackName,
 			Collection<Parameter> parameters, MonitorStackEvents monitor,
 			Tagging tagging) throws CfnAssistException {
-		CreateStackRequest createStackRequest = new CreateStackRequest();
-		createStackRequest.setTemplateBody(contents);
-		createStackRequest.setStackName(stackName);
-		createStackRequest.setParameters(parameters);
-		monitor.addMonitoringTo(createStackRequest);
 		Collection<Tag> tags = createTagsForStack(projAndEnv, tagging);
-		createStackRequest.setTags(tags);
-		
+
+		CreateStackRequest.Builder createStackRequestBuilder = CreateStackRequest.builder().
+			templateBody(contents).
+				stackName(stackName).
+				parameters(parameters).
+				tags(tags);
+
+		monitor.addMonitoringTo(createStackRequestBuilder);
+
 		if (projAndEnv.useCapabilityIAM()) {
 			logger.info("Adding CAPABILITY_IAM to create request");
 			List<String> capabilities = new ArrayList<>();
 			capabilities.add("CAPABILITY_IAM");
-			createStackRequest.setCapabilities(capabilities);
+			createStackRequestBuilder.capabilitiesWithStrings(capabilities);
 		}
 		
 		logger.info("Making createStack call to AWS");
 		
 		try {
-			CreateStackResult result = cfnClient.createStack(createStackRequest);
-			return new StackNameAndId(stackName, result.getStackId());
+			CreateStackResponse result = cfnClient.createStack(createStackRequestBuilder.build());
+			return new StackNameAndId(stackName, result.stackId());
 		}
 		catch (InsufficientCapabilitiesException exception) {
 			throw new MissingCapabilities(exception.getMessage());
 		}
-		
 	}
 
 	public StackNameAndId updateStack(String contents, Collection<Parameter> parameters,
 			MonitorStackEvents monitor, String stackName) throws NotReadyException {
 		
 		logger.info("Will attempt to update stack: " + stackName);
-		UpdateStackRequest updateStackRequest = new UpdateStackRequest();	
-		updateStackRequest.setParameters(parameters);
-		updateStackRequest.setStackName(stackName);
-		updateStackRequest.setTemplateBody(contents);
+		UpdateStackRequest.Builder updateStackRequest = UpdateStackRequest.builder().
+		parameters(parameters).stackName(stackName).templateBody(contents);
+
 		monitor.addMonitoringTo(updateStackRequest);
 
-		UpdateStackResult result = cfnClient.updateStack(updateStackRequest);
-		
-		return new StackNameAndId(stackName,result.getStackId());
+		UpdateStackResponse result = cfnClient.updateStack(updateStackRequest.build());
+
+		return new StackNameAndId(stackName,result.stackId());
 		
 	}
 

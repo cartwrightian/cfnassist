@@ -1,8 +1,8 @@
 package tw.com.entity;
 
-import com.amazonaws.services.cloudformation.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Tag;
 import tw.com.AwsFacade;
 
 import java.util.Collection;
@@ -39,14 +39,8 @@ public class Tagging {
         this.indexTag = Optional.of(indexTag);
     }
 
-    public void setUpdateIndexTag(int updateIndex) {
-        this.updateIndex = Optional.of(updateIndex);
-    }
-
     private Tag createTag(String key, String value) {
-        Tag tag = new Tag();
-        tag.setKey(key);
-        tag.setValue(value);
+        Tag tag = Tag.builder().key(key).value(value).build();
         return tag;
     }
 

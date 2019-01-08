@@ -1,10 +1,11 @@
 package tw.com;
 
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackResource;
-import com.amazonaws.services.cloudformation.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackResource;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+import software.amazon.awssdk.services.cloudformation.model.Tag;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
@@ -18,7 +19,7 @@ public class StackCache {
 	private static final Logger logger = LoggerFactory.getLogger(StackCache.class);
 
 	private List<StackEntry> theEntries;
-	CloudFormationClient formationClient;
+	private CloudFormationClient formationClient;
 	private StackResources stackResources;
 	private String project;
 	
@@ -51,17 +52,17 @@ public class StackCache {
 		logger.info(String.format("Populating stack entries for %s stacks", stacks.size()));
 		for(Stack stack : stacks) {
 
-			logger.info(String.format("Checking stack %s for tag", stack.getStackName()));
+			logger.info(String.format("Checking stack %s for tag", stack.stackName()));
 		
-			List<Tag> tags = stack.getTags();
+			List<Tag> tags = stack.tags();
             Map<String, String> keyValues = convertToMap(tags);
 			int count = 3;
 			String env = "";
 			String proj = "";
 			Integer build = null;
 			for(Tag tag : tags) {
-				String key = tag.getKey();
-				String value = tag.getValue();
+				String key = tag.key();
+				String value = tag.value();
 				if (key.equals(AwsFacade.ENVIRONMENT_TAG)) {
 					env = value;
 					count--;
@@ -81,12 +82,12 @@ public class StackCache {
 
     private HashMap<String, String> convertToMap(List<Tag> tags) {
         HashMap<String, String> result = new HashMap<>();
-        tags.forEach(tag -> result.put(tag.getKey(), tag.getValue()));
+        tags.forEach(tag -> result.put(tag.key(), tag.value()));
         return result;
     }
 
     private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, Integer build, Map<String, String> keyValues) {
-		String stackName = stack.getStackName();
+		String stackName = stack.stackName();
 		if (!proj.equals(project) || (env.isEmpty())) {
 			logger.warn(String.format("Could not match expected tags (%s and %s) for project '%s' and stackname %s", 
 					AwsFacade.ENVIRONMENT_TAG, AwsFacade.PROJECT_TAG, proj, stackName));
@@ -110,7 +111,7 @@ public class StackCache {
 			theEntries.remove(entry);
 			logger.info("Replacing or Removing entry for stack " + stackName);
 		}
-		String stackStatus = stack.getStackStatus();
+		StackStatus stackStatus = stack.stackStatus();
 		theEntries.add(entry);
 		stackResources.removeResources(stackName);
 		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));			 

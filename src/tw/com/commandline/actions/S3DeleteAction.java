@@ -1,7 +1,7 @@
 package tw.com.commandline.actions;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
@@ -25,7 +25,7 @@ public class S3DeleteAction extends SharedAction {
             IOException, InterruptedException, CfnAssistException, MissingArgumentException {
 		ArtifactUploader uploader = factory.createArtifactUploader(projectAndEnv);
 		for(Parameter item : artifacts) {
-			uploader.delete(item.getParameterValue());
+			uploader.delete(item.parameterValue());
 		}
 	}
 

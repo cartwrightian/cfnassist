@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.entity.StackNotification;
 
 public class TestSNSMessageParsing {
@@ -18,7 +19,7 @@ public class TestSNSMessageParsing {
 		StackNotification notification = StackNotification.parseNotificationMessage(stackEventSampleText);	
 		
 		assertEquals("temporaryStack", notification.getStackName());
-		assertEquals("CREATE_COMPLETE", notification.getStatus());
+		assertEquals(StackStatus.CREATE_COMPLETE, notification.getStatus());
 		assertEquals("AWS::CloudFormation::Stack", notification.getResourceType());
 		assertEquals("arn:aws:cloudformation:eu-west-1:619378453009:stack/temporaryStack/8c343e50-9eff-11e3-b6e7-506cf935a496", notification.getStackId());
 	}
@@ -28,7 +29,7 @@ public class TestSNSMessageParsing {
 		StackNotification notification = StackNotification.parseNotificationMessage(instanceInProgessAPIv1_10_0);	
 		
 		assertEquals("tramchesterB0Devservers", notification.getStackName());
-		assertEquals("CREATE_IN_PROGRESS", notification.getStatus());
+		assertEquals(StackStatus.CREATE_IN_PROGRESS, notification.getStatus());
 		assertEquals("AWS::EC2::Instance", notification.getResourceType());
 		assertEquals("arn:aws:cloudformation:eu-west-1:300752856189:stack/tramchesterB0Devservers/fdd1dc60-1362-11e5-b6e6-5001411350e0", notification.getStackId());
 	}
@@ -38,7 +39,7 @@ public class TestSNSMessageParsing {
 		StackNotification notification = StackNotification.parseNotificationMessage(waitHandleInProgressAPIv1_10_0);	
 		
 		assertEquals("tramchesterB0Devservers", notification.getStackName());
-		assertEquals("CREATE_IN_PROGRESS", notification.getStatus());
+		assertEquals(StackStatus.CREATE_IN_PROGRESS, notification.getStatus());
 		assertEquals("AWS::CloudFormation::WaitConditionHandle", notification.getResourceType());
 		assertEquals("arn:aws:cloudformation:eu-west-1:300752856189:stack/tramchesterB0Devservers/fdd1dc60-1362-11e5-b6e6-5001411350e0", notification.getStackId());
 	}
@@ -48,7 +49,7 @@ public class TestSNSMessageParsing {
 		StackNotification notification = StackNotification.parseNotificationMessage(resourceFailureText);	
 		
 		assertEquals("CfnAssistTestelb", notification.getStackName());
-		assertEquals("CREATE_FAILED", notification.getStatus());
+		assertEquals(StackStatus.CREATE_FAILED, notification.getStatus());
 		assertEquals("AWS::ElasticLoadBalancing::LoadBalancer", notification.getResourceType());
 		assertEquals("arn:aws:cloudformation:eu-west-1:619378453009:stack/CfnAssistTestelb/3f12d2c0-af8b-11e3-a939-5088487db896", notification.getStackId());
 		assertEquals("VPC vpc-38d62752 has no internet gateway",notification.getStatusReason());

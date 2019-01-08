@@ -1,7 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.identitymanagement.model.User;
 import org.easymock.EasyMock;
@@ -10,6 +8,8 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -27,7 +27,7 @@ import java.util.List;
 
 @RunWith(EasyMockRunner.class)
 public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
-	private static final String DELETE_COMP_STATUS = StackStatus.DELETE_COMPLETE.toString();
+	private static final StackStatus DELETE_COMP_STATUS = StackStatus.DELETE_COMPLETE;
 	private AwsFacade aws;
 	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	private CloudFormRepository cfnRepository;
@@ -118,9 +118,9 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		
-		Stack stackA = new Stack().withStackName("CfnAssist0057TestsimpleStack").withStackId("idA");
-		Stack stackB = new Stack().withStackName("CfnAssist0058TestsimpleStack").withStackId("idB");
-		Stack stackC = new Stack().withStackName("CfnAssist0059TestsimpleStack").withStackId("idC"); // only this one associated with LB
+		Stack stackA = createStack("CfnAssist0057TestsimpleStack", "idA");
+		Stack stackB = createStack("CfnAssist0058TestsimpleStack", "idB");
+		Stack stackC = createStack("CfnAssist0059TestsimpleStack", "idC"); // only this one associated with LB
 		
 		List<StackEntry> stacksForProj = new LinkedList<>();
 		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
@@ -132,26 +132,30 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		
 		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
-		EasyMock.expect(cfnRepository.getInstancesFor(stackA.getStackName())).andReturn(createInstancesFor("123"));
-		EasyMock.expect(cfnRepository.getInstancesFor(stackB.getStackName())).andReturn(createInstancesFor("567"));
-		EasyMock.expect(cfnRepository.getInstancesFor(stackC.getStackName())).andReturn(createInstancesFor("matchingInstanceId"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackA.stackName())).andReturn(createInstancesFor("123"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackB.stackName())).andReturn(createInstancesFor("567"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackC.stackName())).andReturn(createInstancesFor("matchingInstanceId"));
 		
-		setDeleteExpectations(stackA.getStackName(), createNameAndId(stackA));
-		setDeleteExpectations(stackB.getStackName(), createNameAndId(stackB));
+		setDeleteExpectations(stackA.stackName(), createNameAndId(stackA));
+		setDeleteExpectations(stackB.stackName(), createNameAndId(stackB));
 		
 		replayAll();
 		aws.tidyNonLBAssocStacks(file, projectAndEnv,"typeTag");
 		verifyAll();
 	}
-	
+
+	private Stack createStack(String name, String id) {
+		return Stack.builder().stackName(name).stackId(id).build();
+	}
+
 	@Test
 	public void shouldDeleteNamedStacksNotAssociatedWithLBWhileIgnoringStacksWithNoInstances() throws InterruptedException, CfnAssistException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		
-		Stack stackA = new Stack().withStackName("CfnAssist0057TestsimpleStack").withStackId("idA"); // this one has no instances
-		Stack stackB = new Stack().withStackName("CfnAssist0058TestsimpleStack").withStackId("idB");
-		Stack stackC = new Stack().withStackName("CfnAssist0059TestsimpleStack").withStackId("idC"); // only this one associated with LB
+		Stack stackA = createStack("CfnAssist0057TestsimpleStack","idA"); // this one has no instances
+		Stack stackB = createStack("CfnAssist0058TestsimpleStack","idB");
+		Stack stackC = createStack("CfnAssist0059TestsimpleStack","idC"); // only this one associated with LB
 		
 		List<StackEntry> stacksForProj = new LinkedList<>();
 		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
@@ -163,11 +167,11 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		
 		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
-		EasyMock.expect(cfnRepository.getInstancesFor(stackA.getStackName())).andReturn(new LinkedList<>());
-		EasyMock.expect(cfnRepository.getInstancesFor(stackB.getStackName())).andReturn(createInstancesFor("567"));
-		EasyMock.expect(cfnRepository.getInstancesFor(stackC.getStackName())).andReturn(createInstancesFor("matchingInstanceId"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackA.stackName())).andReturn(new LinkedList<>());
+		EasyMock.expect(cfnRepository.getInstancesFor(stackB.stackName())).andReturn(createInstancesFor("567"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackC.stackName())).andReturn(createInstancesFor("matchingInstanceId"));
 		
-		setDeleteExpectations(stackB.getStackName(), createNameAndId(stackB));
+		setDeleteExpectations(stackB.stackName(), createNameAndId(stackB));
 		
 		replayAll();
 		aws.tidyNonLBAssocStacks(file, projectAndEnv,"typeTag");
@@ -181,7 +185,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		EasyMock.expectLastCall();
 		EasyMock.expect(monitor.waitForDeleteFinished(stackNameAndId)).andReturn(DELETE_COMP_STATUS);
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, DELETE_COMP_STATUS, user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, DELETE_COMP_STATUS.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("ifOfSentMessage");
 	}
 	
@@ -192,6 +196,6 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 
 	private StackNameAndId createNameAndId(Stack stack) {
-		return new StackNameAndId(stack.getStackName(), stack.getStackId());
+		return new StackNameAndId(stack.stackName(), stack.stackId());
 	}
 }

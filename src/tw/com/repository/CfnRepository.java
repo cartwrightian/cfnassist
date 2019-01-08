@@ -1,7 +1,7 @@
 package tw.com.repository;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudformation.model.*;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.ec2.model.Tag;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.slf4j.Logger;
@@ -88,12 +88,12 @@ public class CfnRepository implements CloudFormRepository {
 			logger.debug(String.format("Found %s resources for stack %s",
 					resources.size(), stackName));
 			for (StackResource resource : resources) {
-				String candidateId = resource.getLogicalResourceId();
-				String physicalResourceId = resource.getPhysicalResourceId();
+				String candidateId = resource.logicalResourceId();
+				String physicalResourceId = resource.physicalResourceId();
 				logger.debug(String
 						.format("Checking for match against resource phyId=%s logId=%s",
 								physicalResourceId,
-								resource.getLogicalResourceId()));
+								resource.logicalResourceId()));
 				if (candidateId.equals(logicalId)) {
 					return physicalResourceId;
 				}
@@ -106,22 +106,19 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	@Override
-	public String waitForStatusToChangeFrom(String stackName,
-			StackStatus currentStatus, List<String> aborts)
+	public StackStatus waitForStatusToChangeFrom(String stackName,
+											StackStatus currentStatus, List<StackStatus> aborts)
 			throws WrongNumberOfStacksException, InterruptedException {
 		
 		long pause = STATUS_CHECK_INTERVAL_MILLIS;
 
 		logger.info(String.format("Waiting for stack %s to change FROM status %s", stackName, currentStatus));
-		String status = currentStatus.toString();
-		Stack stack = null;
-		while (status.equals(currentStatus.toString())) {
+		StackStatus status = currentStatus;
+		while (status.equals(currentStatus)) {
 			Thread.sleep(pause);
-		
-			stack = formationClient.describeStack(stackName);
-			status = stack.getStackStatus();
-			logger.debug(String
-					.format("Waiting for status of stack %s, status was %s, pause was %s",
+
+			status = formationClient.currentStatus(stackName);
+			logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was %s",
 							stackName, status, pause));
 			if (pause < MAX_CHECK_INTERVAL_MILLIS) {
 				pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
@@ -131,9 +128,7 @@ public class CfnRepository implements CloudFormRepository {
 				break;
 			}
 		}
-		logger.info(String
-				.format("Stack status changed, status is now %s and reason (if any) was: '%s' ",
-						status, stack.getStackStatusReason()));
+		logger.info(String.format("Stack status changed, status is now %s", status));
 		return status;
 	}
 
@@ -143,56 +138,39 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	@Override
-	public boolean stackExists(String stackName) throws WrongNumberOfStacksException {
+	public boolean stackExists(String stackName) {
 		logger.info("Check if stack exists for " + stackName);
-
-		try { //  throws if stack does not exist
-			formationClient.describeStack(stackName);
-			return true;
-		}
-		catch (AmazonServiceException exception) { 
-			if (exception.getStatusCode()==400) {
-				return false;
-			}
-			throw exception;
-		} catch (WrongNumberOfStacksException wrongNumberException) {
-			if (wrongNumberException.getNumber()!=0) {
-				throw wrongNumberException;
-			} else 
-			{
-				return false;
-			}
-		}
+		return formationClient.stackExists(stackName);
 	}
 	
 	@Override
-	public String getStackStatus(String stackName) {
+	public StackStatus getStackStatus(String stackName) throws WrongNumberOfStacksException {
 		logger.info("Getting stack status for " + stackName);
 		for (StackEntry entry : stackCache.getEntries()) {
 			Stack stack = entry.getStack();
-			if (stack.getStackName().equals(stackName)) {
+			if (stack.stackName().equals(stackName)) {
 				// get latest status
 				try {
 					return getStackCurrentStatus(stackName);
 				} catch (WrongNumberOfStacksException e) {
 					logger.warn("Mismatch on stack status", e);
-					return "";
+					return StackStatus.UNKNOWN_TO_SDK_VERSION;
 				} catch (AmazonServiceException e) {
 					logger.warn("Could not check status of stack " +stackName,e);
 					if (e.getStatusCode()==400) {
-						return ""; // stack does not exist, perhaps a delete was in progress
+						return StackStatus.UNKNOWN_TO_SDK_VERSION; // stack does not exist, perhaps a delete was in progress
 					}
 				}
 			}
 		}
 		logger.warn("Failed to find stack status for :" + stackName);
-		return "";
+		throw new WrongNumberOfStacksException(1,0);
 	}
 
-	private String getStackCurrentStatus(String stackName)
+	private StackStatus getStackCurrentStatus(String stackName)
 			throws WrongNumberOfStacksException {
 		Stack stack = formationClient.describeStack(stackName);
-		String stackStatus = stack.getStackStatus();
+		StackStatus stackStatus = stack.stackStatus();
 		logger.info(String.format("Got status %s for stack %s", stackStatus, stackName));
 		return stackStatus;
 	}
@@ -201,12 +179,12 @@ public class CfnRepository implements CloudFormRepository {
 	public StackNameAndId getStackNameAndId(String stackName)
 			throws WrongNumberOfStacksException {
 		Stack stack = formationClient.describeStack(stackName);
-		String id = stack.getStackId();
+		String id = stack.stackId();
 		return new StackNameAndId(stackName, id);
 	}
 
 	@Override
-	public List<String> getAllInstancesFor(SearchCriteria criteria) throws CfnAssistException {
+	public List<String> getAllInstancesFor(SearchCriteria criteria) {
 		logger.info("Finding instances for " + criteria);
 		
 		List<StackEntry> stacks = criteria.matches(stackCache.getEntries());
@@ -228,10 +206,10 @@ public class CfnRepository implements CloudFormRepository {
 		List<String> instanceIds = new LinkedList<>();
 		List<StackResource> resources = stackCache.getResourcesForStack(stackname);
 		for (StackResource resource : resources) {
-			String type = resource.getResourceType();
+			String type = resource.resourceType();
 			if (type.equals(AWS_EC2_INSTANCE_TYPE)) {
-				logger.info("Matched instance: "+ resource.getPhysicalResourceId());
-				instanceIds.add(resource.getPhysicalResourceId());
+				logger.info("Matched instance: "+ resource.physicalResourceId());
+				instanceIds.add(resource.physicalResourceId());
 			}
 		}
 		return instanceIds;

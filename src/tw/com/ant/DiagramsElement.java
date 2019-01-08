@@ -1,8 +1,8 @@
 package tw.com.ant;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
 import tw.com.commandline.actions.CreateDiagramAction;

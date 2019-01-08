@@ -1,7 +1,5 @@
 package tw.com;
 
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription;
 import com.amazonaws.services.identitymanagement.model.User;
@@ -9,6 +7,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.*;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.entity.*;
@@ -160,8 +160,8 @@ public class AwsFacade implements ProvidesZones {
 
 	private String findStackToUpdate(List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv) throws InvalidStackParameterException {
 		for(TemplateParameter param : declaredParameters) {
-			if (param.getParameterKey().equals(PARAMETER_STACKNAME)) {
-				String defaultValue = param.getDefaultValue();
+			if (param.parameterKey().equals(PARAMETER_STACKNAME)) {
+				String defaultValue = param.defaultValue();
 				if ((defaultValue!=null) && (!defaultValue.isEmpty())) {
 					return createName(projAndEnv, defaultValue);
 				} else {
@@ -180,7 +180,8 @@ public class AwsFacade implements ProvidesZones {
             String contents,
             ParameterFactory parameterFactory, Tagging tagging)
 			throws CfnAssistException, InterruptedException, IOException {
-		String stackName = createStackName(file, projAndEnv);
+
+    	String stackName = createStackName(file, projAndEnv);
 		logger.info("Stackname is " + stackName);
 		
 		handlePossibleRollback(stackName);
@@ -209,10 +210,10 @@ public class AwsFacade implements ProvidesZones {
 	}
 
 	private void createOutputTags(Stack createdStack, ProjectAndEnv projAndEnv) {
-		List<Output> outputs = createdStack.getOutputs();
-		outputs.stream().filter(output -> shouldCreateTag(output.getDescription())).forEach(output -> {
+		List<Output> outputs = createdStack.outputs();
+		outputs.stream().filter(output -> shouldCreateTag(output.description())).forEach(output -> {
 			logger.info("Should create output tag for " + output.toString());
-			vpcRepository.setVpcTag(projAndEnv, output.getOutputKey(), output.getOutputValue());
+			vpcRepository.setVpcTag(projAndEnv, output.outputKey(), output.outputValue());
 		});
 	}
 
@@ -223,25 +224,27 @@ public class AwsFacade implements ProvidesZones {
 	private void handlePossibleRollback(String stackName)
 			throws WrongNumberOfStacksException, NotReadyException,
 			WrongStackStatus, InterruptedException, DuplicateStackException {
-		String currentStatus = cfnRepository.getStackStatus(stackName);
-		if (currentStatus.length()!=0) {
+
+		//StackStatus currentStatus = cfnRepository.getStackStatus(stackName);
+		if (cfnRepository.stackExists(stackName)) {
 			logger.warn("Stack already exists: " + stackName);
+			StackStatus currentStatus = cfnRepository.getStackStatus(stackName);
 			StackNameAndId stackId = cfnRepository.getStackNameAndId(stackName);
-			if (isRollingBack(stackId,currentStatus)) {
+			if (waitForRollbackComplete(stackId, currentStatus)) {
 				logger.warn("Stack is rolled back so delete it and recreate " + stackId);
 				cfnRepository.deleteStack(stackName);
 			} else {
-				logger.error("Stack exists and is not rolled back, cannot create another stack with name:" +stackName);
+				logger.error("Stack exists and is not rolled back, cannot create another stack with name:" + stackName);
 				throw new DuplicateStackException(stackName);
 			}
 		}
 	}
 
-	private boolean isRollingBack(StackNameAndId id, String currentStatus) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
-		if (currentStatus.equals(StackStatus.ROLLBACK_IN_PROGRESS.toString())) {
+	private boolean waitForRollbackComplete(StackNameAndId id, StackStatus currentStatus) throws NotReadyException, WrongNumberOfStacksException, WrongStackStatus, InterruptedException {
+		if (currentStatus.equals(StackStatus.ROLLBACK_IN_PROGRESS)) {
 			monitor.waitForRollbackComplete(id);
 			return true;
-		} else if (currentStatus.equals(StackStatus.ROLLBACK_COMPLETE.toString())) {
+		} else if (currentStatus.equals(StackStatus.ROLLBACK_COMPLETE)) {
 			return true;
 		}
 		return false;
@@ -317,7 +320,7 @@ public class AwsFacade implements ProvidesZones {
 	}
 
 	public ArrayList<StackNameAndId> applyTemplatesFromFolder(String folderPath,
-			ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams)
+															  ProjectAndEnv projAndEnv, Collection<Parameter> cfnParams)
             throws IOException, InterruptedException, CfnAssistException {
 		ArrayList<StackNameAndId> updatedStacks = new ArrayList<>();
 		File folder = validFolder(folderPath);

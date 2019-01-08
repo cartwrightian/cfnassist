@@ -1,10 +1,9 @@
 package tw.com.entity;
 
-
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -30,7 +29,7 @@ public class StackEntry {
 	@Override
 	public String toString() {
 		return String.format("StackEntry [env=%s, project=%s, stackName=%s, buildNumber='%s', index='%s']",
-				environmentTag.getEnv(), project, stack.getStackName(),
+				environmentTag.getEnv(), project, stack.stackName(),
                 (buildNumber.isPresent()?buildNumber.get():""),
                  (index.isPresent()?index.get():""));
 	}
@@ -90,11 +89,11 @@ public class StackEntry {
 	}
 
 	public boolean isLive() {
-		return stack.getStackStatus().equals(StackStatus.CREATE_COMPLETE.toString());
+		return stack.stackStatus().equals(StackStatus.CREATE_COMPLETE);
 	}
 
 	public String getStackName() {
-		return stack.getStackName();
+		return stack.stackName();
 	}
 
 	public String getProject() {
@@ -102,7 +101,7 @@ public class StackEntry {
 	}
 
 	public String getBaseName() {
-		String fullName = stack.getStackName();	
+		String fullName = stack.stackName();
 		String withoutProject = fullName.replace(project, "");
 		
 		String withoutBuild = withoutProject;

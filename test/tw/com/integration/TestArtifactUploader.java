@@ -1,9 +1,6 @@
 package tw.com.integration;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.io.FilenameUtils;
@@ -11,6 +8,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.providers.ArtifactUploader;
@@ -63,8 +61,8 @@ public class TestArtifactUploader {
 		List<Parameter> arts = new LinkedList<>();
 		
 		// any files would do here
-		Parameter artA = new Parameter().withParameterKey("urlA").withParameterValue(FilesForTesting.INSTANCE); 
-		Parameter artB = new Parameter().withParameterKey("urlB").withParameterValue(FilesForTesting.SIMPLE_STACK);
+		Parameter artA = createParameter("urlA", FilesForTesting.INSTANCE);
+		Parameter artB = createParameter("urlB", FilesForTesting.SIMPLE_STACK);
 		arts.add(artA);
 		arts.add(artB);
 		
@@ -74,12 +72,12 @@ public class TestArtifactUploader {
 		assertEquals(arts.size(), results.size());
 		
 		// expect keys remains same
-		assertEquals(arts.get(0).getParameterKey(), results.get(0).getParameterKey());
-		assertEquals(arts.get(1).getParameterKey(), results.get(1).getParameterKey());
+		assertEquals(arts.get(0).parameterKey(), results.get(0).parameterKey());
+		assertEquals(arts.get(1).parameterKey(), results.get(1).parameterKey());
 		
 		// expect value the S3 URL
-		assertEquals(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A, results.get(0).getParameterValue());
-		assertEquals(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B, results.get(1).getParameterValue());
+		assertEquals(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A, results.get(0).parameterValue());
+		assertEquals(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B, results.get(1).parameterValue());
 		
 		// check upload actually happened	
 		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
@@ -87,7 +85,11 @@ public class TestArtifactUploader {
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
 	}
-	
+
+	private Parameter createParameter(String parameterKey, String parameterValue) {
+		return Parameter.builder().parameterKey(parameterKey).parameterValue(parameterValue).build();
+	}
+
 	@Test
 	public void expectUploadDirWithFolderURLReturnedBack() {
 		List<Parameter> arts = new LinkedList<>();
@@ -98,7 +100,7 @@ public class TestArtifactUploader {
 		File folder = new File(folderPath);
 		FilenameFilter filter = (dir, name) -> name.endsWith(".json");
 		String[] filesOnDisc = folder.list(filter);
-		Parameter folderParam = new Parameter().withParameterKey("folder").withParameterValue(folderPath); 
+		Parameter folderParam = createParameter("folder",folderPath);
 		arts.add(folderParam);
 		
 		ArtifactUploader uploader = new ArtifactUploader(s3Client, EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER);
@@ -106,7 +108,7 @@ public class TestArtifactUploader {
 		
 		assertEquals(1, results.size());
 		String s3Prefix = EnvironmentSetupForTests.S3_PREFIX+"/"+BUILD_NUMBER;
-		assertEquals(s3Prefix, results.get(0).getParameterValue());
+		assertEquals(s3Prefix, results.get(0).parameterValue());
 		
 		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 		
@@ -121,7 +123,7 @@ public class TestArtifactUploader {
 		List<Parameter> arts = new LinkedList<>();
 		
 		// any files would do here
-		Parameter artA = new Parameter().withParameterKey("urlA").withParameterValue(FilesForTesting.INSTANCE); 
+		Parameter artA = createParameter("urlA", FilesForTesting.INSTANCE);
 		arts.add(artA);	
 		ArtifactUploader uploader = new ArtifactUploader(s3Client, EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER);
 		uploader.uploadArtifacts(arts);	

@@ -1,6 +1,7 @@
 package tw.com;
 
-import com.amazonaws.services.cloudformation.model.StackStatus;
+
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import static org.junit.Assert.assertTrue;
 

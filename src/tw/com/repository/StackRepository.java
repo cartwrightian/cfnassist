@@ -1,6 +1,6 @@
 package tw.com.repository;
 
-import com.amazonaws.services.cloudformation.model.*;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
@@ -16,12 +16,12 @@ public interface StackRepository {
 	List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name);
 	StackEntry getStacknameByIndex(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException;
 
-	String waitForStatusToChangeFrom(String stackName,
-									 StackStatus currentStatus, List<String> aborts)
+	StackStatus waitForStatusToChangeFrom(String stackName,
+									 StackStatus currentStatus, List<StackStatus> aborts)
 			throws WrongNumberOfStacksException, InterruptedException;
 
 	List<StackEvent> getStackEvents(String stackName);
-	String getStackStatus(String stackName);
+	StackStatus getStackStatus(String stackName) throws WrongNumberOfStacksException;
 
 	StackNameAndId getStackNameAndId(String stackName) throws WrongNumberOfStacksException;
 	Stack getStack(String stackName) throws WrongNumberOfStacksException;
@@ -32,7 +32,7 @@ public interface StackRepository {
 	Stack updateSuccess(StackNameAndId id) throws WrongNumberOfStacksException;
 
 	StackNameAndId updateStack(String contents, Collection<Parameter> parameters, MonitorStackEvents monitor,
-                               String stackName) throws CfnAssistException;
+							   String stackName) throws CfnAssistException;
 
 	StackNameAndId createStack(ProjectAndEnv projAndEnv, String contents, String stackName,
 			Collection<Parameter> parameters, MonitorStackEvents monitor, Tagging tagging) throws CfnAssistException;

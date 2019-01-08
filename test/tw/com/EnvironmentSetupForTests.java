@@ -1,12 +1,12 @@
 package tw.com;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
-import com.amazonaws.services.cloudformation.model.CreateStackRequest;
-import com.amazonaws.services.cloudformation.model.CreateStackResult;
-import com.amazonaws.services.cloudformation.model.Parameter;
 
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest;
+import software.amazon.awssdk.services.cloudformation.model.CreateStackResponse;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
@@ -80,8 +80,8 @@ public class EnvironmentSetupForTests {
 	    return Ec2Client.create();
 	}
 		
-	public static AmazonCloudFormation createCFNClient() {
-        return AmazonCloudFormationClientBuilder.defaultClient();
+	public static CloudFormationClient createCFNClient() {
+        return CloudFormationClient.create();
 	}
 
 	public static AmazonRDS createRDSClient() {
@@ -110,11 +110,12 @@ public class EnvironmentSetupForTests {
 		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	}
 	
-	public static StackNameAndId createTemporarySimpleStack(AmazonCloudFormation cfnClient, String vpcId, String arn) throws IOException {
-		CreateStackRequest createStackRequest = new CreateStackRequest();
-		createStackRequest.setStackName(TEMPORARY_STACK);
+	public static StackNameAndId createTemporarySimpleStack(CloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
 		File file = new File(FilesForTesting.SIMPLE_STACK);
-		createStackRequest.setTemplateBody(FileUtils.readFileToString(file , Charset.defaultCharset()));
+
+		CreateStackRequest.Builder createStackRequestBuilder = CreateStackRequest.builder().
+				stackName(TEMPORARY_STACK).templateBody(FileUtils.readFileToString(file , Charset.defaultCharset()));
+
 		Collection<Parameter> parameters = new LinkedList<>();
 		parameters.add(createParam("env", EnvironmentSetupForTests.ENV));
 		parameters.add(createParam("vpc", vpcId));
@@ -122,18 +123,15 @@ public class EnvironmentSetupForTests {
 			Collection<String> notificationARNs = new LinkedList<>();
 			notificationARNs.add(arn);
 			logger.debug("Adding arn subscription "+ arn);
-			createStackRequest.setNotificationARNs(notificationARNs);
+			createStackRequestBuilder.notificationARNs(notificationARNs);
 		}
-		createStackRequest.setParameters(parameters);
-		CreateStackResult result = cfnClient.createStack(createStackRequest);
-		return new StackNameAndId(TEMPORARY_STACK, result.getStackId());
+		createStackRequestBuilder.parameters(parameters);
+		CreateStackResponse result = cfnClient.createStack(createStackRequestBuilder.build());
+		return new StackNameAndId(TEMPORARY_STACK, result.stackId());
 	}
 	
 	private static Parameter createParam(String key, String value) {
-		Parameter p = new Parameter();
-		p.setParameterKey(key);
-		p.setParameterValue(value);
-		return p;
+		return Parameter.builder().parameterKey(key).parameterValue(value).build();
 	}
 
 	public static AmazonSNS createSNSClient() {
@@ -181,8 +179,8 @@ public class EnvironmentSetupForTests {
 		return requestResult.getObjectSummaries();
 	}
 
-	public static List<com.amazonaws.services.cloudformation.model.Tag> createExpectedStackTags(String comment, Integer build, String project) {
-		List<com.amazonaws.services.cloudformation.model.Tag> expectedTags = new LinkedList<>();
+	public static List<software.amazon.awssdk.services.cloudformation.model.Tag> createExpectedStackTags(String comment, Integer build, String project) {
+		List<software.amazon.awssdk.services.cloudformation.model.Tag> expectedTags = new LinkedList<>();
 		expectedTags.add(createCfnStackTAG("CFN_ASSIST_ENV", "Test"));
 		expectedTags.add(createCfnStackTAG("CFN_ASSIST_PROJECT", project));
 		if (!comment.isEmpty()) {
@@ -194,10 +192,9 @@ public class EnvironmentSetupForTests {
 		return expectedTags;
 	}
 
-	public static com.amazonaws.services.cloudformation.model.Tag createCfnStackTAG(String key, String value) {
-		com.amazonaws.services.cloudformation.model.Tag tag = new com.amazonaws.services.cloudformation.model.Tag();
-		tag.setKey(key);
-		tag.setValue(value);
+	public static software.amazon.awssdk.services.cloudformation.model.Tag createCfnStackTAG(String key, String value) {
+		software.amazon.awssdk.services.cloudformation.model.Tag tag
+				= software.amazon.awssdk.services.cloudformation.model.Tag.builder().key(key).value(value).build();
 		return tag;
 	}
 
@@ -245,6 +242,14 @@ public class EnvironmentSetupForTests {
 		assertFalse(permissions.contains(OTHERS_EXECUTE));
 		assertFalse(permissions.contains(OTHERS_READ));
 		assertFalse(permissions.contains(OTHERS_WRITE));
+	}
+
+	public static TemplateParameter createTemplate(String key) {
+		return TemplateParameter.builder().parameterKey(key).build();
+	}
+
+	public static TemplateParameter createTemplateWithDefault(String key, String def) {
+		return TemplateParameter.builder().parameterKey(key).defaultValue(def).build();
 	}
 
 }

@@ -1,8 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
@@ -11,6 +8,9 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.*;
 import tw.com.commandline.CommandExecutor;
 import tw.com.commandline.Main;
@@ -160,7 +160,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		setFactoryExpectations();
 
 		File file = new File(FilesForTesting.SUBNET_WITH_PARAM);	
-		params.add(new Parameter().withParameterKey("zoneA").withParameterValue("eu-west-1a"));
+		params.add(createParameter("zoneA", "eu-west-1a"));
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
 			
 		validate(CLIArgBuilder.createSubnetStackWithParams(comment));
@@ -246,7 +246,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		setFactoryExpectations();
 			
 		List<StackEntry> stackEntries = new LinkedList<>();
-		Stack stack = new Stack().withStackName(stackName).withStackId(stackId).withStackStatus(StackStatus.CREATE_COMPLETE);
+		Stack stack = Stack.builder().stackName(stackName).stackId(stackId).stackStatus(StackStatus.CREATE_COMPLETE).build();
 		stackEntries.add(new StackEntry(project, new EnvironmentTag(env), stack));
 		EasyMock.expect(facade.listStacks(projectAndEnv)).andReturn(stackEntries);
 		
@@ -310,11 +310,11 @@ public class TestCommandLineActions extends EasyMockSupport {
 		Integer buildNumber = 9987;
 		// src files to upload
 		Collection<Parameter> arts = new LinkedList<>();
-		arts.add(new Parameter().withParameterKey("urlA").withParameterValue(FilesForTesting.ACL));
-		arts.add(new Parameter().withParameterKey("urlB").withParameterValue(FilesForTesting.SUBNET_STACK));
+		arts.add(createParameter("urlA", FilesForTesting.ACL));
+		arts.add(createParameter("urlB", FilesForTesting.SUBNET_STACK));
 		// locations after upload
-		Parameter uploadA = new Parameter().withParameterKey("urlA").withParameterValue("fileAUploadLocation");
-		Parameter uploadB = new Parameter().withParameterKey("urlB").withParameterValue("fileBUploadLocation");
+		Parameter uploadA = createParameter("urlA", "fileAUploadLocation");
+		Parameter uploadB = createParameter("urlB", "fileBUploadLocation");
 		List<Parameter> uploaded = new LinkedList<>();
 		uploaded.add(uploadA);
 		uploaded.add(uploadB);
@@ -334,13 +334,17 @@ public class TestCommandLineActions extends EasyMockSupport {
 		
 		validate(CLIArgBuilder.createSubnetStackWithArtifactUpload(buildNumber, comment));
 	}
-	
+
+	private Parameter createParameter(String key, String value) {
+		return Parameter.builder().parameterKey(key).parameterValue(value).build();
+	}
+
 	@Test
 	public void shouldUploadArtifacts() {
 		Integer buildNumber = 9987;
 		Collection<Parameter> arts = new LinkedList<>();
-		arts.add(new Parameter().withParameterKey("art1").withParameterValue(FilesForTesting.ACL));
-		arts.add(new Parameter().withParameterKey("art2").withParameterValue(FilesForTesting.SUBNET_STACK));
+		arts.add(createParameter("art1",FilesForTesting.ACL));
+		arts.add(createParameter("art2",FilesForTesting.SUBNET_STACK));
 		List<Parameter> uploaded = new LinkedList<>();
 		
 		factory.setProject(EnvironmentSetupForTests.PROJECT);

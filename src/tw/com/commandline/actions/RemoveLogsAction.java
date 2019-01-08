@@ -1,10 +1,9 @@
 package tw.com.commandline.actions;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
@@ -21,8 +20,8 @@ public class RemoveLogsAction extends SharedAction {
         createOptionWithArgs("removeLogs", "Warning: Deletes cloudwatch logs older than N days", 1);
 	}
 
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused, 
-			Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
+					   Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
 		logger.info("Invoking removeLogs for " + projectAndEnv + " and " + args[0]);
 		AwsFacade aws = factory.createFacade();
 		try {

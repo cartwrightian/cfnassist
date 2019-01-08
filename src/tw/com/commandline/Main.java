@@ -2,7 +2,7 @@ package tw.com.commandline;
 
 import ch.qos.logback.classic.util.ContextInitializer;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

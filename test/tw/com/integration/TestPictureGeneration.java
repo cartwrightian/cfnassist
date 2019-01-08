@@ -1,7 +1,6 @@
 package tw.com.integration;
 
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.rds.AmazonRDS;
 import org.junit.Before;
@@ -33,7 +32,7 @@ public class TestPictureGeneration {
 	public void beforeEachTestRuns() {
 		Ec2Client ec2Client = EnvironmentSetupForTests.createEC2Client();
 		AmazonElasticLoadBalancing awsElbClient = EnvironmentSetupForTests.createELBClient();
-		AmazonCloudFormation cfnClient = EnvironmentSetupForTests.createCFNClient();
+		software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient();
 		AmazonRDS awsRdsClient = EnvironmentSetupForTests.createRDSClient();
 
 		CloudClient cloudClient = new CloudClient(ec2Client, new DefaultAwsRegionProviderChain());

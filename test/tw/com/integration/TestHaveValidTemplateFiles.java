@@ -1,9 +1,6 @@
 package tw.com.integration;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,16 +16,13 @@ import static org.junit.Assert.fail;
 
 public class TestHaveValidTemplateFiles {
 
-	private AWSCredentialsProvider credentialsProvider;
-	
 	@Before
 	public void beforeTestsRun() {
-		credentialsProvider = new DefaultAWSCredentialsProviderChain();
 	}
 	
 	@Test
-	public void testAllTestCfnFilesAreValid() throws IOException, InterruptedException {
-		AmazonCloudFormation cfnClient = EnvironmentSetupForTests.createCFNClient();
+	public void testAllTestCfnFilesAreValid() throws InterruptedException {
+		software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient();
 		CloudFormationClient cloudClient = new CloudFormationClient(cfnClient);
 		File folder = new File("src/cfnScripts");
 		

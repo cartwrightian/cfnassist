@@ -1,6 +1,6 @@
 package tw.com.ant;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.tools.ant.BuildException;
 import tw.com.FacadeFactory;
@@ -143,7 +143,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	}
 
 	private Collection<Parameter> createParameterList() {
-		Collection<Parameter> cfnParameters = new LinkedList<Parameter>();
+		Collection<Parameter> cfnParameters = new LinkedList<>();
 		for(Param param : params) {
 			cfnParameters.add(param.getParamter());
 		}
@@ -151,25 +151,25 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	}
 
 	private Collection<Parameter> createArtifactList() {
-		Collection<Parameter> uploadParams = new LinkedList<Parameter>();
+		Collection<Parameter> uploadParams = new LinkedList<>();
 		for(Param upload : artifactParams) {
 			uploadParams.add(upload.getParamter());
 		}
 		return uploadParams;
 	}
-	
-	 public Param createParam() {                                 
+
+	 public Param createParam() {
 		 Param param = new Param();
 		 params.add(param);
 		 return param;
 	 }
-	 
-	 public Param createArtifact() {                                 
+
+	 public Param createArtifact() {
 		 Param param = new Param();
 		 artifactParams.add(param);
 		 return param;
 	 }
-		 
+
 	public class Param {
 		private String name;
 		private String value;
@@ -186,9 +186,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		}
 		
 		public Parameter getParamter() {
-			Parameter param = new Parameter();
-			param.setParameterKey(name);
-			param.setParameterValue(value);
+			Parameter param = Parameter.builder().parameterKey(name).parameterValue(value).build();
 			return param;
 		}
 	}

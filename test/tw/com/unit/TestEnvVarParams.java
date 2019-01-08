@@ -1,7 +1,7 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,16 +39,16 @@ public class TestEnvVarParams implements ProvidesZones {
 		
 		List<Parameter> results = new LinkedList<>();
 		List<TemplateParameter> declaredParameters = new LinkedList<>();
-		declaredParameters.add(new TemplateParameter().
-				withDescription("::ENV").
-				withParameterKey("testEnvVar"));
+		declaredParameters.add(TemplateParameter.builder().
+				description("::ENV").
+				parameterKey("testEnvVar").build());
 		
 		envVarParams.addParameters(results , declaredParameters, projAndEnv, this);
 		
 		assertEquals(1, results.size());
 		Parameter firstResult = results.get(0);
-		assertEquals("testValue", firstResult.getParameterValue());
-		assertEquals("testEnvVar", firstResult.getParameterKey());	
+		assertEquals("testValue", firstResult.parameterValue());
+		assertEquals("testEnvVar", firstResult.parameterKey());
 	}
 	
 	@Test
@@ -56,9 +56,9 @@ public class TestEnvVarParams implements ProvidesZones {
 	
 		List<Parameter> results = new LinkedList<>();
 		List<TemplateParameter> declaredParameters = new LinkedList<>();
-		declaredParameters.add(new TemplateParameter().
-				withDescription("::ENV").
-				withParameterKey("envVarShouldNotExist"));
+		declaredParameters.add(TemplateParameter.builder().
+				description("::ENV").
+				parameterKey("envVarShouldNotExist").build());
 		try {
 			envVarParams.addParameters(results , declaredParameters, projAndEnv, this);
 			fail("should have thrown");

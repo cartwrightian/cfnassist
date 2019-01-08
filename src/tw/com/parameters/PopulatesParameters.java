@@ -1,9 +1,9 @@
 package tw.com.parameters;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidStackParameterException;
@@ -25,21 +25,19 @@ public abstract class PopulatesParameters {
 	public static final String CFN_TAG_ZONE = PARAM_PREFIX+"CFN_ZONE_";
 
 	abstract void addParameters(Collection<Parameter> result,
-			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones) throws CannotFindVpcException, IOException, InvalidStackParameterException;
+								List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones) throws CannotFindVpcException, IOException, InvalidStackParameterException;
 	
 	protected void addParameterTo(Collection<Parameter> parameters, List<TemplateParameter> declared, String parameterName, String parameterValue) {
 		boolean isDeclared = false;
 		for(TemplateParameter declaration : declared) {
-			isDeclared = (declaration.getParameterKey().equals(parameterName));
+			isDeclared = (declaration.parameterKey().equals(parameterName));
 			if (isDeclared==true) break;
 		}
 		if (!isDeclared) {
 			logger.info(String.format("Not populating parameter %s as it is not declared in the json file", parameterName));
 		} else {
 			logger.info(String.format("Setting %s parameter to %s", parameterName, parameterValue));
-			Parameter parameter = new Parameter();
-			parameter.setParameterKey(parameterName);
-			parameter.setParameterValue(parameterValue);
+			Parameter parameter = Parameter.builder().parameterKey(parameterName).parameterValue(parameterValue).build();
 			parameters.add(parameter);
 		}
 	}

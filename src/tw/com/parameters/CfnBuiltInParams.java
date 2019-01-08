@@ -1,9 +1,9 @@
 package tw.com.parameters;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import tw.com.entity.ProjectAndEnv;
 
 import java.util.Collection;

@@ -1,14 +1,16 @@
 package tw.com.entity;
 
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+
 public class StackNotification {
 
-	private String status;
+	private StackStatus status;
 	private String resourceName;
 	private String resourceId;
 	private String resourceType;
 	private String statusReason;
 	
-	public StackNotification(String stackName, String status, String stackId, String resourceType, String statusReason) {
+	public StackNotification(String stackName, StackStatus status, String stackId, String resourceType, String statusReason) {
 		this.status = status;
 		this.resourceName = stackName;
 		this.resourceId = stackId;
@@ -18,7 +20,7 @@ public class StackNotification {
 	
 	public static StackNotification parseNotificationMessage(String notificationMessage) {
 		String[] parts = notificationMessage.split("\n");
-		String status="";
+		StackStatus status = StackStatus.UNKNOWN_TO_SDK_VERSION;
 		String foundName="";
 		String stackId="";
 		String type="";
@@ -31,7 +33,7 @@ public class StackNotification {
 				switch (key) { 
 					case "StackName": foundName=extractValue(containsValue);
 						break;
-					case "ResourceStatus": status=extractValue(containsValue);
+					case "ResourceStatus": status=StackStatus.fromValue(extractValue(containsValue));
 						break;
 					case "StackId": stackId=extractValue(containsValue);
 						break;
@@ -49,7 +51,7 @@ public class StackNotification {
 		return value.replace('\'',' ').trim();
 	}
 
-	public String getStatus() {
+	public StackStatus getStatus() {
 		return status;
 	}
 

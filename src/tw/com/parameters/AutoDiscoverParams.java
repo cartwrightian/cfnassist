@@ -1,7 +1,7 @@
 package tw.com.parameters;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,8 @@ public class AutoDiscoverParams extends PopulatesParameters {
 
 	@Override
 	public void addParameters(Collection<Parameter> result,
-			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones) throws CannotFindVpcException, IOException, InvalidStackParameterException {
+							  List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones)
+			throws CannotFindVpcException, IOException, InvalidStackParameterException {
         Map<String, AvailabilityZone> zones = providesZones.getZones();
         List<Parameter> autoPopulatedParametes = fetchAutopopulateParametersFor(projAndEnv, declaredParameters, zones);
         result.addAll(autoPopulatedParametes.stream().collect(Collectors.toList()));
@@ -45,13 +46,13 @@ public class AutoDiscoverParams extends PopulatesParameters {
 		logger.info(String.format("Discover and populate parameters for %s and %s", templateFile.getAbsolutePath(), projectAndEnv));
 		List<Parameter> matches = new LinkedList<>();
 		for(TemplateParameter templateParam : declaredParameters) {
-			String name = templateParam.getParameterKey();
+			String name = templateParam.parameterKey();
 			if (isBuiltInParamater(name))
 			{
 				continue;
 			}
 			logger.info("Checking if parameter should be auto-populated from an existing resource, param name is " + name);
-			String description = templateParam.getDescription();
+			String description = templateParam.description();
 			if (shouldPopulateFor(description)) {
 				populateParameter(projectAndEnv, matches, name, description, declaredParameters, zones);
 			}
@@ -97,7 +98,7 @@ public class AutoDiscoverParams extends PopulatesParameters {
 		logger.debug("Check for zone " + target);
 		if (zones.containsKey(target)) {
 			String zoneName = zones.get(target).zoneName();
-			declaredParameters.stream().filter(declaredParameter -> declaredParameter.getParameterKey().equals(parameterName)).
+			declaredParameters.stream().filter(declaredParameter -> declaredParameter.parameterKey().equals(parameterName)).
 					forEach(declaredParameter -> {
 						addParameterTo(results, declaredParameters, parameterName, zoneName);
 						logger.info(String.format("Adding zone parameter %s with value %s", parameterName, zoneName));

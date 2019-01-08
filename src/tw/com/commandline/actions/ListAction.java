@@ -1,7 +1,7 @@
 package tw.com.commandline.actions;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.AwsFacade;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
@@ -22,7 +22,7 @@ public class ListAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws
+					   Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws
             IOException,
             InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
@@ -45,7 +45,7 @@ public class ListAction extends SharedAction {
 					entry.getStackName(), 
 					entry.getProject(), 
 					entry.getEnvTag().getEnv(),
-					entry.getStack().getStackStatus().toString()));
+					entry.getStack().stackStatus()));
 		}
 	}
 

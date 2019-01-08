@@ -1,7 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudformation.model.*;
 import com.amazonaws.services.elasticloadbalancing.model.Instance;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -9,17 +7,15 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import tw.com.*;
 import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
-import tw.com.exceptions.InvalidStackParameterException;
-import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.providers.CloudFormationClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.CloudRepository;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -47,13 +43,13 @@ public class TestCfnRepository extends EasyMockSupport {
 		repository = new CfnRepository(formationClient, cloudRepository, mainProjectAndEnv.getProject());	
 		envTag = new EnvironmentTag(EnvironmentSetupForTests.ENV);
 	}
-	
+
 	@Test
 	public void testGetAllStacks() {
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist");
 		List<Stack> list = new LinkedList<>();
-		list.add(new Stack().withTags(tags).withStackName("matchingStack"));
-		list.add(new Stack().withStackName("noMatchingTags"));
+		list.add(Stack.builder().tags(tags).stackName("matchingStack").build());
+		list.add(Stack.builder().stackName("noMatchingTags").build());
 		
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 		replayAll();
@@ -74,8 +70,8 @@ public class TestCfnRepository extends EasyMockSupport {
 		tagsB.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_ASSIST_PROJECT", "CfnAssist"));
 		
 		List<Stack> list = new LinkedList<>();
-		list.add(new Stack().withTags(tagsA).withStackName("matchingStack"));
-		list.add(new Stack().withStackName("wrongEnvStack").withTags(tagsB));
+		list.add(Stack.builder().tags(tagsA).stackName("matchingStack").build());
+		list.add(createStackWithTags("wrongEnvStack", tagsB));
 		
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
@@ -88,19 +84,23 @@ public class TestCfnRepository extends EasyMockSupport {
 		verifyAll();	
 	}
 
+	private Tag createTag(String name, String value) {
+		return Tag.builder().key(name).value(value).build();
+	}
+
     @Test
     public void shouldGetStackByEndAndIndex() throws WrongNumberOfStacksException {
         List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
 
-        tagsA.add(new Tag().withKey(AwsFacade.INDEX_TAG).withValue("4"));
-        tagsB.add(new Tag().withKey(AwsFacade.INDEX_TAG).withValue("9"));
+        tagsA.add(createTag(AwsFacade.INDEX_TAG,"4"));
+        tagsB.add(createTag(AwsFacade.INDEX_TAG,"9"));
 
         List<Stack> list = new LinkedList<>();
-        list.add(new Stack().withStackName("matchingStack").withTags(tagsA).withStackId("anId"));
-        list.add(new Stack().withStackName("wrongStackB").withTags(tagsB));
-        list.add(new Stack().withStackName("wrongStackC").withTags(tagsC));
+        list.add(Stack.builder().stackName("matchingStack").tags(tagsA).stackId("anId").build());
+        list.add(createStackWithTags("wrongStackB", tagsB));
+        list.add(createStackWithTags("wrongStackC", tagsC));
 
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
@@ -111,20 +111,28 @@ public class TestCfnRepository extends EasyMockSupport {
         assertEquals("matchingStack", result.getStackName());
     }
 
+	private Stack createStackWithTags(String stackName, List<Tag> tags) {
+		return Stack.builder().stackName(stackName).tags(tags).build();
+	}
+
+	private Stack createStackWithTagsAndId(String stackName, String id, List<Tag> tags) {
+		return Stack.builder().stackName(stackName).tags(tags).stackId(id).build();
+	}
+
 	@Test
 	public void shouldGetStackNameByUpdateIndexSingle() throws WrongNumberOfStacksException {
         List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
 
-        tagsA.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("4"));
-        tagsB.add(new Tag().withKey(AwsFacade.INDEX_TAG).withValue("3"));
-        tagsC.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("5"));
+        tagsA.add(createTag(AwsFacade.UPDATE_INDEX_TAG,"4"));
+        tagsB.add(createTag(AwsFacade.INDEX_TAG,"3"));
+        tagsC.add(createTag(AwsFacade.UPDATE_INDEX_TAG,"5"));
 
         List<Stack> list = new LinkedList<>();
-        list.add(new Stack().withStackName("matchingStack").withTags(tagsA).withStackId("anId"));
-        list.add(new Stack().withStackName("wrongStackB").withTags(tagsB));
-        list.add(new Stack().withStackName("wrongStackC").withTags(tagsC));
+        list.add(createStackWithTagsAndId("matchingStack","anId",tagsA));
+        list.add(createStackWithTags("wrongStackB",tagsB));
+        list.add(createStackWithTags("wrongStackC",tagsC));
 
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
@@ -141,14 +149,14 @@ public class TestCfnRepository extends EasyMockSupport {
         List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
 
-        tagsA.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("3,4,8"));
-        tagsB.add(new Tag().withKey(AwsFacade.INDEX_TAG).withValue("2"));
-        tagsC.add(new Tag().withKey(AwsFacade.UPDATE_INDEX_TAG).withValue("5,6"));
+        tagsA.add(createTag(AwsFacade.UPDATE_INDEX_TAG,"3,4,8"));
+        tagsB.add(createTag(AwsFacade.INDEX_TAG,"2"));
+        tagsC.add(createTag(AwsFacade.UPDATE_INDEX_TAG,"5,6"));
 
         List<Stack> list = new LinkedList<>();
-        list.add(new Stack().withStackName("matchingStack").withTags(tagsA).withStackId("anId"));
-        list.add(new Stack().withStackName("wrongStackB").withTags(tagsB));
-        list.add(new Stack().withStackName("wrongStackC").withTags(tagsC));
+        list.add(createStackWithTagsAndId("matchingStack", "anId", tagsA));
+        list.add(createStackWithTags("wrongStackB",tagsB));
+        list.add(createStackWithTags("wrongStackC",tagsC));
 
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 
@@ -166,13 +174,12 @@ public class TestCfnRepository extends EasyMockSupport {
 		String stackName = "testStackName";
 		
 		List<StackResource> stackResources = new LinkedList<>();
-		stackResources.add(new StackResource().withLogicalResourceId("logWrong").withPhysicalResourceId("phyWrong"));
-		stackResources.add(new StackResource().withLogicalResourceId(logicalId).withPhysicalResourceId(expectedPhyId));
+		stackResources.add(StackResource.builder().logicalResourceId("logWrong").physicalResourceId("phyWrong").build());
+		stackResources.add(StackResource.builder().logicalResourceId(logicalId).physicalResourceId(expectedPhyId).build());
 		
 		List<Stack> list = new LinkedList<>();
-		list.add(new Stack().
-				withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName));
+		list.add(createStackWithTags(stackName,
+				EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")));
 		
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 		EasyMock.expect(formationClient.describeStackResources(stackName)).andReturn(stackResources);
@@ -185,104 +192,57 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		verifyAll();
 	}
+
+	private Stack createStackWithNameAndStatus(String name, StackStatus stackStatus, List<Tag> tags) {
+		return Stack.builder().stackName(name).stackStatus(stackStatus).tags(tags).build();
+	}
 	
 	@Test
 	public void testShouldWaitForStatusToChange() throws WrongNumberOfStacksException, InterruptedException {
 		String stackName = "testStack";
-		
-		Stack inProgressStack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName).
-				withStackStatus(StackStatus.CREATE_IN_PROGRESS);
-		
-		Stack doneStack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName).
-				withStackStatus(StackStatus.CREATE_COMPLETE);
-		
-		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(inProgressStack);
-		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(inProgressStack);
-		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(doneStack);	
+
+		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_IN_PROGRESS);
+		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_IN_PROGRESS);
+		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_COMPLETE);
 		
 		replayAll();
-		String result = repository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(StackMonitor.CREATE_ABORTS));
-		assertEquals(StackStatus.CREATE_COMPLETE.toString(), result);
+		StackStatus result = repository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(StackMonitor.CREATE_ABORTS));
+		assertEquals(StackStatus.CREATE_COMPLETE, result);
 		verifyAll();
 	}
 	
 	@Test
 	public void testWaitForStatusShouldAbort() throws WrongNumberOfStacksException, InterruptedException {
 		String stackName = "testStack";
-		
-		Stack inProgressStack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName).
-				withStackStatus(StackStatus.CREATE_IN_PROGRESS);
-		
-		Stack abortedStack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName).
-				withStackStatus(StackStatus.CREATE_FAILED);
-		
-		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(inProgressStack);
-		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(inProgressStack);
-		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(abortedStack);	
+
+		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_IN_PROGRESS);
+		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_IN_PROGRESS);
+		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_FAILED);
 		
 		replayAll();
-		String result = repository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(StackMonitor.CREATE_ABORTS));
-		assertEquals(StackStatus.CREATE_FAILED.toString(), result);
+		StackStatus result = repository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(StackMonitor.CREATE_ABORTS));
+		assertEquals(StackStatus.CREATE_FAILED, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void testShouldCheckIfStackExists() throws WrongNumberOfStacksException {
+	public void testShouldCheckIfStackExists() {
 		String stackName = "testStack";
-		
-		Stack stack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName);
-		
-		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(stack);
+
+		EasyMock.expect(formationClient.stackExists(stackName)).andReturn(true);
 		replayAll();
 		assertTrue(repository.stackExists(stackName));
 		verifyAll();
 	}
 	
 	@Test
-	public void testShouldCheckIfStackExistsButMissing() throws WrongNumberOfStacksException {
-		String stackName = "testStack";
-		
-		AmazonServiceException amazonServiceException = new AmazonServiceException("exceptionText");
-		amazonServiceException.setStatusCode(400);
-		EasyMock.expect(formationClient.describeStack(stackName)).andThrow(amazonServiceException);
-		replayAll();
-		assertFalse(repository.stackExists(stackName));
-		verifyAll();
-	}
-	
-	@Test
-	public void testShouldCheckIfStackExistsThrowsIfNotA400() throws WrongNumberOfStacksException {
-		String stackName = "testStack";
-		
-		AmazonServiceException amazonServiceException = new AmazonServiceException("exceptionText");
-		amazonServiceException.setStatusCode(500);
-		EasyMock.expect(formationClient.describeStack(stackName)).andThrow(amazonServiceException);
-		replayAll();
-		try {
-			repository.stackExists(stackName);
-			fail("should have thrown");
-		}
-		catch(AmazonServiceException expectedThisException) {
-			// expected
-		}
-		verifyAll();
-	}
-	
-	@Test
 	public void testShouldGetCurrentStackStatus() throws WrongNumberOfStacksException {
 		String stackName = "testStack";
-		Stack inProgressStack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName).
-				withStackStatus(StackStatus.CREATE_IN_PROGRESS);
+		Stack inProgressStack = createStackWithNameAndStatus(stackName, StackStatus.CREATE_IN_PROGRESS,
+				EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist"));
 		
-		Stack abortedStack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName("someOtherName").
-				withStackStatus(StackStatus.CREATE_FAILED);
+		Stack abortedStack = createStackWithNameAndStatus("someOtherName", StackStatus.CREATE_FAILED,
+				EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist"));
 		
 		List<Stack> stacks = new LinkedList<>();
 		stacks.add(inProgressStack);
@@ -292,23 +252,28 @@ public class TestCfnRepository extends EasyMockSupport {
 		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(inProgressStack);
 		
 		replayAll();
-		String result = repository.getStackStatus(stackName);
-		assertEquals(StackStatus.CREATE_IN_PROGRESS.toString(), result);
+		StackStatus result = repository.getStackStatus(stackName);
+		assertEquals(StackStatus.CREATE_IN_PROGRESS, result);
 		result = repository.getStackStatus(stackName);
-		assertEquals(StackStatus.CREATE_IN_PROGRESS.toString(), result);
+		assertEquals(StackStatus.CREATE_IN_PROGRESS, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void emptyStatusIfNoSuchStack() {
+	public void shouldThrowIfNoSuchStack() {
 		List<Stack> stacks = new LinkedList<>();
-		stacks.add(new Stack().withStackName("ThisIsNotTheStackYouAreLookingFor"));
+		stacks.add(createStackWithNameAndStatus("ThisIsNotTheStackYouAreLookingFor", StackStatus.CREATE_COMPLETE,
+				new LinkedList<>()));
 			
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks); 
+
 		replayAll();
-		
-		String result = repository.getStackStatus("thisStackShouldNotExist");		
-		assertEquals(0, result.length());
+        try {
+            repository.getStackStatus("thisStackShouldNotExist");
+            fail("should not have reached here, exception expected");
+        } catch (WrongNumberOfStacksException e) {
+            // expected
+        }
 		verifyAll();
 	}
 	
@@ -316,9 +281,9 @@ public class TestCfnRepository extends EasyMockSupport {
 	public void testShouldGetIdForAStackName() throws WrongNumberOfStacksException {
 		String stackName = "testStack";
 		String stackId = "theIdOfTheStack";
-		Stack stack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName).
-				withStackId(stackId);
+		Stack stack = Stack.builder().tags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
+				stackName(stackName).
+				stackId(stackId).build();
 		
 		EasyMock.expect(formationClient.describeStack(stackName)).andReturn(stack);
 		
@@ -330,7 +295,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldFindInstancesForProjectBasedOnCriteria() throws CfnAssistException {
+	public void shouldFindInstancesForProjectBasedOnCriteria() {
 		String stackName = "testStack";
 		String stackId = "theIdOfTheStack";
 		String instanceId = "theInstanceId";
@@ -350,13 +315,13 @@ public class TestCfnRepository extends EasyMockSupport {
 
 	private void queryForInstancesExpectations(String stackName, String stackId, String instanceId, String comment, Integer build) {
 		List<StackResource> resources = new LinkedList<>();
-		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceId));
-		resources.add(new StackResource().withResourceType("AWS::EC2::ELB").withPhysicalResourceId("notAnInstance"));
+		resources.add(StackResource.builder().resourceType("AWS::EC2::Instance").physicalResourceId(instanceId).build());
+		resources.add(StackResource.builder().resourceType("AWS::EC2::ELB").physicalResourceId("notAnInstance").build());
 		
-		Stack stack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags(comment, build, "CfnAssist")).
-				withStackName(stackName).
-				withStackId(stackId).
-				withStackStatus(StackStatus.CREATE_COMPLETE);
+		Stack stack = Stack.builder().tags(EnvironmentSetupForTests.createExpectedStackTags(comment, build, "CfnAssist")).
+				stackName(stackName).
+				stackId(stackId).
+				stackStatus(StackStatus.CREATE_COMPLETE).build();
 		
 		List<Stack> list = new LinkedList<>();
 		list.add(stack);
@@ -370,8 +335,8 @@ public class TestCfnRepository extends EasyMockSupport {
 		String instanceId = "theInstanceId";
 		
 		List<StackResource> resources = new LinkedList<>();
-		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceId));
-		resources.add(new StackResource().withResourceType("AWS::EC2::ELB").withPhysicalResourceId("notAnInstance"));
+		resources.add(StackResource.builder().resourceType("AWS::EC2::Instance").physicalResourceId(instanceId).build());
+		resources.add(StackResource.builder().resourceType("AWS::EC2::ELB").physicalResourceId("notAnInstance").build());
 		
 		EasyMock.expect(formationClient.describeStackResources(stackName)).andReturn(resources);
 		
@@ -395,13 +360,13 @@ public class TestCfnRepository extends EasyMockSupport {
 		SearchCriteria criteria = new SearchCriteria(EnvironmentSetupForTests.getMainProjectAndEnv());
 		
 		List<StackResource> resources = new LinkedList<>();
-		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceIdA));
-		resources.add(new StackResource().withResourceType("AWS::EC2::Instance").withPhysicalResourceId(instanceIdB));
+		resources.add(StackResource.builder().resourceType("AWS::EC2::Instance").physicalResourceId(instanceIdA).build());
+		resources.add(StackResource.builder().resourceType("AWS::EC2::Instance").physicalResourceId(instanceIdB).build());
 		
-		Stack stack = new Stack().withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
-				withStackName(stackName).
-				withStackId(stackId).
-				withStackStatus(StackStatus.CREATE_COMPLETE);
+		Stack stack = Stack.builder().tags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
+				stackName(stackName).
+				stackId(stackId).
+				stackStatus(StackStatus.CREATE_COMPLETE).build();
 				
 		List<Stack> stacks = new LinkedList<>();
 		stacks.add(stack);
@@ -427,29 +392,29 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		List<Stack> list = new LinkedList<>();
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist");
-		list.add(new Stack().withStackName(stackName).withStackId("correctId").withTags(tags));
-		list.add(new Stack().withStackName("someOtherName").withStackId("wrongId").withTags(tags));
+		list.add(createStackWithTagsAndId(stackName, "correctId",tags));
+		list.add(createStackWithTagsAndId("someOtherName", "wrongId", tags));
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 		
 		replayAll();
 		Stack result = repository.getStack(stackName);
-		assertEquals(stackName, result.getStackName());
-		assertEquals("correctId", result.getStackId());
+		assertEquals(stackName, result.stackName());
+		assertEquals("correctId", result.stackId());
 		result = repository.getStack(stackName); // cached on this call
-		assertEquals(stackName, result.getStackName());
-		assertEquals("correctId", result.getStackId());
+		assertEquals(stackName, result.stackName());
+		assertEquals("correctId", result.stackId());
 		verifyAll();
 	}
 	
 	@Test
 	public void shouldGetStacksMatchingProjectEnvAndName() {
 		List<Stack> list = new LinkedList<>();
-		
-		list.add(new Stack().withStackName("CfnAssist1TestsimpleStack").withStackId("idA").withTags(createTags(1)));
-		list.add(new Stack().withStackName("CfnAssist78TestsomeOtherName").withStackId("idC").withTags(createTags(78)));
-		list.add(new Stack().withStackName("CfnAssist2TestsimpleStack").withStackId("idB").withTags(createTags(2)));
-		list.add(new Stack().withStackName("CfnAssistTestsomeOtherName").withStackId("idE").
-				withTags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")));
+
+		list.add(createStackWithTagsAndId("CfnAssist1TestsimpleStack", "idA", createTags(1)));
+		list.add(createStackWithTagsAndId("CfnAssist78TestsomeOtherName","idC",createTags(78)));
+		list.add(createStackWithTagsAndId("CfnAssist2TestsimpleStack", "idB", createTags(2)));
+		list.add(createStackWithTagsAndId("CfnAssistTestsomeOtherName","idE",
+				EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")));
 		
 		EasyMock.expect(formationClient.describeAllStacks()).andReturn(list);
 		
@@ -458,8 +423,8 @@ public class TestCfnRepository extends EasyMockSupport {
 		verifyAll();
 		
 		assertEquals(2, result.size());
-		assertEquals("idA", result.get(0).getStack().getStackId());
-		assertEquals("idB", result.get(1).getStack().getStackId());
+		assertEquals("idA", result.get(0).getStack().stackId());
+		assertEquals("idB", result.get(1).getStack().stackId());
 	}
 	
 	private List<Tag> createTags(Integer buildNumber) {
@@ -532,15 +497,14 @@ public class TestCfnRepository extends EasyMockSupport {
 	public void shouldValidateTemplates() {
 		
 		List<TemplateParameter> params = new LinkedList<>();
-		params.add(new TemplateParameter().withDefaultValue("aDefaultValue"));
+		params.add(TemplateParameter.builder().defaultValue("aDefaultValue").build());
 		EasyMock.expect(formationClient.validateTemplate("someContents")).andReturn(params);
 		
 		replayAll();
 		List<TemplateParameter> result = repository.validateStackTemplate("someContents");
 		assertEquals(1, result.size());
 	}
-	
-	
+
 	private List<software.amazon.awssdk.services.ec2.model.Tag> withTags(String buildNumber, String typeTag) {
 		List<software.amazon.awssdk.services.ec2.model.Tag> tags = new LinkedList<>();
 		tags.add(EnvironmentSetupForTests.createEc2Tag(AwsFacade.BUILD_TAG,buildNumber));

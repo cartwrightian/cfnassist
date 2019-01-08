@@ -1,11 +1,11 @@
 package tw.com;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
-import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
-import com.amazonaws.services.cloudformation.model.DescribeStacksResult;
-import com.amazonaws.services.cloudformation.model.Stack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.DeleteStackRequest;
+import software.amazon.awssdk.services.cloudformation.model.DescribeStacksResponse;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.entity.StackNameAndId;
 
 import java.util.LinkedList;
@@ -17,11 +17,11 @@ public class DeletesStacks {
 
 	private static final Logger logger = LoggerFactory.getLogger(DeletesStacks.class);
 
-	private AmazonCloudFormation cfnClient;
+	private CloudFormationClient cfnClient;
 	private LinkedList<String> deleteIfPresent;
 	private LinkedList<String> deleteIfPresentNonBlocking;
 
-	public DeletesStacks(AmazonCloudFormation cfnClient) {
+	public DeletesStacks(CloudFormationClient cfnClient) {
 		this.cfnClient = cfnClient;
 		deleteIfPresent = new LinkedList<>();
 		deleteIfPresentNonBlocking = new LinkedList<>();
@@ -62,9 +62,9 @@ public class DeletesStacks {
 	private List<String> fetchCurrentStacks() {
 		List<String> current = new LinkedList<>();
 
-		DescribeStacksResult result = cfnClient.describeStacks();
-		for(Stack stack : result.getStacks()) {
-			current.add(stack.getStackName());
+		DescribeStacksResponse result = cfnClient.describeStacks();
+		for(Stack stack : result.stacks()) {
+			current.add(stack.stackName());
 		}
 		return current;
 	}
@@ -104,8 +104,8 @@ public class DeletesStacks {
 
 	private void requestDeletion(List<String> deletionList) {
 		for(String stackName : deletionList) {
-			DeleteStackRequest request = new DeleteStackRequest();
-			request.setStackName(stackName);
+			DeleteStackRequest request = DeleteStackRequest.builder().stackName(stackName).build();
+			//request.setStackName(stackName);
 			cfnClient.deleteStack(request);
 			logger.info("Requested deletion of " + stackName);
 		}

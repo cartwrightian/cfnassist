@@ -1,13 +1,13 @@
 package tw.com.providers;
 
 import com.amazonaws.event.ProgressListener;
-import com.amazonaws.services.cloudformation.model.Parameter;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 
 import java.io.File;
 import java.net.URL;
@@ -32,7 +32,7 @@ public class ArtifactUploader {
 
 	public List<Parameter> uploadArtifacts(Collection<Parameter> arts) {
 		logger.info("Uploading artifacts to bucket " + bucketName);
-		LinkedList<Parameter> urls = new LinkedList<Parameter>();
+		LinkedList<Parameter> urls = new LinkedList<>();
 		for(Parameter artifact : arts) {
 			urls.add(processArtifact(artifact));
 		}
@@ -40,7 +40,7 @@ public class ArtifactUploader {
 	}
 
 	private Parameter processArtifact(Parameter artifact) {
-		String fullFilePath = artifact.getParameterValue();
+		String fullFilePath = artifact.parameterValue();
 		File item = FileUtils.getFile(fullFilePath);
 		
 		URL url;
@@ -58,7 +58,7 @@ public class ArtifactUploader {
 			url = uploadItem(item);
 		}
 		logger.info(String.format("Uploaded %s at URL %s", item.getAbsolutePath(), url));
-		return new Parameter().withParameterKey(artifact.getParameterKey()).withParameterValue(url.toString());
+		return Parameter.builder().parameterKey(artifact.parameterKey()).parameterValue(url.toString()).build();
 	}
 
 	private URL uploadItem(File item) {

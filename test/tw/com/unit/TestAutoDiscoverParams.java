@@ -1,8 +1,8 @@
 package tw.com.unit;
 
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
@@ -45,7 +45,7 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
     @Test
     public void shouldAddCorrectValueForTaggedParameter() throws IOException, CannotFindVpcException, InvalidStackParameterException {
 
-        declaredParameters.add(new TemplateParameter().withDescription(AutoDiscoverParams.CFN_TAG_ON_OUTPUT).withParameterKey("paramKey"));
+        declaredParameters.add(TemplateParameter.builder().description(AutoDiscoverParams.CFN_TAG_ON_OUTPUT).parameterKey("paramKey").build());
         EasyMock.expect(vpcRepository.getVpcTag("paramKey", EnvironmentSetupForTests.getMainProjectAndEnv())).andReturn("tagValue");
 
         replayAll();
@@ -54,14 +54,14 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
 
         assertEquals(1, results.size());
         Parameter result = results.getFirst();
-        assertEquals("paramKey", result.getParameterKey());
-        assertEquals("tagValue", result.getParameterValue());
+        assertEquals("paramKey", result.parameterKey());
+        assertEquals("tagValue", result.parameterValue());
     }
 
     @Test
     public void shouldAddCorrectValueForZone() throws IOException, CannotFindVpcException, InvalidStackParameterException {
 
-        declaredParameters.add(new TemplateParameter().withDescription(AutoDiscoverParams.CFN_TAG_ZONE+"A").withParameterKey("paramKey"));
+        declaredParameters.add(TemplateParameter.builder().description(AutoDiscoverParams.CFN_TAG_ZONE+"A").parameterKey("paramKey").build());
 
         replayAll();
         autoDiscover.addParameters(results, declaredParameters, EnvironmentSetupForTests.getMainProjectAndEnv(), this);
@@ -69,8 +69,8 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
 
         assertEquals(1, results.size());
         Parameter result = results.getFirst();
-        assertEquals("paramKey", result.getParameterKey());
-        assertEquals("aviailabilityZoneA", result.getParameterValue());
+        assertEquals("paramKey", result.parameterKey());
+        assertEquals("aviailabilityZoneA", result.parameterValue());
     }
 
     @Override

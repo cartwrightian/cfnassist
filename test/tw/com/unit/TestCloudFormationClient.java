@@ -1,13 +1,12 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
-import com.amazonaws.services.cloudformation.model.*;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
 import tw.com.entity.StackNameAndId;
@@ -21,27 +20,27 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.*;
 
 @RunWith(EasyMockRunner.class)
 public class TestCloudFormationClient extends EasyMockSupport {
 
     private CloudFormationClient client;
-    private AmazonCloudFormationClient cfnClient;
+    private software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 
     @Before
     public void beforeEachTestRuns() {
-        cfnClient = createMock(AmazonCloudFormationClient.class);
+        cfnClient = createMock(software.amazon.awssdk.services.cloudformation.CloudFormationClient.class);
         client = new CloudFormationClient(cfnClient);
     }
 
     @Test
     public void shouldDescribeStack() throws WrongNumberOfStacksException {
 
-        DescribeStacksRequest request = new DescribeStacksRequest().withStackName("stackName");
-        Stack stack = new Stack();
-        DescribeStacksResult answer = new DescribeStacksResult().withStacks(stack);
+        DescribeStacksRequest request = DescribeStacksRequest.builder().stackName("stackName").build();
+        Stack stack = Stack.builder().build();
+
+        DescribeStacksResponse answer = DescribeStacksResponse.builder().stacks(stack).build();
         EasyMock.expect(cfnClient.describeStacks(request)).andReturn(answer);
 
         replayAll();
@@ -53,9 +52,9 @@ public class TestCloudFormationClient extends EasyMockSupport {
     @Test
     public void shouldDescribesAllStacks() {
 
-        Stack stackA = new Stack();
-        Stack stackB = new Stack();
-        DescribeStacksResult answer = new DescribeStacksResult().withStacks(stackA, stackB);
+        Stack stackA = Stack.builder().build();
+        Stack stackB = Stack.builder().build();
+        DescribeStacksResponse answer = DescribeStacksResponse.builder().stacks(stackA, stackB).build();
         EasyMock.expect(cfnClient.describeStacks()).andReturn(answer);
 
         replayAll();
@@ -74,15 +73,15 @@ public class TestCloudFormationClient extends EasyMockSupport {
         tags.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_COMMENT", "commentForStack"));
 
         Collection<Parameter> parameters = new LinkedList<>();
-        Parameter parameter = new Parameter().withParameterKey("paramKey").withParameterValue("paramValue");
+        Parameter parameter = Parameter.builder().parameterKey("paramKey").parameterKey("paramValue").build();
         parameters.add(parameter);
         MonitorStackEvents monitor = createMock(MonitorStackEvents.class);
-        monitor.addMonitoringTo(EasyMock.isA(CreateStackRequest.class));
+        monitor.addMonitoringTo(EasyMock.isA(CreateStackRequest.Builder.class));
         EasyMock.expectLastCall();
 
-        CreateStackRequest createStackRequest = new CreateStackRequest().withStackName("stackName").
-                withTemplateBody("{json}").withTags(tags).withParameters(parameters);
-        CreateStackResult createStackResponse = new CreateStackResult().withStackId("stackId");
+        CreateStackRequest createStackRequest = CreateStackRequest.builder().stackName("stackName").
+                templateBody("{json}").tags(tags).parameters(parameters).build();
+        CreateStackResponse createStackResponse = CreateStackResponse.builder().stackId("stackId").build();
         EasyMock.expect(cfnClient.createStack(createStackRequest)).andReturn(createStackResponse);
 
         replayAll();
@@ -99,8 +98,8 @@ public class TestCloudFormationClient extends EasyMockSupport {
     @Test
     public void shouldDeleteStack() {
 
-        DeleteStackRequest deleteRequest = new DeleteStackRequest().withStackName("stackName");
-        DeleteStackResult result = new DeleteStackResult();
+        DeleteStackRequest deleteRequest = DeleteStackRequest.builder().stackName("stackName").build();
+        DeleteStackResponse result = DeleteStackResponse.builder().build();
         EasyMock.expect(cfnClient.deleteStack(deleteRequest)).andReturn(result);
 
         replayAll();
@@ -111,10 +110,11 @@ public class TestCloudFormationClient extends EasyMockSupport {
     @Test
     public void shouldGetStackEvents() {
 
-        DescribeStackEventsRequest eventRequest = new DescribeStackEventsRequest().withStackName("stackName");
-        StackEvent eventA = new StackEvent();
-        StackEvent eventB = new StackEvent();
-        DescribeStackEventsResult eventResponse = new DescribeStackEventsResult().withStackEvents(eventA, eventB);
+        DescribeStackEventsRequest eventRequest = DescribeStackEventsRequest.builder().stackName("stackName").build();
+        StackEvent eventA = StackEvent.builder().build();
+        StackEvent eventB = StackEvent.builder().build();
+        DescribeStackEventsResponse eventResponse = DescribeStackEventsResponse.builder().
+                stackEvents(eventA, eventB).build();
         EasyMock.expect(cfnClient.describeStackEvents(eventRequest)).andReturn(eventResponse);
 
         replayAll();
@@ -127,10 +127,10 @@ public class TestCloudFormationClient extends EasyMockSupport {
     }
 
     public void shouldGetStackResources() {
-        DescribeStackResourcesRequest request = new DescribeStackResourcesRequest().withStackName("stackName");
-        StackResource resA = new StackResource();
-        StackResource resB = new StackResource();
-        DescribeStackResourcesResult response = new DescribeStackResourcesResult().withStackResources(resA, resB);
+        DescribeStackResourcesRequest request = DescribeStackResourcesRequest.builder().stackName("stackName").build();
+        StackResource resA = StackResource.builder().build();
+        StackResource resB = StackResource.builder().build();
+        DescribeStackResourcesResponse response = DescribeStackResourcesResponse.builder().stackResources(resA, resB).build();
 
         EasyMock.expect(cfnClient.describeStackResources(request)).andReturn(response);
         replayAll();
@@ -142,21 +142,67 @@ public class TestCloudFormationClient extends EasyMockSupport {
         assertTrue(result.contains(resB));
     }
 
+    private ListStacksRequest listActionStackRequest() {
+        return ListStacksRequest.builder().stackStatusFilters(
+                StackStatus.CREATE_COMPLETE,
+                StackStatus.ROLLBACK_COMPLETE,
+                StackStatus.UPDATE_COMPLETE,
+                StackStatus.UPDATE_ROLLBACK_COMPLETE,
+
+                StackStatus.CREATE_IN_PROGRESS,
+                StackStatus.UPDATE_IN_PROGRESS,
+                StackStatus.ROLLBACK_IN_PROGRESS,
+                StackStatus.UPDATE_ROLLBACK_IN_PROGRESS,
+                StackStatus.UPDATE_COMPLETE_CLEANUP_IN_PROGRESS,
+
+                StackStatus.CREATE_FAILED,
+                StackStatus.DELETE_FAILED,
+                StackStatus.ROLLBACK_FAILED,
+                StackStatus.UPDATE_ROLLBACK_FAILED).build();
+    }
+
+    @Test
+    public void shouldTestStackExists() {
+
+        ListStacksRequest listStackRequest = listActionStackRequest();
+        StackSummary stackSummary = StackSummary.builder().
+                stackName("stackName").
+                stackStatus(StackStatus.CREATE_COMPLETE).build();
+        ListStacksResponse summary = ListStacksResponse.builder().stackSummaries(stackSummary).build();
+        EasyMock.expect(cfnClient.listStacks(listStackRequest)).andReturn(summary);
+
+        replayAll();
+        assertTrue(client.stackExists("stackName"));
+        verifyAll();
+    }
+
+    @Test
+    public void shouldTestStackNotExists() {
+        ListStacksRequest listStackRequest = listActionStackRequest();
+        ListStacksResponse summary = ListStacksResponse.builder().build();
+        EasyMock.expect(cfnClient.listStacks(listStackRequest)).andReturn(summary);
+
+        replayAll();
+        assertFalse(client.stackExists("stackName"));
+        verifyAll();
+    }
+
     @Test
     public void shouldUpdateStack() throws NotReadyException {
         Collection<Parameter> parameters = new LinkedList<>();
-        Parameter parameter = new Parameter().withParameterKey("paramKey").withParameterValue("paramValue");
+        Parameter parameter = Parameter.builder().parameterKey("paramKey").parameterValue("paramValue").build();
         parameters.add(parameter);
 
         MonitorStackEvents monitor = createMock(MonitorStackEvents.class);
-        monitor.addMonitoringTo(EasyMock.isA(UpdateStackRequest.class));
+        monitor.addMonitoringTo(EasyMock.isA(UpdateStackRequest.Builder.class));
         EasyMock.expectLastCall();
 
-        UpdateStackRequest request = new UpdateStackRequest().
-                withStackName("stackName").
-                withParameters(parameters).
-                withTemplateBody("{json}");
-        UpdateStackResult response = new UpdateStackResult().withStackId("stackId");
+        UpdateStackRequest request = UpdateStackRequest.builder().
+                stackName("stackName").
+                parameters(parameters).
+                templateBody("{json}").build();
+
+        UpdateStackResponse response = UpdateStackResponse.builder().stackId("stackId").build();
         EasyMock.expect(cfnClient.updateStack(request)).andReturn(response);
 
         replayAll();
@@ -170,11 +216,11 @@ public class TestCloudFormationClient extends EasyMockSupport {
     @Test
     public void shouldValidateTemplate() {
         Collection<TemplateParameter> parameters = new LinkedList<>();
-        TemplateParameter parameter = new TemplateParameter().withParameterKey("paramKey");
+        TemplateParameter parameter = TemplateParameter.builder().parameterKey("paramKey").build();
         parameters.add(parameter);
 
-        ValidateTemplateRequest request =new ValidateTemplateRequest().withTemplateBody("{json}");
-        ValidateTemplateResult response = new ValidateTemplateResult().withParameters(parameters);
+        ValidateTemplateRequest request = ValidateTemplateRequest.builder().templateBody("{json}").build();
+        ValidateTemplateResponse response = ValidateTemplateResponse.builder().parameters(parameters).build();
         EasyMock.expect(cfnClient.validateTemplate(request)).andReturn(response);
 
         replayAll();

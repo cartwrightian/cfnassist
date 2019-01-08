@@ -1,8 +1,8 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Stack;
 import org.junit.Before;
 import org.junit.Test;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
@@ -27,7 +27,7 @@ public class TestSearchCriteria {
 
     @Before
 	public void beforeEachTestRuns() {
-		Stack stack = new Stack();
+		Stack stack = Stack.builder().build();
 		entryA = new StackEntry("project", new EnvironmentTag("anEnv"), stack);
 		entryB = new StackEntry("project", new EnvironmentTag("someOtherTag"), stack);
 		entryC = new StackEntry("project", new EnvironmentTag("anEnv"), stack).setBuildNumber(42);

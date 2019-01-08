@@ -1,7 +1,7 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Stack;
 import org.junit.Test;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.StackEntry;
 
@@ -17,7 +17,7 @@ public class TestStackEntry {
 	
 	@Test
 	public void shouldExtractBasenameFromEntryWithNoBuildNumber() {
-		Stack stack = new Stack().withStackName("ProjectEnvTheBaseName");
+		Stack stack = createAStack("ProjectEnvTheBaseName");
 		StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), stack);
 		
 		assertEquals("TheBaseName", entry.getBaseName());
@@ -25,16 +25,20 @@ public class TestStackEntry {
 	
 	@Test
 	public void shouldExtractBasenameFromEntryWithBuildNumber() {
-		Stack stack = new Stack().withStackName("Project42EnvTheBaseName");
+		Stack stack = createAStack("Project42EnvTheBaseName");
 		StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), stack);
 		entry.setBuildNumber(42);
 		
 		assertEquals("TheBaseName",entry.getBaseName());
 	}
 
-	@Test
+    private Stack createAStack(String name) {
+        return Stack.builder().stackName(name).build();
+    }
+
+    @Test
     public void shouldHaveIndex() {
-        StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), new Stack().withStackName("theStackName"));
+        StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), createAStack("theStackName"));
         entry.setIndex(56);
 
         assertTrue(entry.hasIndex());
@@ -43,7 +47,7 @@ public class TestStackEntry {
 
     @Test
     public void shouldHaveUpdateIndex() {
-        StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), new Stack().withStackName("theStackName"));
+        StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), createAStack("theStackName"));
         Set<Integer> updates = new HashSet<>(Arrays.asList(42));
         entry.setUpdateIndex(updates);
 
@@ -53,9 +57,9 @@ public class TestStackEntry {
 
     @Test
     public void shouldHaveEquality() {
-        StackEntry entryA = new StackEntry("project", new EnvironmentTag("Env1"), new Stack());
-        StackEntry entryB = new StackEntry("project", new EnvironmentTag("Env1"), new Stack());
-        StackEntry entryC = new StackEntry("project", new EnvironmentTag("Env2"), new Stack());
+        StackEntry entryA = new StackEntry("project", new EnvironmentTag("Env1"), createAStack(""));
+        StackEntry entryB = new StackEntry("project", new EnvironmentTag("Env1"), createAStack(""));
+        StackEntry entryC = new StackEntry("project", new EnvironmentTag("Env2"), createAStack(""));
 
         assertTrue(entryA.equals(entryB));
         assertTrue(entryB.equals(entryA));

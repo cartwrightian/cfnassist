@@ -1,14 +1,12 @@
 package tw.com.parameters;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import tw.com.entity.ProjectAndEnv;
-import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidStackParameterException;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,9 +16,8 @@ public class EnvVarParams extends PopulatesParameters {
 
 	@Override
 	public void addParameters(Collection<Parameter> result,
-			List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones)
-			throws CannotFindVpcException, IOException,
-			InvalidStackParameterException {
+							  List<TemplateParameter> declaredParameters, ProjectAndEnv projAndEnv, ProvidesZones providesZones)
+			throws InvalidStackParameterException {
 		List<String> toPopulate = findParametersToFill(declaredParameters);
 		populateFromEnv(result, toPopulate);
 	}
@@ -29,18 +26,17 @@ public class EnvVarParams extends PopulatesParameters {
 		List<String> results = new LinkedList<>();
 		for(TemplateParameter candidate : declaredParameters) {
 			if (shouldPopulateFor(candidate)) {
-				results.add(candidate.getParameterKey());
+				results.add(candidate.parameterKey());
 			}
-
 		}
 		return results;
 	}
 	
 	private boolean shouldPopulateFor(TemplateParameter candidate) {
-		if (candidate.getDescription()==null) {
+		if (candidate.description()==null) {
 			return false;
 		}
-		return candidate.getDescription().equals(PopulatesParameters.ENV_TAG);
+		return candidate.description().equals(PopulatesParameters.ENV_TAG);
 	}
 
 	private void populateFromEnv(Collection<Parameter> result,
@@ -52,7 +48,7 @@ public class EnvVarParams extends PopulatesParameters {
 				logger.error("Environment variable not set, name was " + name);
 				throw new InvalidStackParameterException(name);
 			}
-			result.add(new Parameter().withParameterKey(name).withParameterValue(value));
+			result.add(Parameter.builder().parameterKey(name).parameterValue(value).build());
 		}
 		
 	}

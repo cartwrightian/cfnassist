@@ -1,12 +1,12 @@
 package tw.com.unit;
 
 
-import com.amazonaws.services.cloudformation.model.Stack;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.StackCache;
 import tw.com.entity.StackEntry;
@@ -28,12 +28,12 @@ public class TestStackCache extends EasyMockSupport {
 
         CloudFormationClient formationClient = createMock(CloudFormationClient.class);
         List<Stack> stacks = new LinkedList<>();
-        stacks.add(new Stack().withTags(
+        stacks.add(Stack.builder().tags(
                 createCfnStackTAG("CFN_ASSIST_PROJECT",EnvironmentSetupForTests.PROJECT),
                 createCfnStackTAG("CFN_ASSIST_ENV", EnvironmentSetupForTests.ENV),
                 createCfnStackTAG("CFN_ASSIST_BUILD_NUMBER", "42"),
                 createCfnStackTAG("CFN_ASSIST_DELTA", "8"),
-                createCfnStackTAG("CFN_ASSIST_UPDATE", "9,10,11")));
+                createCfnStackTAG("CFN_ASSIST_UPDATE", "9,10,11")).build());
         EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks);
 
         StackCache stackCache = new StackCache(formationClient, EnvironmentSetupForTests.PROJECT);

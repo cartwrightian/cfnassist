@@ -1,9 +1,9 @@
 package tw.com.parameters;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidStackParameterException;
@@ -28,9 +28,9 @@ public class ParameterFactory {
     }
 
 	public Collection<Parameter> createRequiredParameters(ProjectAndEnv projAndEnv,
-                                                          Collection<Parameter> userParameters,
-                                                          List<TemplateParameter> declaredParameters,
-                                                          ProvidesZones providesZones)
+														  Collection<Parameter> userParameters,
+														  List<TemplateParameter> declaredParameters,
+														  ProvidesZones providesZones)
 			throws InvalidStackParameterException,
 			IOException, CannotFindVpcException {
 		
@@ -50,10 +50,10 @@ public class ParameterFactory {
 		logger.info("Invoking with following parameters");
 		for(Parameter param : parameters) {
 			if (noEchoIsSet(param, declaredParameters)) {
-				logger.info(String.format("Parameter key='%s' value=<NoEchoIsSet>", param.getParameterKey()));				
+				logger.info(String.format("Parameter key='%s' value=<NoEchoIsSet>", param.parameterKey()));
 			}
 			else {
-				logger.info(String.format("Parameter key='%s' value='%s'", param.getParameterKey(), param.getParameterValue()));
+				logger.info(String.format("Parameter key='%s' value='%s'", param.parameterKey(), param.parameterValue()));
 			}			
 		}
 	}
@@ -61,11 +61,11 @@ public class ParameterFactory {
 	private boolean noEchoIsSet(Parameter param,
 			List<TemplateParameter> declaredParameters) {
 		for(TemplateParameter declared : declaredParameters) {
-			if (declared.getParameterKey().equals(param.getParameterKey())) {
-				if (declared.getNoEcho()==null) {
+			if (declared.parameterKey().equals(param.parameterKey())) {
+				if (declared.noEcho()==null) {
 					return false; 
 				}
-				return declared.getNoEcho();
+				return declared.noEcho();
 			}
 		}
 		return false;
@@ -73,7 +73,7 @@ public class ParameterFactory {
 
 	private void checkNoClashWithBuiltInParameters(Collection<Parameter> parameters) throws InvalidStackParameterException {
 		for(Parameter param : parameters) {
-			String parameterKey = param.getParameterKey();
+			String parameterKey = param.parameterKey();
 			if (reservedParameters.contains(parameterKey)) {
 				logger.error("Attempt to overide built in and autoset parameter called " + parameterKey);
 				throw new InvalidStackParameterException(parameterKey);

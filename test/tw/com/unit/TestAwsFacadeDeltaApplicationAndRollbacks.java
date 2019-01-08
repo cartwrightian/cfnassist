@@ -1,9 +1,9 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.StackStatus;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.identitymanagement.model.User;
 import org.apache.commons.io.FileUtils;
@@ -125,8 +125,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		// second run set up
 		Path currentPath = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "holding", THIRD_FILE);
 		File newFile = new File(currentPath.toString());
-		LinkedList<File> newFiles = new LinkedList<>();
-		newFiles.addAll(originalFiles);
+		LinkedList<File> newFiles = new LinkedList<>(originalFiles);
 		newFiles.add(newFile);
 		// second run expectations
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
@@ -155,8 +154,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 
         LinkedList<Parameter> cfnParams = new LinkedList<>();
 
-        List<TemplateParameter> templateParameters = Collections.singletonList(new TemplateParameter().
-                withParameterKey(AwsFacade.PARAMETER_STACKNAME).withDefaultValue("01createSubnet"));
+        List<TemplateParameter> templateParameters = Collections.singletonList(TemplateParameter.builder().
+                parameterKey(AwsFacade.PARAMETER_STACKNAME).defaultValue("01createSubnet").build());
         // processing pass
         setExpectationsForFile(1, allFiles.get(0), new LinkedList<>());
         setUpdateExpectations("CfnAssistTest01createSubnet", allFiles.get(1).getAbsolutePath(), templateParameters,
@@ -175,12 +174,12 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 	public void shouldRollbackTemplatesWithNoUpdateBasedOnIndex() throws CfnAssistException {
 		String stackA = "CfnAssistTest01createSubnet";
         StackEntry stackEntryA = new StackEntry(projectAndEnv.getProject(), projectAndEnv.getEnvTag(),
-                new Stack().withStackName(stackA));
+                Stack.builder().stackName(stackA).build());
 		StackNameAndId stackANameAndId = new StackNameAndId(stackA, "id1");
 		String stackB = "CfnAssistTest02createAcls";
 		StackNameAndId stackBNameAndId = new StackNameAndId(stackB, "id2");
         StackEntry stackEntryB = new StackEntry(projectAndEnv.getProject(), projectAndEnv.getEnvTag(),
-                new Stack().withStackName(stackB));
+                Stack.builder().stackName(stackB).build());
 
 		SetDeltaIndexForProjectAndEnv setDeltaIndexForProjectAndEnv = new SetDeltaIndexForProjectAndEnv(projectAndEnv,vpcRepository);
 
@@ -216,7 +215,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 
     @Ignore
     @Test
-    public void shouldRollbackWithDeltas() throws CfnAssistException {
+    public void shouldRollbackWithDeltas() {
        fail("no way to do this until we can unpdate tags on a stack");
     }
 
@@ -229,7 +228,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 
         EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
         StackEntry stackEntry = new StackEntry(projectAndEnv.getProject(), projectAndEnv.getEnvTag(),
-                new Stack().withStackName(stackB));
+                Stack.builder().stackName(stackB).build());
 
         EasyMock.expect(cfnRepository.getStacknameByIndex(projectAndEnv.getEnvTag(), 2)).andReturn(stackEntry);
         EasyMock.expect(cfnRepository.getStackNameAndId(stackB)).andReturn(stackBNameAndId);
@@ -286,9 +285,10 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		String stackName = aws.createStackName(file, projectAndEnv);
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, count.toString());
 
-		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(Vpc.builder().build());
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(Vpc.builder().vpcId("vpicId").build());
 		EasyMock.expect(cfnRepository.validateStackTemplate(templateContents)).andReturn(templateParameters);
-		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");
+		//EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.UNKNOWN_TO_SDK_VERSION);
+		EasyMock.expect(cfnRepository.stackExists(stackName)).andReturn(false);
 		// tagging
 		Tagging tagging = new Tagging();
         tagging.setIndexTag(count);
@@ -296,14 +296,14 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, templateContents, stackName, creationParameters, monitor, tagging))
 			.andReturn(stackNameAndId);
 		// monitor
-		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE.toString());
+		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(StackStatus.CREATE_COMPLETE);
 		// notification
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
 		CFNAssistNotification notification = new CFNAssistNotification(stackName, StackStatus.CREATE_COMPLETE.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sentMessageId");
 		// success
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(
-                new Stack().withStackId(count.toString()).withStackName(stackName));
+                Stack.builder().stackId(count.toString()).stackName(stackName).build());
 		// index update
 		vpcRepository.setVpcIndexTag(projectAndEnv, count.toString());
 
@@ -316,13 +316,12 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		return Arrays.asList(files);
 	}
 	
-	private Path copyInFile(String filename) throws IOException {
+	private void copyInFile(String filename) throws IOException {
 		Path srcFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "holding", filename);
 		Path destFile = FileSystems.getDefault().getPath(FilesForTesting.ORDERED_SCRIPTS_FOLDER, filename);
 		Files.deleteIfExists(destFile);
 
 		FileUtils.copyFile(srcFile.toFile(), destFile.toFile());
-		return destFile;
 	}
 	
 	private void deleteFile(String filename) throws IOException {

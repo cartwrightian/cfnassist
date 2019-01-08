@@ -1,7 +1,7 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.*;
-import com.amazonaws.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.*;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import com.amazonaws.services.identitymanagement.model.User;
@@ -30,11 +30,13 @@ import java.io.IOException;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static tw.com.EnvironmentSetupForTests.createTemplate;
 import static tw.com.EnvironmentSetupForTests.getMainProjectAndEnv;
 
 @RunWith(EasyMockRunner.class)
 public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
-	private static final String CREATE_COMP_STATUS = StackStatus.CREATE_COMPLETE.toString();
+	private static final StackStatus CREATE_COMP_STATUS = StackStatus.CREATE_COMPLETE;
 	private static final String VPC_ID = "vpcId";
 	private final Vpc vpc = Vpc.builder().vpcId(VPC_ID).build();
 	private AwsFacade aws;
@@ -90,7 +92,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("noDescription").withDefaultValue("defaultValue"));
+		templateParameters.add(TemplateParameter.builder().parameterKey("noDescription").defaultValue("defaultValue").build());
 		Collection<Parameter> creationParameters = new LinkedList<>();
 
         Map<String, AvailabilityZone> zones = new HashMap<>();
@@ -111,8 +113,8 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		List<TemplateParameter> templateParameters = new LinkedList<>();
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		Collection<Output> outputs = new LinkedList<>();
-		outputs.add(new Output().withDescription("::CFN_TAG").withOutputKey("outputKey").withOutputValue("outputValue"));
-		outputs.add(new Output().withDescription("something").withOutputKey("ignored").withOutputValue("noThanks"));
+		outputs.add(Output.builder().description("::CFN_TAG").outputKey("outputKey").outputValue("outputValue").build());
+		outputs.add(Output.builder().description("something").outputKey("ignored").outputValue("noThanks").build());
 
         Map<String, AvailabilityZone> zones = new HashMap<>();
         StackNameAndId stackNameAndId = SetCreateExpectations(stackName, contents, templateParameters, creationParameters, "", outputs, zones);
@@ -162,6 +164,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
+        EasyMock.expect(cfnRepository.stackExists(stackName)).andReturn(true);
 		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(CREATE_COMP_STATUS);	
 		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
 		
@@ -185,12 +188,13 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		Stack stack = new Stack().withStackId(stackId);
+		Stack stack = Stack.builder().stackId(stackId).build();
 		
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
-		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_COMPLETE.toString());	
+        EasyMock.expect(cfnRepository.stackExists(stackName)).andReturn(true);
+		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_COMPLETE);
 		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
 		cfnRepository.deleteStack(stackName);
 		EasyMock.expectLastCall();
@@ -202,7 +206,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);	
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
@@ -221,14 +225,15 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, stackId);
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		Stack stack = new Stack().withStackId(stackId);
+		Stack stack = Stack.builder().stackId(stackId).build();
 		
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
 		// stack in rolled back status so delete it
-		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_IN_PROGRESS.toString());	
+        EasyMock.expect(cfnRepository.stackExists(stackName)).andReturn(true);
+		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.ROLLBACK_IN_PROGRESS);
 		EasyMock.expect(cfnRepository.getStackNameAndId(stackName)).andReturn(stackNameAndId);
-		EasyMock.expect(monitor.waitForRollbackComplete(stackNameAndId)).andReturn(StackStatus.ROLLBACK_COMPLETE.toString());
+		EasyMock.expect(monitor.waitForRollbackComplete(stackNameAndId)).andReturn(StackStatus.ROLLBACK_COMPLETE);
 		cfnRepository.deleteStack(stackName);
 		EasyMock.expectLastCall();
 		// now proceed with creation
@@ -238,7 +243,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
         EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
@@ -255,9 +260,9 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("vpc"));
-		templateParameters.add(new TemplateParameter().withParameterKey("env"));
-		templateParameters.add(new TemplateParameter().withParameterKey("build"));
+		templateParameters.add(createTemplate("vpc"));
+		templateParameters.add(createTemplate("env"));
+		templateParameters.add(createTemplate("build"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		projectAndEnv.addBuildNumber(43);
 		addParam(creationParameters, "env", projectAndEnv.getEnv());
@@ -280,12 +285,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("vpc"));
-		templateParameters.add(new TemplateParameter().withParameterKey("env"));
-		templateParameters.add(new TemplateParameter().withParameterKey("build"));
-		templateParameters.add(new TemplateParameter().withParameterKey("zoneA").withDescription("::CFN_ZONE_A"));
-		templateParameters.add(new TemplateParameter().withParameterKey("zoneB").withDescription("::CFN_ZONE_B"));
-		templateParameters.add(new TemplateParameter().withParameterKey("zoneC").withDescription("::CFN_ZONE_C"));
+		templateParameters.add(createTemplate("vpc"));
+		templateParameters.add(createTemplate("env"));
+		templateParameters.add(createTemplate("build"));
+		templateParameters.add(createTemplateWithDescription("zoneA", "::CFN_ZONE_A"));
+		templateParameters.add(createTemplateWithDescription("zoneB", "::CFN_ZONE_B"));
+		templateParameters.add(createTemplateWithDescription("zoneC", "::CFN_ZONE_C"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		projectAndEnv.addBuildNumber(43);
 		addParam(creationParameters, "env", projectAndEnv.getEnv());
@@ -306,7 +311,11 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
-	
+
+	private TemplateParameter createTemplateWithDescription(String key, String desc) {
+		return TemplateParameter.builder().parameterKey(key).description(desc).build();
+	}
+
 	@Test
 	public void shouldApplySimpleTemplateInputParameters() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
@@ -338,7 +347,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("testEnvVar").withDescription("::ENV"));
+		templateParameters.add(createTemplateWithDescription("testEnvVar","::ENV"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		addParam(creationParameters, "testEnvVar", "testValue");
 
@@ -362,8 +371,8 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("testEnvVar").
-				withDescription("::ENV").withNoEcho(true));
+		templateParameters.add(TemplateParameter.builder().parameterKey("testEnvVar").
+				description("::ENV").noEcho(true).build());
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		addParam(creationParameters, "testEnvVar", "testValue");
 
@@ -384,16 +393,17 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("keyName").withDescription("::logicalIdToFind"));
+		templateParameters.add(createTemplateWithDescription("keyName", "::logicalIdToFind"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		addParam(creationParameters, "keyName", "foundPhysicalId");
 		
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, "stackId");
-		Stack stack = new Stack().withStackId("stackId");
+		Stack stack = Stack.builder().stackId("stackId").build();
 		
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
-		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");	
+		//EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.UNKNOWN_TO_SDK_VERSION);
+        EasyMock.expect(cfnRepository.stackExists(stackName)).andReturn(false);
 		// search for the logical id, return the found id
 		EasyMock.expect(cfnRepository.findPhysicalIdByLogicalId(projectAndEnv.getEnvTag(), "logicalIdToFind")).andReturn("foundPhysicalId");
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, new Tagging())).
@@ -402,7 +412,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
         EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
@@ -420,16 +430,17 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("vpcTagKey").withDescription("::CFN_TAG"));
+		templateParameters.add(createTemplateWithDescription("vpcTagKey", "::CFN_TAG"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		addParam(creationParameters, "vpcTagKey", "foundVpcTagValue");
 		
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, "stackId");
-		Stack stack = new Stack().withStackId("stackId");
+		Stack stack = Stack.builder().stackId("stackId").build();
 		
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
-		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");	
+		//EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.UNKNOWN_TO_SDK_VERSION);
+        EasyMock.expect(cfnRepository.stackExists(stackName)).andReturn(false);
 		// get the tag from the VPC
 		EasyMock.expect(vpcRepository.getVpcTag("vpcTagKey", projectAndEnv)).andReturn("foundVpcTagValue");
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, new Tagging())).
@@ -438,7 +449,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
         EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);	
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageId");
 		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
 		
@@ -478,8 +489,8 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("vpc"));
-		templateParameters.add(new TemplateParameter().withParameterKey("env"));
+		templateParameters.add(createTemplate("vpc"));
+		templateParameters.add(createTemplate("env"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		addParam(creationParameters, "subnet", "subnetValue");
 		addParam(creationParameters, "env", projectAndEnv.getEnv());
@@ -503,8 +514,8 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		String contents = EnvironmentSetupForTests.loadFile(filename);
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("vpc"));
-		templateParameters.add(new TemplateParameter().withParameterKey("env"));
+		templateParameters.add(createTemplate("vpc"));
+		templateParameters.add(createTemplate("env"));
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		addParam(creationParameters, "env", projectAndEnv.getEnv());
 		addParam(creationParameters, "vpc", VPC_ID);
@@ -530,14 +541,15 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
                                                  Map<String, AvailabilityZone> zones)
 			throws CfnAssistException, InterruptedException {
 		StackNameAndId stackNameAndId = new StackNameAndId(stackName, "stackId");
-		Stack stack = new Stack().withStackId("stackId");
+		Stack.Builder stackBuilder = Stack.builder().stackId("stackId");
 		if (outputs.size()>0) {
-			stack.setOutputs(outputs);
+			stackBuilder.outputs(outputs);
 		}
 		
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(vpc);
 		EasyMock.expect(cfnRepository.validateStackTemplate(contents)).andReturn(templateParameters);
-		EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn("");
+		//EasyMock.expect(cfnRepository.getStackStatus(stackName)).andReturn(StackStatus.UNKNOWN_TO_SDK_VERSION);
+        EasyMock.expect(cfnRepository.stackExists(stackName)).andReturn(false);
         Tagging tagging = new Tagging();
         tagging.setCommentTag(comment);
 		EasyMock.expect(cfnRepository.createStack(projectAndEnv, contents, stackName, creationParameters, monitor, tagging)).
@@ -545,14 +557,14 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
         EasyMock.expect(cloudRepository.getZones()).andReturn(zones);
 		EasyMock.expect(monitor.waitForCreateFinished(stackNameAndId)).andReturn(CREATE_COMP_STATUS);
 		EasyMock.expect(identityProvider.getUserId()).andReturn(user);
-		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS, user);
+		CFNAssistNotification notification = new CFNAssistNotification(stackName, CREATE_COMP_STATUS.toString(), user);
 		EasyMock.expect(notificationSender.sendNotification(notification)).andReturn("sendMessageID");
-		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stack);
+		EasyMock.expect(cfnRepository.createSuccess(stackNameAndId)).andReturn(stackBuilder.build());
 		return stackNameAndId;
 	}
 	
 	public static void addParam(Collection<Parameter> creationParameters, String key, String value) {
-		creationParameters.add(new Parameter().withParameterKey(key).withParameterValue(value));		
+		creationParameters.add(Parameter.builder().parameterKey(key).parameterValue(value).build());
 	}
 
 }

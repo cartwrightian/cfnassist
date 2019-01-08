@@ -1,11 +1,11 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
 import org.easymock.EasyMockRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import tw.com.*;
 import tw.com.entity.StackNameAndId;
 import tw.com.exceptions.CfnAssistException;
@@ -20,12 +20,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static tw.com.EnvironmentSetupForTests.createTemplateWithDefault;
 
 
 @RunWith(EasyMockRunner.class)
 public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 	private AwsFacade aws;
-	private LogRepository logRepository;
 
 	@Before
 	public void beforeEachTestRuns() {
@@ -34,7 +34,7 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		vpcRepository = createMock(VpcRepository.class);
 		ELBRepository elbRepository = createMock(ELBRepository.class);
 		cloudRepository =  createStrictMock(CloudRepository.class);
-		logRepository = createStrictMock(LogRepository.class);
+		LogRepository logRepository = createStrictMock(LogRepository.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 
@@ -47,7 +47,7 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		String stackName = "CfnAssistTestsubnet";
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("stackname").withDefaultValue("subnet"));
+		templateParameters.add(createTemplateWithDefault("stackname","subnet"));
 		Collection<Parameter> parameters = new LinkedList<>();
 
         StackNameAndId stackNameAndId = setUpdateExpectations(stackName, filename, templateParameters, parameters);
@@ -64,9 +64,9 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		String stackName = "CfnAssistTestsubnet";
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("stackname").withDefaultValue("subnet"));
-		templateParameters.add(new TemplateParameter().withParameterKey("env").withDefaultValue(projectAndEnv.getEnv()));
-		templateParameters.add(new TemplateParameter().withParameterKey("vpc").withDefaultValue(VPC_ID));
+		templateParameters.add(createTemplateWithDefault("stackname","subnet"));
+		templateParameters.add(createTemplateWithDefault("env", projectAndEnv.getEnv()));
+		templateParameters.add(createTemplateWithDefault("vpc", VPC_ID));
 
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		TestAwsFacadeCreatesStacks.addParam(creationParameters, "env", projectAndEnv.getEnv());
@@ -86,7 +86,7 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		String stackName = "CfnAssistTestsubnet";
 		
 		List<TemplateParameter> templateParameters = new LinkedList<>();
-		templateParameters.add(new TemplateParameter().withParameterKey("stackname").withDefaultValue("subnet"));
+		templateParameters.add(createTemplateWithDefault("stackname", "subnet"));
 		Collection<Parameter> userParameters  = new LinkedList<>();
 		Collection<Parameter> creationParameters = new LinkedList<>();
 		TestAwsFacadeCreatesStacks.addParam(userParameters, "userKey", "value");

@@ -1,17 +1,17 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
-import com.amazonaws.services.cloudformation.model.Stack;
-import com.amazonaws.services.cloudformation.model.TemplateParameter;
-import software.amazon.awssdk.services.ec2.model.Instance;
-import software.amazon.awssdk.services.ec2.model.Tag;
-import software.amazon.awssdk.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.ec2.model.Instance;
+import software.amazon.awssdk.services.ec2.model.Tag;
+import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -31,10 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyPair;
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -195,7 +193,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	@Test 
 	public void shouldListStacksEnvSupplied() {
 		List<StackEntry> stacks = new LinkedList<>();
-		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), new Stack()));
+		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), Stack.builder().build()));
 		EasyMock.expect(cfnRepository.getStacks(projectAndEnv.getEnvTag())).andReturn(stacks);
 		
 		replayAll();
@@ -239,7 +237,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	@Test 
 	public void shouldListStacksNoEnvSupplied() {
 		List<StackEntry> stacks = new LinkedList<>();
-		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), new Stack()));
+		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), software.amazon.awssdk.services.cloudformation.model.Stack.builder().build()));
 		EasyMock.expect(cfnRepository.getStacks()).andReturn(stacks);
 		
 		replayAll();
@@ -252,7 +250,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	@Test
 	public void shouldInvokeValidation() {
 		List<TemplateParameter> params = new LinkedList<>();
-		params.add(new TemplateParameter().withDescription("a parameter"));
+		params.add(TemplateParameter.builder().description("a parameter").build());
 		EasyMock.expect(cfnRepository.validateStackTemplate("someContents")).andReturn(params);
 		
 		replayAll();
@@ -358,9 +356,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	private void checkParameterCannotBePassed(String parameterName)
 			throws IOException,
 			CfnAssistException, InterruptedException {
-		Parameter parameter = new Parameter();
-		parameter.setParameterKey(parameterName);
-		parameter.setParameterValue("test");
+		Parameter parameter = Parameter.builder().parameterKey(parameterName).parameterValue("test").build();
 		
 		Collection<Parameter> parameters = new HashSet<>();
 		parameters.add(parameter);

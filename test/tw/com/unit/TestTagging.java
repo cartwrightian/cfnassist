@@ -1,9 +1,9 @@
 package tw.com.unit;
 
 
-import com.amazonaws.services.cloudformation.model.Tag;
 import org.junit.Before;
 import org.junit.Test;
+import software.amazon.awssdk.services.cloudformation.model.Tag;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.Tagging;
 

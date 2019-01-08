@@ -1,7 +1,7 @@
 package tw.com.acceptance;
 
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.cloudformation.AmazonCloudFormation;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Subnet;
 import software.amazon.awssdk.services.ec2.model.Tag;
@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
 public class TestCommandLineS3Operations {
 	private static final Integer BUILD_NUMBER = 9987;
 	private static Ec2Client ec2Client;
-	private static AmazonCloudFormation cfnClient;
+	private static CloudFormationClient cfnClient;
 	private static AmazonS3 s3Client;
 	
 	@BeforeClass

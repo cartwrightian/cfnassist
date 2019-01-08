@@ -1,6 +1,6 @@
 package tw.com.commandline;
 
-import com.amazonaws.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,9 +167,7 @@ public class CommandFlags {
 				logger.error(msg);
 				throw new InvalidStackParameterException(msg);
 			}
-			Parameter pair = new Parameter();
-			pair.setParameterKey(parts[0]);
-			pair.setParameterValue(parts[1]);
+			Parameter pair = Parameter.builder().parameterKey(parts[0]).parameterValue(parts[1]).build();
 			results.add(pair);
 			logger.info("Add parameter " + keyValue);
 		}

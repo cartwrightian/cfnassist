@@ -1,6 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.services.cloudformation.model.StackStatus;
 import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -8,6 +7,7 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.NotificationProvider;
 import tw.com.SNSMonitor;
 import tw.com.SetsDeltaIndex;
@@ -48,14 +48,14 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test
 	public void shouldTestWaitForStackCreationDoneEvents() throws InterruptedException, MissingArgumentException, CfnAssistException {	
 		isStackFound= true;
-		String inProgress = StackStatus.CREATE_IN_PROGRESS.toString();
-		String complete = StackStatus.CREATE_COMPLETE.toString();	
+		StackStatus inProgress = StackStatus.CREATE_IN_PROGRESS;
+		StackStatus complete = StackStatus.CREATE_COMPLETE;
 		setExpectationsForInitAndReady();
 		setEventStreamExpectations(inProgress, complete);
 		
 		replayAll();
 		monitor.init();
-		String result = monitor.waitForCreateFinished(stackNameAndId);
+		StackStatus result = monitor.waitForCreateFinished(stackNameAndId);
 		assertEquals(complete, result);
 		verifyAll();
 	}
@@ -63,28 +63,28 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test
 	public void shouldTestWaitForStackDeletionDoneEvents() throws InterruptedException, MissingArgumentException, CfnAssistException {	
 		isStackFound= true;
-		String inProgress = StackStatus.DELETE_IN_PROGRESS.toString();
-		String complete = StackStatus.DELETE_COMPLETE.toString();	
+		StackStatus inProgress = StackStatus.DELETE_IN_PROGRESS;
+		StackStatus complete = StackStatus.DELETE_COMPLETE;
 		setExpectationsForInitAndReady();
 		setEventStreamExpectations(inProgress, complete);
 		
 		replayAll();
 		monitor.init();
-		String result = monitor.waitForDeleteFinished(stackNameAndId);
+		StackStatus result = monitor.waitForDeleteFinished(stackNameAndId);
 		assertEquals(complete, result);
 		verifyAll();
 	}
 	
 	@Test
 	public void shouldTestWaitForStackDeletionStackAlreadyGone() throws InterruptedException, MissingArgumentException, CfnAssistException {	
-		String complete = StackStatus.DELETE_COMPLETE.toString();	
+		StackStatus complete = StackStatus.DELETE_COMPLETE;
 
 		isStackFound= false;			
 		setExpectationsForInitAndReady();
 		
 		replayAll();
 		monitor.init();
-		String result = monitor.waitForDeleteFinished(stackNameAndId);
+		StackStatus result = monitor.waitForDeleteFinished(stackNameAndId);
 		assertEquals(complete, result);
 		verifyAll();
 	}
@@ -92,14 +92,14 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test
 	public void shouldTestWaitForStackRollbackDoneEvents() throws InterruptedException, MissingArgumentException, CfnAssistException {	
 		isStackFound= true;
-		String inProgress = StackStatus.ROLLBACK_IN_PROGRESS.toString();
-		String complete = StackStatus.ROLLBACK_COMPLETE.toString();	
+		StackStatus inProgress = StackStatus.ROLLBACK_IN_PROGRESS;
+		StackStatus complete = StackStatus.ROLLBACK_COMPLETE;
 		setExpectationsForInitAndReady();
 		setEventStreamExpectations(inProgress, complete);
 		
 		replayAll();
 		monitor.init();
-		String result = monitor.waitForRollbackComplete(stackNameAndId);
+		StackStatus result = monitor.waitForRollbackComplete(stackNameAndId);
 		assertEquals(complete, result);
 		verifyAll();
 	}
@@ -107,7 +107,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test 
 	public void shouldThrowWhenExpectedStatusNotWithinTimeout() throws MissingArgumentException, InterruptedException, CfnAssistException {
 		isStackFound= true;
-		String inProgress = StackStatus.CREATE_IN_PROGRESS.toString();
+		StackStatus inProgress = StackStatus.CREATE_IN_PROGRESS;
 		
 		setExpectationsForInitAndReady();
 		setExpectationsRepondInProgressUntilLimit(inProgress);
@@ -124,7 +124,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 		verifyAll();
 	}
 
-	private void setExpectationsRepondInProgressUntilLimit(String inProgress) throws NotReadyException {
+	private void setExpectationsRepondInProgressUntilLimit(StackStatus inProgress) throws NotReadyException {
 		List<StackNotification> theEvents = new LinkedList<>();
 		addMatchingEvent(theEvents, inProgress, stackName, stackId);
 		for(int count=0; count<=LIMIT; count++) {
@@ -133,7 +133,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	}
 	
 	@Test 
-	public void shouldThrowIfNotifIsNotInit() throws WrongNumberOfStacksException, WrongStackStatus, InterruptedException, MissingArgumentException {
+	public void shouldThrowIfNotifIsNotInit() throws WrongStackStatus, InterruptedException {
 		isStackFound= true;
 		EasyMock.expect(eventSource.isInit()).andReturn(false);
 		
@@ -165,16 +165,16 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test
 	public void shouldMonitorMultiplePendingDeletes() throws InterruptedException, CfnAssistException, MissingArgumentException {
 		isStackFound = true;
-		String targetStatus = StackStatus.DELETE_COMPLETE.toString();
+		StackStatus targetStatus = StackStatus.DELETE_COMPLETE;
 		
 		DeletionsPending pending = createPendingDelete();
 		
 		eventSource.init();
 		EasyMock.expectLastCall();
 		EasyMock.expect(eventSource.isInit()).andReturn(true);
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackC", "id3");
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackB", "id2");
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackA", "id1");
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackC", "id3");
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackB", "id2");
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackA", "id1");
 	
 		replayAll();
 		monitor.init();
@@ -186,16 +186,16 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test
 	public void shouldMonitorMultiplePendingDeletesOutOfOrder() throws InterruptedException, CfnAssistException, MissingArgumentException {
 		isStackFound = true;
-		String targetStatus = StackStatus.DELETE_COMPLETE.toString();
+		StackStatus targetStatus = StackStatus.DELETE_COMPLETE;
 		
 		DeletionsPending pending = createPendingDelete();
 		
 		eventSource.init();
 		EasyMock.expectLastCall();
 		EasyMock.expect(eventSource.isInit()).andReturn(true);
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackB", "id2");
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackA", "id1");
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackC", "id3");
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackB", "id2");
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackA", "id1");
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackC", "id3");
 		
 		replayAll();
 		monitor.init();
@@ -207,16 +207,16 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test
 	public void shouldMonitorMultiplePendingDeletesNotAll() throws InterruptedException, CfnAssistException, MissingArgumentException {
 		isStackFound = true;
-		String targetStatus = StackStatus.DELETE_COMPLETE.toString();
+		StackStatus targetStatus = StackStatus.DELETE_COMPLETE;
 		
 		DeletionsPending pending = createPendingDelete();
 		
 		eventSource.init();
 		EasyMock.expectLastCall();
 		EasyMock.expect(eventSource.isInit()).andReturn(true);
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackB", "id2");
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackC", "id3");
-		setExpectationsRepondInProgressUntilLimit(StackStatus.DELETE_IN_PROGRESS.toString());
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackB", "id2");
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackC", "id3");
+		setExpectationsRepondInProgressUntilLimit(StackStatus.DELETE_IN_PROGRESS);
 	
 		replayAll();
 		monitor.init();
@@ -230,15 +230,15 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	@Test
 	public void shouldMonitorMultiplePendingDeletesSomeMissing() throws InterruptedException, CfnAssistException, MissingArgumentException {
 		isStackFound = true;
-		String targetStatus = StackStatus.DELETE_COMPLETE.toString();
+		StackStatus targetStatus = StackStatus.DELETE_COMPLETE;
 		
 		DeletionsPending pending = createPendingDelete();
 		
 		eventSource.init();
 		EasyMock.expectLastCall();
 		EasyMock.expect(eventSource.isInit()).andReturn(true);
-		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS.toString(), targetStatus, "stackB", "id2");
-		setExpectationsRepondInProgressUntilLimit(StackStatus.DELETE_IN_PROGRESS.toString());
+		setEventStreamExpectations(StackStatus.DELETE_IN_PROGRESS, targetStatus, "stackB", "id2");
+		setExpectationsRepondInProgressUntilLimit(StackStatus.DELETE_IN_PROGRESS);
 	
 		replayAll();
 		monitor.init();
@@ -263,11 +263,11 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 		return pending;
 	}
 	
-	private void setEventStreamExpectations(String inProgress, String complete) throws NotReadyException {
+	private void setEventStreamExpectations(StackStatus inProgress, StackStatus complete) throws NotReadyException {
 		setEventStreamExpectations(inProgress, complete, stackName, stackId);	
 	}
 
-	private void setEventStreamExpectations(String inProgress, String complete, String theName, String theId) throws NotReadyException {
+	private void setEventStreamExpectations(StackStatus inProgress, StackStatus complete, String theName, String theId) throws NotReadyException {
 		List<StackNotification> theEvents = new LinkedList<>();
 		addMatchingEvent(theEvents, inProgress, theName, theId);
 		addNonMatchingEvent(theEvents, complete, theName, theId);
@@ -290,23 +290,22 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 		EasyMock.expect(eventSource.isInit()).andReturn(true);
 	}
 
-	private void addMatchingEvent(List<StackNotification> theEvents, String status, String theName, String theId) {
+	private void addMatchingEvent(List<StackNotification> theEvents, StackStatus status, String theName, String theId) {
 		theEvents.add(new StackNotification(theName, status, theId, STACK_RESOURCE_TYPE, "reason"));
 	}
 	
 	private void addNonMatchingEvent(List<StackNotification> theEvents,
-			String status, String theName, String theId) {
+									 StackStatus status, String theName, String theId) {
 		theEvents.add(new StackNotification(theName, status, theId, "someOtherType", "reason"));		
 	}
 
 	@Override
-	public boolean stackExists(String stackName)
-			throws WrongNumberOfStacksException {
+	public boolean stackExists(String stackName) {
 		return isStackFound;
 	}
 
 	@Override
-	public void setDeltaIndex(Integer newDelta) throws CannotFindVpcException {
+	public void setDeltaIndex(Integer newDelta) {
 		deltaIndexResult = newDelta;
 	}
 
