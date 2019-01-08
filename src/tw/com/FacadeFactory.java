@@ -18,6 +18,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.cli.MissingArgumentException;
 import org.joda.time.DateTime;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import tw.com.commandline.CommandExecutor;
 import tw.com.entity.ProjectAndEnv;
@@ -33,7 +34,7 @@ public class FacadeFactory implements ProvidesNow {
 	
 	private boolean init;
 
-    private software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
+    private CloudFormationClient cfnClient;
 	private AmazonSQS sqsClient;
 	private AmazonSNS snsClient;
 	private AmazonS3 s3Client;
@@ -47,7 +48,7 @@ public class FacadeFactory implements ProvidesNow {
     // providers
 	private ArtifactUploader artifactUploader;
 	private CloudClient cloudClient;
-	private CloudFormationClient formationClient;
+	private CFNClient formationClient;
 	private LoadBalancerClient loadBalancerClient;
 	private RDSClient datastoreClient;
 	private SNSNotificationSender notificationSender;
@@ -90,7 +91,7 @@ public class FacadeFactory implements ProvidesNow {
 		loadBalancerClient = new LoadBalancerClient(elbClient);
         AwsRegionProvider regionProvider = new DefaultAwsRegionProviderChain();
         cloudClient = new CloudClient(ec2Client, regionProvider);
-		formationClient = new CloudFormationClient(cfnClient);
+		formationClient = new CFNClient(cfnClient);
 		datastoreClient = new RDSClient(rdsClient);
 		notificationSender = new SNSNotificationSender(snsClient);
 		identityProvider = new IdentityProvider(iamClient);

@@ -5,7 +5,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,14 +23,14 @@ public class TestHaveValidTemplateFiles {
 	@Test
 	public void testAllTestCfnFilesAreValid() throws InterruptedException {
 		software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient = EnvironmentSetupForTests.createCFNClient();
-		CloudFormationClient cloudClient = new CloudFormationClient(cfnClient);
+		CFNClient cloudClient = new CFNClient(cfnClient);
 		File folder = new File("src/cfnScripts");
 		
 		assertTrue(folder.exists());	
 		validateFolder(cloudClient, folder);
 	}
 
-	private void validateFolder(CloudFormationClient cloudClient, File folder) throws InterruptedException
+	private void validateFolder(CFNClient cloudClient, File folder) throws InterruptedException
 	{
 		File[] files = folder.listFiles();
 		for(File file : files) {

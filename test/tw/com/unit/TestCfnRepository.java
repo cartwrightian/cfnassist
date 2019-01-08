@@ -12,7 +12,7 @@ import tw.com.*;
 import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.CloudRepository;
 
@@ -28,7 +28,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 
-    private CloudFormationClient formationClient;
+    private CFNClient formationClient;
 	private CfnRepository repository;
 	private EnvironmentTag envTag;
 	private Integer noBuildNumber = -1;
@@ -37,7 +37,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	
 	@Before
 	public void beforeEachTestRuns() {
-		formationClient = createMock(CloudFormationClient.class);
+		formationClient = createMock(CFNClient.class);
 		
 		cloudRepository = createMock(CloudRepository.class);
 		repository = new CfnRepository(formationClient, cloudRepository, mainProjectAndEnv.getProject());	

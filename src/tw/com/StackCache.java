@@ -11,7 +11,7 @@ import tw.com.entity.StackEntry;
 import tw.com.entity.StackNameAndId;
 import tw.com.entity.StackResources;
 import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 
 import java.util.*;
 
@@ -19,11 +19,11 @@ public class StackCache {
 	private static final Logger logger = LoggerFactory.getLogger(StackCache.class);
 
 	private List<StackEntry> theEntries;
-	private CloudFormationClient formationClient;
+	private CFNClient formationClient;
 	private StackResources stackResources;
 	private String project;
 	
-	public StackCache(CloudFormationClient formationClient, String project) {
+	public StackCache(CFNClient formationClient, String project) {
 		this.formationClient = formationClient;
 		this.project = project;
 		stackResources = new StackResources();

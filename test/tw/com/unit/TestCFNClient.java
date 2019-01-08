@@ -14,7 +14,7 @@ import tw.com.entity.Tagging;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -23,15 +23,15 @@ import java.util.List;
 import static junit.framework.TestCase.*;
 
 @RunWith(EasyMockRunner.class)
-public class TestCloudFormationClient extends EasyMockSupport {
+public class TestCFNClient extends EasyMockSupport {
 
-    private CloudFormationClient client;
+    private CFNClient client;
     private software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 
     @Before
     public void beforeEachTestRuns() {
         cfnClient = createMock(software.amazon.awssdk.services.cloudformation.CloudFormationClient.class);
-        client = new CloudFormationClient(cfnClient);
+        client = new CFNClient(cfnClient);
     }
 
     @Test

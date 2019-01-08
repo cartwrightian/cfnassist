@@ -11,7 +11,7 @@ import tw.com.MonitorStackEvents;
 import tw.com.StackCache;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -25,11 +25,11 @@ public class CfnRepository implements CloudFormRepository {
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 
     private final String project;
-    private CloudFormationClient formationClient;
+    private CFNClient formationClient;
 	private CloudRepository cloudRepository;
 	private StackCache stackCache;
 	
-	public CfnRepository(CloudFormationClient formationClient, CloudRepository cloudRepository, String project) {
+	public CfnRepository(CFNClient formationClient, CloudRepository cloudRepository, String project) {
 		this.formationClient = formationClient;
 		this.cloudRepository = cloudRepository;
         this.project = project;

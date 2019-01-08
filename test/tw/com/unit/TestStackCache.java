@@ -10,7 +10,7 @@ import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.StackCache;
 import tw.com.entity.StackEntry;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -26,7 +26,7 @@ public class TestStackCache extends EasyMockSupport {
     @Test
     public void shouldGetStackEntry() {
 
-        CloudFormationClient formationClient = createMock(CloudFormationClient.class);
+        CFNClient formationClient = createMock(CFNClient.class);
         List<Stack> stacks = new LinkedList<>();
         stacks.add(Stack.builder().tags(
                 createCfnStackTAG("CFN_ASSIST_PROJECT",EnvironmentSetupForTests.PROJECT),

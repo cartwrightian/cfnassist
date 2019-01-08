@@ -2,6 +2,7 @@ package tw.com.providers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.*;
 import tw.com.AwsFacade;
 import tw.com.MonitorStackEvents;
@@ -17,19 +18,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class CloudFormationClient {
-	private static final Logger logger = LoggerFactory.getLogger(CloudFormationClient.class);
+public class CFNClient {
+	private static final Logger logger = LoggerFactory.getLogger(CFNClient.class);
 
-	private software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
+	private CloudFormationClient cloudFormationClient;
 
-	public CloudFormationClient(software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient) {
-		this.cfnClient = cfnClient;
+	public CFNClient(CloudFormationClient cloudFormationClient) {
+		this.cloudFormationClient = cloudFormationClient;
 	}
 
 	public Stack describeStack(String stackName) throws WrongNumberOfStacksException {
 		DescribeStacksRequest describeStacksRequest = DescribeStacksRequest.builder().stackName(stackName).build();
 
-		DescribeStacksResponse result = cfnClient.describeStacks(describeStacksRequest);
+		DescribeStacksResponse result = cloudFormationClient.describeStacks(describeStacksRequest);
 		List<Stack> stacks = result.stacks();
 		
 		int numberOfStacks = stacks.size();
@@ -59,7 +60,7 @@ public class CloudFormationClient {
 				StackStatus.UPDATE_ROLLBACK_FAILED
 
 		).build();
-		ListStacksResponse result = cfnClient.listStacks(request);
+		ListStacksResponse result = cloudFormationClient.listStacks(request);
 		for (StackSummary summary : result.stackSummaries()) {
 			if (summary.stackName().equals(stackName)) {
 				return true;
@@ -69,7 +70,7 @@ public class CloudFormationClient {
 	}
 
 	public StackStatus currentStatus(String stackName) throws WrongNumberOfStacksException {
-		ListStacksResponse result = cfnClient.listStacks();
+		ListStacksResponse result = cloudFormationClient.listStacks();
 		for(StackSummary summary : result.stackSummaries()) {
 			if (summary.stackName().equals(stackName)) {
 				return summary.stackStatus();
@@ -81,32 +82,32 @@ public class CloudFormationClient {
 	public List<StackEvent> describeStackEvents(String stackName) {
 		DescribeStackEventsRequest request = DescribeStackEventsRequest.builder().stackName(stackName).build();
 
-		DescribeStackEventsResponse result = cfnClient.describeStackEvents(request);
+		DescribeStackEventsResponse result = cloudFormationClient.describeStackEvents(request);
 		return result.stackEvents();
 	}
 
 	public List<TemplateParameter> validateTemplate(String contents) {
 		ValidateTemplateRequest validateTemplateRequest = ValidateTemplateRequest.builder().templateBody(contents).build();
 
-		return cfnClient.validateTemplate(validateTemplateRequest).parameters();
+		return cloudFormationClient.validateTemplate(validateTemplateRequest).parameters();
 	}
 
 	public void deleteStack(String stackName) {
 		DeleteStackRequest deleteStackRequest = DeleteStackRequest.builder().stackName(stackName).build();
 		logger.info("Requesting deletion of stack " + stackName);
 
-		cfnClient.deleteStack(deleteStackRequest);
+		cloudFormationClient.deleteStack(deleteStackRequest);
 	}
 
 	public List<StackResource> describeStackResources(String stackName) {
 		DescribeStackResourcesRequest request = DescribeStackResourcesRequest.builder().stackName(stackName).build();
 
-		DescribeStackResourcesResponse results = cfnClient.describeStackResources(request);
+		DescribeStackResourcesResponse results = cloudFormationClient.describeStackResources(request);
 		return results.stackResources();
 	}
 
 	public List<Stack> describeAllStacks() {
-		DescribeStacksResponse results = cfnClient.describeStacks();
+		DescribeStacksResponse results = cloudFormationClient.describeStacks();
 		return results.stacks();
 	}
 
@@ -152,7 +153,7 @@ public class CloudFormationClient {
 		logger.info("Making createStack call to AWS");
 		
 		try {
-			CreateStackResponse result = cfnClient.createStack(createStackRequestBuilder.build());
+			CreateStackResponse result = cloudFormationClient.createStack(createStackRequestBuilder.build());
 			return new StackNameAndId(stackName, result.stackId());
 		}
 		catch (InsufficientCapabilitiesException exception) {
@@ -169,7 +170,7 @@ public class CloudFormationClient {
 
 		monitor.addMonitoringTo(updateStackRequest);
 
-		UpdateStackResponse result = cfnClient.updateStack(updateStackRequest.build());
+		UpdateStackResponse result = cloudFormationClient.updateStack(updateStackRequest.build());
 
 		return new StackNameAndId(stackName,result.stackId());
 		

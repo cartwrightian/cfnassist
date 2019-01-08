@@ -13,7 +13,7 @@ import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
 import tw.com.providers.CloudClient;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 import tw.com.providers.LoadBalancerClient;
 import tw.com.providers.RDSClient;
 import tw.com.repository.*;
@@ -39,9 +39,9 @@ public class TestPictureGeneration {
 		LoadBalancerClient elbClient = new LoadBalancerClient(awsElbClient);
 		VpcRepository vpcRepository = new VpcRepository(cloudClient);
 
-		CloudFormationClient cloudFormationClient = new CloudFormationClient(cfnClient);
+		CFNClient CFNClient = new CFNClient(cfnClient);
 		cloudRepository = new CloudRepository(cloudClient);
-		ResourceRepository cfnRepository = new CfnRepository(cloudFormationClient, cloudRepository, "CfnAssist");
+		ResourceRepository cfnRepository = new CfnRepository(CFNClient, cloudRepository, "CfnAssist");
 		
 		elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
 		rdsClient = new RDSClient(awsRdsClient);

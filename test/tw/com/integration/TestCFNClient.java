@@ -1,6 +1,5 @@
 package tw.com.integration;
 
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -22,7 +21,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.MissingCapabilities;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.providers.CloudClient;
-import tw.com.providers.CloudFormationClient;
+import tw.com.providers.CFNClient;
 import tw.com.providers.SNSEventSource;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.CloudRepository;
@@ -37,7 +36,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-public class TestCloudFormationClient {
+public class TestCFNClient {
 	
 	private static software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 	private static Ec2Client ec2Client;
@@ -47,7 +46,7 @@ public class TestCloudFormationClient {
 	private ProjectAndEnv projAndEnv;
 	private static VpcRepository vpcRepository;
 	private static SNSEventSource snsNotifProvider;
-	private CloudFormationClient formationClient;
+	private CFNClient formationClient;
 	private DeletesStacks deletesStacks;
 	private Vpc mainTestVPC;
 
@@ -71,7 +70,7 @@ public class TestCloudFormationClient {
 
 	@Before
 	public void beforeEachTestRuns() throws MissingArgumentException, CfnAssistException, InterruptedException {
-		formationClient = new CloudFormationClient(cfnClient);
+		formationClient = new CFNClient(cfnClient);
 		CloudClient cloudClient = new CloudClient(ec2Client, regionProvider);
 		CloudRepository cloudRepository = new CloudRepository(cloudClient);
 		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudRepository, EnvironmentSetupForTests.PROJECT);
