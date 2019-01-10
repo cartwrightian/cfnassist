@@ -1,32 +1,27 @@
 package tw.com;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackResponse;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
-import com.amazonaws.services.logs.AWSLogs;
-import com.amazonaws.services.logs.AWSLogsClientBuilder;
-import com.amazonaws.services.rds.AmazonRDS;
-import com.amazonaws.services.rds.AmazonRDSClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectListing;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
+import software.amazon.awssdk.services.iam.IamClient;
+import software.amazon.awssdk.services.iam.model.User;
+import software.amazon.awssdk.services.rds.RdsClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
 import tw.com.repository.VpcRepository;
@@ -35,6 +30,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.attribute.PosixFilePermission;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
@@ -83,8 +82,8 @@ public class EnvironmentSetupForTests {
         return CloudFormationClient.create();
 	}
 
-	public static AmazonRDS createRDSClient() {
-        return AmazonRDSClientBuilder.defaultClient();
+	public static RdsClient createRDSClient() {
+        return RdsClient.create();
 	}
 
 	public static Vpc findAltVpc(VpcRepository repository) {
@@ -133,36 +132,34 @@ public class EnvironmentSetupForTests {
 		return Parameter.builder().parameterKey(key).parameterValue(value).build();
 	}
 
-	public static AmazonSNS createSNSClient() {
-        return AmazonSNSClientBuilder.defaultClient();
+	public static SnsClient createSNSClient() {
+        return SnsClient.create();
 	}
 	
-	public static AmazonSQS createSQSClient() {
-        return AmazonSQSClientBuilder.defaultClient();
+	public static SqsClient createSQSClient() {
+        return SqsClient.create();
 	}
 
 
-	public static AWSLogs createAWSLogsClient() {
-		return AWSLogsClientBuilder.defaultClient();
+	public static CloudWatchLogsClient createAWSLogsClient() {
+		return CloudWatchLogsClient.create();
 	}
 
 	public static ElasticLoadBalancingClient createELBClient() {
         return ElasticLoadBalancingClient.create();
 	}
 
-	public static AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.defaultClient();
+	public static S3Client createS3Client() {
+        return S3Client.create();
 	}
 	
-	public static AmazonIdentityManagement createIamClient(DefaultAWSCredentialsProviderChain credentialsProvider) {
-        return AmazonIdentityManagementClientBuilder.defaultClient();
+	public static IamClient createIamClient() {
+        return IamClient.builder().build();
     }
 	
-	public static Boolean isContainedIn(List<S3ObjectSummary> objectSummaries,
-			String key) {
-		for(S3ObjectSummary summary : objectSummaries) {
-			if (summary.getBucketName().equals(EnvironmentSetupForTests.BUCKET_NAME) &&
-					summary.getKey().equals(key)) {
+	public static Boolean isContainedIn(List<S3Object> objectSummaries, String key) {
+		for(S3Object summary : objectSummaries) {
+			if (summary.key().equals(key)) {
 				return true;
 			}
 		}
@@ -172,9 +169,10 @@ public class EnvironmentSetupForTests {
 	public static final int FAILURE_STATUS = -1;
 
 
-	public static List<S3ObjectSummary> getBucketObjects(AmazonS3 s3Client) {
-		ObjectListing requestResult = s3Client.listObjects(EnvironmentSetupForTests.BUCKET_NAME);
-		return requestResult.getObjectSummaries();
+	public static List<S3Object> getBucketObjects(S3Client s3Client) {
+		ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(EnvironmentSetupForTests.BUCKET_NAME).build();
+		ListObjectsV2Response requestResult = s3Client.listObjectsV2(request);
+		return requestResult.contents();
 	}
 
 	public static List<software.amazon.awssdk.services.cloudformation.model.Tag> createExpectedStackTags(String comment, Integer build, String project) {
@@ -250,4 +248,11 @@ public class EnvironmentSetupForTests {
 		return TemplateParameter.builder().parameterKey(key).defaultValue(def).build();
 	}
 
+	public static User createUser() {
+		return User.builder().path("path").userName("userName").userId("userId").arn("arn").createDate(Instant.now()).build();
+	}
+
+	public static Long asMillis(ZonedDateTime zonedDateTime) {
+		return Instant.from(zonedDateTime).toEpochMilli();
+	}
 }

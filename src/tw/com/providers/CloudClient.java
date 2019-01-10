@@ -1,11 +1,9 @@
 package tw.com.providers;
 
-import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressEventType;
-import com.amazonaws.event.ProgressListener;
-import com.amazonaws.regions.AwsRegionProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import tw.com.exceptions.WrongNumberOfInstancesException;
@@ -15,7 +13,7 @@ import java.util.*;
 
 import static java.lang.String.format;
 
-public class CloudClient implements ProgressListener {
+public class CloudClient { //implements ProgressListener {
     private static final Logger logger = LoggerFactory.getLogger(CloudClient.class);
 
     private Ec2Client ec2Client;
@@ -55,9 +53,9 @@ public class CloudClient implements ProgressListener {
     }
 
     public Map<String, AvailabilityZone> getAvailabilityZones() {
-        String regionName = regionProvider.getRegion();
-        logger.info("Get AZ for region " + regionName);
-        Filter filter = Filter.builder().name("region-name").values(regionName).build();
+        Region region = regionProvider.getRegion();
+        logger.info("Get AZ for region " + region);
+        Filter filter = Filter.builder().name("region-name").values(region.id()).build();
         DescribeAvailabilityZonesRequest request = DescribeAvailabilityZonesRequest.builder().
                 filters(filter).build();
 
@@ -160,13 +158,13 @@ public class CloudClient implements ProgressListener {
         return ipPermissions;
     }
 
-    @Override
-    public void progressChanged(ProgressEvent progressEvent) {
-        if (progressEvent.getEventType() == ProgressEventType.CLIENT_REQUEST_FAILED_EVENT) {
-            logger.warn(progressEvent.toString());
-        }
-        logger.info(progressEvent.toString());
-    }
+//    @Override
+//    public void progressChanged(ProgressEvent progressEvent) {
+//        if (progressEvent.getEventType() == ProgressEventType.CLIENT_REQUEST_FAILED_EVENT) {
+//            logger.warn(progressEvent.toString());
+//        }
+//        logger.info(progressEvent.toString());
+//    }
 
     // unencrypted PEM encoded RSA private key
     public AWSPrivateKey createKeyPair(String keypairName) {

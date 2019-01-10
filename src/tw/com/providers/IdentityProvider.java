@@ -1,20 +1,19 @@
 package tw.com.providers;
 
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
-import com.amazonaws.services.identitymanagement.model.GetUserResult;
-import com.amazonaws.services.identitymanagement.model.User;
+import software.amazon.awssdk.services.iam.IamClient;
+import software.amazon.awssdk.services.iam.model.GetUserResponse;
+import software.amazon.awssdk.services.iam.model.IamException;
+import software.amazon.awssdk.services.iam.model.User;
 
 public class IdentityProvider {
 	private static final Logger logger = LoggerFactory.getLogger(IdentityProvider.class);
 
-	private AmazonIdentityManagement iamClient;
+	private IamClient iamClient;
 
-	public IdentityProvider(AmazonIdentityManagement iamClient) {
+	public IdentityProvider(IamClient iamClient) {
 		this.iamClient = iamClient;
 	}
 
@@ -22,12 +21,12 @@ public class IdentityProvider {
 	public User getUserId() {
 		logger.debug("Get current user");
 		try {
-			GetUserResult result = iamClient.getUser();
-			User user = result.getUser();
+			GetUserResponse result = iamClient.getUser();
+			User user = result.user();
 			logger.info("Fetched current user: " + user);
 			return user;
 		}
-		catch(AmazonServiceException exception) {
+		catch(IamException exception) {
 			logger.warn("Unable to fetch current user: " + exception.toString());
 			return null;
 		}	

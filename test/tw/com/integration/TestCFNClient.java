@@ -1,18 +1,18 @@
 package tw.com.integration;
 
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sqs.AmazonSQS;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
 import org.junit.rules.TestName;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.DescribeSubnetsRequest;
 import software.amazon.awssdk.services.ec2.model.DescribeSubnetsResponse;
 import software.amazon.awssdk.services.ec2.model.Subnet;
 import software.amazon.awssdk.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import tw.com.*;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.StackNameAndId;
@@ -56,8 +56,8 @@ public class TestCFNClient {
 		regionProvider = new DefaultAwsRegionProviderChain();
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client, regionProvider));
 		cfnClient = EnvironmentSetupForTests.createCFNClient();
-		AmazonSNS snsClient = EnvironmentSetupForTests.createSNSClient();
-		AmazonSQS sqsClient = EnvironmentSetupForTests.createSQSClient();
+		SnsClient snsClient = EnvironmentSetupForTests.createSNSClient();
+		SqsClient sqsClient = EnvironmentSetupForTests.createSQSClient();
 		snsNotifProvider = new SNSEventSource(snsClient, sqsClient);
 		
 		new DeletesStacks(cfnClient).ifPresent("queryStackTest").

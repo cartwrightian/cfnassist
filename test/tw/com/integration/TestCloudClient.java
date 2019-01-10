@@ -1,9 +1,10 @@
 package tw.com.integration;
 
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import tw.com.AwsFacade;
@@ -92,11 +93,11 @@ public class TestCloudClient {
 
 	@Test
 	public void shouldGetAvailabilityZones() {
-		String regionName = new DefaultAwsRegionProviderChain().getRegion();
+		Region region = new DefaultAwsRegionProviderChain().getRegion();
 		Map<String, AvailabilityZone> zones = cloudClient.getAvailabilityZones();
 
 		assertEquals(3, zones.size());
-		zones.forEach((name, zone) -> assertEquals(regionName, zone.regionName()));
+		zones.forEach((name, zone) -> assertEquals(region.id(), zone.regionName()));
         assertTrue(zones.containsKey("a"));
         assertTrue(zones.containsKey("b"));
 	}

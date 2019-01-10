@@ -1,7 +1,6 @@
 package tw.com.unit;
 
 import software.amazon.awssdk.services.ec2.model.*;
-import com.amazonaws.services.rds.model.DBInstance;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -9,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
+import software.amazon.awssdk.services.rds.model.DBInstance;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
@@ -99,7 +99,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAddDB() throws CfnAssistException {
-		DBInstance rds = new DBInstance().withDBName("dbName").withDBInstanceIdentifier("instanceID");
+		DBInstance rds = DBInstance.builder().dbName("dbName").dbInstanceIdentifier("instanceID").build();
 		networkDiagram.addDBInstance("instanceID", "dbName [instanceID]");
 		securityDiagram.addDBInstance("instanceID", "dbName [instanceID]");
 
@@ -110,7 +110,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	
 	@Test
 	public void shouldAssociateDBWithSubent() throws CfnAssistException {
-		DBInstance rds = new DBInstance().withDBName("dbName").withDBInstanceIdentifier("instanceID");
+		DBInstance rds = DBInstance.builder().dbName("dbName").dbInstanceIdentifier("instanceID").build();
 
 		SubnetDiagramBuilder subnetDiagramBuilder = setupSubnetDiagramBuidler();
 		

@@ -1,11 +1,10 @@
 package tw.com.integration;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import tw.com.EnvironmentSetupForTests;

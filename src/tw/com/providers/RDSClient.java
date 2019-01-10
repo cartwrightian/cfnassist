@@ -3,28 +3,27 @@ package tw.com.providers;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.amazonaws.services.rds.AmazonRDS;
-import com.amazonaws.services.rds.AmazonRDSClient;
-import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DBSubnetGroup;
-import com.amazonaws.services.rds.model.DescribeDBInstancesResult;
+import software.amazon.awssdk.services.rds.RdsClient;
+import software.amazon.awssdk.services.rds.model.DBInstance;
+import software.amazon.awssdk.services.rds.model.DBSubnetGroup;
+import software.amazon.awssdk.services.rds.model.DescribeDbInstancesResponse;
 
 public class RDSClient {
-	AmazonRDS rdsClient;
+	RdsClient rdsClient;
 
-	public RDSClient(AmazonRDS rdsClient) {
+	public RDSClient(RdsClient rdsClient) {
 		this.rdsClient = rdsClient;
 	}
 
-	public List<DBInstance> getDBInstancesForVpc(String vpcId) {	
-		DescribeDBInstancesResult result = rdsClient.describeDBInstances();
-		List<DBInstance> dbInstances = result.getDBInstances();
+	public List<DBInstance> getDBInstancesForVpc(String vpcId) {
+		DescribeDbInstancesResponse result = rdsClient.describeDBInstances();
+		List<DBInstance> dbInstances = result.dbInstances();
 		
-		List<DBInstance> filtered = new LinkedList<DBInstance>(); 
+		List<DBInstance> filtered = new LinkedList<>();
 		for(DBInstance dbInstance : dbInstances) {
-			DBSubnetGroup dbSubnetGroup = dbInstance.getDBSubnetGroup();
+			DBSubnetGroup dbSubnetGroup = dbInstance.dbSubnetGroup();
 			if (dbSubnetGroup!=null) {
-				String groupVpcId = dbSubnetGroup.getVpcId();
+				String groupVpcId = dbSubnetGroup.vpcId();
 				if (groupVpcId.equals(vpcId)) {
 					filtered.add(dbInstance);
 				}

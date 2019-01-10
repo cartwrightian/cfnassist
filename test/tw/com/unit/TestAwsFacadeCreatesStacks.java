@@ -4,13 +4,13 @@ import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.identitymanagement.model.User;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.iam.model.User;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -27,6 +27,7 @@ import tw.com.repository.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
@@ -61,7 +62,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		identityProvider = createStrictMock(IdentityProvider.class);
         LogRepository logRepository = createStrictMock(LogRepository.class);
 
-		user = new User("path", "userName", "userId", "arn", new Date());
+		user = EnvironmentSetupForTests.createUser();
 
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender,
 				identityProvider, logRepository);

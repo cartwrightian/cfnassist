@@ -18,12 +18,12 @@ import software.amazon.awssdk.services.ec2.model.RouteTableAssociation;
 import software.amazon.awssdk.services.ec2.model.SecurityGroup;
 import software.amazon.awssdk.services.ec2.model.Subnet;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
-import com.amazonaws.services.rds.model.DBSubnetGroup;
-import com.amazonaws.services.rds.model.VpcSecurityGroupMembership;
 
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
+import software.amazon.awssdk.services.rds.model.DBInstance;
+import software.amazon.awssdk.services.rds.model.DBSecurityGroupMembership;
+import software.amazon.awssdk.services.rds.model.DBSubnetGroup;
+import software.amazon.awssdk.services.rds.model.VpcSecurityGroupMembership;
 import tw.com.exceptions.CfnAssistException;
 
 public class VPCVisitor {
@@ -75,13 +75,13 @@ public class VPCVisitor {
 	}
 
 	private void visitRDS(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
-		logger.debug("visit rds " + rds.getDBInstanceIdentifier());
+		logger.debug("visit rds " + rds.dbInstanceIdentifier());
 		vpcDiagram.addDBInstance(rds);
-		DBSubnetGroup dbSubnetGroup = rds.getDBSubnetGroup();
+		DBSubnetGroup dbSubnetGroup = rds.dbSubnetGroup();
 
 		if (dbSubnetGroup!=null) {
-			for(com.amazonaws.services.rds.model.Subnet subnet : dbSubnetGroup.getSubnets()) {
-				String subnetId = subnet.getSubnetIdentifier();
+			for(software.amazon.awssdk.services.rds.model.Subnet subnet : dbSubnetGroup.subnets()) {
+				String subnetId = subnet.subnetIdentifier();
 				logger.debug("visit rds subnet " + subnetId);
 				vpcDiagram.associateDBWithSubnet(rds, subnetId);
 			}
@@ -90,16 +90,16 @@ public class VPCVisitor {
 	}
 
 	private void addDBSecurityGroupsToDiagram(VPCDiagramBuilder vpcDiagram, DBInstance rds) throws CfnAssistException {
-		String dbInstanceIdentifier = rds.getDBInstanceIdentifier();
-		for(DBSecurityGroupMembership secGroupMember : rds.getDBSecurityGroups()) {
-			String groupName = secGroupMember.getDBSecurityGroupName();
+		String dbInstanceIdentifier = rds.dbInstanceIdentifier();
+		for(DBSecurityGroupMembership secGroupMember : rds.dbSecurityGroups()) {
+			String groupName = secGroupMember.dbSecurityGroupName();
 			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsByName(groupName);
 			logger.debug("visit rds secgroup " + dbSecGroup.groupId());
 			addSecGroupToDiagram(vpcDiagram, dbInstanceIdentifier, dbSecGroup);
 		}
 		//
-		for(VpcSecurityGroupMembership secGroupMember : rds.getVpcSecurityGroups()) {
-			String groupId = secGroupMember.getVpcSecurityGroupId();
+		for(VpcSecurityGroupMembership secGroupMember : rds.vpcSecurityGroups()) {
+			String groupId = secGroupMember.vpcSecurityGroupId();
 			SecurityGroup dbSecGroup = facade.getSecurityGroupDetailsById(groupId);
 			logger.debug("visit rds vpc secgroup " + dbSecGroup.groupId());
 			addSecGroupToDiagram(vpcDiagram, dbInstanceIdentifier, dbSecGroup);

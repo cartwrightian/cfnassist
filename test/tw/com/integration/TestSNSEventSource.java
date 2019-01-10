@@ -1,14 +1,18 @@
 package tw.com.integration;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
-import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.commons.cli.MissingArgumentException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.DeleteTopicRequest;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.UnsubscribeRequest;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.DeleteQueueRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.StackNotification;
 import tw.com.exceptions.FailedToCreateQueueException;
@@ -23,14 +27,13 @@ import static org.junit.Assert.fail;
 
 public class TestSNSEventSource {
 	
-	private static AmazonSNS snsClient;
-	private static AmazonSQS sqsClient;
+	private static SnsClient snsClient;
+	private static SqsClient sqsClient;
 	
 	SNSEventSource eventSource;
 
 	@BeforeClass
 	public static void beforeAllTestsRun() {
-		DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
 		snsClient = EnvironmentSetupForTests.createSNSClient();
 		sqsClient = EnvironmentSetupForTests.createSQSClient();
 	}
@@ -59,23 +62,27 @@ public class TestSNSEventSource {
 		// reset the queue, sns and subscription (this forces policy recreation as well)
 		String sub = eventSource.getARNofSQSSubscriptionToSNS();
 		if (sub!=null) {
-			snsClient.unsubscribe(sub);
+			snsClient.unsubscribe(UnsubscribeRequest.builder().subscriptionArn(sub).build());
 		}
-		snsClient.deleteTopic(existingSNSARN);
-		sqsClient.deleteQueue(eventSource.getQueueURL());
+		snsClient.deleteTopic(DeleteTopicRequest.builder().topicArn(existingSNSARN).build());
+		sqsClient.deleteQueue(DeleteQueueRequest.builder().queueUrl(eventSource.getQueueURL()).build());
 		
 		// now recreate the source and make sure we can send/receive
 		SNSEventSource anotherEventSource = new SNSEventSource(snsClient, sqsClient);
 		anotherEventSource.init();
 		// should be able to send via sns and then receive from sqs if everything worked ok
-		snsClient.publish(anotherEventSource.getSNSArn(), "aMessage");
-		ReceiveMessageRequest request = new ReceiveMessageRequest().
-				withQueueUrl(anotherEventSource.getQueueURL()).
-				withWaitTimeSeconds(10);
-		ReceiveMessageResult result = sqsClient.receiveMessage(request);
-		assertTrue(result.getMessages().size()>0);
+		publish(anotherEventSource.getSNSArn(), "aMessage");
+		ReceiveMessageRequest.Builder request = ReceiveMessageRequest.builder().
+				queueUrl(anotherEventSource.getQueueURL()).
+				waitTimeSeconds(10);
+		ReceiveMessageResponse result = sqsClient.receiveMessage(request.build());
+		assertTrue(result.messages().size()>0);
 	}
-	
+
+	private void publish(String snsArn, String aMessage) {
+		snsClient.publish(PublishRequest.builder().topicArn(snsArn).message(aMessage).build());
+	}
+
 	@Test 
 	public void shouldReceiveNotifications() throws MissingArgumentException, NotReadyException, FailedToCreateQueueException, InterruptedException {
 		String stackId = UUID.randomUUID().toString();
@@ -85,10 +92,10 @@ public class TestSNSEventSource {
 		eventSource.init();	
 		
 		String topicArn = eventSource.getSNSArn();
-		snsClient.publish(topicArn, "willNotParse");
-		snsClient.publish(topicArn, messageContents);
-		snsClient.publish(topicArn, "AlsoWillNotParse");
-		
+		publish(topicArn, "willNotParse");
+		publish(topicArn, messageContents);
+		publish(topicArn, "AlsoWillNotParse");
+
 		int attempts = 10;	
 		boolean found = false;
 		while((attempts>0) && (!found)) {

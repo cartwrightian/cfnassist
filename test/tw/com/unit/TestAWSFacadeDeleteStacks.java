@@ -1,6 +1,5 @@
 package tw.com.unit;
 
-import com.amazonaws.services.identitymanagement.model.User;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -10,6 +9,7 @@ import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
+import software.amazon.awssdk.services.iam.model.User;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
@@ -49,7 +49,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
 		
-		user = new User("path", "userName", "userId", "arn", new Date());
+		user = EnvironmentSetupForTests.createUser();
 
 		LogRepository logRepository = createStrictMock(LogRepository.class);
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);

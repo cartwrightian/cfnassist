@@ -1,12 +1,13 @@
 package tw.com.unit;
 
-import com.amazonaws.AmazonServiceException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.PollingStackMonitor;
@@ -183,38 +184,6 @@ public class TestPollingStackMonitor extends EasyMockSupport implements SetsDelt
 		List<StackStatus> aborts =  Arrays.asList(StackMonitor.DELETE_ABORTS);
 		setRepoExcpetationsForFailure(aborts, StackStatus.DELETE_IN_PROGRESS, StackStatus.DELETE_FAILED);
 		
-		replayAll();		
-		StackStatus result = monitor.waitForDeleteFinished(stackId);
-		assertEquals(StackStatus.DELETE_FAILED, result);
-		verifyAll();
-	}
-	
-	@Test
-	public void shouldReturnStatusDeletionOKDueToNoSuchStack() throws WrongNumberOfStacksException, InterruptedException {
-		List<StackStatus> aborts =  Arrays.asList(StackMonitor.DELETE_ABORTS);
-				
-		AmazonServiceException amazonServiceException = new AmazonServiceException("message");
-		amazonServiceException.setErrorCode("ValidationError");
-		EasyMock.expect(cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.DELETE_IN_PROGRESS, aborts)).
-			andThrow(amazonServiceException);
-
-		replayAll();		
-		StackStatus result = monitor.waitForDeleteFinished(stackId);
-		assertEquals(StackStatus.DELETE_COMPLETE, result);
-		verifyAll();
-	}
-	
-	@Test
-	public void shouldReturnStatusDeletionFailDueToOtherException() throws WrongNumberOfStacksException, InterruptedException {
-		List<StackStatus> aborts =  Arrays.asList(StackMonitor.DELETE_ABORTS);
-				
-		AmazonServiceException amazonServiceException = new AmazonServiceException("message");
-		amazonServiceException.setErrorCode("someOtherError");
-		EasyMock.expect(cfnRepository.waitForStatusToChangeFrom(stackName, StackStatus.DELETE_IN_PROGRESS, aborts)).
-			andThrow(amazonServiceException);
-		List<StackEvent> events = new LinkedList<>();
-		EasyMock.expect(cfnRepository.getStackEvents(stackName)).andReturn(events);	
-
 		replayAll();		
 		StackStatus result = monitor.waitForDeleteFinished(stackId);
 		assertEquals(StackStatus.DELETE_FAILED, result);

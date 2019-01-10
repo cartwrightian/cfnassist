@@ -1,15 +1,13 @@
 package tw.com.unit;
 
-import com.amazonaws.services.logs.model.LogStream;
-import com.amazonaws.services.logs.model.OutputLogEvent;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream;
+import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.OutputLogEventDecorator;
@@ -21,6 +19,10 @@ import tw.com.repository.LogRepository;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -34,13 +36,13 @@ public class TestLogRepository  extends EasyMockSupport {
     private LogClient logClient;
     private ProjectAndEnv projectAndEnv;
     private LogRepository logRepository;
-    private DateTime timestamp;
+    private ZonedDateTime timestamp;
     private SavesFile savesFile;
 
     @Before
     public void beforeEachTestRuns() {
-        timestamp = DateTime.now();
-        timestamp = timestamp.minusMinutes(timestamp.getMinuteOfDay()); // use midnight
+        timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
+        timestamp = timestamp.minusMinutes(timestamp.getMinute()).minusHours(timestamp.getHour()); // use midnight
 
         projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
         logClient = createStrictMock(LogClient.class);
@@ -67,12 +69,12 @@ public class TestLogRepository  extends EasyMockSupport {
     public void shouldRemoveOldStreamsForGroupList() {
         int days = 28;
 
-        LogStream streamA = createStream(timestamp.minusDays(20).getMillis(), "streamA");
-        LogStream streamB = createStream(timestamp.minusDays(29).getMillis(), "streamB");
-        LogStream streamC = createStream(timestamp.minusDays(27).getMillis(), "streamC");
+        LogStream streamA = createStream(EnvironmentSetupForTests.asMillis(timestamp.minusDays(20)), "streamA");
+        LogStream streamB = createStream(EnvironmentSetupForTests.asMillis(timestamp.minusDays(29)), "streamB");
+        LogStream streamC = createStream(EnvironmentSetupForTests.asMillis(timestamp.minusDays(27)), "streamC");
         List<LogStream> streams = Arrays.asList(streamA, streamB, streamC);
 
-        long queryTime = timestamp.minus(Duration.ofDays(days).toMillis()).getMillis();
+        long queryTime = EnvironmentSetupForTests.asMillis(timestamp.minusDays(days));
 
         EasyMock.expect(logClient.getStreamsFor("groupName", queryTime)).andReturn(streams);
         logClient.deleteLogStream("groupName", "streamB");
@@ -115,12 +117,13 @@ public class TestLogRepository  extends EasyMockSupport {
         List<String> streamNames = Arrays.asList("streamA", "streamB");
 
         int days = 42;
-        long queryTime = timestamp.minus(Duration.ofDays(days).toMillis()).getMillis();
-        long eventTime = timestamp.minusDays(days-1).getMillis();
+        long queryTime = EnvironmentSetupForTests.asMillis(timestamp.minusDays(days));
+        long eventTime = EnvironmentSetupForTests.asMillis(timestamp.minusDays(days-1));
 
-        Path expectedPath = Paths.get(format("%s_%s.log",groupName, timestamp.toString(ISODateTimeFormat.basicDateTime())));
+        Path expectedPath = Paths.get(format("%s_%s.log",groupName,
+                timestamp.format(DateTimeFormatter.ISO_DATE_TIME)));
 
-        OutputLogEvent logEvent = new OutputLogEvent().withMessage("TEST").withTimestamp(eventTime);
+        OutputLogEvent logEvent = OutputLogEvent.builder().message("TEST").timestamp(eventTime).build();
 
         LinkedList<Stream<OutputLogEventDecorator>> streamList = new LinkedList<>();
         streamNames.forEach(name -> {
@@ -153,8 +156,8 @@ public class TestLogRepository  extends EasyMockSupport {
         assertFalse(result.toAbsolutePath().toString().contains(exampleGroupName));
     }
 
-    private LogStream createStream(long offset, String streamName) {
-        return new LogStream().withLogStreamName(streamName).withLastEventTimestamp(offset);
+    private LogStream createStream(long utcEpochMillis, String streamName) {
+        return LogStream.builder().logStreamName(streamName).lastEventTimestamp(utcEpochMillis).build();
     }
 
     private void createExistingGroups(Map<String, Map<String, String>> groups) {

@@ -1,7 +1,6 @@
 package tw.com.commandline;
 
 import ch.qos.logback.classic.util.ContextInitializer;
-import com.amazonaws.regions.Regions;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
@@ -118,17 +117,17 @@ public class Main {
 	}
 
 	// TODO CHANGE TO USE DEFAULT REGION PROVIDERS BUILT INTO THE SDK
-	private Regions populateRegion(String regionName) throws MissingArgumentException {
-		logger.info("Check for region using name "+regionName);
-		try {
-            Regions result = Regions.fromName(regionName);
-            return result;
-        }
-        catch(IllegalArgumentException noSuchRegion) {
-            String msg = "Unable for find region for " + regionName;
-            logger.error(msg);
-            throw new MissingArgumentException(msg);
-        }
-	}
+//	private Regions populateRegion(String regionName) throws MissingArgumentException {
+//		logger.info("Check for region using name "+regionName);
+//		try {
+//            Regions result = Regions.fromName(regionName);
+//            return result;
+//        }
+//        catch(IllegalArgumentException noSuchRegion) {
+//            String msg = "Unable for find region for " + regionName;
+//            logger.error(msg);
+//            throw new MissingArgumentException(msg);
+//        }
+//	}
 
 }

@@ -1,6 +1,5 @@
 package tw.com.repository;
 
-import com.amazonaws.AmazonServiceException;
 import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.ec2.model.Tag;
 import org.slf4j.Logger;
@@ -98,9 +97,8 @@ public class CfnRepository implements CloudFormRepository {
 					return physicalResourceId;
 				}
 			}
-		} catch (AmazonServiceException exception) {
-			logger.warn("Unable to check for resources, stack name: "
-					+ stackName, exception);
+		} catch (CloudFormationException exception) {
+			logger.warn("Unable to check for resources, stack name: " + stackName, exception);
 		}
 		return null;
 	}
@@ -117,14 +115,20 @@ public class CfnRepository implements CloudFormRepository {
 		while (status.equals(currentStatus)) {
 			Thread.sleep(pause);
 
-			status = formationClient.currentStatus(stackName);
-			logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was %s",
-							stackName, status, pause));
-			if (pause < MAX_CHECK_INTERVAL_MILLIS) {
-				pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
+			try {
+				status = formationClient.currentStatus(stackName);
+				logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was %s",
+						stackName, status, pause));
+				if (pause < MAX_CHECK_INTERVAL_MILLIS) {
+					pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
+				}
+				if (aborts.contains(status)) {
+					logger.error("Matched an abort status");
+					break;
+				}
 			}
-			if (aborts.contains(status)) {
-				logger.error("Matched an abort status");
+			catch (CloudFormationException exception) {
+				logger.warn("Caught exception while waiting for status change", exception);
 				break;
 			}
 		}
@@ -155,9 +159,9 @@ public class CfnRepository implements CloudFormRepository {
 				} catch (WrongNumberOfStacksException e) {
 					logger.warn("Mismatch on stack status", e);
 					return StackStatus.UNKNOWN_TO_SDK_VERSION;
-				} catch (AmazonServiceException e) {
+				} catch (CloudFormationException e) {
 					logger.warn("Could not check status of stack " +stackName,e);
-					if (e.getStatusCode()==400) {
+					if (e.statusCode()==400) {
 						return StackStatus.UNKNOWN_TO_SDK_VERSION; // stack does not exist, perhaps a delete was in progress
 					}
 				}

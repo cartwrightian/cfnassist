@@ -1,17 +1,13 @@
 package tw.com.providers;
 
-import com.amazonaws.services.sns.AmazonSNS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.*;
 import tw.com.entity.CFNAssistNotification;
 import tw.com.exceptions.CfnAssistException;
 
-import com.amazonaws.services.sns.AmazonSNSClient;
-import com.amazonaws.services.sns.model.AuthorizationErrorException;
-import com.amazonaws.services.sns.model.ListTopicsResult;
-import com.amazonaws.services.sns.model.PublishResult;
-import com.amazonaws.services.sns.model.Topic;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,21 +16,21 @@ public class SNSNotificationSender implements NotificationSender {
 
 	public static final String TOPIC_NAME = "CFN_ASSIST_NOTIFICATIONS";
 	
-	private AmazonSNS snsClient;
+	private SnsClient snsClient;
 
 	// stateful to limit number of AWS API calls we make
 	private String topicANR ="";
 
-	public SNSNotificationSender(AmazonSNS snsClient) {
+	public SNSNotificationSender(SnsClient snsClient) {
 		this.snsClient = snsClient;
 	}
 
 	public String getTopicARN() {
 		try {
 			if (topicANR.isEmpty()) {
-				ListTopicsResult topics = snsClient.listTopics();
-				for(Topic topic : topics.getTopics()) {
-					String foundArn = topic.getTopicArn();
+				ListTopicsResponse topics = snsClient.listTopics();
+				for(Topic topic : topics.topics()) {
+					String foundArn = topic.topicArn();
 					if (foundArn.contains(TOPIC_NAME)) {
 						logger.info("Found notification topic for SNS, ARN is: " + foundArn);
 						topicANR =  foundArn;
@@ -64,9 +60,11 @@ public class SNSNotificationSender implements NotificationSender {
 		try {
 			logger.info("Send notification: " + notification);
 			String json = objectMapper.writeValueAsString(notification);
-			PublishResult result = snsClient.publish(topicArn, json);
-			logger.info(String.format("Send message on topic %s with id %s", TOPIC_NAME, result.getMessageId()));
-			return result.getMessageId();
+
+			PublishRequest request = PublishRequest.builder().topicArn(topicArn).message(json).build();
+			PublishResponse result = snsClient.publish(request);
+			logger.info(String.format("Send message on topic %s with id %s", TOPIC_NAME, result.messageId()));
+			return result.messageId();
 		}
 		catch (JsonProcessingException jsonException) {
 			throw new CfnAssistException("Unable to create notification JSON " + jsonException.toString());

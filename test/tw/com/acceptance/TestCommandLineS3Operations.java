@@ -1,18 +1,19 @@
 package tw.com.acceptance;
 
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Subnet;
 import software.amazon.awssdk.services.ec2.model.Tag;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.*;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import tw.com.CLIArgBuilder;
 import tw.com.DeletesStacks;
 import tw.com.EnvironmentSetupForTests;
@@ -31,7 +32,7 @@ public class TestCommandLineS3Operations {
 	private static final Integer BUILD_NUMBER = 9987;
 	private static Ec2Client ec2Client;
 	private static CloudFormationClient cfnClient;
-	private static AmazonS3 s3Client;
+	private static S3Client s3Client;
 	
 	@BeforeClass
 	public static void beforeAllTestsRun() {
@@ -67,10 +68,10 @@ public class TestCommandLineS3Operations {
 	
 	private void deleteTestKeysFromBucket() {
 		try {
-			s3Client.deleteObject(EnvironmentSetupForTests.BUCKET_NAME, KEY_A);
-			s3Client.deleteObject(EnvironmentSetupForTests.BUCKET_NAME, KEY_B);
+			s3Client.deleteObject(DeleteObjectRequest.builder().bucket(EnvironmentSetupForTests.BUCKET_NAME).key(KEY_A).build());
+			s3Client.deleteObject(DeleteObjectRequest.builder().bucket(EnvironmentSetupForTests.BUCKET_NAME).key(KEY_B).build());
 		} 
-		catch(AmazonS3Exception exception) {
+		catch(S3Exception exception) {
 			System.out.println(exception);
 		}	
 	}
@@ -114,7 +115,7 @@ public class TestCommandLineS3Operations {
 		int result = main.parse();
 		assertEquals("create failed", 0, result);
 		
-		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		List<S3Object> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
 		
@@ -143,7 +144,7 @@ public class TestCommandLineS3Operations {
 		int result = main.parse();
 		assertEquals("create failed", 0, result);
 		
-		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		List<S3Object> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 		String key1 = BUILD_NUMBER+"/01createSubnet.json";
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, key1));
 		String key2 = BUILD_NUMBER+"/02createAcls.json";

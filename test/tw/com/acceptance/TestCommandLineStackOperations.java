@@ -1,9 +1,9 @@
 package tw.com.acceptance;
 
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import org.junit.*;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Vpc;

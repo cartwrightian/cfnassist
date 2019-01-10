@@ -1,15 +1,14 @@
 package tw.com.providers;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.*;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.MissingArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.*;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.*;
 import tw.com.NotificationProvider;
 import tw.com.entity.StackNotification;
 import tw.com.exceptions.FailedToCreateQueueException;
@@ -32,13 +31,13 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	private static final int QUEUE_CREATE_RETRYS = 3;
 	private static final long QUEUE_RETRY_INTERNAL_MILLIS = 70 * 1000;
 	
-	private AmazonSNS snsClient;
+	private SnsClient snsClient;
 	private String queueURL;
 	private String topicSnsArn;
-	private String queueArn;
+	private String sqsQueueArn;
 	private boolean init;
 	
-	public SNSEventSource(AmazonSNS snsClient, AmazonSQS sqsClient) {
+	public SNSEventSource(SnsClient snsClient, SqsClient sqsClient) {
 		super(sqsClient);
 		this.snsClient = snsClient;
 		
@@ -59,16 +58,17 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 		topicSnsArn = getOrCreateSNSARN();
 		queueURL = getOrCreateQueue();
 		
-		Map<String, String> queueAttributes = getQueueAttributes(queueURL);
-		queueArn = queueAttributes.get(QUEUE_ARN_KEY);
-		checkOrCreateQueuePermissions(queueAttributes, topicSnsArn, queueArn, queueURL);
-		
-		createOrGetSQSSubscriptionToSNS();
+		Map<QueueAttributeName, String> queueAttributes = getQueueAttributes(queueURL);
+		sqsQueueArn = queueAttributes.get(QueueAttributeName.QUEUE_ARN);
+		checkOrCreateQueuePermissions(queueAttributes, topicSnsArn, sqsQueueArn, queueURL);
+
+		String subscriptionArn = createOrGetSQSSubscriptionToSNS();
+		logger.info("Using subscription arn " + subscriptionArn);
 		init = true;
 	}
 	
 	
-	private ReceiveMessageResult receiveMessages() {
+	private ReceiveMessageResponse receiveMessages() {
 		logger.info("Waiting for messages for queue " + queueURL);
 		ReceiveMessageRequest receiveMessageRequest = createWaitRequest();
 		return sqsClient.receiveMessage(receiveMessageRequest);
@@ -77,11 +77,11 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	@Override
 	public List<StackNotification> receiveNotifications() throws NotReadyException {
 		guardForInit();
-		List<StackNotification> notifications = new LinkedList<StackNotification>();
-		ReceiveMessageResult result = receiveMessages();
+		List<StackNotification> notifications = new LinkedList<>();
+		ReceiveMessageResponse result = receiveMessages();
 		ObjectMapper objectMapper = new ObjectMapper();
 
-		List<Message> messages = result.getMessages();
+		List<Message> messages = result.messages();
 		logger.info(String.format("Received %s messages", messages.size()));
 
 		for(Message msg : messages) {
@@ -102,48 +102,49 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	
 	private JsonNode extractMessageNode(Message msg, ObjectMapper objectMapper)
 			throws IOException {
-		String json = msg.getBody();
+		String json = msg.body();
 		
 		//logger.debug("Body json: " + json);
 		
-		JsonNode rootNode = objectMapper.readTree(json);		
-		JsonNode messageNode = rootNode.get("Message");
-		return messageNode;
+		JsonNode rootNode = objectMapper.readTree(json);
+		return rootNode.get("Message");
 	}
 	
 	private ReceiveMessageRequest createWaitRequest() {
-		ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(queueURL);
-		receiveMessageRequest.setWaitTimeSeconds(QUEUE_READ_TIMEOUT_SECS);
-		receiveMessageRequest.setMaxNumberOfMessages(MAX_NUMBER_MSGS_TO_RECEIVE);
-		return receiveMessageRequest;
+		return ReceiveMessageRequest.builder().
+				queueUrl(queueURL).
+				waitTimeSeconds(QUEUE_READ_TIMEOUT_SECS).
+				maxNumberOfMessages(MAX_NUMBER_MSGS_TO_RECEIVE).
+				build();
 	}
 
-	
 	private List<Subscription> getSNSSubs() {
-		ListSubscriptionsResult subResults = snsClient.listSubscriptions();
-		List<Subscription> subs = subResults.getSubscriptions();
-		return subs;
+		ListSubscriptionsResponse subResults = snsClient.listSubscriptions();
+		return subResults.subscriptions();
 	}
 
 	private String createNewSQSSubscriptionToSNS() {
 		logger.info("No SQS Subscription to SNS found, creating a new one");
-		SubscribeRequest subscribeRequest = new SubscribeRequest(topicSnsArn, SQS_PROTO, queueArn);
-		SubscribeResult result = snsClient.subscribe(subscribeRequest);
+		SubscribeRequest subscribeRequest = SubscribeRequest.builder().
+				topicArn(topicSnsArn).
+				protocol(SQS_PROTO).
+				endpoint(sqsQueueArn).returnSubscriptionArn(true).build();
+		SubscribeResponse result = snsClient.subscribe(subscribeRequest);
 		
-		String subscriptionArn = result.getSubscriptionArn();
+		String subscriptionArn = result.subscriptionArn();
 		logger.info("Created new SNS subscription, subscription arn is: " + subscriptionArn);
 		return subscriptionArn;
 	}
 
 	// TODO
 	private String getOrCreateQueue() throws InterruptedException, FailedToCreateQueueException {
-		CreateQueueRequest createQueueRequest = new CreateQueueRequest(SQS_QUEUE_NAME);
+		CreateQueueRequest createQueueRequest = CreateQueueRequest.builder().queueName(SQS_QUEUE_NAME).build();
 		int attemptsLefts = QUEUE_CREATE_RETRYS;
 		while (attemptsLefts>0) {
 			try {
 				logger.info("Attempt to create queue with name " + SQS_QUEUE_NAME);
-				CreateQueueResult result = sqsClient.createQueue(createQueueRequest); // creates, or returns existing queue
-				String queueUrl = result.getQueueUrl();
+				CreateQueueResponse result = sqsClient.createQueue(createQueueRequest); // creates, or returns existing queue
+				String queueUrl = result.queueUrl();
 				logger.info("Found sqs queue URL:" +queueUrl);
 				return queueUrl;
 			}
@@ -152,10 +153,11 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 				// aws docs say have to wait >60 seconds before trying again
 				Thread.sleep(QUEUE_RETRY_INTERNAL_MILLIS);
 			}
-			catch(AmazonServiceException serviceException) {
-				logger.error("Caught service exception during queue creation: " +serviceException.getErrorMessage());
+			catch(QueueNameExistsException serviceException) {
+				logger.error("Caught service exception during queue creation: " +serviceException.getMessage());
 				Thread.sleep(QUEUE_RETRY_INTERNAL_MILLIS);
 			}
+			attemptsLefts--;
 		}
 		throw new FailedToCreateQueueException(SQS_QUEUE_NAME);
 	}
@@ -173,9 +175,9 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	}
 	
 	private String getOrCreateSNSARN() {
-		CreateTopicRequest createTopicRequest = new CreateTopicRequest(SNS_TOPIC_NAME);
-		CreateTopicResult result = snsClient.createTopic(createTopicRequest); // returns arn if topic already exists
-		String topicArn = result.getTopicArn();
+		CreateTopicRequest createTopicRequest = CreateTopicRequest.builder().name(SNS_TOPIC_NAME).build();
+		CreateTopicResponse result = snsClient.createTopic(createTopicRequest); // returns arn if topic already exists
+		String topicArn = result.topicArn();
 		logger.info("Using arn :" + topicArn);
 		return topicArn;
 	}
@@ -191,9 +193,9 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	public String getARNofSQSSubscriptionToSNS() {
 		List<Subscription> subs = getSNSSubs();
 		for(Subscription sub : subs) {		
-			if (sub.getProtocol().equals(SQS_PROTO)) {
-				if (sub.getEndpoint().equals(queueArn)) {
-					String subscriptionArn = sub.getSubscriptionArn();
+			if (sub.protocol().equals(SQS_PROTO)) {
+				if (sub.endpoint().equals(sqsQueueArn)) {
+					String subscriptionArn = sub.subscriptionArn();
 					logger.info("Found existing SNS subscription, subscription arn is: " + subscriptionArn);
 					return subscriptionArn;
 				}
@@ -203,10 +205,9 @@ public class SNSEventSource extends QueuePolicyManager implements NotificationPr
 	}
 
 	private void deleteMessage(Message msg) {
-		logger.info("Deleting message " + msg.getReceiptHandle());
-		sqsClient.deleteMessage(new DeleteMessageRequest()
-	    .withQueueUrl(queueURL)
-	    .withReceiptHandle(msg.getReceiptHandle()));	
+		logger.info("Deleting message " + msg.receiptHandle());
+		sqsClient.deleteMessage(DeleteMessageRequest.builder().queueUrl(queueURL)
+				.receiptHandle(msg.receiptHandle()).build());
 	}
 
 	@Override

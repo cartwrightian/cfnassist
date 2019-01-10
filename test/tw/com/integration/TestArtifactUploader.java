@@ -1,14 +1,15 @@
 package tw.com.integration;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.providers.ArtifactUploader;
@@ -17,6 +18,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
 
@@ -26,7 +28,7 @@ public class TestArtifactUploader {
 	private static final String KEY_A = BUILD_NUMBER+"/instance.json";
 	private static final String KEY_B = BUILD_NUMBER+"/simpleStack.json";
 	
-	private static AmazonS3 s3Client;
+	private static S3Client s3Client;
 
 	@BeforeClass 
 	public static void beforeAllTestsRun() {
@@ -45,15 +47,21 @@ public class TestArtifactUploader {
 
 	private void deleteTestKeysFromBucket() {
 		try {
-			s3Client.deleteObject(EnvironmentSetupForTests.BUCKET_NAME, KEY_A);
-			s3Client.deleteObject(EnvironmentSetupForTests.BUCKET_NAME, KEY_B);
-			s3Client.deleteObject(EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER+"/cfnassit-1.0.DEV.zip");
-			s3Client.deleteObject(EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER+"/01createSubnet.json");
-			s3Client.deleteObject(EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER+"/02createAcls.json");
+			deleteKey(KEY_A);
+			deleteKey(KEY_B);
+			deleteKey(BUILD_NUMBER+"/cfnassit-1.0.DEV.zip");
+			deleteKey(BUILD_NUMBER+"/01createSubnet.json");
+			deleteKey(BUILD_NUMBER+"/02createAcls.json");
 		} 
-		catch(AmazonS3Exception exception) {
+		catch(S3Exception exception) {
 			System.out.println(exception);
 		}
+	}
+
+	private void deleteKey(String key) {
+		DeleteObjectRequest request = DeleteObjectRequest.builder().
+				bucket(EnvironmentSetupForTests.BUCKET_NAME).key(key).build() ;
+		s3Client.deleteObject(request);
 	}
 
 	@Test
@@ -80,7 +88,7 @@ public class TestArtifactUploader {
 		assertEquals(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_B, results.get(1).parameterValue());
 		
 		// check upload actually happened	
-		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		List<S3Object> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 		
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_B));
@@ -110,7 +118,7 @@ public class TestArtifactUploader {
 		String s3Prefix = EnvironmentSetupForTests.S3_PREFIX+"/"+BUILD_NUMBER;
 		assertEquals(s3Prefix, results.get(0).parameterValue());
 		
-		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		List<S3Object> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 		
 		assertEquals(filesOnDisc.length, objectSummaries.size());
 		for(String file : filesOnDisc) {
@@ -129,7 +137,7 @@ public class TestArtifactUploader {
 		uploader.uploadArtifacts(arts);	
 		
 		// check upload actually happened	
-		List<S3ObjectSummary> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
+		List<S3Object> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 		assertTrue(EnvironmentSetupForTests.isContainedIn(objectSummaries, KEY_A));
 		
 		uploader.delete("instance.json");

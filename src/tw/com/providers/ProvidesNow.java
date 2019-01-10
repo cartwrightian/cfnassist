@@ -1,7 +1,7 @@
 package tw.com.providers;
 
-import org.joda.time.DateTime;
+import java.time.ZonedDateTime;
 
 public interface ProvidesNow {
-    DateTime getNow();
+    ZonedDateTime getUTCNow();
 }

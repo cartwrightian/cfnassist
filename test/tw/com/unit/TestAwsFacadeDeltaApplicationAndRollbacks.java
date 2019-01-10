@@ -5,7 +5,6 @@ import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.identitymanagement.model.User;
 import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
@@ -13,6 +12,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.iam.model.User;
 import tw.com.*;
 import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -48,7 +49,8 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		cloudRepository =  createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
-		user = new User("path", "userName", "userId", "arn", new Date());
+
+		user = EnvironmentSetupForTests.createUser();
 
 		LogRepository logRepository = createStrictMock(LogRepository.class);
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);

@@ -1,12 +1,7 @@
 package tw.com.acceptance;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.DeleteKeyPairRequest;
-import software.amazon.awssdk.services.ec2.model.DescribeKeyPairsRequest;
-import software.amazon.awssdk.services.ec2.model.DescribeKeyPairsResponse;
-import software.amazon.awssdk.services.ec2.model.KeyPairInfo;
+import software.amazon.awssdk.services.ec2.model.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import tw.com.CLIArgBuilder;
@@ -70,7 +65,7 @@ public class TestKeyPairCreationAndSave {
             DescribeKeyPairsRequest query = DescribeKeyPairsRequest.builder().keyNames(keypairName).build();
             DescribeKeyPairsResponse keysFound = ec2Client.describeKeyPairs(query);
             keys = keysFound.keyPairs();
-        } catch (AmazonServiceException exception) {
+        } catch (Ec2Exception exception) {
             keys = new LinkedList<>();
         }
 

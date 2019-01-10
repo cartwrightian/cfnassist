@@ -1,24 +1,17 @@
 package tw.com;
 
-import com.amazonaws.regions.AwsRegionProvider;
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder;
-import com.amazonaws.services.logs.AWSLogs;
-import com.amazonaws.services.logs.AWSLogsClientBuilder;
-import com.amazonaws.services.rds.AmazonRDS;
-import com.amazonaws.services.rds.AmazonRDSClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.AmazonSNSClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.commons.cli.MissingArgumentException;
-import org.joda.time.DateTime;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
+import software.amazon.awssdk.services.iam.IamClient;
+import software.amazon.awssdk.services.rds.RdsClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import tw.com.commandline.CommandExecutor;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
@@ -27,6 +20,11 @@ import tw.com.pictures.DiagramCreator;
 import tw.com.providers.*;
 import tw.com.repository.*;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+
 public class FacadeFactory implements ProvidesNow {
 	private boolean snsMonitoring = false;
 	private String project;
@@ -34,14 +32,14 @@ public class FacadeFactory implements ProvidesNow {
 	private boolean init;
 
     private CloudFormationClient cfnClient;
-	private AmazonSQS sqsClient;
-	private AmazonSNS snsClient;
-	private AmazonS3 s3Client;
+	private SqsClient sqsClient;
+	private SnsClient snsClient;
+	private S3Client s3Client;
 	private Ec2Client ec2Client;
 	private ElasticLoadBalancingClient elbClient;
-	private AmazonRDS rdsClient;
-	private AmazonIdentityManagement iamClient;
-    private AWSLogs awsLogClient;
+	private RdsClient rdsClient;
+	private IamClient iamClient;
+    private CloudWatchLogsClient awsLogClient;
 
     // providers
 	private ArtifactUploader artifactUploader;
@@ -106,14 +104,14 @@ public class FacadeFactory implements ProvidesNow {
 
 	private void createAmazonAPIClients() {
         cfnClient = software.amazon.awssdk.services.cloudformation.CloudFormationClient.create();
-        ec2Client = Ec2Client.builder().build();
-        snsClient = AmazonSNSClientBuilder.defaultClient();
-        sqsClient = AmazonSQSClientBuilder.defaultClient();
+        ec2Client = Ec2Client.create();
+        snsClient = SnsClient.create();
+        sqsClient = SqsClient.create();
         elbClient = ElasticLoadBalancingClient.create();
-        s3Client = AmazonS3ClientBuilder.defaultClient();
-        rdsClient = AmazonRDSClientBuilder.defaultClient();
-        iamClient = AmazonIdentityManagementClientBuilder.defaultClient();
-        awsLogClient = AWSLogsClientBuilder.defaultClient();
+        s3Client = S3Client.create();
+        rdsClient = RdsClient.create();
+        iamClient = IamClient.builder().build();
+        awsLogClient = CloudWatchLogsClient.create();
 	}
 
 	public AwsFacade createFacade() throws MissingArgumentException, CfnAssistException, InterruptedException {		
@@ -168,7 +166,7 @@ public class FacadeFactory implements ProvidesNow {
 	}
 
     @Override
-    public DateTime getNow() {
-        return DateTime.now();
+    public ZonedDateTime getUTCNow() {
+        return ZonedDateTime.now(ZoneId.of("UTC"));
     }
 }

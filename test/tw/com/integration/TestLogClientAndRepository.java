@@ -1,10 +1,8 @@
 package tw.com.integration;
 
-import com.amazonaws.services.logs.AWSLogs;
-import com.amazonaws.services.logs.model.*;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
 import org.junit.*;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.cloudwatchlogs.model.*;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.OutputLogEventDecorator;
@@ -18,7 +16,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,7 +27,7 @@ import static junit.framework.TestCase.*;
 public class TestLogClientAndRepository {
 
     private static final String TEST_LOG_GROUP = "testLogGroup";
-    private static AWSLogs awsLogs;
+    private static CloudWatchLogsClient awsLogs;
     private LogClient logClient;
 
     @BeforeClass
@@ -38,7 +37,7 @@ public class TestLogClientAndRepository {
         tags.put("TESTA", "valuea");
         tags.put("TESTB", "42");
         try {
-            awsLogs.createLogGroup(new CreateLogGroupRequest().withLogGroupName(TEST_LOG_GROUP).withTags(tags));
+            awsLogs.createLogGroup(CreateLogGroupRequest.builder().logGroupName(TEST_LOG_GROUP).tags(tags).build());
         }
         catch (ResourceAlreadyExistsException alreadyPresent) {
             // no op
@@ -47,8 +46,8 @@ public class TestLogClientAndRepository {
 
     @AfterClass
     public static void afterAllTestRun() {
-        awsLogs.deleteLogGroup(new DeleteLogGroupRequest().withLogGroupName(TEST_LOG_GROUP));
-        awsLogs.shutdown();
+        awsLogs.deleteLogGroup(DeleteLogGroupRequest.builder().logGroupName(TEST_LOG_GROUP).build());
+        //awsLogs.shutdown();
     }
 
     @Before
@@ -59,11 +58,12 @@ public class TestLogClientAndRepository {
     @After
     public void afterEachTestRuns() {
         // delete all streams for group TEST_LOG_GROUP
-        DescribeLogStreamsResult existing = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
-        List<String> streamNames = existing.getLogStreams().stream().map(LogStream::getLogStreamName).collect(Collectors.toList());
-        streamNames.forEach(streamName -> awsLogs.deleteLogStream(new DeleteLogStreamRequest().
-                withLogGroupName(TEST_LOG_GROUP).
-                withLogStreamName(streamName)));
+        DescribeLogStreamsResponse existing = awsLogs.describeLogStreams(DescribeLogStreamsRequest.builder().
+                logGroupName(TEST_LOG_GROUP).build());
+        List<String> streamNames = existing.logStreams().stream().map(LogStream::logStreamName).collect(Collectors.toList());
+        streamNames.forEach(streamName -> awsLogs.deleteLogStream(DeleteLogStreamRequest.builder().
+                logGroupName(TEST_LOG_GROUP).
+                logStreamName(streamName).build()));
     }
 
     @Test
@@ -84,17 +84,17 @@ public class TestLogClientAndRepository {
     @Test
     public void shouldGetAndDeleteLogStream() {
         String streamName = "testStreamName";
-        awsLogs.createLogStream(new CreateLogStreamRequest().
-                withLogGroupName(TEST_LOG_GROUP).
-                withLogStreamName(streamName));
+        awsLogs.createLogStream(CreateLogStreamRequest.builder().
+                logGroupName(TEST_LOG_GROUP).
+                logStreamName(streamName).build());
 
         List<LogStream> streams = logClient.getStreamsFor(TEST_LOG_GROUP, Long.MIN_VALUE); // MIN_VALUE=all
         assertEquals(1, streams.size());
-        assertEquals(streamName, streams.get(0).getLogStreamName());
+        assertEquals(streamName, streams.get(0).logStreamName());
         logClient.deleteLogStream(TEST_LOG_GROUP, streamName);
 
-        DescribeLogStreamsResult actual = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
-        List<String> names = actual.getLogStreams().stream().map(LogStream::getLogStreamName).collect(Collectors.toList());
+        DescribeLogStreamsResponse actual = awsLogs.describeLogStreams(DescribeLogStreamsRequest.builder().logGroupName(TEST_LOG_GROUP).build());
+        List<String> names = actual.logStreams().stream().map(LogStream::logStreamName).collect(Collectors.toList());
         assertFalse(names.contains(streamName));
     }
 
@@ -104,9 +104,9 @@ public class TestLogClientAndRepository {
 
         logClient.tagGroupFor(projectAndEnv, TEST_LOG_GROUP);
 
-        ListTagsLogGroupResult actual = awsLogs.listTagsLogGroup(new ListTagsLogGroupRequest().withLogGroupName(TEST_LOG_GROUP));
+        ListTagsLogGroupResponse actual = awsLogs.listTagsLogGroup(ListTagsLogGroupRequest.builder().logGroupName(TEST_LOG_GROUP).build());
 
-        Map<String, String> result = actual.getTags();
+        Map<String, String> result = actual.tags();
         assertTrue(result.containsKey(AwsFacade.PROJECT_TAG));
         assertTrue(result.containsKey(AwsFacade.ENVIRONMENT_TAG));
 
@@ -124,23 +124,24 @@ public class TestLogClientAndRepository {
         int numberOfEventsPerUpload = 200;
         int numberOfUploads = 6;
 
-        DescribeLogStreamsResult existing = awsLogs.describeLogStreams(new DescribeLogStreamsRequest().withLogGroupName(TEST_LOG_GROUP));
-        List<String> present = existing.getLogStreams().stream().map(LogStream::getLogStreamName).collect(Collectors.toList());
+        DescribeLogStreamsResponse existing = awsLogs.describeLogStreams(DescribeLogStreamsRequest.builder().
+                logGroupName(TEST_LOG_GROUP).build());
+        List<String> present = existing.logStreams().stream().map(LogStream::logStreamName).collect(Collectors.toList());
 
         streamNames.forEach(streamName -> {
                 if (!present.contains(streamName))
-                awsLogs.createLogStream(new CreateLogStreamRequest().
-                withLogGroupName(TEST_LOG_GROUP).
-                withLogStreamName(streamName));}
+                awsLogs.createLogStream(CreateLogStreamRequest.builder().
+                    logGroupName(TEST_LOG_GROUP).
+                    logStreamName(streamName).build());}
                 );
 
-        DateTime beginInsert = DateTime.now();
+        ZonedDateTime beginInsert = ZonedDateTime.now(ZoneId.of("UTC"));
 
         uploadTestEvents(streamNames, numberOfEventsPerUpload, numberOfUploads, beginInsert);
 
         Thread.sleep(2000); // inserted log events are not immediately available for consumption
 
-        Long epoch = beginInsert.getMillis();
+        Long epoch = EnvironmentSetupForTests.asMillis(beginInsert);
         List<Stream<OutputLogEventDecorator>> resultStream = logClient.fetchLogs(TEST_LOG_GROUP, streamNames, epoch);
 
         assertEquals(3, resultStream.size());
@@ -151,9 +152,10 @@ public class TestLogClientAndRepository {
         assertEquals(expectedSize, resultStream.get(2).count());
     }
 
+
     @Test
     public void shouldFetchLogResultsViaLogRepository() throws IOException, InterruptedException {
-        DateTime timeStamp = DateTime.now();
+        ZonedDateTime timeStamp = ZonedDateTime.now(ZoneId.of("UTC"));
 
         ProvidesNow providesNow = () -> timeStamp;
         SavesFile savesFile = new SavesFile();
@@ -162,12 +164,12 @@ public class TestLogClientAndRepository {
         ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 
         logClient.tagGroupFor(projectAndEnv, TEST_LOG_GROUP);
-        awsLogs.createLogStream(new CreateLogStreamRequest().
-                withLogGroupName(TEST_LOG_GROUP).
-                withLogStreamName("repoTestStream"));
+        awsLogs.createLogStream(CreateLogStreamRequest.builder().
+                logGroupName(TEST_LOG_GROUP).
+                logStreamName("repoTestStream").build());
 
         Path expectedFilename = Paths.get(String.format("%s_%s.log",TEST_LOG_GROUP,
-                timeStamp.toString(ISODateTimeFormat.basicDateTime())));
+                timeStamp.format(DateTimeFormatter.ISO_DATE_TIME)));
         Files.deleteIfExists(expectedFilename);
 
         // TODO sleep after this if upload not completed
@@ -191,30 +193,32 @@ public class TestLogClientAndRepository {
         assertEquals(2000, lines.size());
     }
 
-    private void uploadTestEvents(List<String> streamNames, int numberOfEventsPerUpload, int numberOfUploads, DateTime beginInsert) {
+    private void uploadTestEvents(List<String> streamNames, int numberOfEventsPerUpload, int numberOfUploads,
+                                  ZonedDateTime beginInsert) {
         List<String> nextSeqToken = new LinkedList<>();
         for (int i = 0; i <numberOfUploads; i++) {
             streamNames.forEach(streamName -> {
                 // responses split by token when size of one response >1MB
-                PutLogEventsRequest putEventsRequest = new PutLogEventsRequest();
-                Collection<InputLogEvent> events = createTestLogEvents(numberOfEventsPerUpload, beginInsert.getMillis());
-                putEventsRequest.withLogGroupName(TEST_LOG_GROUP).withLogStreamName(streamName).withLogEvents(events);
-                nextSeqToken.forEach(token -> putEventsRequest.setSequenceToken(token));
+                PutLogEventsRequest.Builder putEventsRequest = PutLogEventsRequest.builder();
+                Collection<InputLogEvent> events = createTestLogEvents(numberOfEventsPerUpload,
+                        EnvironmentSetupForTests.asMillis(beginInsert));
+                putEventsRequest.logGroupName(TEST_LOG_GROUP).logStreamName(streamName).logEvents(events);
+                nextSeqToken.forEach(putEventsRequest::sequenceToken);
                 try {
-                    awsLogs.putLogEvents(putEventsRequest);
+                    awsLogs.putLogEvents(putEventsRequest.build());
                 }
                 catch(DataAlreadyAcceptedException alreadyExcepted) {
-                    String token = alreadyExcepted.getExpectedSequenceToken();
-                    putEventsRequest.setSequenceToken(token);
-                    awsLogs.putLogEvents(putEventsRequest);
+                    String token = alreadyExcepted.expectedSequenceToken();
+                    putEventsRequest.sequenceToken(token);
+                    awsLogs.putLogEvents(putEventsRequest.build());
 
                     nextSeqToken.clear();
                     nextSeqToken.add(token);
                 }
                 catch (InvalidSequenceTokenException invalidToken) {
-                    String token = invalidToken.getExpectedSequenceToken();
-                    putEventsRequest.setSequenceToken(token);
-                    awsLogs.putLogEvents(putEventsRequest);
+                    String token = invalidToken.expectedSequenceToken();
+                    putEventsRequest.sequenceToken(token);
+                    awsLogs.putLogEvents(putEventsRequest.build());
 
                     nextSeqToken.clear();
                     nextSeqToken.add(token);
@@ -232,9 +236,9 @@ public class TestLogClientAndRepository {
             builder.append(builder.toString());
         }
         for (int i = 0; i < number; i++) {
-            InputLogEvent logEvent = new InputLogEvent().
-                    withMessage("This is log message number "+i+" "+builder.toString()).
-                    withTimestamp(epoch);
+            InputLogEvent logEvent = InputLogEvent.builder().
+                    message("This is log message number "+i+" "+builder.toString()).
+                    timestamp(epoch).build();
             events.add(logEvent);
         }
         return events;

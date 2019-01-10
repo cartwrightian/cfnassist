@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
+import software.amazon.awssdk.services.rds.model.DBInstance;
 import tw.com.AwsFacade;
 import tw.com.entity.Cidr;
 import tw.com.exceptions.CfnAssistException;
@@ -27,7 +28,6 @@ import software.amazon.awssdk.services.ec2.model.SecurityGroup;
 import software.amazon.awssdk.services.ec2.model.Subnet;
 import software.amazon.awssdk.services.ec2.model.Tag;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import com.amazonaws.services.rds.model.DBInstance;
 
 public class VPCDiagramBuilder extends CommonBuilder {
 	private static final Logger logger = LoggerFactory.getLogger(VPCDiagramBuilder.class);
@@ -126,8 +126,8 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	public void addDBInstance(DBInstance rds) throws CfnAssistException {
-		String rdsId = rds.getDBInstanceIdentifier();
-		String label = AmazonVPCFacade.createLabelFromNameAndID(rdsId, rds.getDBName());
+		String rdsId = rds.dbInstanceIdentifier();
+		String label = AmazonVPCFacade.createLabelFromNameAndID(rdsId, rds.dbName());
 		networkDiagram.addDBInstance(rdsId, label);
 		securityDiagram.addDBInstance(rdsId, label);
 	}
@@ -145,8 +145,8 @@ public class VPCDiagramBuilder extends CommonBuilder {
 		if (childDiagramBuilder==null) {
 			throw new CfnAssistException("Unable to find child diagram for subnet Id:" + subnetId);
 		}
-		networkDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, childDiagramBuilder);	
-		securityDiagram.associateWithSubDiagram(rds.getDBInstanceIdentifier(), subnetId, childDiagramBuilder);	
+		networkDiagram.associateWithSubDiagram(rds.dbInstanceIdentifier(), subnetId, childDiagramBuilder);
+		securityDiagram.associateWithSubDiagram(rds.dbInstanceIdentifier(), subnetId, childDiagramBuilder);
 	}
 	
 	public void addSecurityGroup(SecurityGroup group, String subnetId) throws CfnAssistException {
@@ -292,14 +292,14 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 
 	private String getProtoFrom(NetworkAclEntry entry) {
-		Integer protoNum = Integer.parseInt(entry.protocol());
+		int protoNum = Integer.parseInt(entry.protocol());
 		switch(protoNum) {
 			case -1: return "all";
 			case 1: return "icmp";
 			case 6: return "tcp";
 			case 17: return "udp";
 		}
-		return protoNum.toString();		
+		return Integer.toString(protoNum);
 	}
 
 	private String getLabelFromCidr(NetworkAclEntry entry) {

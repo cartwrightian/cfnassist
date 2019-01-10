@@ -1,10 +1,9 @@
 package tw.com.providers;
 
-import com.amazonaws.services.logs.AWSLogs;
-import com.amazonaws.services.logs.model.*;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.cloudwatchlogs.model.*;
 import tw.com.AwsFacade;
 import tw.com.entity.OutputLogEventDecorator;
 import tw.com.entity.ProjectAndEnv;
@@ -19,9 +18,9 @@ import static java.util.Spliterator.ORDERED;
 
 public class LogClient {
     private static final Logger logger = LoggerFactory.getLogger(LogClient.class);
-    private final AWSLogs theClient;
+    private final CloudWatchLogsClient theClient;
 
-    public LogClient(AWSLogs theClient) {
+    public LogClient(CloudWatchLogsClient theClient) {
         this.theClient = theClient;
     }
 
@@ -31,14 +30,14 @@ public class LogClient {
         List<LogGroup> groups = getLogGroups();
         logger.info(format("Found %s groups", groups.size()));
         groups.forEach(group->{
-            String logGroupName = group.getLogGroupName();
-            ListTagsLogGroupResult tagResult = theClient.listTagsLogGroup(new ListTagsLogGroupRequest().withLogGroupName(logGroupName));
-            Map<String, String> resultTags = tagResult.getTags();
+            String logGroupName = group.logGroupName();
+            ListTagsLogGroupRequest request = ListTagsLogGroupRequest.builder().logGroupName(logGroupName).build();
+            ListTagsLogGroupResponse tagResult = theClient.listTagsLogGroup(request);
+            Map<String, String> resultTags = tagResult.tags();
 
             logger.info(format("Group name: %s has tags '%s'", logGroupName, resultTags));
             Map<String, String> tags = resultTags; // TAG -> Value
             groupsWithTags.put(logGroupName, tags);
-
         });
 
         return groupsWithTags;
@@ -52,27 +51,27 @@ public class LogClient {
     private List<LogStream> getStreamsFor(String groupName, String token, long when) {
         List<LogStream> streamsForGroup = new LinkedList<>();
 
-        DescribeLogStreamsRequest request = new DescribeLogStreamsRequest().
-                withLogGroupName(groupName).
-                withOrderBy(OrderBy.LastEventTime).
+        DescribeLogStreamsRequest.Builder requestBuilder = DescribeLogStreamsRequest.builder().
+                logGroupName(groupName).
+                orderBy(OrderBy.LAST_EVENT_TIME).
                 // withLimit(200). // defauls to 50 and causes error if set higher..
-                withDescending(true); // newest first
+                descending(true); // newest first
 
         if (!token.isEmpty()) {
-            request.setNextToken(token);
+            requestBuilder.nextToken(token);
         }
-        DescribeLogStreamsResult describeResult = theClient.describeLogStreams(request);
-        String nextToken = describeResult.getNextToken();
+        DescribeLogStreamsResponse describeResult = theClient.describeLogStreams(requestBuilder.build());
+        String nextToken = describeResult.nextToken();
 
-        List<LogStream> logStreams = describeResult.getLogStreams();
+        List<LogStream> logStreams = describeResult.logStreams();
         logger.info(format("Got %s log streams for group %s", logStreams.size(), groupName));
         logger.debug("Next token was: " + nextToken);
         boolean tooOld = false;
         for (LogStream stream : logStreams) {
-            String logStreamName = stream.getLogStreamName();
+            String logStreamName = stream.logStreamName();
             logger.debug(format("Processing stream '%s' for group '%s", logStreamName, groupName));
-            Long firstEvent = stream.getFirstEventTimestamp();
-            Long lastEvent = stream.getLastEventTimestamp();
+            Long firstEvent = stream.firstEventTimestamp();
+            Long lastEvent = stream.lastEventTimestamp();
 
             if (firstEvent==null) {
                 logger.warn(format("Group '%s' stream '%s' has null start event, assume in scope", groupName, logStreamName));
@@ -103,23 +102,28 @@ public class LogClient {
     }
 
     public void deleteLogStream(String groupdName, String streamName) {
-        DeleteLogStreamRequest request = new DeleteLogStreamRequest().withLogGroupName(groupdName).withLogStreamName(streamName);
-        DeleteLogStreamResult result = theClient.deleteLogStream(request);
+        DeleteLogStreamRequest request = DeleteLogStreamRequest.builder().
+                logGroupName(groupdName).
+                logStreamName(streamName).build();
+        DeleteLogStreamResponse result = theClient.deleteLogStream(request);
         logger.info(format("Deleted %s for group %s result was %s", streamName, groupdName, result));
     }
 
     private List<LogGroup> getLogGroups() {
-        DescribeLogGroupsResult result = theClient.describeLogGroups();
-        return result.getLogGroups();
+        DescribeLogGroupsResponse result = theClient.describeLogGroups();
+        return result.logGroups();
     }
 
     public void tagGroupFor(ProjectAndEnv projectAndEnv, String groupToTag) {
         logger.info(format("Tag log group %s with %s", groupToTag, projectAndEnv));
 
-        TagLogGroupRequest request = new TagLogGroupRequest().withLogGroupName(groupToTag);
-        request.addTagsEntry(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv());
-        request.addTagsEntry(AwsFacade.PROJECT_TAG, projectAndEnv.getProject());
-        theClient.tagLogGroup(request);
+        Map<String, String> tags = new HashMap<>();
+        tags.put(AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv());
+        tags.put(AwsFacade.PROJECT_TAG, projectAndEnv.getProject());
+        TagLogGroupRequest.Builder requestBuilder = TagLogGroupRequest.builder().
+                logGroupName(groupToTag).tags(tags);
+
+        theClient.tagLogGroup(requestBuilder.build());
     }
 
     public List<Stream<OutputLogEventDecorator>> fetchLogs(String groupName, List<String> streamNames, Long endEpoch) {
@@ -145,8 +149,8 @@ public class LogClient {
     private class TokenStrategy {
             private String token = "";
 
-            public void set(GetLogEventsResult result) {
-                this.token = result.getNextForwardToken();
+            public void set(GetLogEventsResponse result) {
+                this.token = result.nextForwardToken();
             }
 
             public boolean isEmpty() {
@@ -161,8 +165,8 @@ public class LogClient {
                 return "token:"+ token;
             }
 
-        public boolean tokenMatch(GetLogEventsResult result) {
-            return token.equals(result.getNextForwardToken());
+        boolean tokenMatch(GetLogEventsResponse result) {
+            return token.equals(result.nextForwardToken());
         }
     }
 
@@ -206,8 +210,8 @@ public class LogClient {
         }
 
         private boolean loadNextResult() {
-            GetLogEventsResult nextResult = getLogEvents();
-            if (nextResult.getEvents().isEmpty()) {
+            GetLogEventsResponse nextResult = getLogEvents();
+            if (nextResult.events().isEmpty()) {
                 return false;
             }
             if (currentToken.tokenMatch(nextResult)) {
@@ -215,26 +219,26 @@ public class LogClient {
                 return false;
             }
             currentToken.set(nextResult);
-            inProgress = nextResult.getEvents().iterator();
+            inProgress = nextResult.events().iterator();
             return true;
         }
 
-        private GetLogEventsResult getLogEvents() {
+        private GetLogEventsResponse getLogEvents() {
             logger.debug(format("LogIterator: Getting events for %s stream %s and epoch %s", groupName, streamName, endEpoch));
-            GetLogEventsRequest request = new GetLogEventsRequest().
-                    withLogGroupName(groupName).
-                    withLogStreamName(streamName).
-                    withStartTime(endEpoch). // do we need this if have already selected stream(name)s that are in scope?
-                    withStartFromHead(true); // earlier events come first
+            GetLogEventsRequest.Builder requestBuilder = GetLogEventsRequest.builder().
+                    logGroupName(groupName).
+                    logStreamName(streamName).
+                    startTime(endEpoch). // do we need this if have already selected stream(name)s that are in scope?
+                    startFromHead(true); // earlier events come first
 
             if (!currentToken.isEmpty()) {
                 logger.debug(format("LogIterator: Setting nextToken on stream %s request to %s", streamName, currentToken));
-                request.setNextToken(currentToken.get());
+                requestBuilder.nextToken(currentToken.get());
             }
 
-            GetLogEventsResult currentResult = theClient.getLogEvents(request);
-            logger.debug(format("LogIterator: Got %s entries for stream %s", currentResult.getEvents().size(), streamName));
-            logger.debug(format("LogIterator: Got nextToken on stream %s token: %s", streamName, currentResult.getNextForwardToken()));
+            GetLogEventsResponse currentResult = theClient.getLogEvents(requestBuilder.build());
+            logger.debug(format("LogIterator: Got %s entries for stream %s", currentResult.events().size(), streamName));
+            logger.debug(format("LogIterator: Got nextToken on stream %s token: %s", streamName, currentResult.nextForwardToken()));
             return currentResult;
         }
 

@@ -1,12 +1,10 @@
 package tw.com.entity;
 
-import java.io.IOException;
-
-import com.amazonaws.services.identitymanagement.model.User;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import software.amazon.awssdk.services.iam.model.User;
+
+import java.io.IOException;
 
 public class CFNAssistNotification {
 	
@@ -19,8 +17,8 @@ public class CFNAssistNotification {
 		this.stackName = stackName;
 		this.stackStatus = stackStatus;
 		if (user!=null) {
-			this.userId = user.getUserId();
-			this.setUserName(user.getUserName());
+			this.userId = user.userId();
+			this.setUserName(user.userName());
 		}	
 	}
 	

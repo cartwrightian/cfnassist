@@ -1,9 +1,9 @@
 package tw.com.acceptance;
 
-import com.amazonaws.regions.DefaultAwsRegionProviderChain;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.CLIArgBuilder;

@@ -1,9 +1,9 @@
 package tw.com.integration;
 
-import com.amazonaws.AmazonServiceException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.CFNClient;
 
@@ -42,7 +42,7 @@ public class TestHaveValidTemplateFiles {
                     try {
                         String contents = FileUtils.readFileToString(file, Charset.defaultCharset());
                         cloudClient.validateTemplate(contents);
-                    } catch (IOException | AmazonServiceException e) {
+                    } catch (IOException | CloudFormationException e) {
                         fail(file.getAbsolutePath() + ": " + e);
                     }
                 }

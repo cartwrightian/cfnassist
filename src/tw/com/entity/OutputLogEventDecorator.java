@@ -1,6 +1,7 @@
 package tw.com.entity;
 
-import com.amazonaws.services.logs.model.OutputLogEvent;
+
+import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
 
 public class OutputLogEventDecorator implements Comparable<OutputLogEventDecorator> {
 
@@ -18,11 +19,11 @@ public class OutputLogEventDecorator implements Comparable<OutputLogEventDecorat
         return groupName;
     }
     public String toString() {
-        return String.format("%s %s", streamName, outputLogEvent.getMessage());
+        return String.format("%s %s", streamName, outputLogEvent.message());
     }
 
     public Long getTimestamp() {
-        return outputLogEvent.getTimestamp();
+        return outputLogEvent.timestamp();
     }
 
     @Override

@@ -3,13 +3,13 @@ package tw.com.unit;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.util.Date;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.amazonaws.services.identitymanagement.model.User;
 
+import software.amazon.awssdk.services.iam.model.User;
+import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.CFNAssistNotification;
 
 public class TestCFNAssistNotification {
@@ -18,7 +18,7 @@ public class TestCFNAssistNotification {
 	
 	@Before
 	public void beforeEachTestRuns() {
-		user = new User("path", "userName", "userId", "userArn", new Date());
+		user = EnvironmentSetupForTests.createUser();
 	}
 
 	@Test

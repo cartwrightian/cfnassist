@@ -1,11 +1,11 @@
 package tw.com;
 
 import software.amazon.awssdk.services.ec2.model.*;
-import com.amazonaws.services.rds.model.DBInstance;
-import com.amazonaws.services.rds.model.DBSecurityGroupMembership;
-import com.amazonaws.services.rds.model.DBSubnetGroup;
 import org.easymock.EasyMock;
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
+import software.amazon.awssdk.services.rds.model.DBInstance;
+import software.amazon.awssdk.services.rds.model.DBSecurityGroupMembership;
+import software.amazon.awssdk.services.rds.model.DBSubnetGroup;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
 
@@ -49,6 +49,7 @@ public class VpcTestBuilder {
 	private SecurityGroup elbSecurityGroup;
 
 	IpRange range = IpRange.builder().cidrIp("ipRanges").build();
+	private DBInstance.Builder dbInstanceBuilder;
 
 	public VpcTestBuilder(String vpcId) {
 		this.vpcId = vpcId;
@@ -110,9 +111,9 @@ public class VpcTestBuilder {
 				loadBalancerName("loadBalancerName").
 				dnsName("lbDNSName").
 				securityGroups(elbSecurityGroup.groupId());
-		dbInstance = new DBInstance().
-				withDBInstanceIdentifier("dbInstanceId").
-				withDBName("dbName");
+		dbInstanceBuilder = DBInstance.builder().
+				dbInstanceIdentifier("dbInstanceId").
+				dbName("dbName");
 		NetworkAclAssociation aclAssoc = NetworkAclAssociation.builder().
 				subnetId(subnetId).build();
 		PortRange portRange = PortRange.builder().
@@ -161,9 +162,10 @@ public class VpcTestBuilder {
 		add(routeTable);
 		add(eip);
 		elb = addAndAssociate(elbBuilder);
-		addAndAssociate(dbInstance);
+		addAndAssociate(dbInstanceBuilder, dbSecurityGroup);
+		dbInstance = dbInstanceBuilder.build();
 		add(acl);
-		addAndAssociateWithDBs(dbSecurityGroup);
+		//addAndAssociateWithDBs(dbSecurityGroup);
 	}
 
 	private void add(Route route) {
@@ -174,12 +176,13 @@ public class VpcTestBuilder {
 		return vpc;
 	}
 
-	private void addAndAssociateWithDBs(SecurityGroup securityGroup) {
-		for(DBInstance db  : databases) {
-			DBSecurityGroupMembership groupMembership = new DBSecurityGroupMembership().withDBSecurityGroupName(securityGroup.groupName());
-			db.withDBSecurityGroups(groupMembership);
-		}	
-	}
+//	private void addAndAssociateWithDBs(SecurityGroup securityGroup) {
+//		for(DBInstance db  : databases) {
+//			DBSecurityGroupMembership groupMembership = DBSecurityGroupMembership.builder().
+//					dbSecurityGroupName(securityGroup.groupName()).build();
+//			//db.withDBSecurityGroups(groupMembership);
+//		}
+//	}
 
 	private void add(Subnet subnet) {
 		subnets.add(subnet);
@@ -217,14 +220,21 @@ public class VpcTestBuilder {
 		return balancerDescription;
 	}
 	
-	private void addAndAssociate(DBInstance dbInstance) {
-		databases.add(dbInstance);
-		
-		List<com.amazonaws.services.rds.model.Subnet> rdsSubnets = new LinkedList<>();
-		rdsSubnets.add(new com.amazonaws.services.rds.model.Subnet().withSubnetIdentifier(dbSubnet.subnetId()));
-		DBSubnetGroup dBSubnetGroup = new DBSubnetGroup();
-		dBSubnetGroup.setSubnets(rdsSubnets);
-		dbInstance.withDBSubnetGroup(dBSubnetGroup);
+	private void addAndAssociate(DBInstance.Builder dbInstance, SecurityGroup dbSecurityGroup) {
+
+		List<software.amazon.awssdk.services.rds.model.Subnet> rdsSubnets = new LinkedList<>();
+		software.amazon.awssdk.services.rds.model.Subnet subnet = software.amazon.awssdk.services.rds.model.Subnet.
+				builder().subnetIdentifier(dbSubnet.subnetId()).build();
+		rdsSubnets.add(subnet);
+		DBSubnetGroup dBSubnetGroup = DBSubnetGroup.builder().subnets(rdsSubnets).build();
+		dbInstance.dbSubnetGroup(dBSubnetGroup);
+
+		DBSecurityGroupMembership groupMembership = DBSecurityGroupMembership.builder().
+				dbSecurityGroupName(dbSecurityGroup.groupName()).build();
+		dbInstance.dbSecurityGroups(groupMembership);
+
+		databases.add(dbInstance.build());
+
 	}
 	
 	private void add(NetworkAcl acl) {

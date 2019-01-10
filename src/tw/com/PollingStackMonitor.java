@@ -7,10 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest;
-import software.amazon.awssdk.services.cloudformation.model.StackEvent;
-import software.amazon.awssdk.services.cloudformation.model.StackStatus;
-import software.amazon.awssdk.services.cloudformation.model.UpdateStackRequest;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import tw.com.entity.DeletionPending;
 import tw.com.entity.DeletionsPending;
 import tw.com.entity.StackNameAndId;
@@ -57,19 +54,8 @@ public class PollingStackMonitor extends StackMonitor {
 	public StackStatus waitForDeleteFinished(StackNameAndId stackId) throws WrongNumberOfStacksException, InterruptedException {
 		StackStatus initialStatus = StackStatus.DELETE_IN_PROGRESS;
 		StackStatus result;
-		try {
-			result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), initialStatus, Arrays.asList(DELETE_ABORTS));
-		}
-		catch(com.amazonaws.AmazonServiceException awsException) {
-			logger.warn("Caught exception during status check", awsException);
-			String errorCode = awsException.getErrorCode();
-			// TODO should this be using statuscode=400?
-			if (errorCode.equals("ValidationError")) {
-				result = StackStatus.DELETE_COMPLETE;
-			} else {
-				result = StackStatus.DELETE_FAILED;
-			}		
-		}	
+
+		result = cfnRepository.waitForStatusToChangeFrom(stackId.getStackName(), initialStatus, Arrays.asList(DELETE_ABORTS));
 		
 		if (!result.equals(StackStatus.DELETE_COMPLETE)) {
 			logger.error("Failed to delete stack, status is " + result);
