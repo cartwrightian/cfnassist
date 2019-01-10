@@ -1,6 +1,8 @@
 package tw.com;
 
 import org.apache.commons.cli.MissingArgumentException;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
@@ -103,15 +105,18 @@ public class FacadeFactory implements ProvidesNow {
 	}
 
 	private void createAmazonAPIClients() {
-        cfnClient = software.amazon.awssdk.services.cloudformation.CloudFormationClient.create();
+        cfnClient = CloudFormationClient.create();
         ec2Client = Ec2Client.create();
         snsClient = SnsClient.create();
         sqsClient = SqsClient.create();
         elbClient = ElasticLoadBalancingClient.create();
         s3Client = S3Client.create();
         rdsClient = RdsClient.create();
-        iamClient = IamClient.builder().build();
         awsLogClient = CloudWatchLogsClient.create();
+		iamClient = IamClient.builder().
+				credentialsProvider(DefaultCredentialsProvider.create())
+				.region(Region.AWS_GLOBAL).
+						build();
 	}
 
 	public AwsFacade createFacade() throws MissingArgumentException, CfnAssistException, InterruptedException {		

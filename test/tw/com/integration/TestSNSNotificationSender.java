@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
 public class TestSNSNotificationSender {
 	private static SnsClient snsClient;
 	private static SqsClient sqsClient;
-	private SNSNotificationSender sender;
+	private SNSNotificationSender snsNotificationSender;
 	private QueuePolicyManager policyManager;
 	
 	@BeforeClass
@@ -38,7 +38,7 @@ public class TestSNSNotificationSender {
 
 	@Before
 	public void beforeEachTestRuns() {
-		sender = new SNSNotificationSender(snsClient);
+		snsNotificationSender = new SNSNotificationSender(snsClient);
 		policyManager = new QueuePolicyManager(sqsClient);
 	}
 	
@@ -48,7 +48,7 @@ public class TestSNSNotificationSender {
 				name(SNSNotificationSender.TOPIC_NAME).build());
 		String arn = createResult.topicArn();
 		
-		assertFalse(sender.getTopicARN().isEmpty());
+		assertFalse(snsNotificationSender.getTopicARN().isEmpty());
 		
 		snsClient.deleteTopic(DeleteTopicRequest.builder().topicArn(arn).build());
 		
@@ -57,46 +57,49 @@ public class TestSNSNotificationSender {
 	}
 	
 	@Test
-	public void shouldSendNotificationMessageOnTopic() throws CfnAssistException, MissingArgumentException, InterruptedException, IOException {
+	public void shouldSendNotificationMessageOnTopicToSQSviaSNS() throws CfnAssistException, MissingArgumentException, InterruptedException, IOException {
 		User user = EnvironmentSetupForTests.createUser();
 
 		CFNAssistNotification notification = new CFNAssistNotification("name", "complete", user);
 
+		// create topic
 		CreateTopicResponse createResult = snsClient.createTopic(CreateTopicRequest.builder().
 				name(SNSNotificationSender.TOPIC_NAME).build());
-		String SNSarn = createResult.topicArn();
-		assertNotNull(SNSarn);
+		String SnsTopicArn = createResult.topicArn();
+		assertNotNull(SnsTopicArn);
 			
-		// test the SNS notification by creating a SQS and subscribing that to the SNS
+		// create an SQS queue, subscribe that to the SNS topic
 		CreateQueueResponse queueResult = createQueue();
-		String queueUrl = queueResult.queueUrl();
+		String sqsQueueUrl = queueResult.queueUrl();
 		
 		// give queue perms to subscribe to SNS
-		Map<QueueAttributeName, String> attribrutes = policyManager.getQueueAttributes(queueUrl);
-		String queueArn = attribrutes.get(QueueAttributeName.QUEUE_ARN);
-		policyManager.checkOrCreateQueuePermissions(attribrutes, SNSarn, queueArn, queueUrl);
+		Map<QueueAttributeName, String> attribrutes = policyManager.getQueueAttributes(sqsQueueUrl);
+		String sqsQueueArn = attribrutes.get(QueueAttributeName.QUEUE_ARN);
+		policyManager.checkOrCreateQueuePermissions(attribrutes, SnsTopicArn, sqsQueueArn, sqsQueueUrl);
 		
 		// create subscription
-		SubscribeRequest.Builder subscribeRequest = SubscribeRequest.builder().topicArn(SNSarn).protocol(SNSEventSource.SQS_PROTO).endpoint(queueArn);
-		SubscribeResponse subResult = snsClient.subscribe(subscribeRequest.build());
+		SubscribeRequest.Builder subscribeSQSRequest = SubscribeRequest.builder().topicArn(SnsTopicArn).
+				protocol(SNSEventSource.SQS_PROTO).endpoint(sqsQueueArn);
+		SubscribeResponse subResult = snsClient.subscribe(subscribeSQSRequest.build());
 		String subscriptionArn = subResult.subscriptionArn();
 		
 		// send SNS and then check right thing arrives at SQS
-		sender.sendNotification(notification);
-		
-		ReceiveMessageRequest request = ReceiveMessageRequest.builder().
-				queueUrl(queueUrl).
+		snsNotificationSender.sendNotification(notification);
+
+		// No race condition as notification is sent to a queue
+		ReceiveMessageRequest sqsReceiveRequest = ReceiveMessageRequest.builder().
+				queueUrl(sqsQueueUrl).
 				waitTimeSeconds(10).build();
-		ReceiveMessageResponse receiveResult = sqsClient.receiveMessage(request);
-		List<Message> messages = receiveResult.messages();
+		ReceiveMessageResponse sqsReceiveRequestResponse = sqsClient.receiveMessage(sqsReceiveRequest);
+		List<Message> sqsMessages = sqsReceiveRequestResponse.messages();
 		
-		sqsClient.deleteQueue(DeleteQueueRequest.builder().queueUrl(queueUrl).build());
+		sqsClient.deleteQueue(DeleteQueueRequest.builder().queueUrl(sqsQueueUrl).build());
 		snsClient.unsubscribe(UnsubscribeRequest.builder().subscriptionArn(subscriptionArn).build());
-		snsClient.deleteTopic(DeleteTopicRequest.builder().topicArn(SNSarn).build());
+		snsClient.deleteTopic(DeleteTopicRequest.builder().topicArn(SnsTopicArn).build());
 		
-		assertEquals(1, messages.size());
+		assertEquals(1, sqsMessages.size());
 		
-		Message msg = messages.get(0);
+		Message msg = sqsMessages.get(0);
 
 		ObjectMapper objectMapper = new ObjectMapper();
 		JsonNode rootNode = objectMapper.readTree(msg.body());

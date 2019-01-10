@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.iam.model.Policy;
 import software.amazon.awssdk.services.iam.model.Statement;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse;
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
-import software.amazon.awssdk.services.sqs.model.SetQueueAttributesRequest;
+import software.amazon.awssdk.services.sqs.model.*;
 
 import java.util.*;
 import java.util.concurrent.locks.Condition;
@@ -20,6 +17,26 @@ public class QueuePolicyManager {
 	protected SqsClient sqsClient;
 	private Collection<QueueAttributeName> attributeNames = new LinkedList<>();
 
+	private String QUEUE_ARN = "QUEUE_ARN";
+	private String SNS_TOPIC_ARN = "SNS_TOPIC_ARN";
+
+	private String templatePolicy = "{\n" +
+			"      \"Version\": \"2012-10-17\",\n" +
+			"      \"Id\": \"MyQueuePolicy\",\n" +
+			"      \"Statement\": [{\n" +
+			"         \"Sid\":\"SubscribeToSNSFromSQSQueue0001\",\n" +
+			"         \"Effect\":\"Allow\",\n" +
+			"         \"Principal\":\"*\",\n" +
+			"         \"Action\":\"sqs:SendMessage\",\n" +
+			"         \"Resource\":\"QUEUE_ARN\",\n" +
+			"         \"Condition\":{\n" +
+			"           \"ArnEquals\":{\n" +
+			"             \"aws:SourceArn\":\"SNS_TOPIC_ARN\"\n" +
+			"           }\n" +
+			"         }\n" +
+			"      }]\n" +
+			"    }";
+
 	public QueuePolicyManager(SqsClient sqsClient) {
 		this.sqsClient = sqsClient;
 		attributeNames.add(QueueAttributeName.QUEUE_ARN);
@@ -28,59 +45,24 @@ public class QueuePolicyManager {
 
 	public void checkOrCreateQueuePermissions(
 			Map<QueueAttributeName, String> queueAttributes, String topicSnsArn, String queueArn, String queueURL) {
-		String policy = extractPolicy(queueAttributes);
 
-		return;
-//		if (policy!=null) {
-//			logger.info("Policy found for queue, check if required conditions set");
-//			for (Statement statement :  policy.getStatements()) {
-//				if (allowQueuePublish(statement)) {
-//					logger.info("Statement allows sending, checking for ARN condition. Statement ID is " + statement.getId());
-//					for (Condition condition : statement.getConditions()) {
-//						if (condition.getConditionKey().equals("aws:SourceArn") &&
-//								condition.getValues().contains(topicSnsArn)) {
-//								logger.info("Found a matching condition for sns arn " + topicSnsArn);
-//								return;
-//						}
-//					}
-//				}
-//			}
-//		}
-//		logger.info("Policy allowing SNS to publish to queue not found");
-//		setQueuePolicy(topicSnsArn, queueArn, queueURL);
+		if (queueAttributes.containsKey(QueueAttributeName.POLICY)) {
+			String existing = queueAttributes.get(QueueAttributeName.POLICY);
+			logger.info("Queue already has policy set: " +existing);
+			return;
+		}
+		logger.info("Policy allowing SNS to publish to queue not found");
+		setQueuePolicy(topicSnsArn, queueArn, queueURL);
+
 	}
 		
 	private void setQueuePolicy(String topicSnsArn, String queueArn, String queueURL) {
-		logger.info("Set up policy for queue to allow SNS to publish to it");
-		Policy sqsPolicy = Policy.builder().build();
-
-//				.builder().
-//        .withStatements(new Statement(Statement.Effect.Allow)
-//                            .withPrincipals(Principal.AllUsers)
-//                            .withResources(new Resource(queueArn))
-//                            .withConditions(ConditionFactory.newSourceArnCondition(topicSnsArn))
-//                            .withActions(SQSActions.SendMessage));
-		
-        Map<QueueAttributeName, String> attributes = new HashMap<>();
-        attributes.put(QueueAttributeName.POLICY, "sqsPolicy");
-        
-        SetQueueAttributesRequest setQueueAttributesRequest = SetQueueAttributesRequest.builder().
+		Map<QueueAttributeName, String> attributes = new HashMap<>();
+		String thePolicy = templatePolicy.replace(QUEUE_ARN, queueArn).replace(SNS_TOPIC_ARN, topicSnsArn);
+		attributes.put(QueueAttributeName.POLICY, thePolicy);
+		SetQueueAttributesRequest request = SetQueueAttributesRequest.builder().
 				queueUrl(queueURL).attributes(attributes).build();
-        sqsClient.setQueueAttributes(setQueueAttributesRequest);
-	}
-	
-	private boolean allowQueuePublish(Statement statement) {
-//		statement.getValueForField()
-//		if (statement.getEffect().equals(Statement.Effect.Allow)) {
-//			List<Action> actions = statement.getActions();
-//
-//			for(Action action : actions) { // .equals not properly defined on actions
-//				if (action.getActionName().equals("sqs:"+SQSActions.SendMessage.toString())) {
-//					return true;
-//				}
-//			}
-//		}
-		return false;
+		sqsClient.setQueueAttributes(request);
 	}
 	
 	public Map<QueueAttributeName, String> getQueueAttributes(String url) throws MissingArgumentException {
@@ -98,18 +80,5 @@ public class QueuePolicyManager {
 		}	
 		return attribMap;
 	}
-
-	private String extractPolicy(Map<QueueAttributeName, String> queueAttributes) {
-		return queueAttributes.get(QueueAttributeName.POLICY);
-//		String policyJson = queueAttributes.get(QueueAttributeName.POLICY);
-//		if (policyJson==null) {
-//			return null;
-//		}
-//
-//		logger.debug("Current queue policy: " + policyJson);
-//		Policy policy = Policy.fromJson(policyJson);
-//		return policy;
-	}
-
 
 }
