@@ -1,9 +1,11 @@
 package tw.com;
 
 
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackResponse;
@@ -12,9 +14,6 @@ import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.User;
@@ -34,10 +33,11 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
 import static org.junit.Assert.assertFalse;
@@ -52,8 +52,7 @@ public class EnvironmentSetupForTests {
     public static final String AVAILABILITY_ZONE = "eu-west-1c";
     public static final String S3_PREFIX = "https://s3.amazonaws.com/"+BUCKET_NAME;
 
-    // TODO THIS Instance ID is *very* *very* out of date
-    private static final String AMI_FOR_INSTANCE = "ami-9c7ad8eb"; // eu amazon linux instance
+    private static final String AMI_FOR_INSTANCE = "ami-08935252a36e25f85"; //"ami-9c7ad8eb"; // eu amazon linux instance
 	public static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
     //
 	///////////////
