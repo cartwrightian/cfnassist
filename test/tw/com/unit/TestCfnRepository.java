@@ -63,9 +63,14 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldGetDrifts() throws InterruptedException {
+	public void shouldGetDrifts() {
+		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist");
 
-		String refID = "refID42";
+		List<Stack> stacks = new LinkedList<>();
+		stacks.add(Stack.builder().stackName("stackName").tags(tags).build());
+		EasyMock.expect(formationClient.describeAllStacks()).andReturn(stacks);
+
+		String refID = "someRefId";
 		EasyMock.expect(formationClient.detectDrift("stackName")).andReturn(refID);
 		EasyMock.expect(formationClient.driftDetectionInProgress(refID)).andReturn(true);
 		EasyMock.expect(formationClient.driftDetectionInProgress(refID)).andReturn(true);
@@ -74,9 +79,11 @@ public class TestCfnRepository extends EasyMockSupport {
 				new CFNClient.DriftStatus("stackName", StackDriftStatus.DRIFTED, 42));
 
 		replayAll();
-		CFNClient.DriftStatus results = repository.getStackDrift("stackName");
-		assertEquals(42, results.getDriftedStackResourceCount());
-		assertEquals(StackDriftStatus.DRIFTED, results.getStackDriftStatus());
+		List<StackEntry> results = repository.getStackDrifts(mainProjectAndEnv);
+		assertEquals(1, results.size());
+		CFNClient.DriftStatus driftStatus = results.get(0).getDriftStatus();
+		assertEquals(42, driftStatus.getDriftedStackResourceCount());
+		assertEquals(StackDriftStatus.DRIFTED, driftStatus.getStackDriftStatus());
 		verifyAll();
 	}
 	

@@ -36,7 +36,7 @@ public class CfnRepository implements CloudFormRepository {
         this.project = project;
 		stackCache = new StackCache(formationClient, project);
 	}
-	
+
 	@Override
 	public List<StackEntry> getStacks(EnvironmentTag envTag) {
 		List<StackEntry> results = new LinkedList<>();
@@ -48,6 +48,14 @@ public class CfnRepository implements CloudFormRepository {
 		return results;
 	}
 
+	@Override
+	public List<StackEntry> getStacks(ProjectAndEnv projectAndEnv) {
+		if (projectAndEnv.hasEnv()) {
+			return getStacks(projectAndEnv.getEnvTag());
+		}
+		return getStacks();
+	}
+
 	public List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name) {
 		logger.info(format("Find stacks matching env %s and name %s", envTag, name));
 		List<StackEntry> results = new LinkedList<>();
@@ -57,7 +65,6 @@ public class CfnRepository implements CloudFormRepository {
 				results.add(entry);		
 			}
 		}
-		
 		return results;
 	}
 
@@ -258,8 +265,7 @@ public class CfnRepository implements CloudFormRepository {
 		return formationClient.validateTemplate(templateBody);
 	}
 
-	@Override
-	public CFNClient.DriftStatus getStackDrift(String name) throws InterruptedException {
+	private CFNClient.DriftStatus getStackDrift(String name) throws InterruptedException {
 		String refId = formationClient.detectDrift(name);
 		while (formationClient.driftDetectionInProgress(refId)) {
 			logger.info(format("Waiting for stack drift detection to finish ref: %s name %s", refId, name));
@@ -267,6 +273,21 @@ public class CfnRepository implements CloudFormRepository {
 		}
 		return formationClient.getDriftDetectionResult(name, refId);
 	}
+
+	@Override
+	public List<StackEntry> getStackDrifts(ProjectAndEnv projectAndEnv) {
+		List<StackEntry> stacks = getStacks(projectAndEnv);
+		for (StackEntry stackEntry: stacks) {
+			try {
+				CFNClient.DriftStatus  drift = getStackDrift(stackEntry.getStackName());
+				stackEntry.setDriftStatus(drift);
+			} catch (InterruptedException e) {
+				logger.warn("Unable to check drift status of stack " + stackEntry, e);
+			}
+		}
+		return stacks;
+	}
+
 
 	@Override
 	public void deleteStack(String stackName) {

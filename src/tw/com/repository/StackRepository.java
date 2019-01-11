@@ -14,6 +14,9 @@ public interface StackRepository {
 
 	List<StackEntry> getStacks();
 	List<StackEntry> getStacks(EnvironmentTag envTag);
+
+	List<StackEntry> getStacks(ProjectAndEnv projectAndEnv);
+
 	List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name);
 	StackEntry getStacknameByIndex(EnvironmentTag envTag, Integer index) throws WrongNumberOfStacksException;
 
@@ -42,5 +45,5 @@ public interface StackRepository {
 	
 	List<TemplateParameter> validateStackTemplate(String templateContents);
 
-	CFNClient.DriftStatus getStackDrift(String name) throws InterruptedException;
+	List<StackEntry> getStackDrifts(ProjectAndEnv projectAndEnv);
 }

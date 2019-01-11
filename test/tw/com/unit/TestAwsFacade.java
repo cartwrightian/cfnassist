@@ -192,7 +192,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	public void shouldListStacksEnvSupplied() {
 		List<StackEntry> stacks = new LinkedList<>();
 		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), Stack.builder().build()));
-		EasyMock.expect(cfnRepository.getStacks(projectAndEnv.getEnvTag())).andReturn(stacks);
+		EasyMock.expect(cfnRepository.getStacks(projectAndEnv)).andReturn(stacks);
 		
 		replayAll();
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
@@ -201,14 +201,14 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldListStackDrift() throws InterruptedException {
-
+	public void shouldListStackDrift() {
 		List<StackEntry> stacks = new LinkedList<>();
-		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), Stack.builder().stackName("nameB").build()));
-		EasyMock.expect(cfnRepository.getStacks(projectAndEnv.getEnvTag())).andReturn(stacks);
+		Stack stack = Stack.builder().stackName("nameB").build();
+		StackEntry entry = new StackEntry("proj", projectAndEnv.getEnvTag(), stack);
+		entry.setDriftStatus(new CFNClient.DriftStatus("nameB", StackDriftStatus.DRIFTED, 42));
+		stacks.add(entry);
 
-		EasyMock.expect(cfnRepository.getStackDrift("nameB")).
-				andReturn(new CFNClient.DriftStatus("nameB", StackDriftStatus.DRIFTED, 42));
+		EasyMock.expect(cfnRepository.getStackDrifts(projectAndEnv)).andReturn(stacks);
 
 		replayAll();
 		List<StackEntry> results = aws.listStackDrift(projectAndEnv);
@@ -249,19 +249,6 @@ public class TestAwsFacade extends EasyMockSupport {
 		assertEquals(2, results.size());
 		assertTrue(results.contains(new InstanceSummary(idA, "10.1.2.3", tagsA)));
 		assertTrue(results.contains(new InstanceSummary(idB, "10.8.7.6", tagsB)));
-	}
-	
-	@Test 
-	public void shouldListStacksNoEnvSupplied() {
-		List<StackEntry> stacks = new LinkedList<>();
-		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), software.amazon.awssdk.services.cloudformation.model.Stack.builder().build()));
-		EasyMock.expect(cfnRepository.getStacks()).andReturn(stacks);
-		
-		replayAll();
-		ProjectAndEnv pattern = new ProjectAndEnv("someProject", "");
-		List<StackEntry> results = aws.listStacks(pattern);
-		assertEquals(1,results.size());
-		verifyAll();
 	}
 	
 	@Test

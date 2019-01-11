@@ -465,23 +465,11 @@ public class AwsFacade implements ProvidesZones {
 	}
 	
 	public List<StackEntry> listStacks(ProjectAndEnv projectAndEnv) {
-		if (projectAndEnv.hasEnv()) {
-			return cfnRepository.getStacks(projectAndEnv.getEnvTag());
-		}
-		return cfnRepository.getStacks();
+    	return cfnRepository.getStacks(projectAndEnv);
 	}
 
 	public List<StackEntry> listStackDrift(ProjectAndEnv projectAndEnv) {
-		List<StackEntry> stacks = listStacks(projectAndEnv);
-		for (StackEntry stackEntry: stacks) {
-			try {
-				CFNClient.DriftStatus  drift = cfnRepository.getStackDrift(stackEntry.getStackName());
-				stackEntry.setDriftStatus(drift);
-			} catch (InterruptedException e) {
-				logger.warn("Unable to check drift status of stack " + stackEntry, e);
-			}
-		}
-		return stacks;
+    	return cfnRepository.getStackDrifts(projectAndEnv);
 	}
 
 	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
