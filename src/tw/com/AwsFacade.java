@@ -471,6 +471,19 @@ public class AwsFacade implements ProvidesZones {
 		return cfnRepository.getStacks();
 	}
 
+	public List<StackEntry> listStackDrift(ProjectAndEnv projectAndEnv) {
+		List<StackEntry> stacks = listStacks(projectAndEnv);
+		for (StackEntry stackEntry: stacks) {
+			try {
+				CFNClient.DriftStatus  drift = cfnRepository.getStackDrift(stackEntry.getStackName());
+				stackEntry.setDriftStatus(drift);
+			} catch (InterruptedException e) {
+				logger.warn("Unable to check drift status of stack " + stackEntry, e);
+			}
+		}
+		return stacks;
+	}
+
 	public void tidyNonLBAssocStacks(File file, ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
 		String filename = file.getName();
 		String name = FilenameUtils.removeExtension(filename);
@@ -661,4 +674,5 @@ public class AwsFacade implements ProvidesZones {
 	public List<Path> fetchLogs(ProjectAndEnv projectAndEnv, Integer hours) {
 		return logRepository.fetchLogs(projectAndEnv, Duration.ofHours(hours));
 	}
+
 }

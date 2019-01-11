@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
+import tw.com.providers.CFNClient;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -18,6 +19,7 @@ public class StackEntry {
 
     private Optional<Integer> buildNumber = Optional.empty();
     private Optional<Integer> index = Optional.empty();
+    private Optional<CFNClient.DriftStatus> driftStatus = Optional.empty();
 	private Set<Integer> updateIndex = new HashSet<>();
 
 	public StackEntry(String project, EnvironmentTag environmentTag, Stack stack) {
@@ -28,10 +30,21 @@ public class StackEntry {
 	
 	@Override
 	public String toString() {
-		return String.format("StackEntry [env=%s, project=%s, stackName=%s, buildNumber='%s', index='%s']",
-				environmentTag.getEnv(), project, stack.stackName(),
-                (buildNumber.isPresent()?buildNumber.get():""),
-                 (index.isPresent()?index.get():""));
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append(String.format("StackEntry [env=%s, project=%s, stackName=%s",
+						environmentTag.getEnv(), project, stack.stackName()));
+		if (buildNumber.isPresent()) {
+			stringBuilder.append(String.format(" buildNumber='%s'", buildNumber.get()));
+		}
+		if (index.isPresent()) {
+			stringBuilder.append(String.format(" index='%s'", index.get()));
+		}
+		if (driftStatus.isPresent()) {
+			stringBuilder.append(String.format(" index='%s'", driftStatus.get()));
+		}
+
+		stringBuilder.append("]");
+		return stringBuilder.toString();
 	}
 
 	public EnvironmentTag getEnvTag() {
@@ -44,6 +57,10 @@ public class StackEntry {
 
 	public Integer getBuildNumber() {
         return buildNumber.get();
+	}
+
+	public CFNClient.DriftStatus getDriftStatus() {
+		return driftStatus.get();
 	}
 	
 	public StackEntry setBuildNumber(Integer buildNumber) {
@@ -137,5 +154,9 @@ public class StackEntry {
 
 	public Set<Integer> getUpdateIndex() {
 		return updateIndex;
+	}
+
+	public void setDriftStatus(CFNClient.DriftStatus driftStatus) {
+		this.driftStatus = Optional.of(driftStatus);
 	}
 }

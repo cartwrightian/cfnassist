@@ -5,6 +5,7 @@ import tw.com.MonitorStackEvents;
 import tw.com.entity.*;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfStacksException;
+import tw.com.providers.CFNClient;
 
 import java.util.Collection;
 import java.util.List;
@@ -41,5 +42,5 @@ public interface StackRepository {
 	
 	List<TemplateParameter> validateStackTemplate(String templateContents);
 
-
+	CFNClient.DriftStatus getStackDrift(String name) throws InterruptedException;
 }

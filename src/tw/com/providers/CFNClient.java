@@ -147,13 +147,13 @@ public class CFNClient {
 		return cloudFormationClient.describeStackDriftDetectionStatus(request);
 	}
 
-	public DriftStatus getDriftDetectionResult(String detectionId) {
+	public DriftStatus getDriftDetectionResult(String stackName, String detectionId) {
 		DescribeStackDriftDetectionStatusResponse query = getDriftQueryStatus(detectionId);
 		if (query.detectionStatus().equals(StackDriftDetectionStatus.DETECTION_COMPLETE)) {
 			logger.info(String.format("Drift detection failed for query: %s status: %s reason: %s",
 					detectionId,query.detectionStatus(), query.detectionStatusReason()));
 		}
-		return new DriftStatus(query.stackDriftStatus(), query.driftedStackResourceCount());
+		return new DriftStatus(stackName, query.stackDriftStatus(), query.driftedStackResourceCount());
 	}
 	
 	private Tag createTag(String key, String value) {
@@ -208,11 +208,13 @@ public class CFNClient {
 	}
 
 
-	public class DriftStatus {
+	public static class DriftStatus {
 		private final StackDriftStatus stackDriftStatus;
 		private final int driftedStackResourceCount;
+		private final String stackName;
 
-		public DriftStatus(StackDriftStatus stackDriftStatus, int driftedStackResourceCount) {
+		public DriftStatus(String stackName, StackDriftStatus stackDriftStatus, int driftedStackResourceCount) {
+			this.stackName = stackName;
 			this.stackDriftStatus = stackDriftStatus;
 			this.driftedStackResourceCount = driftedStackResourceCount;
 		}
@@ -223,6 +225,19 @@ public class CFNClient {
 
 		public int getDriftedStackResourceCount() {
 			return driftedStackResourceCount;
+		}
+
+		public String getStackName() {
+			return stackName;
+		}
+
+		@Override
+		public String toString() {
+			return "DriftStatus{" +
+					"stackDriftStatus=" + stackDriftStatus +
+					", driftedStackResourceCount=" + driftedStackResourceCount +
+					", stackName='" + stackName + '\'' +
+					'}';
 		}
 	}
 }

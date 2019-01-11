@@ -5,6 +5,7 @@ import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import tw.com.CLIArgBuilder;
@@ -108,7 +109,7 @@ public class TestCommandLineStackOperations {
 		System.setOut(origStream);
 
 		String outputText = new String(stream.toByteArray(), Charset.defaultCharset());
-		CLIArgBuilder.checkForExpectedLine("CfnAssistTestsimpleStack", "CfnAssist", "Test", outputText);
+		CLIArgBuilder.checkForExpectedLine(outputText, "CfnAssistTestsimpleStack", "CfnAssist", "Test", StackStatus.CREATE_COMPLETE.toString());
 
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");
 		assertEquals(0, status);

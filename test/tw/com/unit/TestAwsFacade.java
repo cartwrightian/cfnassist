@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackDriftStatus;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.Tag;
@@ -21,10 +22,7 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.entity.SearchCriteria;
 import tw.com.entity.StackEntry;
 import tw.com.exceptions.*;
-import tw.com.providers.CloudClient;
-import tw.com.providers.IdentityProvider;
-import tw.com.providers.NotificationSender;
-import tw.com.providers.SavesFile;
+import tw.com.providers.*;
 import tw.com.repository.*;
 
 import java.io.File;
@@ -199,6 +197,25 @@ public class TestAwsFacade extends EasyMockSupport {
 		replayAll();
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
 		assertEquals(1, results.size());
+		verifyAll();
+	}
+
+	@Test
+	public void shouldListStackDrift() throws InterruptedException {
+
+		List<StackEntry> stacks = new LinkedList<>();
+		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), Stack.builder().stackName("nameB").build()));
+		EasyMock.expect(cfnRepository.getStacks(projectAndEnv.getEnvTag())).andReturn(stacks);
+
+		EasyMock.expect(cfnRepository.getStackDrift("nameB")).
+				andReturn(new CFNClient.DriftStatus("nameB", StackDriftStatus.DRIFTED, 42));
+
+		replayAll();
+		List<StackEntry> results = aws.listStackDrift(projectAndEnv);
+		assertEquals(1, results.size());
+		StackEntry stackEntry = results.get(0);
+		assertEquals("nameB", stackEntry.getStackName());
+		assertEquals(StackDriftStatus.DRIFTED, stackEntry.getDriftStatus().getStackDriftStatus());
 		verifyAll();
 	}
 

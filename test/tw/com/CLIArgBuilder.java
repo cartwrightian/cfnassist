@@ -1,26 +1,36 @@
 package tw.com;
 
 
-import software.amazon.awssdk.services.cloudformation.model.StackStatus;
-
 import static org.junit.Assert.assertTrue;
 
 public class CLIArgBuilder {
 
-    public static void checkForExpectedLine(String stackName, String project,
-                                            String env, String result) {
-		//String result = stream.toString();
+    public static void checkForExpectedLine(String result, String expectedStackName, String expectedProject,
+                                            String env, String... expectedStatus) {
 		String lines[] = result.split("\\r?\\n");
 		
-		boolean found=false;
+		boolean start=false;
+		boolean end = false;
 		for(String line : lines) {
-			found = line.equals(String.format("%s\t%s\t%s\t%s",stackName, project, env, StackStatus.CREATE_COMPLETE.toString()));
-			if (found) break;
+			start = line.startsWith(String.format("%s\t%s\t%s\t",expectedStackName, expectedProject, env));
+            end = line.endsWith(createEnding(expectedStatus));
+			if (start && end) break;
 		}
-		assertTrue(found);
+		assertTrue(start && end);
 	}
-	
-	public static String[] createSimpleStack(String testName) {
+
+    private static String createEnding(String[] expectedStatus) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < expectedStatus.length; i++) {
+            if (i>0) {
+                builder.append("\t");
+            }
+            builder.append(expectedStatus[i]);
+        }
+        return builder.toString();
+    }
+
+    public static String[] createSimpleStack(String testName) {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
@@ -129,6 +139,14 @@ public class CLIArgBuilder {
             "-ls"
             };
 	}
+
+    public static String[] listStackDrift() {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-drift"
+        };
+    }
 	
 
 	public static String[] listInstances() {

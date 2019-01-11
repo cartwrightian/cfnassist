@@ -16,6 +16,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.lang.String.format;
+
 public class CfnRepository implements CloudFormRepository {
 	private static final Logger logger = LoggerFactory.getLogger(CfnRepository.class);
 
@@ -47,7 +49,7 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	public List<StackEntry> getStacksMatching(EnvironmentTag envTag, String name) {
-		logger.info(String.format("Find stacks matching env %s and name %s", envTag, name));
+		logger.info(format("Find stacks matching env %s and name %s", envTag, name));
 		List<StackEntry> results = new LinkedList<>();
 		for(StackEntry entry : stackCache.getEntries()) {
 			logger.debug("Check if entry matches " + entry);
@@ -61,14 +63,14 @@ public class CfnRepository implements CloudFormRepository {
 
 	@Override
 	public String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId) {
-		logger.info(String.format("Looking for resource matching logicalID: %s for %s",logicalId, envTag));
+		logger.info(format("Looking for resource matching logicalID: %s for %s",logicalId, envTag));
 		List<StackEntry> stacks = getStacks(envTag);
 		for (StackEntry stackEntry : stacks) {
 			String stackName = stackEntry.getStackName();
-			logger.debug(String.format("Checking stack %s for logical id %s", stackName, logicalId));
+			logger.debug(format("Checking stack %s for logical id %s", stackName, logicalId));
 			String maybeHaveId = findPhysicalIdByLogicalId(envTag, stackName, logicalId);
 			if (maybeHaveId != null) {
-				logger.info(String.format(
+				logger.info(format(
 						"Found physicalID: %s for logical ID: %s in stack %s", maybeHaveId, logicalId, stackName));
 				return maybeHaveId;
 			}
@@ -78,19 +80,18 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	private String findPhysicalIdByLogicalId(EnvironmentTag envTag, String stackName, String logicalId) {
-		logger.info(String.format(
+		logger.info(format(
                 "Check Env %s and stack %s for logical ID %s", envTag,
                 stackName, logicalId));
 
 		try {
 			List<StackResource> resources = stackCache.getResourcesForStack(stackName);
-			logger.debug(String.format("Found %s resources for stack %s",
+			logger.debug(format("Found %s resources for stack %s",
 					resources.size(), stackName));
 			for (StackResource resource : resources) {
 				String candidateId = resource.logicalResourceId();
 				String physicalResourceId = resource.physicalResourceId();
-				logger.debug(String
-						.format("Checking for match against resource phyId=%s logId=%s",
+				logger.debug(format("Checking for match against resource phyId=%s logId=%s",
 								physicalResourceId,
 								resource.logicalResourceId()));
 				if (candidateId.equals(logicalId)) {
@@ -110,14 +111,14 @@ public class CfnRepository implements CloudFormRepository {
 		
 		long pause = STATUS_CHECK_INTERVAL_MILLIS;
 
-		logger.info(String.format("Waiting for stack %s to change FROM status %s", stackName, currentStatus));
+		logger.info(format("Waiting for stack %s to change FROM status %s", stackName, currentStatus));
 		StackStatus status = currentStatus;
 		while (status.equals(currentStatus)) {
 			Thread.sleep(pause);
 
 			try {
 				status = formationClient.currentStatus(stackName);
-				logger.debug(String.format("Waiting for status of stack %s, status was %s, pause was %s",
+				logger.debug(format("Waiting for status of stack %s, status was %s, pause was %s",
 						stackName, status, pause));
 				if (pause < MAX_CHECK_INTERVAL_MILLIS) {
 					pause = pause + STATUS_CHECK_INTERVAL_MILLIS;
@@ -132,7 +133,7 @@ public class CfnRepository implements CloudFormRepository {
 				break;
 			}
 		}
-		logger.info(String.format("Stack status changed, status is now %s", status));
+		logger.info(format("Stack status changed, status is now %s", status));
 		return status;
 	}
 
@@ -175,7 +176,7 @@ public class CfnRepository implements CloudFormRepository {
 			throws WrongNumberOfStacksException {
 		Stack stack = formationClient.describeStack(stackName);
 		StackStatus stackStatus = stack.stackStatus();
-		logger.info(String.format("Got status %s for stack %s", stackStatus, stackName));
+		logger.info(format("Got status %s for stack %s", stackStatus, stackName));
 		return stackStatus;
 	}
 
@@ -244,7 +245,7 @@ public class CfnRepository implements CloudFormRepository {
             throw new WrongNumberOfStacksException(1, stacks.size());
         }
         StackEntry stack = stacks.get(0);
-        logger.info(String.format("Found stack %s for %s and index %s", stack, envTag, index));
+        logger.info(format("Found stack %s for %s and index %s", stack, envTag, index));
         return stack;
     }
 
@@ -255,6 +256,16 @@ public class CfnRepository implements CloudFormRepository {
 
 	public List<TemplateParameter> validateStackTemplate(String templateBody) {
 		return formationClient.validateTemplate(templateBody);
+	}
+
+	@Override
+	public CFNClient.DriftStatus getStackDrift(String name) throws InterruptedException {
+		String refId = formationClient.detectDrift(name);
+		while (formationClient.driftDetectionInProgress(refId)) {
+			logger.info(format("Waiting for stack drift detection to finish ref: %s name %s", refId, name));
+			Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
+		}
+		return formationClient.getDriftDetectionResult(name, refId);
 	}
 
 	@Override
@@ -281,13 +292,13 @@ public class CfnRepository implements CloudFormRepository {
 		List<Instance> instances = new LinkedList<>();
 		for (String id : instancesIds) {
 			if (instanceHasCorrectType(typeTag, id)) {
-				logger.info(String.format("Adding instance %s as it matched %s %s",id, AwsFacade.TYPE_TAG, typeTag));
+				logger.info(format("Adding instance %s as it matched %s %s",id, AwsFacade.TYPE_TAG, typeTag));
 				instances.add(Instance.builder().instanceId(id).build());
 			} else {
-				logger.info(String.format("Not adding instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, typeTag));
+				logger.info(format("Not adding instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, typeTag));
 			}	
 		}
-		logger.info(String.format("Found %s instances matching %s and type: %s", instances.size(), criteria, typeTag));
+		logger.info(format("Found %s instances matching %s and type: %s", instances.size(), criteria, typeTag));
 		return instances;
 	}
 	

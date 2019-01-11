@@ -9,7 +9,6 @@ import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.cloudformation.model.Tag;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import tw.com.*;
@@ -275,7 +274,7 @@ public class TestCFNClient {
 		while (formationClient.driftDetectionInProgress(detectionId)) {
 			Thread.sleep(5*1000);
 		}
-		return formationClient.getDriftDetectionResult(detectionId);
+		return formationClient.getDriftDetectionResult(stackName, detectionId);
 	}
 
 	@Test

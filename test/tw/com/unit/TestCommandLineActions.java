@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackDriftStatus;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.*;
@@ -19,10 +20,7 @@ import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
-import tw.com.providers.ArtifactUploader;
-import tw.com.providers.CloudClient;
-import tw.com.providers.ProvidesCurrentIp;
-import tw.com.providers.SavesFile;
+import tw.com.providers.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -251,7 +249,29 @@ public class TestCommandLineActions extends EasyMockSupport {
 		
 		String output = validate(CLIArgBuilder.listStacks());
 
-		CLIArgBuilder.checkForExpectedLine(stackName, project, env, output);
+		CLIArgBuilder.checkForExpectedLine(output, stackName, project, env, StackStatus.CREATE_COMPLETE.toString());
+	}
+
+	@Test
+	public void shouldListDriftStatusForStacks() throws InterruptedException, MissingArgumentException, CfnAssistException {
+		String stackName = "theStackName";
+		String project = "theProject";
+		String stackId = "theStackId";
+		String env = "theEnv";
+
+		List<StackEntry> stackEntries = new LinkedList<>();
+		Stack stack = Stack.builder().stackName(stackName).stackId(stackId).stackStatus(StackStatus.CREATE_COMPLETE).build();
+		StackEntry stackEntry = new StackEntry(project, new EnvironmentTag(env), stack);
+		stackEntry.setDriftStatus(new CFNClient.DriftStatus(stackName, StackDriftStatus.IN_SYNC,0));
+		stackEntries.add(stackEntry);
+
+		EasyMock.expect(facade.listStackDrift(projectAndEnv)).andReturn(stackEntries);
+
+		setFactoryExpectations();
+
+		String output = validate(CLIArgBuilder.listStackDrift());
+
+		CLIArgBuilder.checkForExpectedLine(output, stackName, project, env, StackDriftStatus.IN_SYNC.toString(), "0");
 	}
 
 	@Test
