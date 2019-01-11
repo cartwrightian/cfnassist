@@ -227,7 +227,7 @@ public class TestCFNClient {
 	@Test
 	public void shouldCreateAndThenUpdateAStack() throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
-		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
@@ -259,7 +259,7 @@ public class TestCFNClient {
 	@Test
 	public void shouldCreateAndThenUpdateAStackAddingSNS() throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
-		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
@@ -290,8 +290,8 @@ public class TestCFNClient {
 	}
 	
 	@Test
-	public void shouldValidateTemplates() throws IOException {
-		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK), Charset.defaultCharset());
+	public void shouldValidateTemplatesJSON() throws IOException {
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
 		List<TemplateParameter> result =  formationClient.validateTemplate(contents);
 		
 		assertEquals(4, result.size());
@@ -303,6 +303,25 @@ public class TestCFNClient {
 		}
 		TemplateParameter zoneAParameter = result.get(i);
 		
+		assertEquals("zoneA", zoneAParameter.parameterKey());
+		assertEquals("eu-west-1a", zoneAParameter.defaultValue());
+		assertEquals("zoneADescription", zoneAParameter.description());
+	}
+
+	@Test
+	public void shouldValidateTemplatesYAML() throws IOException {
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_YAML), Charset.defaultCharset());
+		List<TemplateParameter> result =  formationClient.validateTemplate(contents);
+
+		assertEquals(4, result.size());
+
+		int i;
+		for(i=0; i<4; i++) {
+			TemplateParameter parameter = result.get(i);
+			if (parameter.parameterKey().equals("zoneA")) break;
+		}
+		TemplateParameter zoneAParameter = result.get(i);
+
 		assertEquals("zoneA", zoneAParameter.parameterKey());
 		assertEquals("eu-west-1a", zoneAParameter.defaultValue());
 		assertEquals("zoneADescription", zoneAParameter.description());

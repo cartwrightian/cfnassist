@@ -32,7 +32,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -311,7 +310,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		// src files to upload
 		Collection<Parameter> arts = new LinkedList<>();
 		arts.add(createParameter("urlA", FilesForTesting.ACL));
-		arts.add(createParameter("urlB", FilesForTesting.SUBNET_STACK));
+		arts.add(createParameter("urlB", FilesForTesting.SUBNET_STACK_JSON));
 		// locations after upload
 		Parameter uploadA = createParameter("urlA", "fileAUploadLocation");
 		Parameter uploadB = createParameter("urlB", "fileBUploadLocation");
@@ -344,7 +343,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 		Integer buildNumber = 9987;
 		Collection<Parameter> arts = new LinkedList<>();
 		arts.add(createParameter("art1",FilesForTesting.ACL));
-		arts.add(createParameter("art2",FilesForTesting.SUBNET_STACK));
+		arts.add(createParameter("art2",FilesForTesting.SUBNET_STACK_JSON));
 		List<Parameter> uploaded = new LinkedList<>();
 		
 		factory.setProject(EnvironmentSetupForTests.PROJECT);
@@ -568,7 +567,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 
     @Test
 	public void shouldNotAllowSNSWithS3Create() {
-		String artifacts = format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String artifacts = format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
 		
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
@@ -642,7 +641,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void testMustGiveTheBuildNumberWhenUploadingArtifacts() {
-		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -656,7 +655,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	
 	@Test
 	public void testMustGiveTheBucketWhenUploadingArtifacts() {
-		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -681,7 +680,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	@Test
 	public void testUploadArgumentParsingFailsWithoutBucket() {
 		
-		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT,

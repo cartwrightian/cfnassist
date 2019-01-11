@@ -278,7 +278,7 @@ public class CfnRepository implements CloudFormRepository {
 	public List<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException {
 		Collection<String> instancesIds = getAllInstancesFor(criteria);
 		
-		List<Instance> instances = new LinkedList<Instance>();
+		List<Instance> instances = new LinkedList<>();
 		for (String id : instancesIds) {
 			if (instanceHasCorrectType(typeTag, id)) {
 				logger.info(String.format("Adding instance %s as it matched %s %s",id, AwsFacade.TYPE_TAG, typeTag));

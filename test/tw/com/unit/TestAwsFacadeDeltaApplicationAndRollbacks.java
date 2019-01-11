@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -312,7 +311,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 	}
 	
 	private List<File> loadFiles(File folder) {
-		FilenameFilter jsonFilter = new JsonExtensionFilter();
+		FilenameFilter jsonFilter = new TemplateExtensionFilter();
 		File[] files = folder.listFiles(jsonFilter);
 		Arrays.sort(files); // place in lexigraphical order
 		return Arrays.asList(files);

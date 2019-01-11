@@ -125,8 +125,7 @@ public class CFNClient {
 	}
 	
 	private Tag createTag(String key, String value) {
-		Tag tag = Tag.builder().key(key).value(value).build();
-		return tag;
+		return Tag.builder().key(key).value(value).build();
 	}
 
 	public StackNameAndId createStack(ProjectAndEnv projAndEnv,

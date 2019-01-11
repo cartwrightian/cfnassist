@@ -7,7 +7,9 @@ public class FilesForTesting {
 	// eclipse on windows may need you to set working directory to basedir and not workspace
 	private static Path DIR = Paths.get("src","cfnScripts");
 	
-	public static final String SUBNET_STACK = DIR.resolve("subnet.json").toString();
+	public static final String SUBNET_STACK_JSON = DIR.resolve("subnet.json").toString();
+	public static final String SUBNET_STACK_YAML = DIR.resolve("subnet.yaml").toString();
+
 	public static final String SUBNET_STACK_DELTA = DIR.resolve("subnet.delta.json").toString();
 	public static final String SIMPLE_STACK = DIR.resolve("simpleStack.json").toString();
 	public static final String SIMPLE_STACK_WITH_AZ = DIR.resolve("simpleStackWithAZ.json").toString();

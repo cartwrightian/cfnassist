@@ -43,7 +43,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-file", FilesForTesting.SUBNET_STACK,
+                "-file", FilesForTesting.SUBNET_STACK_JSON,
                 "-comment", testName
                 };
 	}
@@ -244,7 +244,7 @@ public class CLIArgBuilder {
 	}
 
 	public static String[] createSubnetStackWithArtifactUpload(Integer buildNumber, String testName) {
-		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String uploads = String.format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
 
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
@@ -259,7 +259,7 @@ public class CLIArgBuilder {
 	}
 
 	public static String[] uploadArtifacts(Integer buildNumber) {
-		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK);
+		String artifacts = String.format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
 
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,

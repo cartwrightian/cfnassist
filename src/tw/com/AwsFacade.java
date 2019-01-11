@@ -225,7 +225,6 @@ public class AwsFacade implements ProvidesZones {
 			throws WrongNumberOfStacksException, NotReadyException,
 			WrongStackStatus, InterruptedException, DuplicateStackException {
 
-		//StackStatus currentStatus = cfnRepository.getStackStatus(stackName);
 		if (cfnRepository.stackExists(stackName)) {
 			logger.warn("Stack already exists: " + stackName);
 			StackStatus currentStatus = cfnRepository.getStackStatus(stackName);
@@ -358,7 +357,7 @@ public class AwsFacade implements ProvidesZones {
 	}
 
 	private List<File> loadFiles(File folder) {
-		FilenameFilter jsonFilter = new JsonExtensionFilter();
+		FilenameFilter jsonFilter = new TemplateExtensionFilter();
 		File[] files = folder.listFiles(jsonFilter);
 		Arrays.sort(files); // place in lexigraphical order
 		return Arrays.asList(files);

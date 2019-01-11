@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A sample template
+Parameters:
+  env:
+    Type: "String"
+  vpc:
+    Type: "String"
+  zoneA:
+    Type: "String"
+    Default: "eu-west-1a"
+    Description: "zoneADescription"
+  zoneB:
+    Type: "String"
+    Default: "eu-west-1b"
+Resources:
+  testSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone:
+        Ref: zoneA
+      CidrBlock: "10.0.10.0/24"
+      Tags:
+        -
+          Key: "Name"
+          Value: "testSubnet"
+        -
+          Key: "TagEnv"
+          Value:
+            Ref: env
+      VpcId:
+        Ref: vpc
+Outputs:
+  SUBNET:
+    Value: !Ref testSubnet
+    Description: "::CFN_TAG"
+  notused:
+    Value: !Ref testSubnet
+    Description: "should not get picked up by cfn assist"
