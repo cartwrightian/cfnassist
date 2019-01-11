@@ -123,6 +123,38 @@ public class CFNClient {
 
 		return tags;
 	}
+
+	public String detectDrift(String stackName) {
+		logger.debug("Check drift for stack: " + stackName);
+		DetectStackDriftRequest request = DetectStackDriftRequest.builder()
+				.stackName(stackName)
+				.build();
+		DetectStackDriftResponse result = cloudFormationClient.detectStackDrift(request);
+		String driftDetectionId = result.stackDriftDetectionId();
+		logger.info(String.format("Drift detection id: %s for stackname %s", driftDetectionId, stackName));
+		return driftDetectionId;
+	}
+
+	public boolean driftDetectionInProgress(String driftDetectionId) {
+		DescribeStackDriftDetectionStatusResponse result = getDriftQueryStatus(driftDetectionId);
+		return result.detectionStatus().equals(StackDriftDetectionStatus.DETECTION_IN_PROGRESS);
+	}
+
+	private DescribeStackDriftDetectionStatusResponse getDriftQueryStatus(String driftDetectionId) {
+		DescribeStackDriftDetectionStatusRequest request = DescribeStackDriftDetectionStatusRequest.builder().
+			stackDriftDetectionId(driftDetectionId)
+			.build();
+		return cloudFormationClient.describeStackDriftDetectionStatus(request);
+	}
+
+	public DriftStatus getDriftDetectionResult(String detectionId) {
+		DescribeStackDriftDetectionStatusResponse query = getDriftQueryStatus(detectionId);
+		if (query.detectionStatus().equals(StackDriftDetectionStatus.DETECTION_COMPLETE)) {
+			logger.info(String.format("Drift detection failed for query: %s status: %s reason: %s",
+					detectionId,query.detectionStatus(), query.detectionStatusReason()));
+		}
+		return new DriftStatus(query.stackDriftStatus(), query.driftedStackResourceCount());
+	}
 	
 	private Tag createTag(String key, String value) {
 		return Tag.builder().key(key).value(value).build();
@@ -175,4 +207,22 @@ public class CFNClient {
 		
 	}
 
+
+	public class DriftStatus {
+		private final StackDriftStatus stackDriftStatus;
+		private final int driftedStackResourceCount;
+
+		public DriftStatus(StackDriftStatus stackDriftStatus, int driftedStackResourceCount) {
+			this.stackDriftStatus = stackDriftStatus;
+			this.driftedStackResourceCount = driftedStackResourceCount;
+		}
+
+		public StackDriftStatus getStackDriftStatus() {
+			return stackDriftStatus;
+		}
+
+		public int getDriftedStackResourceCount() {
+			return driftedStackResourceCount;
+		}
+	}
 }

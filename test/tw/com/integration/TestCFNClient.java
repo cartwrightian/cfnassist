@@ -6,11 +6,10 @@ import org.junit.*;
 import org.junit.rules.TestName;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.model.*;
+import software.amazon.awssdk.services.cloudformation.model.Tag;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.ec2.model.DescribeSubnetsRequest;
-import software.amazon.awssdk.services.ec2.model.DescribeSubnetsResponse;
-import software.amazon.awssdk.services.ec2.model.Subnet;
-import software.amazon.awssdk.services.ec2.model.Vpc;
+import software.amazon.awssdk.services.ec2.model.*;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import tw.com.*;
@@ -195,7 +194,6 @@ public class TestCFNClient {
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
 				polligMonitor, createTagging(test.getMethodName()));
 
-
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
 		assertEquals(StackStatus.CREATE_COMPLETE, status);
 		assertTrue(formationClient.stackExists(stackName));
@@ -223,25 +221,81 @@ public class TestCFNClient {
 		// query resources
 		assertCIDR(nameAndId, cidr, vpcId);
 	}
-	
+
+	@Test
+	public void shouldDetectDrift() throws IOException, CfnAssistException, InterruptedException {
+		String vpcId = mainTestVPC.vpcId();
+		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_YAML), Charset.defaultCharset());
+
+		Collection<Parameter> parameters = createStandardParameters(vpcId);
+		String stackName = "createStackTest";
+		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor,
+				createTagging(test.getMethodName()));
+		deletesStacks.ifPresent(stackName);
+
+		assertEquals(stackName, nameAndId.getStackName());
+
+		StackStatus stackStatus = polligMonitor.waitForCreateFinished(nameAndId);
+		assertEquals(StackStatus.CREATE_COMPLETE, stackStatus);
+
+		CFNClient.DriftStatus status = getStackDrift(stackName);
+		assertEquals(StackDriftStatus.IN_SYNC, status.getStackDriftStatus());
+		assertEquals(0, status.getDriftedStackResourceCount());
+
+		// find the id of the subnet from the stack
+		List<StackResource> resources = formationClient.describeStackResources(stackName);
+		assertEquals(1, resources.size());
+		StackResource subnetResource = resources.get(0);
+		assertEquals("testSubnet", subnetResource.logicalResourceId());
+		String subnetId = subnetResource.physicalResourceId();
+
+		// delete the subnet directly
+		DeleteSubnetRequest deleteSubnetRequest = DeleteSubnetRequest.builder().subnetId(subnetId).build();
+		ec2Client.deleteSubnet(deleteSubnetRequest);
+
+		// wait for deletion
+		DescribeSubnetsRequest describeSubnetsRequest = DescribeSubnetsRequest.builder().subnetIds(subnetId).build();
+		try {
+			while(!ec2Client.describeSubnets(describeSubnetsRequest).subnets().isEmpty()) {
+				Thread.sleep(1000);
+			}
+		} catch (Ec2Exception expected) {
+			assertEquals(400, expected.statusCode());
+		}
+
+		// now check if stack has drifted
+		status = getStackDrift(stackName);
+		assertEquals(StackDriftStatus.DRIFTED, status.getStackDriftStatus());
+		assertEquals(1, status.getDriftedStackResourceCount());
+
+	}
+
+	private CFNClient.DriftStatus getStackDrift(String stackName) throws InterruptedException {
+		String detectionId = formationClient.detectDrift(stackName);
+		while (formationClient.driftDetectionInProgress(detectionId)) {
+			Thread.sleep(5*1000);
+		}
+		return formationClient.getDriftDetectionResult(detectionId);
+	}
+
 	@Test
 	public void shouldCreateAndThenUpdateAStack() throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
-		
+
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor,
                 createTagging(test.getMethodName()));
 		deletesStacks.ifPresent(stackName);
-		
+
 		assertEquals(stackName, nameAndId.getStackName());
-		
+
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
 		assertEquals(StackStatus.CREATE_COMPLETE, status);
-		
+
 		assertCIDR(nameAndId, "10.0.10.0/24", vpcId);
-		
+
 		/////
 		// now update
 		
@@ -308,6 +362,7 @@ public class TestCFNClient {
 		assertEquals("zoneADescription", zoneAParameter.description());
 	}
 
+
 	@Test
 	public void shouldValidateTemplatesYAML() throws IOException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_YAML), Charset.defaultCharset());
@@ -338,10 +393,6 @@ public class TestCFNClient {
 	
 	private Subnet getSubnetDetails(String physicalId) {
 		DescribeSubnetsRequest describeSubnetsRequest = DescribeSubnetsRequest.builder().subnetIds(physicalId).build();
-//		Collection<String> subnetIds = new LinkedList<>();
-//		subnetIds.add(physicalId);
-//		describeSubnetsRequest.setSubnetIds(subnetIds);
-
 		DescribeSubnetsResponse result = ec2Client.describeSubnets(describeSubnetsRequest);
 		assertEquals(1, result.subnets().size());
 		return result.subnets().get(0);
