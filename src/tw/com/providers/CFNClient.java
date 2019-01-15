@@ -149,7 +149,7 @@ public class CFNClient {
 
 	public DriftStatus getDriftDetectionResult(String stackName, String detectionId) {
 		DescribeStackDriftDetectionStatusResponse query = getDriftQueryStatus(detectionId);
-		if (query.detectionStatus().equals(StackDriftDetectionStatus.DETECTION_COMPLETE)) {
+		if (!query.detectionStatus().equals(StackDriftDetectionStatus.DETECTION_COMPLETE)) {
 			logger.info(String.format("Drift detection failed for query: %s status: %s reason: %s",
 					detectionId,query.detectionStatus(), query.detectionStatusReason()));
 		}

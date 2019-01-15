@@ -1,6 +1,7 @@
 package tw.com.repository;
 
 import software.amazon.awssdk.services.cloudformation.model.*;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.ec2.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,9 +13,8 @@ import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.providers.CFNClient;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -276,13 +276,32 @@ public class CfnRepository implements CloudFormRepository {
 
 	@Override
 	public List<StackEntry> getStackDrifts(ProjectAndEnv projectAndEnv) {
+		// name -> query ID
+		Map<String,String> refIds = new HashMap<>();
 		List<StackEntry> stacks = getStacks(projectAndEnv);
-		for (StackEntry stackEntry: stacks) {
+		stacks.forEach(stackEntry -> refIds.put(stackEntry.getStackName(),formationClient.detectDrift(stackEntry.getStackName())));
+
+		Collection<String> stillInProgress = refIds.values();
+		while (!stillInProgress.isEmpty()) {
 			try {
-				CFNClient.DriftStatus  drift = getStackDrift(stackEntry.getStackName());
-				stackEntry.setDriftStatus(drift);
+				Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
+				stillInProgress = stillInProgress.stream().filter(id -> formationClient.driftDetectionInProgress(id)).collect(Collectors.toList());
 			} catch (InterruptedException e) {
-				logger.warn("Unable to check drift status of stack " + stackEntry, e);
+				logger.warn("Exception while checking drift status", e);
+				break;
+			}
+		}
+
+		if (!stillInProgress.isEmpty()) {
+			logger.warn("Unable to check drift status of all stacks");
+		}
+
+		for (StackEntry stackEntry: stacks) {
+			String stackName = stackEntry.getStackName();
+			String refId = refIds.get(stackName);
+			if (!stillInProgress.contains(refId)) {
+				CFNClient.DriftStatus drift = formationClient.getDriftDetectionResult(stackName, refId);
+				stackEntry.setDriftStatus(drift);
 			}
 		}
 		return stacks;
