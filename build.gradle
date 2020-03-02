@@ -14,10 +14,8 @@ apply plugin: 'maven'
 apply plugin: 'application'
 apply plugin: 'idea'
 
-def snapNumber = System.getenv("SNAP_PIPELINE_COUNTER") ?: "0"
-def buildNumber = System.getenv("TRAVIS_BUILD_NUMBER") ?: snapNumber
+def buildNumber = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
 
-//def antBuild = new groovy.util.AntBuilder()
 version = '1.1.'+buildNumber
 
 repositories {
@@ -140,14 +138,6 @@ distributions {
     }
 }
 
-//task cfnassist << {
-//    antBuild.taskdef(name: 'cfnassist', classname: 'tw.com.ant.CfnAssistAntTask') {
-//        classpath {
-//            fileset(dir: jar.destinationDir, includes: jar.archiveName)
-//        }
-//    }
-//}
-
 task cfnassist {
     doLast {
         ant.taskdef(name: 'cfnassist', classname: 'tw.com.ant.CfnAssistAntTask') {
@@ -168,18 +158,7 @@ task upload(dependsOn: ['distZip','installDist','cfnassist']) {
 }
 upload.mustRunAfter installDist
 
-task release(dependsOn: ['upload', 'tagRelease'])
-
-//import org.ajoberstar.grgit.*
-//ext.repo = Grgit.open(project.file('.'))
-
-//task tagRelease << {
-//  repo.tag.add {
-//    name = 'cfnassist-'+version
-//    message = "Release of cfnassist ${version}"
-//  }
-//  repo.push(tags: true)
-//}
+task release(dependsOn: ['upload'])
 
 idea {
   module {
