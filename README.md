@@ -19,8 +19,7 @@ Previous Releases
 
 Build Status
 ------------
-Travis
-[![Build Status](https://travis-ci.org/cartwrightian/cfnassist.svg?branch=master)](https://travis-ci.org/cartwrightian/cfnassist)
+[![CircleCI](https://circleci.com/gh/cartwrightian/cfnassist.svg?style=svg)](https://circleci.com/gh/cartwrightian/cfnassist)
 
 Key Features
 ------------
