@@ -46,7 +46,7 @@ dependencies {
             'org.apache.ant:ant:1.9.6'
 
     testImplementation 'junit:junit:4.11',
-            'org.easymock:easymock:3.2'
+            'org.easymock:easymock:4.3'
 }
 
 mainClassName = 'tw.com.commandline.Main'
