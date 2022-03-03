@@ -1,18 +1,15 @@
 
 
-buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies {
-    classpath 'org.ajoberstar:gradle-git:1.2.0'
-  }
-}
+//buildscript {
+//  dependencies {
+//    classpath 'org.ajoberstar:gradle-git:1.2.0'
+//  }
+//}
 
 apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'application'
 apply plugin: 'idea'
+apply plugin: 'application'
+
 
 def buildNumber = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
 
@@ -22,13 +19,13 @@ repositories {
     mavenCentral()
 }
 
-configurations {
-	compileOnly
-	testRuntime.extendsFrom(compileOnly)
-}
+//configurations {
+//	compileOnly
+//	testRuntime.extendsFrom(compileOnly)
+//}
 
 dependencies {
-    compile 'org.slf4j:slf4j-api:1.7.25',
+    implementation 'org.slf4j:slf4j-api:1.7.25',
             'ch.qos.logback:logback-classic:1.2.3',
             // aws sdk 2
             'software.amazon.awssdk:protocol-core:2.2.0',
@@ -48,20 +45,28 @@ dependencies {
             'commons-net:commons-net:3.6',
             'org.apache.ant:ant:1.9.6'
 
-    testCompile 'junit:junit:4.11',
+    testImplementation 'junit:junit:4.11',
             'org.easymock:easymock:3.2'
 }
 
 mainClassName = 'tw.com.commandline.Main'
 
 sourceSets {
-	main { java { srcDirs 'src' } }
-	test { java { srcDirs 'test' } }
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['test']
+        }
+    }
 }
 
-sourceSets.all {
-    compileClasspath += configurations.compileOnly
-}
+//sourceSets.all {
+//    compileClasspath += configurations.compileOnly
+//}
 
 test {
     environment 'testEnvVar', 'testValue'
@@ -74,7 +79,7 @@ test {
     }
 }
 
-task unit(type: Test) {
+task unit(type: Test, dependsOn: compileJava) {
     environment 'testEnvVar', 'testValue'
     filter {
         includeTestsMatching "tw.com.unit.*"
@@ -85,7 +90,7 @@ task unit(type: Test) {
     }
 }
 
-task integration(type: Test) {
+task integration(type: Test,  dependsOn: compileJava) {
     filter {
         includeTestsMatching "tw.com.integration.*"
     }
@@ -95,7 +100,7 @@ task integration(type: Test) {
     }
 }
 
-task acceptance(type: Test) {
+task acceptance(type: Test,  dependsOn: compileJava) {
     filter {
         includeTestsMatching "tw.com.acceptance.*"
     }
@@ -105,31 +110,32 @@ task acceptance(type: Test) {
     }
 }
 
-jar {
-    manifest {
-        attributes(
-                "Manifest-Version": "1."+buildNumber,
-                "Class-Path": configurations.compileOnly.collect { it.getName() }.join(' '),
-                "Main-Class": mainClassName
-        )
-    }
-    baseName = project.name + '-all'
-    from({ configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }) {
-        exclude "META-INF/*.SF"
-        exclude "META-INF/*.DSA"
-        exclude "META-INF/*.RSA"
-    }
-}
+//jar {
+//    manifest {
+//        attributes(
+//                "Manifest-Version": "1."+buildNumber,
+//                "Class-Path": configurations.compileOnly.collect { it.getName() }.join(' '),
+//                "Main-Class": mainClassName
+//        )
+//    }
+//    baseName = project.name + '-all'
+//    from({ configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }) {
+//        exclude "META-INF/*.SF"
+//        exclude "META-INF/*.DSA"
+//        exclude "META-INF/*.RSA"
+//    }
+//}
 
 distributions {
     main {
-        baseName = project.name
+//        baseName = project.name
         contents {
             from { 'README.md' }
             from { 'testAntTasks.xml"' }
             into('conf') {
                 from 'conf'
-            } into('licenses') {
+            }
+            into('licenses') {
                 from 'lib'
                 include '**/*LICENSE.txt'
                 includeEmptyDirs = false
@@ -160,10 +166,4 @@ upload.mustRunAfter installDist
 
 task release(dependsOn: ['upload'])
 
-idea {
-  module {
-        scopes.TEST.plus += [ configurations.compileOnly ]
-        scopes.PROVIDED.plus += [ configurations.compileOnly ]
-  }
-}
 
