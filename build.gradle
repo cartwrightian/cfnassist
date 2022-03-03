@@ -44,7 +44,7 @@ dependencies {
             'software.amazon.awssdk:cloudwatchlogs:2.2.0',
             
             'commons-io:commons-io:2.6',
-            'commons-cli:commons-cli:1.4',
+            'commons-cli:commons-cli:1.5.0',
             'commons-net:commons-net:3.6',
             'org.apache.ant:ant:1.9.6'
 
