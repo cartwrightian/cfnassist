@@ -34,7 +34,7 @@ dependencies {
             'software.amazon.awssdk:protocol-core:2.2.0',
             'software.amazon.awssdk:aws-query-protocol:2.2.0',
             'software.amazon.awssdk:ec2:2.2.0',
-            'software.amazon.awssdk:cloudformation:2.2.0',
+            'software.amazon.awssdk:cloudformation:2.17.142',
             'software.amazon.awssdk:elasticloadbalancing:2.2.0',
             'software.amazon.awssdk:sns:2.2.0',
             'software.amazon.awssdk:sqs:2.2.0',
