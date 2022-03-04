@@ -57,12 +57,12 @@ public class AwsFacade implements ProvidesZones {
 	private final CloudRepository cloudRepository;
 	private final NotificationSender notificationSender;
 	private final MonitorStackEvents monitor;
-	private final IdentityProvider identityProvider;
+	private final tw.com.providers.IdentityProvider identityProvider;
 	private final LogRepository logRepository;
 
     public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository,
                      ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
-                     IdentityProvider identityProvider, LogRepository logRepository) {
+					 tw.com.providers.IdentityProvider identityProvider, LogRepository logRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;

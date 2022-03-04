@@ -24,3 +24,56 @@ jobs:
           path: ~/repo/build/test-results
       - store_artifacts:
           path: ~/repo/build/reports/tests
+  integration:
+    docker:
+      - image: circleci/openjdk:15-jdk-buster-node
+    resource_class: medium
+    working_directory: ~/repo
+
+    environment:
+      #JAVA_TOOL_OPTIONS: -Xmx3500m
+      TERM: dumb
+      AWS_REGION: eu-west-1
+      CFN_ASSIST_PROJECT: CfnAssist
+      testEnvVar: testValue
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-gradle-deps-{{ checksum "build.gradle" }}
+      - run: gradle dependencies --no-daemon
+      - run:
+          name: integration
+          command: gradle integration --no-daemon
+      - store_test_results:
+          path: ~/repo/build/test-results
+      - store_artifacts:
+          path: ~/repo/build/reports/tests
+  acceptance:
+    docker:
+      - image: circleci/openjdk:15-jdk-buster-node
+    resource_class: medium
+    working_directory: ~/repo
+
+    environment:
+      #JAVA_TOOL_OPTIONS: -Xmx3500m
+      TERM: dumb
+      AWS_REGION: eu-west-1
+      CFN_ASSIST_PROJECT: CfnAssist
+      testEnvVar: testValue
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-gradle-deps-{{ checksum "build.gradle" }}
+      - run: gradle dependencies --no-daemon
+      - run:
+          name: integration
+          command: gradle acceptance --no-daemon
+      - store_test_results:
+          path: ~/repo/build/test-results
+      - store_artifacts:
+          path: ~/repo/build/reports/tests
+          

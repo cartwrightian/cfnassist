@@ -12,6 +12,7 @@ import tw.com.providers.ProvidesCurrentIp;
 import java.io.IOException;
 import java.util.Collection;
 
+@Deprecated
 public class WhitelistAction extends SharedAction {
 
 	private static final int INDEX_OF_PORT_ARG = 1;

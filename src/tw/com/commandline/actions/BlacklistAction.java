@@ -12,6 +12,7 @@ import tw.com.providers.ProvidesCurrentIp;
 import java.io.IOException;
 import java.util.Collection;
 
+@Deprecated
 public class BlacklistAction extends SharedAction {
 
 	@SuppressWarnings("static-access")
