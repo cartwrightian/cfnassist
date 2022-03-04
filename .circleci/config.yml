@@ -76,4 +76,16 @@ jobs:
           path: ~/repo/build/test-results
       - store_artifacts:
           path: ~/repo/build/reports/tests
-          
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+      - integration:
+          requires:
+            - build
+      - acceptance:
+          requires:
+            - integration
+
