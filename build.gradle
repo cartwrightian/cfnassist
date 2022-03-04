@@ -1,28 +1,16 @@
 
 
-//buildscript {
-//  dependencies {
-//    classpath 'org.ajoberstar:gradle-git:1.2.0'
-//  }
-//}
-
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'application'
 
-
 def buildNumber = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
 
-version = '1.1.'+buildNumber
+version = '1.2.'+buildNumber
 
 repositories {
     mavenCentral()
 }
-
-//configurations {
-//	compileOnly
-//	testRuntime.extendsFrom(compileOnly)
-//}
 
 project.ext {
     awsSdk = '2.17.142'
@@ -31,6 +19,7 @@ project.ext {
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36',
             'ch.qos.logback:logback-classic:1.2.10'
+            'ch.qos.logback:logback-core:1.2.10'
 
     implementation 'software.amazon.awssdk:protocol-core:'+awsSdk,
             'software.amazon.awssdk:aws-query-protocol:'+awsSdk,
@@ -47,7 +36,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.11.0',
             'commons-cli:commons-cli:1.5.0',
             'commons-net:commons-net:3.8.0',
-            'org.apache.ant:ant:1.9.6',
+            'org.apache.ant:ant:1.10.12',
             'com.fasterxml.jackson.core:jackson-core:2.13.0',
             'com.fasterxml.jackson.core:jackson-databind:2.13.0'
 
@@ -67,23 +56,10 @@ sourceSets {
         java {
             srcDirs = ['test']
         }
+        resources.srcDir file('test/resources')
     }
 }
 
-//sourceSets.all {
-//    compileClasspath += configurations.compileOnly
-//}
-
-test {
-    environment 'testEnvVar', 'testValue'
-    filter {
-        includeTestsMatching "tw.com.unit.*"
-    }
-    testLogging {
-        events "failed"
-        exceptionFormat "full"
-    }
-}
 
 task unit(type: Test, dependsOn: compileJava) {
     environment 'testEnvVar', 'testValue'
@@ -97,6 +73,7 @@ task unit(type: Test, dependsOn: compileJava) {
 }
 
 task integration(type: Test,  dependsOn: compileJava) {
+    testLogging.showStandardStreams = true
     filter {
         includeTestsMatching "tw.com.integration.*"
     }
@@ -107,6 +84,7 @@ task integration(type: Test,  dependsOn: compileJava) {
 }
 
 task acceptance(type: Test,  dependsOn: compileJava) {
+    testLogging.showStandardStreams = true
     filter {
         includeTestsMatching "tw.com.acceptance.*"
     }
@@ -116,60 +94,17 @@ task acceptance(type: Test,  dependsOn: compileJava) {
     }
 }
 
-//jar {
-//    manifest {
-//        attributes(
-//                "Manifest-Version": "1."+buildNumber,
-//                "Class-Path": configurations.compileOnly.collect { it.getName() }.join(' '),
-//                "Main-Class": mainClassName
-//        )
-//    }
-//    baseName = project.name + '-all'
-//    from({ configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }) {
-//        exclude "META-INF/*.SF"
-//        exclude "META-INF/*.DSA"
-//        exclude "META-INF/*.RSA"
-//    }
-//}
-
 distributions {
     main {
 //        baseName = project.name
         contents {
             from { 'README.md' }
-            from { 'testAntTasks.xml"' }
             into('conf') {
                 from 'conf'
             }
-            into('licenses') {
-                from 'lib'
-                include '**/*LICENSE.txt'
-                includeEmptyDirs = false
-            }
         }
     }
 }
 
-task cfnassist {
-    doLast {
-        ant.taskdef(name: 'cfnassist', classname: 'tw.com.ant.CfnAssistAntTask') {
-            classpath {
-                fileset(dir: jar.destinationDir, includes: jar.archiveName)
-            }
-        }
-    }
-}
-
-task upload(dependsOn: ['distZip','installDist','cfnassist']) {
-    doLast {
-        antBuild.cfnassist(buildNumber: buildNumber, bucketname: 'cfnassist-release') {
-            Artifact(name: 'package', value: distZip.archivePath)
-            S3Create()
-        }
-    }
-}
-upload.mustRunAfter installDist
-
-task release(dependsOn: ['upload'])
 
 
