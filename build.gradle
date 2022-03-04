@@ -44,7 +44,11 @@ dependencies {
             'org.easymock:easymock:4.3'
 }
 
-mainClassName = 'tw.com.commandline.Main'
+//mainClassName = 'tw.com.commandline.Main'
+
+application {
+    mainClass = 'tw.com.commandline.Main'
+}
 
 sourceSets {
     main {

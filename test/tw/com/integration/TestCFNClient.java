@@ -179,7 +179,7 @@ public class TestCFNClient {
 	@Test
 	public void shouldQueryCreatedStack() throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
-		String cidr = "10.0.10.0/24";
+		String cidr = "10.0.42.0/24";
 		
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_CIDR_PARAM), Charset.defaultCharset());
 		
@@ -283,17 +283,19 @@ public class TestCFNClient {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
 
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
+
 		String stackName = "createStackTest";
+		deletesStacks.ifPresent(stackName);
+
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor,
                 createTagging(test.getMethodName()));
-		deletesStacks.ifPresent(stackName);
 
 		assertEquals(stackName, nameAndId.getStackName());
 
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
 		assertEquals(StackStatus.CREATE_COMPLETE, status);
 
-		assertCIDR(nameAndId, "10.0.10.0/24", vpcId);
+		assertCIDR(nameAndId, "10.0.42.0/24", vpcId);
 
 		/////
 		// now update
@@ -316,16 +318,17 @@ public class TestCFNClient {
 		
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
+		deletesStacks.ifPresent(stackName);
+
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
 				polligMonitor, createTagging(test.getMethodName()));
-		deletesStacks.ifPresent(stackName);
-		
+
 		assertEquals(stackName, nameAndId.getStackName());
 		
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
 		assertEquals(StackStatus.CREATE_COMPLETE, status);
 		
-		assertCIDR(nameAndId, "10.0.10.0/24", vpcId);
+		assertCIDR(nameAndId, "10.0.42.0/24", vpcId);
 		
 		/////
 		// now update

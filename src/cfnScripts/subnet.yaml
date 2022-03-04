@@ -18,7 +18,7 @@ Resources:
     Properties:
       AvailabilityZone:
         Ref: zoneA
-      CidrBlock: "10.0.10.0/24"
+      CidrBlock: "10.0.42.0/24"
       Tags:
         -
           Key: "Name"
