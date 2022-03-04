@@ -47,7 +47,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.11.0',
             'commons-cli:commons-cli:1.5.0',
             'commons-net:commons-net:3.8.0',
-            'org.apache.ant:ant:1.9.6',
+            'org.apache.ant:ant:1.10.12',
             'com.fasterxml.jackson.core:jackson-core:2.13.0',
             'com.fasterxml.jackson.core:jackson-databind:2.13.0'
 
