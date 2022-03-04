@@ -37,7 +37,7 @@ dependencies {
             'software.amazon.awssdk:sqs:2.2.0',
             'software.amazon.awssdk:iam:2.2.0',
             'software.amazon.awssdk:rds:2.2.0',
-            'software.amazon.awssdk:s3:2.2.0',
+            'software.amazon.awssdk:s3:2.17.142',
             'software.amazon.awssdk:cloudwatchlogs:2.2.0',
             
             'commons-io:commons-io:2.11.0',
