@@ -28,7 +28,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.25',
             'ch.qos.logback:logback-classic:1.2.10',
             // aws sdk 2
-            'software.amazon.awssdk:protocol-core:2.2.0',
+            'software.amazon.awssdk:protocol-core:2.17.142',
             'software.amazon.awssdk:aws-query-protocol:2.2.0',
             'software.amazon.awssdk:ec2:2.2.0',
             'software.amazon.awssdk:cloudformation:2.2.0',
