@@ -20,32 +20,32 @@ import tw.com.exceptions.NotReadyException;
 import tw.com.exceptions.WrongNumberOfStacksException;
 import tw.com.exceptions.WrongStackStatus;
 import tw.com.repository.CheckStackExists;
+import tw.com.repository.StackRepository;
 
 public class SNSMonitor extends StackMonitor  {
 	private static final Logger logger = LoggerFactory.getLogger(SNSMonitor.class);
 	private static final int LIMIT = 50; // total delay = LIMIT * SNSEventSource.QUEUE_READ_TIMEOUT_SECS
 	private static final String STACK_RESOURCE_TYPE = "AWS::CloudFormation::Stack";
 	
-	private List<StackStatus> deleteAborts = Arrays.asList(DELETE_ABORTS);
-	private NotificationProvider notifProvider;
-	private CheckStackExists checkStackExists;
+	private final List<StackStatus> deleteAborts = Arrays.asList(DELETE_ABORTS);
+	private final NotificationProvider notifProvider;
+	private final CheckStackExists checkStackExists;
 
-	public SNSMonitor(NotificationProvider eventSource, CheckStackExists checkStackExists) {
+	public SNSMonitor(NotificationProvider eventSource, CheckStackExists checkStackExists, StackRepository cfnRepository) {
+		super(cfnRepository);
 		this.notifProvider = eventSource;
 		this.checkStackExists = checkStackExists;
 	}
 
 	@Override
-	public StackStatus waitForCreateFinished(StackNameAndId stackId)
-			throws InterruptedException,
-			NotReadyException, WrongStackStatus {
+	public StackStatus waitForCreateFinished(StackNameAndId stackId) throws NotReadyException, WrongStackStatus {
 		guardForInit();
 		return waitForStatus(stackId, StackStatus.CREATE_COMPLETE, Arrays.asList(CREATE_ABORTS));
 	}
 	
 	@Override
 	public StackStatus waitForDeleteFinished(StackNameAndId stackId)
-			throws WrongNumberOfStacksException, InterruptedException, NotReadyException, WrongStackStatus {
+			throws WrongNumberOfStacksException, NotReadyException, WrongStackStatus {
 		guardForInit();
 		if (!checkStackExists.stackExists(stackId.getStackName())) {
 			return StackStatus.DELETE_COMPLETE; // assume already gone
@@ -54,14 +54,13 @@ public class SNSMonitor extends StackMonitor  {
 	}
 
 	@Override
-	public StackStatus waitForUpdateFinished(StackNameAndId stackId) throws InterruptedException,
-			WrongStackStatus, NotReadyException {
+	public StackStatus waitForUpdateFinished(StackNameAndId stackId) throws WrongStackStatus, NotReadyException {
 		guardForInit();
 		return waitForStatus(stackId, StackStatus.UPDATE_COMPLETE, Arrays.asList(UPDATE_ABORTS));
 	}
 	
 	@Override
-	public StackStatus waitForRollbackComplete(StackNameAndId id) throws NotReadyException, InterruptedException, WrongStackStatus {
+	public StackStatus waitForRollbackComplete(StackNameAndId id) throws NotReadyException, WrongStackStatus {
 		guardForInit();
 		return waitForStatus(id, StackStatus.ROLLBACK_COMPLETE, Arrays.asList(ROLLBACK_ABORTS));
 	}
@@ -136,6 +135,7 @@ public class SNSMonitor extends StackMonitor  {
 			}		
 		}
 		logger.error("Timed out waiting for status to change");
+		logStackEvents(stackId.getStackName());
 		throw new WrongStackStatus(stackId, requiredStatus, StackStatus.CREATE_FAILED);
 	}
 
@@ -150,6 +150,7 @@ public class SNSMonitor extends StackMonitor  {
 				}
 				if (aborts.contains(status)) {
 					logger.error(String.format("Got an failure status %s while waiting for status %s", status, requiredStatus));
+					logStackEvents(stackId.getStackName());
 					throw new WrongStackStatus(stackId, requiredStatus, status);
 				}
 			}	
@@ -167,7 +168,7 @@ public class SNSMonitor extends StackMonitor  {
 	private boolean isMatchingStackNotif(StackNotification notification, StackNameAndId stackId) {
 		if (notification.getStackId().equals(stackId.getStackId())) {
 			logger.info(String.format("Received notification for %s status was %s", notification.getResourceType(), notification.getStatus()));
-			if (notification.getStatus().equals(StackStatus.CREATE_FAILED.toString())) {
+			if (notification.getStatus().equals(StackStatus.CREATE_FAILED)) {
 				logger.warn(String.format("Failed to create resource of type %s reason was %s",notification.getResourceType(),notification.getStatusReason()));
 			}
 			return notification.getResourceType().equals(STACK_RESOURCE_TYPE); 
@@ -197,7 +198,7 @@ public class SNSMonitor extends StackMonitor  {
 	private Collection<String> getArns() throws NotReadyException {
 		String arn = notifProvider.getSNSArn();
 		logger.info("Setting arn for sns events to " + arn);
-		Collection<String> arns = new LinkedList<String>();
+		Collection<String> arns = new LinkedList<>();
 		arns.add(arn);
 		return arns;
 	}

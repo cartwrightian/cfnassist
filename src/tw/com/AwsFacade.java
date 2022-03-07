@@ -4,8 +4,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
@@ -14,7 +14,10 @@ import software.amazon.awssdk.services.iam.model.User;
 import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
-import tw.com.providers.*;
+import tw.com.providers.CloudClient;
+import tw.com.providers.NotificationSender;
+import tw.com.providers.ProvidesCurrentIp;
+import tw.com.providers.SavesFile;
 import tw.com.repository.*;
 
 import java.io.File;
@@ -35,6 +38,7 @@ public class AwsFacade implements ProvidesZones {
 
     @Deprecated
 	private static final String UPDATE_EXTENSTION_LEGACY = ".delta"; // use update instead
+
     private static final String UPDATE_EXTENSTION = ".update";
 
     private static final Logger logger = LoggerFactory.getLogger(AwsFacade.class);
@@ -212,7 +216,7 @@ public class AwsFacade implements ProvidesZones {
 	private void createOutputTags(Stack createdStack, ProjectAndEnv projAndEnv) {
 		List<Output> outputs = createdStack.outputs();
 		outputs.stream().filter(output -> shouldCreateTag(output.description())).forEach(output -> {
-			logger.info("Should create output tag for " + output.toString());
+			logger.info("Should create output tag for " + output);
 			vpcRepository.setVpcTag(projAndEnv, output.outputKey(), output.outputValue());
 		});
 	}
@@ -359,6 +363,10 @@ public class AwsFacade implements ProvidesZones {
 	private List<File> loadFiles(File folder) {
 		FilenameFilter jsonFilter = new TemplateExtensionFilter();
 		File[] files = folder.listFiles(jsonFilter);
+		if (files==null) {
+			logger.error("null files for " + folder.getAbsolutePath() + " and filter " +jsonFilter);
+			return Collections.emptyList();
+		}
 		Arrays.sort(files); // place in lexigraphical order
 		return Arrays.asList(files);
 	}

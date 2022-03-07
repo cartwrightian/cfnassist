@@ -4,9 +4,11 @@ import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
+import org.easymock.internal.EasyMockProperties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.NotificationProvider;
 import tw.com.SNSMonitor;
@@ -15,8 +17,11 @@ import tw.com.entity.DeletionsPending;
 import tw.com.entity.StackNameAndId;
 import tw.com.entity.StackNotification;
 import tw.com.exceptions.*;
+import tw.com.repository.CfnRepository;
 import tw.com.repository.CheckStackExists;
+import tw.com.repository.StackRepository;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,11 +40,13 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	private int deltaIndexResult;
 	private static final String STACK_RESOURCE_TYPE = "AWS::CloudFormation::Stack";
 	private static final int LIMIT = 50;
-	
+	private StackRepository stackRepository;
+
 	@Before 
 	public void beforeEachTestRuns() {
 		eventSource = createMock(NotificationProvider.class);
-		monitor = new SNSMonitor(eventSource, this);
+		stackRepository = createMock(StackRepository.class);
+		monitor = new SNSMonitor(eventSource, this, stackRepository);
 		stackName = "aStackName";
 		stackId = "aStackId";
 		stackNameAndId = new StackNameAndId(stackName, stackId);
@@ -111,6 +118,9 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 		
 		setExpectationsForInitAndReady();
 		setExpectationsRepondInProgressUntilLimit(inProgress);
+
+		List<StackEvent> stackEvents = Collections.emptyList();
+		EasyMock.expect(stackRepository.getStackEvents(stackNameAndId.getStackName())).andReturn(stackEvents);
 			
 		replayAll();
 		monitor.init();
@@ -133,7 +143,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	}
 	
 	@Test 
-	public void shouldThrowIfNotifIsNotInit() throws WrongStackStatus, InterruptedException {
+	public void shouldThrowIfNotifIsNotInit() throws WrongStackStatus {
 		isStackFound= true;
 		EasyMock.expect(eventSource.isInit()).andReturn(false);
 		

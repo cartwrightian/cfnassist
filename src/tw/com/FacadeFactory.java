@@ -125,7 +125,7 @@ public class FacadeFactory implements ProvidesNow {
 			SNSEventSource eventSource = new SNSEventSource(snsClient, sqsClient);
 			MonitorStackEvents monitor;
 			if (snsMonitoring) {	
-				monitor = new SNSMonitor(eventSource, cfnRepository);
+				monitor = new SNSMonitor(eventSource, cfnRepository, cfnRepository);
 			} else {
 				monitor = new PollingStackMonitor(cfnRepository);
 			}

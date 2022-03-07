@@ -16,12 +16,13 @@ import tw.com.exceptions.WrongNumberOfStacksException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class CFNClient {
 	private static final Logger logger = LoggerFactory.getLogger(CFNClient.class);
 
-	private CloudFormationClient cloudFormationClient;
+	private final CloudFormationClient cloudFormationClient;
 
 	public CFNClient(CloudFormationClient cloudFormationClient) {
 		this.cloudFormationClient = cloudFormationClient;
@@ -79,11 +80,19 @@ public class CFNClient {
 		throw new WrongNumberOfStacksException(0,1);
 	}
 
+	// todo pass down stack id and name, name is not uique for diagnostics
 	public List<StackEvent> describeStackEvents(String stackName) {
+		logger.info("Get statck events for " + stackName);
 		DescribeStackEventsRequest request = DescribeStackEventsRequest.builder().stackName(stackName).build();
 
 		DescribeStackEventsResponse result = cloudFormationClient.describeStackEvents(request);
-		return result.stackEvents();
+
+		if (result.hasStackEvents()) {
+			return result.stackEvents();
+		} else {
+			logger.error("No stack events for " + stackName);
+			return Collections.emptyList();
+		}
 	}
 
 	public List<TemplateParameter> validateTemplate(String contents) {

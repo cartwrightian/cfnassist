@@ -73,7 +73,7 @@ public class TestCFNClient {
 		CloudRepository cloudRepository = new CloudRepository(cloudClient);
 		CfnRepository cfnRepository = new CfnRepository(formationClient, cloudRepository, EnvironmentSetupForTests.PROJECT);
 		polligMonitor = new PollingStackMonitor(cfnRepository );
-		snsMonitor = new SNSMonitor(snsNotifProvider, cfnRepository);
+		snsMonitor = new SNSMonitor(snsNotifProvider, cfnRepository, cfnRepository);
 		snsMonitor.init();
 		
 		deletesStacks = new DeletesStacks(cfnClient);
