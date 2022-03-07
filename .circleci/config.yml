@@ -80,10 +80,10 @@ jobs:
   release:
     docker:
       - image: circleci/openjdk:15-jdk-buster-node
-      resource_class: medium
-      working_directory: ~/repo
-      environment:
-        TERM: dumb
+    resource_class: medium
+    working_directory: ~/repo
+    environment:
+      TERM: dumb
 
     steps:
         - checkout
