@@ -77,6 +77,29 @@ jobs:
       - store_artifacts:
           path: ~/repo/build/reports/tests
 
+  release:
+    docker:
+      - image: circleci/openjdk:15-jdk-buster-node
+      resource_class: medium
+      working_directory: ~/repo
+      environment:
+        TERM: dumb
+
+    steps:
+        - checkout
+        - restore_cache:
+            keys:
+              - v1-gradle-deps-{{ checksum "build.gradle" }}
+        - run: gradle dependencies --no-daemon
+        - run:
+            name: distributions
+            command: gradle distZip --no-daemon
+        -run:
+            name: githubRelease
+            command: |
+              go install github.com/tcnksm/ghr@latest
+              gradle release
+
 workflows:
   version: 2
   build:
@@ -88,4 +111,10 @@ workflows:
       - acceptance:
           requires:
             - integration
-
+      - hold:
+          type: approval
+          requires:
+            - acceptance
+      - release:
+          requires:
+            - hold

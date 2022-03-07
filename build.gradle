@@ -4,7 +4,22 @@ apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'application'
 
+ext.currentGitSha = { ->
+    def result = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git'
+        args 'rev-parse', 'HEAD'
+        standardOutput = result
+    }
+    return result.toString().replaceAll("(?:\\n|\\r)", "")
+}
+
 def buildNumber = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
+def githubToken = System.getenv("GITHUB_TOKEN")
+def gitUser = System.getenv("CIRCLE_PROJECT_USERNAME") ?: System.getenv("GIT_USERNAME")
+def gitProject = System.getenv("CIRCLE_PROJECT_REPONAME") ?: System.getenv("GIT_PROJECT")
+def gitSha = System.getenv("CIRCLE_SHA1") ?: currentGitSha()
+def goPath = System.getenv("GOPATH") ?: "./go"
 
 version = '1.2.'+buildNumber
 
@@ -18,8 +33,8 @@ project.ext {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36',
-            'ch.qos.logback:logback-classic:1.2.10'
-            'ch.qos.logback:logback-core:1.2.10'
+            'ch.qos.logback:logback-classic:1.2.11'
+            'ch.qos.logback:logback-core:1.2.11'
 
     implementation 'software.amazon.awssdk:protocol-core:'+awsSdk,
             'software.amazon.awssdk:aws-query-protocol:'+awsSdk,
@@ -37,8 +52,8 @@ dependencies {
             'commons-cli:commons-cli:1.5.0',
             'commons-net:commons-net:3.8.0',
             'org.apache.ant:ant:1.10.12',
-            'com.fasterxml.jackson.core:jackson-core:2.13.0',
-            'com.fasterxml.jackson.core:jackson-databind:2.13.0'
+            'com.fasterxml.jackson.core:jackson-core:2.13.2',
+            'com.fasterxml.jackson.core:jackson-databind:2.13.2'
 
     testImplementation 'junit:junit:4.13.2',
             'org.easymock:easymock:4.3'
@@ -76,6 +91,8 @@ task unit(type: Test, dependsOn: compileJava) {
     }
 }
 
+
+
 task integration(type: Test,  dependsOn: compileJava) {
     testLogging.showStandardStreams = true
     filter {
@@ -108,6 +125,11 @@ distributions {
             }
         }
     }
+}
+
+task release(type:Exec, dependsOn: distZip) {
+    executable  goPath+'/bin/ghr'
+    args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
 }
 
 
