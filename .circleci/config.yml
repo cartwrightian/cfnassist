@@ -86,19 +86,19 @@ jobs:
       TERM: dumb
 
     steps:
-        - checkout
-        - restore_cache:
-            keys:
-              - v1-gradle-deps-{{ checksum "build.gradle" }}
-        - run: gradle dependencies --no-daemon
-        - run:
-            name: distributions
-            command: gradle distZip --no-daemon
-        -run:
-            name: githubRelease
-            command: |
-              go install github.com/tcnksm/ghr@latest
-              gradle release
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-gradle-deps-{{ checksum "build.gradle" }}
+      - run: gradle dependencies --no-daemon
+      - run:
+          name: distributions
+          command: gradle distZip --no-daemon
+      - run:
+          name: githubRelease
+          command: |
+            go install github.com/tcnksm/ghr@latest
+            gradle release
 
 workflows:
   version: 2
