@@ -76,6 +76,9 @@ jobs:
           path: ~/repo/build/test-results
       - store_artifacts:
           path: ~/repo/build/reports/tests
+      - run:
+          name: buildRelease
+          command: gradle distZip
       - persist_to_workspace:
           root: build
           paths:

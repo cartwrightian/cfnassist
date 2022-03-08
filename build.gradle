@@ -14,7 +14,7 @@ ext.currentGitSha = { ->
     return result.toString().replaceAll("(?:\\n|\\r)", "")
 }
 
-def buildNumber = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
+def buildNumber = System.getenv("CIRCLE_WORKFLOW_ID") ?: "0"
 def githubToken = System.getenv("GITHUB_TOKEN")
 def gitUser = System.getenv("CIRCLE_PROJECT_USERNAME") ?: System.getenv("GIT_USERNAME")
 def gitProject = System.getenv("CIRCLE_PROJECT_REPONAME") ?: System.getenv("GIT_PROJECT")
