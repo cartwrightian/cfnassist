@@ -76,29 +76,23 @@ jobs:
           path: ~/repo/build/test-results
       - store_artifacts:
           path: ~/repo/build/reports/tests
+      - persist_to_workspace:
+          root: build
+          paths:
+            - distributions
 
   release:
     docker:
-      - image: circleci/openjdk:15-jdk-buster-node
-    resource_class: medium
-    working_directory: ~/repo
-    environment:
-      TERM: dumb
-
+      - image: circleci/golang:1.8
     steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - v1-gradle-deps-{{ checksum "build.gradle" }}
-      - run: gradle dependencies --no-daemon
+      - attach_workspace:
+          at: ./release
       - run:
-          name: distributions
-          command: gradle distZip --no-daemon
-      - run:
-          name: githubRelease
+          name: "Publish Release on GitHub"
           command: |
-            go install github.com/tcnksm/ghr@latest
-            gradle release
+            go get github.com/tcnksm/ghr
+            VERSION="1.2.$CIRCLE_WORKFLOW_ID"
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./release/
 
 workflows:
   version: 2
