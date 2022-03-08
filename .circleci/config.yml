@@ -95,7 +95,7 @@ jobs:
           command: |
             go install github.com/tcnksm/ghr@latest
             VERSION="1.2.$CIRCLE_BUILD_NUM"
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./release/
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./release/distributions
 
 workflows:
   version: 2
