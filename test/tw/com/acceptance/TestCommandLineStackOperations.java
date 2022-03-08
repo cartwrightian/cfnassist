@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,13 +45,13 @@ public class TestCommandLineStackOperations {
 	String testName = "";
 	
 	@Rule
-    public Timeout globalTimeout = new Timeout(5*60*1000);
+    public Timeout globalTimeout = new Timeout(5*60, TimeUnit.SECONDS);
 	
 	@Before
 	public void beforeEveryTestRun() {
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
-		EnvironmentSetupForTests.getMainProjectAndEnv();
+//		EnvironmentSetupForTests.getMainProjectAndEnv();
 		
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
 		deletesStacks = new DeletesStacks(cfnClient);
@@ -58,6 +59,7 @@ public class TestCommandLineStackOperations {
 			.ifPresent("CfnAssistTest01createSubnet")
 			.ifPresent("CfnAssistTest02createAcls")
 			.ifPresent("CfnAssistTestsimpleStack")
+			.ifPresent("CfnAssistTestsubnetWithParam")
 			.ifPresent("CfnAssistTestsubnet")
 			.ifPresent("CfnAssist876TestelbAndInstance")
             .ifPresent("CfnAssistTestsimpleStackWithAZ");
@@ -108,7 +110,7 @@ public class TestCommandLineStackOperations {
 
 		System.setOut(origStream);
 
-		String outputText = new String(stream.toByteArray(), Charset.defaultCharset());
+		String outputText = stream.toString(Charset.defaultCharset());
 		CLIArgBuilder.checkForExpectedLine(outputText, "CfnAssistTestsimpleStack", "CfnAssist", "Test", StackStatus.CREATE_COMPLETE.toString());
 
 		deletesStacks.ifPresent("CfnAssistTestsimpleStack");

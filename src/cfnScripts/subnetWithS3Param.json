@@ -28,7 +28,7 @@
 				"AvailabilityZone":{
 					"Ref":"zoneA"
 				},
-				"CidrBlock":"10.0.10.0/24",
+				"CidrBlock":"10.0.43.0/24",
 				"Tags":[
 					{
 						"Key":"Name",

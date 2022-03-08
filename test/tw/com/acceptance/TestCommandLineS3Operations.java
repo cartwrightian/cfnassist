@@ -61,7 +61,8 @@ public class TestCommandLineS3Operations {
 		deletesStacks.ifPresent(EnvironmentSetupForTests.TEMPORARY_STACK)
 			.ifPresent("CfnAssistTest01createSubnet")
 			.ifPresent("CfnAssistTest02createAcls")
-			.ifPresent("CfnAssistTestsimpleStack");
+			.ifPresent("CfnAssistTestsimpleStack")
+			.ifPresent("CfnAssist9987TestsubnetWithS3Param");
 		deletesStacks.act();
 		testName = test.getMethodName();
 	}
@@ -72,7 +73,7 @@ public class TestCommandLineS3Operations {
 			s3Client.deleteObject(DeleteObjectRequest.builder().bucket(EnvironmentSetupForTests.BUCKET_NAME).key(KEY_B).build());
 		} 
 		catch(S3Exception exception) {
-			System.out.println(exception);
+			System.out.println(exception.toString());
 		}	
 	}
 
