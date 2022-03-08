@@ -86,7 +86,7 @@ jobs:
 
   release:
     docker:
-      - image: circleci/golang:1.8
+      - image: cimg/go:1.17.8
     steps:
       - attach_workspace:
           at: ./release
