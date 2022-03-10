@@ -12,15 +12,14 @@ import tw.com.providers.ProvidesCurrentIp;
 import java.io.IOException;
 import java.util.Collection;
 
-@Deprecated
-public class WhitelistAction extends SharedAction {
+public class AllowCurrentIPAction extends SharedAction {
 
 	private static final int INDEX_OF_PORT_ARG = 1;
 
 	@SuppressWarnings("static-access")
-	public WhitelistAction() {
-		createOptionWithArgs("whitelist",
-				"Whitelist current ip (i.e. add to the security group) for ELB tagged with type tag, supply tag & port",
+	public AllowCurrentIPAction() {
+		createOptionWithArgs("allowCurrentIP",
+				"Allow current ip (i.e. add to the security group) for ELB tagged with type tag, supply tag & port",
 				2);
 	}
 

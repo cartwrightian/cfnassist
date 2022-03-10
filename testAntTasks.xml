@@ -5,7 +5,12 @@
 	<target name="cfnTask" >
 		<taskdef name="cfnassist" classname="tw.com.ant.CfnAssistAntTask">
 			<classpath>
-				<pathelement location="build/libs/cfnassist-all-1.1.0.jar"/>
+				<fileset dir="build/libs">
+					<include name="*.jar"/>
+				</fileset>
+				<fileset dir="build/dependencies">
+					<include name="*.jar"/>
+				</fileset>
 			</classpath>
 		</taskdef>
 	</target>
@@ -111,17 +116,17 @@
 			</cfnassist>
 	</target>
 
-	<target name="testElbAcccessControl" depends="cfnTask,testWhitelist,testBlacklist,testAllowBlockhost"/>
+	<target name="testElbAcccessControl" depends="cfnTask,testAllowCurrentIP,testBlockCurrentIP,testAllowBlockhost"/>
 
-	<target name="testWhitelist" depends="cfnTask">
-			<cfnassist  project="CfnAssist" env="Test">
-				<WhiteList tag="web" port="8080"/>
+	<target name="testAllowCurrentIP" depends="cfnTask">
+			<cfnassist project="CfnAssist" env="Test">
+				<AllowCurrentIP tag="web" port="8080"/>
 			</cfnassist>
 	</target>
 
-	<target name="testBlacklist" depends="cfnTask">
-			<cfnassist  project="CfnAssist" env="Test">
-				<BlackList tag="web" port="8080"/>
+	<target name="testBlockCurrentIP" depends="cfnTask">
+			<cfnassist project="CfnAssist" env="Test">
+				<BlockCurrentIP tag="web" port="8080"/>
 			</cfnassist>
 	</target>
 

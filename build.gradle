@@ -132,5 +132,9 @@ task release(type:Exec, dependsOn: distZip) {
     args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
 }
 
+task copyDependencies(type: Copy) {
+    from configurations.default
+    into 'build/dependencies'
+}
 
 

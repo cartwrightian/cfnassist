@@ -441,15 +441,15 @@ Two diagrams will be generated for each VPC, one for the network configuration a
 19.Manage ELB Security Group access
 -----------------------------------
 
-This is helpful if you need to lock down access to a web site during development & testing while still allowing your current 
-location to access it. 
+This is helpful if you need to lock down access to a web site during development & testing while still allowing your 
+current location to access it. 
 
-`cfnassist -env Dev -whitelist web 80`
+`cfnassist -env Dev -allowCurrentIP web 80`
 
-This will update the Security Group for the Dev environment's ELB to allow access to port 80 from your current public IP.
-To revoke the access use this command (from the same location/public IP!)
+This will update the Security Group for the Dev environment's ELB to allow access to port 80 from your current 
+public IP. To revoke the access use this command (from the same location/public IP!)
 
-`cfnassist -env Dev -blacklist web 80`
+`cfnassist -env Dev -blockCurrentIP web 80`
 
 If need be you can use the aws console or cli tool to upadte the ELB secuity group, for example if you forget to revoke access 
 before leaving a location.

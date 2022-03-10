@@ -1,21 +1,21 @@
 package tw.com.ant;
 
-import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
-import tw.com.commandline.actions.BlacklistAction;
+import tw.com.commandline.actions.AllowCurrentIPAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class BlacklistElement implements ActionElement {
+public class AllowCurrentIPElement implements ActionElement {
 	private String tag;
 	private String port;
 	
-	public BlacklistElement() {
+	public AllowCurrentIPElement() {
 		
 	}
 
@@ -30,10 +30,11 @@ public class BlacklistElement implements ActionElement {
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
 			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
-			throws IOException, InterruptedException,
+			throws IOException,
+			InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		
-		BlacklistAction action = new BlacklistAction();
+		AllowCurrentIPAction action = new AllowCurrentIPAction();
 		
 		action.validate(projectAndEnv, cfnParams, artifacts, tag, port);
 		action.invoke(factory, projectAndEnv, cfnParams, artifacts, tag, port);

@@ -21,10 +21,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private String bucketName;
 	private boolean snsMonitoring;
 	private boolean capabilityIAM;
-	private Collection<Param> params;
-	private Collection<Param> artifactParams;
+	private final Collection<Param> params;
+	private final Collection<Param> artifactParams;
 	
-	private List<ActionElement> actionElements;
+	private final List<ActionElement> actionElements;
 	
 	public CfnAssistAntTask() {
 		snsMonitoring = false;
@@ -96,11 +96,11 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		actionElements.add(diagramsElement);
 	}
 	
-	public void addConfiguredWhitelist(WhitelistElement whitelistElement) {
-		actionElements.add(whitelistElement);
+	public void addConfiguredAllowCurrentIP(AllowCurrentIPElement allowCurrentIPElement) {
+		actionElements.add(allowCurrentIPElement);
 	}
 	
-	public void addConfiguredBlacklist(BlacklistElement blacklistElement) { actionElements.add(blacklistElement); }
+	public void addConfiguredBlockCurrentIP(BlockCurrentIPElement blockCurrentIPElement) { actionElements.add(blockCurrentIPElement); }
 
 	public void addConfiguredAllowHost(AllowhostElement allowhostElement) { actionElements.add(allowhostElement); }
 

@@ -225,7 +225,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-whitelist", type, port.toString()
+                "-allowCurrentIP", type, port.toString()
                 };
 	}
 
@@ -249,7 +249,7 @@ public class CLIArgBuilder {
         return new String[]{
                 "-env", EnvironmentSetupForTests.ENV,
                 "-project", EnvironmentSetupForTests.PROJECT,
-                "-blacklist", type, port.toString()
+                "-blockCurrentIP", type, port.toString()
                 };
 	}
 

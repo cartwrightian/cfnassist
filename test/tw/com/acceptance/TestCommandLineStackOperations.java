@@ -195,13 +195,13 @@ public class TestCommandLineStackOperations {
 		assertEquals(0,result);
 		
 		Integer port = 8080;
-		String[] whitelist = CLIArgBuilder.allowlistCurrentIP(typeTag, port);
-		main = new Main(whitelist);
+		String[] allowlistCurrentIP = CLIArgBuilder.allowlistCurrentIP(typeTag, port);
+		main = new Main(allowlistCurrentIP);
 		result = main.parse();
 		assertEquals(0,result);
 		
-		String[] blacklist = CLIArgBuilder.blockCurrentIP(typeTag, port);
-		main = new Main(blacklist);
+		String[] blockCurrentIP = CLIArgBuilder.blockCurrentIP(typeTag, port);
+		main = new Main(blockCurrentIP);
 		result = main.parse();
 		assertEquals(0,result);
 		

@@ -12,13 +12,12 @@ import tw.com.providers.ProvidesCurrentIp;
 import java.io.IOException;
 import java.util.Collection;
 
-@Deprecated
-public class BlacklistAction extends SharedAction {
+public class BlockCurrentIPAction extends SharedAction {
 
 	@SuppressWarnings("static-access")
-	public BlacklistAction() {
-		createOptionWithArgs("blacklist",
-                "Blacklist (i.e remove from security group) current ip for ELB tagged with type tag for port", 2);
+	public BlockCurrentIPAction() {
+		createOptionWithArgs("blockCurrentIP",
+                "Block (i.e remove from security group) current ip for ELB tagged with type tag for port", 2);
 	}
 
     @Override
