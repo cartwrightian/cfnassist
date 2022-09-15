@@ -32,7 +32,7 @@ project.ext {
 }
 
 dependencies {
-    implementation 'org.slf4j:slf4j-api:1.7.36',
+    implementation 'org.slf4j:slf4j-api:2.0.1',
             'ch.qos.logback:logback-classic:1.2.11'
             'ch.qos.logback:logback-core:1.2.11'
 
