@@ -33,7 +33,7 @@ project.ext {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.36',
-            'ch.qos.logback:logback-classic:1.2.11'
+            'ch.qos.logback:logback-classic:1.4.4'
             'ch.qos.logback:logback-core:1.2.11'
 
     implementation 'software.amazon.awssdk:protocol-core:'+awsSdk,
