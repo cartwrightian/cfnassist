@@ -56,7 +56,7 @@ dependencies {
             'com.fasterxml.jackson.core:jackson-databind:2.13.2.2'
 
     testImplementation 'junit:junit:4.13.2',
-            'org.easymock:easymock:4.3'
+            'org.easymock:easymock:5.1.0'
 }
 
 //mainClassName = 'tw.com.commandline.Main'
