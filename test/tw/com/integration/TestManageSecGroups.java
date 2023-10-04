@@ -15,6 +15,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -45,18 +47,21 @@ public class TestManageSecGroups {
     }
 
     private static void deleteGroupIfPresent() {
-        try {
-            DescribeSecurityGroupsRequest describeSecurityGroupsRequest = DescribeSecurityGroupsRequest.
-                    builder().groupNames(GROUP_NAME).build();
+        DescribeSecurityGroupsRequest describeSecurityGroupsRequest = DescribeSecurityGroupsRequest.
+                builder().
+                build();
 
-            DescribeSecurityGroupsResponse existing = ec2Client.describeSecurityGroups(describeSecurityGroupsRequest);
-            if (existing.securityGroups().size()>0) {
-                DeleteSecurityGroupRequest deleteGroup = DeleteSecurityGroupRequest.builder().groupName(GROUP_NAME).build();
-                ec2Client.deleteSecurityGroup(deleteGroup);
-            }
-        } catch (Ec2Exception exception) {
-            // no op - thrown if group does not exist
-        }
+        DescribeSecurityGroupsResponse existing = ec2Client.describeSecurityGroups(describeSecurityGroupsRequest);
+
+        Set<SecurityGroup> present = existing.securityGroups().stream().
+                filter(securityGroup -> securityGroup.groupName().equals(GROUP_NAME)).collect(Collectors.toSet());
+
+        present.forEach(securityGroup -> {
+            DeleteSecurityGroupRequest deleteGroup = DeleteSecurityGroupRequest.builder().
+                    groupId(securityGroup.groupId()).build();
+            ec2Client.deleteSecurityGroup(deleteGroup);
+        });
+
     }
 
     @AfterClass
