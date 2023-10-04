@@ -2,6 +2,7 @@ package tw.com.integration;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -101,7 +102,7 @@ public class TestCloudClient {
         assertTrue(zones.containsKey("a"));
         assertTrue(zones.containsKey("b"));
 	}
-	
+
 	@Test
 	public void testShouldBeAbleToGetInstanceById() throws WrongNumberOfInstancesException {
 		instance = EnvironmentSetupForTests.createSimpleInstance(ec2Client);

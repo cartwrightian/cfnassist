@@ -38,6 +38,7 @@ public class TestManageSecGroups {
 
         CreateSecurityGroupRequest createRequest = CreateSecurityGroupRequest.builder().
                 description("test group").
+                vpcId(EnvironmentSetupForTests.MAIN_VPC_FOR_TEST).
                 groupName(GROUP_NAME).build();
         CreateSecurityGroupResponse result = ec2Client.createSecurityGroup(createRequest);
         groupId = result.groupId();

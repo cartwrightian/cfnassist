@@ -44,8 +44,8 @@ public class TestCommandLineS3Operations {
 	private VpcRepository vpcRepository;
 	private DeletesStacks deletesStacks;
 	private ProjectAndEnv projectAndEnv;
-	private static String filenameA = FilenameUtils.getName(FilesForTesting.ACL);
-	private static String filenameB = FilenameUtils.getName(FilesForTesting.SUBNET_STACK_JSON);
+	private static final String filenameA = FilenameUtils.getName(FilesForTesting.ACL);
+	private static final String filenameB = FilenameUtils.getName(FilesForTesting.SUBNET_STACK_JSON);
 	private static final String KEY_A = BUILD_NUMBER+"/"+filenameA;
 	private static final String KEY_B = BUILD_NUMBER+"/"+filenameB;	
 	

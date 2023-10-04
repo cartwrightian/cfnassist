@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.elasticloadbalancing.model.*;
 public class LoadBalancerClient {
 	private static final Logger logger = LoggerFactory.getLogger(LoadBalancerClient.class);
 
-	private ElasticLoadBalancingClient elbClient;
+	private final ElasticLoadBalancingClient elbClient;
 
 	public LoadBalancerClient(ElasticLoadBalancingClient elbClient) {
 		this.elbClient = elbClient;
@@ -35,8 +35,7 @@ public class LoadBalancerClient {
 		logger.info("ELB Add instance call result: " + result.toString());	
 	}
 
-	public List<Instance> degisterInstancesFromLB(List<Instance> toRemove,
-			String loadBalancerName) {
+	public List<Instance> deregisterInstancesFromLB(List<Instance> toRemove, String loadBalancerName) {
 		
 		DeregisterInstancesFromLoadBalancerRequest.Builder request= DeregisterInstancesFromLoadBalancerRequest.builder();
 		request.instances(toRemove);

@@ -210,6 +210,10 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	private void addActiveRoute(String routeTableId, String subnetId, Route route, Cidr subnet) throws CfnAssistException {
 		String destination = getDestination(route);
 		String cidr = subnetAsCidrString(subnet);
+
+		if (destination==null) {
+			 throw new CfnAssistException("Could not find destination for " + route);
+		}
 		
 		if (!destination.equals("local")) { 
 			String diagramId = formRouteTableIdForDiagram(subnetId, routeTableId);
@@ -230,9 +234,13 @@ public class VPCDiagramBuilder extends CommonBuilder {
 	}
 		
 	private String getDestination(Route route) {
+		// TODO Need better way of dealing with all the different types could encounter here
 		String dest = route.gatewayId();
 		if (dest==null) {
 			dest = route.instanceId(); // api docs say this is a NAT instance, but could it be any instance?
+		}
+		if (dest==null) {
+			dest = route.natGatewayId();
 		}
 		return dest;
 	}

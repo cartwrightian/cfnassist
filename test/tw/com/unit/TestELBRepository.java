@@ -161,7 +161,7 @@ public class TestELBRepository extends EasyMockSupport {
 		elbClient.registerInstances(instancesToAdd, "lbName");
 		EasyMock.expectLastCall();
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(updatedLoadBalancers);
-		EasyMock.expect(elbClient.degisterInstancesFromLB(toRemove, "lbName")).andReturn(instancesToAdd);
+		EasyMock.expect(elbClient.deregisterInstancesFromLB(toRemove, "lbName")).andReturn(instancesToAdd);
 		
 		replayAll();
 		List<Instance> result = elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag");

@@ -14,16 +14,16 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class VpcTestBuilder {
-	private List<Subnet> subnets;
-	private List<RouteTable> routeTables;
-	private List<Address> eips;
-	private List<LoadBalancerDescription> loadBalancers;
-	private List<DBInstance> databases;
-	private List<Instance> instances;
-	private String vpcId;
-	private List<NetworkAcl> acls;
-	private List<SecurityGroup> securityGroups;
-	private List<Route> routes;
+	private final List<Subnet> subnets;
+	private final List<RouteTable> routeTables;
+	private final List<Address> eips;
+	private final List<LoadBalancerDescription> loadBalancers;
+	private final List<DBInstance> databases;
+	private final List<Instance> instances;
+	private final String vpcId;
+	private final List<NetworkAcl> acls;
+	private final List<SecurityGroup> securityGroups;
+	private final List<Route> routes;
 
 	//
 	private Vpc vpc;

@@ -52,8 +52,10 @@ public class EnvironmentSetupForTests {
     public static final String AVAILABILITY_ZONE = "eu-west-1c";
     public static final String S3_PREFIX = "https://s3.amazonaws.com/"+BUCKET_NAME;
 
-    private static final String AMI_FOR_INSTANCE = "ami-08935252a36e25f85"; //"ami-9c7ad8eb"; // eu amazon linux instance
-	public static final String VPC_ID_FOR_ALT_ENV = "vpc-21e5ee43";
+    private static final String AMI_FOR_INSTANCE =  "ami-0f3164307ee5d695a"; //"ami-08935252a36e25f85";
+	public static final String MAIN_VPC_FOR_TEST = "vpc-38d62752";
+	public static final String VPC_ID_FOR_ALT_ENV =  "vpc-24e4624f"; //"vpc-21e5ee43";
+	public static final String TEST_SUBNET_FOR_MAIN_VPC = "subnet-0c70801c424a8f4f1";
     //
 	///////////////
 	
@@ -111,7 +113,7 @@ public class EnvironmentSetupForTests {
 		return new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ALT_ENV);
 	}
 	
-	public static StackNameAndId createTemporarySimpleStack(CloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
+	public static void createTemporarySimpleStack(CloudFormationClient cfnClient, String vpcId, String arn) throws IOException {
 		File file = new File(FilesForTesting.SIMPLE_STACK);
 
 		CreateStackRequest.Builder createStackRequestBuilder = CreateStackRequest.builder().
@@ -128,7 +130,7 @@ public class EnvironmentSetupForTests {
 		}
 		createStackRequestBuilder.parameters(parameters);
 		CreateStackResponse result = cfnClient.createStack(createStackRequestBuilder.build());
-		return new StackNameAndId(TEMPORARY_STACK, result.stackId());
+		new StackNameAndId(TEMPORARY_STACK, result.stackId());
 	}
 	
 	private static Parameter createParam(String key, String value) {
@@ -195,9 +197,7 @@ public class EnvironmentSetupForTests {
 	}
 
 	public static software.amazon.awssdk.services.cloudformation.model.Tag createCfnStackTAG(String key, String value) {
-		software.amazon.awssdk.services.cloudformation.model.Tag tag
-				= software.amazon.awssdk.services.cloudformation.model.Tag.builder().key(key).value(value).build();
-		return tag;
+        return software.amazon.awssdk.services.cloudformation.model.Tag.builder().key(key).value(value).build();
 	}
 
 	public static List<Tag> createExpectedEc2Tags(ProjectAndEnv projAndEnv, String comment) {
@@ -223,8 +223,12 @@ public class EnvironmentSetupForTests {
 
 	public static Instance createSimpleInstance(Ec2Client ec2Client) {
 		RunInstancesRequest runInstancesRequest = RunInstancesRequest.builder().
-				instanceType(InstanceType.T1_MICRO).imageId(AMI_FOR_INSTANCE).
-				minCount(1).maxCount(1).build();
+				instanceType(InstanceType.T2_MICRO).
+				imageId(AMI_FOR_INSTANCE).
+				minCount(1).
+				maxCount(1).
+				subnetId(TEST_SUBNET_FOR_MAIN_VPC).
+				build();
 
 		RunInstancesResponse instancesResults = ec2Client.runInstances(runInstancesRequest);
 		List<Instance> instances = instancesResults.instances();

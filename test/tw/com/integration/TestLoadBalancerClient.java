@@ -13,10 +13,12 @@ import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.LoadBalancerClient;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static tw.com.EnvironmentSetupForTests.TEST_SUBNET_FOR_MAIN_VPC;
 
 public class TestLoadBalancerClient  {
 	
@@ -84,7 +86,7 @@ public class TestLoadBalancerClient  {
 		}
 		assertTrue(found);
 		
-		client.degisterInstancesFromLB(instances, LB_NAME);		
+		client.deregisterInstancesFromLB(instances, LB_NAME);
 		
 		lbDescription = getUpToDateLBDescription();
 		results = lbDescription.instances();
@@ -108,7 +110,9 @@ public class TestLoadBalancerClient  {
 		CreateLoadBalancerRequest createLoadBalancerRequest = CreateLoadBalancerRequest.builder().
 				loadBalancerName(LB_NAME).
 				listeners(listener).
-				availabilityZones(EnvironmentSetupForTests.AVAILABILITY_ZONE).tags(createTags()).build();
+				subnets(Collections.singleton(TEST_SUBNET_FOR_MAIN_VPC)).
+				//availabilityZones(EnvironmentSetupForTests.AVAILABILITY_ZONE).
+				tags(createTags()).build();
 		elbClient.createLoadBalancer(createLoadBalancerRequest);
 	}
 	

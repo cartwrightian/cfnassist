@@ -22,9 +22,9 @@ import software.amazon.awssdk.services.ec2.model.Vpc;
 public class ELBRepository {
 	private static final Logger logger = LoggerFactory.getLogger(ELBRepository.class);
 
-	private LoadBalancerClient elbClient;
-	private VpcRepository vpcRepository;
-	private ResourceRepository cfnRepository;
+	private final LoadBalancerClient elbClient;
+	private final VpcRepository vpcRepository;
+	private final ResourceRepository cfnRepository;
 	
 	public ELBRepository(LoadBalancerClient elbClient, VpcRepository vpcRepository, ResourceRepository cfnRepository) {
 		this.elbClient = elbClient;
@@ -113,7 +113,7 @@ public class ELBRepository {
 		if (allMatchingInstances.size()==0) {
 			logger.warn(String.format("No instances matched %s and type tag %s (%s)", projAndEnv, typeTag, AwsFacade.TYPE_TAG));
 		} else {	
-			logger.info(String.format("Regsister matching %s instances with the LB %s ", instancesToAdd.size(),lbName));
+			logger.info(String.format("Register matching %s instances with the LB %s ", instancesToAdd.size(),lbName));
 			elbClient.registerInstances(instancesToAdd, lbName);	
 		}
 		return instancesToAdd;
@@ -165,7 +165,7 @@ public class ELBRepository {
 		String loadBalancerName = elb.loadBalancerName();
 		logger.info("Removing instances from ELB " + loadBalancerName);
 
-		return elbClient.degisterInstancesFromLB(toRemove,loadBalancerName);
+		return elbClient.deregisterInstancesFromLB(toRemove,loadBalancerName);
 
 	}
 
