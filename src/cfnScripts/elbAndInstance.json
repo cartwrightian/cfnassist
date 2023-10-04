@@ -15,20 +15,7 @@
 		}	
 	},
 	"Resources":{
-		"internetGateway":{
-			"Type":"AWS::EC2::InternetGateway"
-		},
-		"AttachGateway":{
-			"Type":"AWS::EC2::VPCGatewayAttachment",
-			"Properties":{
-				"VpcId":{
-					"Ref":"vpc"
-				},
-				"InternetGatewayId":{
-					"Ref":"internetGateway"
-				}		
-			}
-		},
+
 		"vpcSubnet":{
 			"Type":"AWS::EC2::Subnet",
 			"Properties":{
@@ -56,7 +43,6 @@
         },
 		"loadBalancer":{
 			"Type":"AWS::ElasticLoadBalancing::LoadBalancer",
-			"DependsOn" : "AttachGateway",
 			"Properties":{
 				"HealthCheck":{
 					"HealthyThreshold":"2",

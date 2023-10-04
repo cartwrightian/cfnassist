@@ -25,6 +25,8 @@ import tw.com.repository.VpcRepository;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -73,7 +75,7 @@ public class TestCommandLineS3Operations {
 			s3Client.deleteObject(DeleteObjectRequest.builder().bucket(EnvironmentSetupForTests.BUCKET_NAME).key(KEY_B).build());
 		} 
 		catch(S3Exception exception) {
-			System.out.println(exception.toString());
+			System.out.println(exception);
 		}	
 	}
 
@@ -99,9 +101,14 @@ public class TestCommandLineS3Operations {
 		assertEquals("deploy failed", 0, result);
 		
 		Vpc vpcId = vpcRepository.getCopyOfVpc(projectAndEnv);
-		List<Subnet> subnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpcId);
-		assertEquals(1, subnets.size());
-		List<Tag> tags = subnets.get(0).tags();
+		List<Subnet> allSubnets = EnvironmentSetupForTests.getSubnetFors(ec2Client, vpcId);
+		// +1 for existing test subnet
+		assertEquals(2, allSubnets.size());
+
+		List<Subnet> withTags = allSubnets.stream().filter(Subnet::hasTags).toList();
+		assertFalse(withTags.isEmpty());
+
+		List<Tag> tags = withTags.get(0).tags();
 
 		List<Tag> expectedTags = new LinkedList<>();
 		expectedTags.add(Tag.builder().key("urlATag").value(EnvironmentSetupForTests.S3_PREFIX+"/"+KEY_A).build());
