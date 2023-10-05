@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
+import software.amazon.awssdk.services.elasticloadbalancingv2.ElasticLoadBalancingV2Client;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.User;
 import software.amazon.awssdk.services.rds.RdsClient;
@@ -49,7 +50,7 @@ public class EnvironmentSetupForTests {
 	///////////////
 	// User/Env specific constants, these will need to change for others running these tests!
     public static final String BUCKET_NAME="cfnassists3testbucket";
-    public static final String AVAILABILITY_ZONE = "eu-west-1c";
+    //public static final String AVAILABILITY_ZONE = "eu-west-1c";
     public static final String S3_PREFIX = "https://s3.amazonaws.com/"+BUCKET_NAME;
 
     private static final String AMI_FOR_INSTANCE =  "ami-0f3164307ee5d695a"; //"ami-08935252a36e25f85";
@@ -152,6 +153,10 @@ public class EnvironmentSetupForTests {
 
 	public static ElasticLoadBalancingClient createELBClient() {
         return ElasticLoadBalancingClient.create();
+	}
+
+	public static ElasticLoadBalancingV2Client createELBClientV2() {
+		return ElasticLoadBalancingV2Client.create();
 	}
 
 	public static S3Client createS3Client() {
@@ -265,4 +270,6 @@ public class EnvironmentSetupForTests {
 	public static Long asMillis(ZonedDateTime zonedDateTime) {
 		return Instant.from(zonedDateTime).toEpochMilli();
 	}
+
+
 }

@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancing
 import software.amazon.awssdk.services.elasticloadbalancing.model.*;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
-import tw.com.providers.LoadBalancerClient;
+import tw.com.providers.LoadBalancerClassicClient;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -23,7 +23,7 @@ import static tw.com.EnvironmentSetupForTests.TEST_SUBNET_FOR_MAIN_VPC;
 public class TestLoadBalancerClient  {
 	
 	private static final String LB_NAME = "cfnAssistTest";
-	private LoadBalancerClient client;
+	private LoadBalancerClassicClient client;
 	private static ElasticLoadBalancingClient elbClient;
 	private static Ec2Client ec2Client;
 	private static Instance instance;
@@ -45,7 +45,7 @@ public class TestLoadBalancerClient  {
 
 	@Before
 	public void beforeEachTestRuns() {
-		client = new LoadBalancerClient(elbClient);
+		client = new LoadBalancerClassicClient(elbClient);
 	}
 	
 	@Test

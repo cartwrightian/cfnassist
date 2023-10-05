@@ -14,7 +14,7 @@ import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
 import tw.com.providers.CloudClient;
 import tw.com.providers.CFNClient;
-import tw.com.providers.LoadBalancerClient;
+import tw.com.providers.LoadBalancerClassicClient;
 import tw.com.providers.RDSClient;
 import tw.com.repository.*;
 
@@ -36,7 +36,7 @@ public class TestPictureGeneration {
 		RdsClient awsRdsClient = EnvironmentSetupForTests.createRDSClient();
 
 		CloudClient cloudClient = new CloudClient(ec2Client, new DefaultAwsRegionProviderChain());
-		LoadBalancerClient elbClient = new LoadBalancerClient(awsElbClient);
+		LoadBalancerClassicClient elbClient = new LoadBalancerClassicClient(awsElbClient);
 		VpcRepository vpcRepository = new VpcRepository(cloudClient);
 
 		CFNClient CFNClient = new CFNClient(cfnClient);

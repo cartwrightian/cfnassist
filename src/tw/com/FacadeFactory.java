@@ -22,9 +22,7 @@ import tw.com.pictures.DiagramCreator;
 import tw.com.providers.*;
 import tw.com.repository.*;
 
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 public class FacadeFactory implements ProvidesNow {
@@ -47,7 +45,7 @@ public class FacadeFactory implements ProvidesNow {
 	private ArtifactUploader artifactUploader;
 	private CloudClient cloudClient;
 	private CFNClient formationClient;
-	private LoadBalancerClient loadBalancerClient;
+	private LoadBalancerClassicClient loadBalancerClient;
 	private RDSClient datastoreClient;
 	private SNSNotificationSender notificationSender;
     private SavesFile savesFile;
@@ -86,7 +84,7 @@ public class FacadeFactory implements ProvidesNow {
 	}
 	
 	private void createProviders() {
-		loadBalancerClient = new LoadBalancerClient(elbClient);
+		loadBalancerClient = new LoadBalancerClassicClient(elbClient);
         AwsRegionProvider regionProvider = new DefaultAwsRegionProviderChain();
         cloudClient = new CloudClient(ec2Client, regionProvider);
 		formationClient = new CFNClient(cfnClient);

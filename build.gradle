@@ -43,6 +43,7 @@ dependencies {
             'software.amazon.awssdk:ec2:'+awsSdk,
             'software.amazon.awssdk:cloudformation:'+awsSdk,
             'software.amazon.awssdk:elasticloadbalancing:'+awsSdk,
+            'software.amazon.awssdk:elasticloadbalancingv2:'+awsSdk,
             'software.amazon.awssdk:sns:'+awsSdk,
             'software.amazon.awssdk:sqs:'+awsSdk,
             'software.amazon.awssdk:iam:'+awsSdk,
@@ -58,7 +59,7 @@ dependencies {
             'com.fasterxml.jackson.core:jackson-databind:2.13.5'
 
     testImplementation 'junit:junit:4.13.2',
-            'org.easymock:easymock:4.3'
+            'org.easymock:easymock:5.2.0'
 }
 
 //mainClassName = 'tw.com.commandline.Main'

@@ -8,12 +8,12 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
 import software.amazon.awssdk.services.elasticloadbalancing.model.*;
 
-public class LoadBalancerClient {
-	private static final Logger logger = LoggerFactory.getLogger(LoadBalancerClient.class);
+public class LoadBalancerClassicClient {
+	private static final Logger logger = LoggerFactory.getLogger(LoadBalancerClassicClient.class);
 
 	private final ElasticLoadBalancingClient elbClient;
 
-	public LoadBalancerClient(ElasticLoadBalancingClient elbClient) {
+	public LoadBalancerClassicClient(ElasticLoadBalancingClient elbClient) {
 		this.elbClient = elbClient;
 	}
 
@@ -55,4 +55,7 @@ public class LoadBalancerClient {
 		return descriptions.get(0).tags();
 	}
 
+	public List<Instance> getInstancesFor(LoadBalancerDescription balancerDescription) {
+		return balancerDescription.instances();
+	}
 }

@@ -16,11 +16,13 @@ import tw.com.entity.SearchCriteria;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.MustHaveBuildNumber;
 import tw.com.exceptions.TooManyELBException;
-import tw.com.providers.LoadBalancerClient;
+import tw.com.providers.LoadBalancerClassicClient;
 import tw.com.repository.ELBRepository;
 import tw.com.repository.ResourceRepository;
 import tw.com.repository.VpcRepository;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,14 +33,14 @@ import static org.junit.Assert.fail;
 public class TestELBRepository extends EasyMockSupport {
 	
 	private ELBRepository elbRepository;
-	private LoadBalancerClient elbClient;
+	private LoadBalancerClassicClient elbClient;
 	private VpcRepository vpcRepository;
 	private ResourceRepository cfnRepository;
-	private ProjectAndEnv projAndEnv = new ProjectAndEnv("proj", "testEnv");
+	private final ProjectAndEnv projAndEnv = new ProjectAndEnv("proj", "testEnv");
 	
 	@Before
 	public void beforeEachTestRuns() {
-		elbClient = createMock(LoadBalancerClient.class);
+		elbClient = createMock(LoadBalancerClassicClient.class);
 		vpcRepository  = createMock(VpcRepository.class);
 		cfnRepository = createMock(ResourceRepository.class);	
 		elbRepository = new ELBRepository(elbClient, vpcRepository, cfnRepository);
@@ -146,15 +148,21 @@ public class TestELBRepository extends EasyMockSupport {
 		Integer newBuildNumber = 11;
 		projAndEnv.addBuildNumber(newBuildNumber);
 
+		LoadBalancerDescription elbA = createElbDescriptionWithInstances(vpcId, insA1, insA2);
+		LoadBalancerDescription elbB = createElbDescriptionWithInstances(vpcId, insA1, insA2, insB1, insB2);
+
 		List<LoadBalancerDescription> initalLoadBalancers = new LinkedList<>();
-		initalLoadBalancers.add(createElbDescriptionWithInstances(vpcId, insA1, insA2));
+		initalLoadBalancers.add(elbA);
 		
 		List<LoadBalancerDescription> updatedLoadBalancers = new LinkedList<>();
-		updatedLoadBalancers.add( createElbDescriptionWithInstances(vpcId,insA1, insA2, insB1, insB2));
+		updatedLoadBalancers.add(elbB);
 		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
 
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
 		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(initalLoadBalancers);
+		EasyMock.expect(elbClient.getInstancesFor(elbA)).andReturn(Arrays.asList(insA1, insA2));
+		EasyMock.expect(elbClient.getInstancesFor(elbB)).andReturn(Arrays.asList(insA1, insA2, insB1, insB2));
+
 		SearchCriteria criteria = new SearchCriteria(projAndEnv);
 		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(criteria, "typeTag")).andReturn(instancesThatMatch);
 
@@ -187,13 +195,15 @@ public class TestELBRepository extends EasyMockSupport {
 		String vpcId = "myVPC";
 		Instance insA = createInstance("instanceA"); // associated
 		
-		List<LoadBalancerDescription> theLB = new LinkedList<>();
-		theLB.add(createElbDescriptionWithInstances(vpcId,insA));
+		List<LoadBalancerDescription> loadBalancerDescriptions = new LinkedList<>();
+		LoadBalancerDescription elb = createElbDescriptionWithInstances(vpcId, insA);
+		loadBalancerDescriptions.add(elb);
 
 		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
 
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
-		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(theLB);
+		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(loadBalancerDescriptions);
+		EasyMock.expect(elbClient.getInstancesFor(elb)).andReturn(Collections.singletonList(insA));
 		
 		replayAll();
 		List<Instance> result = elbRepository.findInstancesAssociatedWithLB(projAndEnv,"typeNotUsedWhenOneMatchingLB");
