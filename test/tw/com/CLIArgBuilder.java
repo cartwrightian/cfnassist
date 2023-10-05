@@ -220,6 +220,15 @@ public class CLIArgBuilder {
                 "-elbUpdate", typeTag
                 };
 	}
+
+    public static String[] updateTargetGroup(String typeTag, Integer buildNumber, Integer port) {
+        return new String[]{
+                "-env", EnvironmentSetupForTests.ENV,
+                "-project", EnvironmentSetupForTests.PROJECT,
+                "-build", buildNumber.toString(),
+                "-targetGroupUpdate", typeTag, port.toString()
+        };
+    }
 	
 	public static String[] allowlistCurrentIP(String type, Integer port) {
         return new String[]{

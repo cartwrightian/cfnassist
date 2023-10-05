@@ -21,7 +21,6 @@ import tw.com.providers.NotificationSender;
 import tw.com.repository.*;
 
 import java.io.File;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,11 +47,12 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		CloudRepository cloudRepository = createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
-		
+		TargetGroupRepository targetGroupRepository = createStrictMock(TargetGroupRepository.class);
+
 		user = EnvironmentSetupForTests.createUser();
 
 		LogRepository logRepository = createStrictMock(LogRepository.class);
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, targetGroupRepository, identityProvider, logRepository);
 	}
 	
 	@Test

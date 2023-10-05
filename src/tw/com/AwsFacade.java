@@ -15,6 +15,7 @@ import tw.com.entity.*;
 import tw.com.exceptions.*;
 import tw.com.parameters.*;
 import tw.com.providers.CloudClient;
+import tw.com.providers.IdentityProvider;
 import tw.com.providers.NotificationSender;
 import tw.com.providers.ProvidesCurrentIp;
 import tw.com.providers.SavesFile;
@@ -61,18 +62,20 @@ public class AwsFacade implements ProvidesZones {
 	private final CloudRepository cloudRepository;
 	private final NotificationSender notificationSender;
 	private final MonitorStackEvents monitor;
+	private final TargetGroupRepository targetGroupRepository;
 	private final tw.com.providers.IdentityProvider identityProvider;
 	private final LogRepository logRepository;
 
     public AwsFacade(MonitorStackEvents monitor, CloudFormRepository cfnRepository, VpcRepository vpcRepository,
-                     ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
-					 tw.com.providers.IdentityProvider identityProvider, LogRepository logRepository) {
+					 ELBRepository elbRepository, CloudRepository cloudRepository, NotificationSender notificationSender,
+					 TargetGroupRepository targetGroupRepository, IdentityProvider identityProvider, LogRepository logRepository) {
 		this.monitor = monitor;
 		this.cfnRepository = cfnRepository;
 		this.vpcRepository = vpcRepository;
 		this.elbRepository = elbRepository;
 		this.cloudRepository = cloudRepository;
 		this.notificationSender = notificationSender;
+		this.targetGroupRepository = targetGroupRepository;
 		this.identityProvider = identityProvider;
         this.logRepository = logRepository;
     }
@@ -548,9 +551,14 @@ public class AwsFacade implements ProvidesZones {
 		return false;
 	}
 
-	public List<Instance> updateELBToInstancesMatchingBuild(ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
+	public void updateELBToInstancesMatchingBuild(ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
 		logger.info(format("Update instances for ELB to match %s and type tag %s", projectAndEnv, typeTag));
-		return elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);	
+		elbRepository.updateInstancesMatchingBuild(projectAndEnv, typeTag);
+	}
+
+	public void updateTargetGroupToInstancesMatchingBuild(ProjectAndEnv projectAndEnv, String tag, int port) throws CfnAssistException {
+		logger.info(format("Update instances for Target Group to match %s and type tag %s and port %s", projectAndEnv, tag, port));
+		targetGroupRepository.updateInstancesMatchingBuild(projectAndEnv, tag, port);
 	}
 
 	public void addCurrentIPWithPortToELB(ProjectAndEnv projectAndEnv, String type, ProvidesCurrentIp hasCurrentIp, Integer port) throws CfnAssistException {

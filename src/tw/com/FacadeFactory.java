@@ -9,6 +9,7 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
+import software.amazon.awssdk.services.elasticloadbalancingv2.ElasticLoadBalancingV2Client;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.rds.RdsClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -37,6 +38,7 @@ public class FacadeFactory implements ProvidesNow {
 	private S3Client s3Client;
 	private Ec2Client ec2Client;
 	private ElasticLoadBalancingClient elbClient;
+	private ElasticLoadBalancingV2Client elbClientV2;
 	private RdsClient rdsClient;
 	private IamClient iamClient;
     private CloudWatchLogsClient awsLogClient;
@@ -46,6 +48,7 @@ public class FacadeFactory implements ProvidesNow {
 	private CloudClient cloudClient;
 	private CFNClient formationClient;
 	private LoadBalancerClassicClient loadBalancerClient;
+	private LoadBalancerClientV2 loadBalancerClientV2;
 	private RDSClient datastoreClient;
 	private SNSNotificationSender notificationSender;
     private SavesFile savesFile;
@@ -62,8 +65,9 @@ public class FacadeFactory implements ProvidesNow {
 	private AwsFacade awsFacade;
 	private DiagramCreator diagramCreator;
 	private IdentityProvider identityProvider;
+	private TargetGroupRepository targetGroupRepository;
 
-    public FacadeFactory() {
+	public FacadeFactory() {
 	}
 
 	public void setProject(String project) {
@@ -82,9 +86,26 @@ public class FacadeFactory implements ProvidesNow {
 			init = true;
 		}
 	}
+
+	private void createAmazonAPIClients() {
+		cfnClient = CloudFormationClient.create();
+		ec2Client = Ec2Client.create();
+		snsClient = SnsClient.create();
+		sqsClient = SqsClient.create();
+		elbClient = ElasticLoadBalancingClient.create();
+		elbClientV2 = ElasticLoadBalancingV2Client.create();
+		s3Client = S3Client.create();
+		rdsClient = RdsClient.create();
+		awsLogClient = CloudWatchLogsClient.create();
+		iamClient = IamClient.builder().
+				credentialsProvider(DefaultCredentialsProvider.create())
+				.region(Region.AWS_GLOBAL).
+				build();
+	}
 	
 	private void createProviders() {
 		loadBalancerClient = new LoadBalancerClassicClient(elbClient);
+		loadBalancerClientV2 = new LoadBalancerClientV2(elbClientV2);
         AwsRegionProvider regionProvider = new DefaultAwsRegionProviderChain();
         cloudClient = new CloudClient(ec2Client, regionProvider);
 		formationClient = new CFNClient(cfnClient);
@@ -99,23 +120,11 @@ public class FacadeFactory implements ProvidesNow {
 		cfnRepository = new CfnRepository(formationClient, cloudRepository, project);
 		vpcRepository = new VpcRepository(cloudClient);
 		elbRepository = new ELBRepository(loadBalancerClient, vpcRepository, cfnRepository);
+		targetGroupRepository = new TargetGroupRepository(loadBalancerClientV2, vpcRepository, cfnRepository);
 		logRepository = new LogRepository(logClient, this, getSavesFile());
 	}
 
-	private void createAmazonAPIClients() {
-        cfnClient = CloudFormationClient.create();
-        ec2Client = Ec2Client.create();
-        snsClient = SnsClient.create();
-        sqsClient = SqsClient.create();
-        elbClient = ElasticLoadBalancingClient.create();
-        s3Client = S3Client.create();
-        rdsClient = RdsClient.create();
-        awsLogClient = CloudWatchLogsClient.create();
-		iamClient = IamClient.builder().
-				credentialsProvider(DefaultCredentialsProvider.create())
-				.region(Region.AWS_GLOBAL).
-						build();
-	}
+
 
 	public AwsFacade createFacade() throws MissingArgumentException, CfnAssistException, InterruptedException {		
 		if (awsFacade==null) {
@@ -130,7 +139,7 @@ public class FacadeFactory implements ProvidesNow {
 			
 			monitor.init();
 			awsFacade = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository,
-					cloudRepository, notificationSender, identityProvider, logRepository);
+					cloudRepository, notificationSender, targetGroupRepository, identityProvider, logRepository);
 		}	
 		return awsFacade;	
 	}

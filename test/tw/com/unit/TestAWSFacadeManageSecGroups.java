@@ -50,8 +50,9 @@ public class TestAWSFacadeManageSecGroups extends EasyMockSupport {
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 		LogRepository logRepository = createStrictMock(LogRepository.class);
+		TargetGroupRepository targetGroupRepository = createStrictMock(TargetGroupRepository.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, targetGroupRepository, identityProvider, logRepository);
 
         elbDescription = LoadBalancerDescription.builder().
                 loadBalancerName("elbName").

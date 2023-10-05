@@ -27,7 +27,6 @@ import tw.com.repository.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
@@ -61,11 +60,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
         LogRepository logRepository = createStrictMock(LogRepository.class);
+		TargetGroupRepository targetGroupRepository = createStrictMock(TargetGroupRepository.class);
 
 		user = EnvironmentSetupForTests.createUser();
 
 		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender,
-				identityProvider, logRepository);
+                targetGroupRepository, identityProvider, logRepository);
 	}
 	
 	@Test

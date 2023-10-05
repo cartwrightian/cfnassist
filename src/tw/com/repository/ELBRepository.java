@@ -169,11 +169,11 @@ public class ELBRepository {
 	}
 
 	public List<Instance> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String typeTag) throws CfnAssistException {
-		List<Instance> matchinginstances = addInstancesThatMatchBuildAndType(projAndEnv, typeTag); 
-		return removeInstancesNotMatching(projAndEnv, matchinginstances, typeTag);	
+		List<Instance> matchingInstances = addInstancesThatMatchBuildAndType(projAndEnv, typeTag);
+		return removeInstancesNotMatching(projAndEnv, matchingInstances, typeTag);
 	}
 
-	// TODO filter on the request, but api does not seeem to support that currently
+	// TODO filter on the request, but api does not seem to support that currently
 	public List<LoadBalancerDescription> findELBForVPC(String vpcId) {
 		List<LoadBalancerDescription> result = classicClient.describeLoadBalancers(); // seems to be no filter for vpc on elbs
 		

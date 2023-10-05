@@ -37,8 +37,9 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		LogRepository logRepository = createStrictMock(LogRepository.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
+		TargetGroupRepository targetGroupRepository = createStrictMock(TargetGroupRepository.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, targetGroupRepository, identityProvider, logRepository);
 	}
 	
 	@Test

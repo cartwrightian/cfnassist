@@ -203,11 +203,25 @@ public class TestCommandLineActions extends EasyMockSupport {
 		Integer buildNumber = 42;
 		String typeTag = "web";
 		
-		List<Instance> instances = new LinkedList<>();
 		projectAndEnv.addBuildNumber(buildNumber);
-		EasyMock.expect(facade.updateELBToInstancesMatchingBuild(projectAndEnv, typeTag)).andReturn(instances);
+		facade.updateELBToInstancesMatchingBuild(projectAndEnv, typeTag);
+		EasyMock.expectLastCall();
 			
 		validate(CLIArgBuilder.updateELB(typeTag, buildNumber));
+	}
+
+	@Test
+	public void shouldUpdateTargetGroup() throws MissingArgumentException, CfnAssistException, InterruptedException {
+		setFactoryExpectations();
+		Integer buildNumber = 42;
+		String typeTag = "web";
+		int port = 4242;
+
+		projectAndEnv.addBuildNumber(buildNumber);
+		facade.updateTargetGroupToInstancesMatchingBuild(projectAndEnv, typeTag, port);
+		EasyMock.expectLastCall();
+
+		validate(CLIArgBuilder.updateTargetGroup(typeTag, buildNumber, port));
 	}
 	
 	@Test

@@ -79,6 +79,10 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	public void addConfiguredELBUpdate(ELBUpdateElement elbUpdateElement) {
 		actionElements.add(elbUpdateElement);
 	}
+
+	public void addConfiguredTargetGroupUpdate(TargetGroupUpdateElement targetGroupUpdateElement) {
+		actionElements.add(targetGroupUpdateElement);
+	}
 	
 	public void addConfiguredS3Create(S3Create s3create) {
 		actionElements.add(s3create);

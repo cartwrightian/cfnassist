@@ -55,6 +55,7 @@ public class Actions {
 		actions.add(new InitAction());
 		actions.add(new AddTagAction());
 		actions.add(new ElbAction());
+		actions.add(new UpdateTargetGroupAction());
 		actions.add(new DeleteAction());
 		actions.add(new DeleteByNameAction());
 		actions.add(new ListAction());

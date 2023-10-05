@@ -54,8 +54,9 @@ public class TestAwsFacade extends EasyMockSupport {
         logRepository = createStrictMock(LogRepository.class);
 		IdentityProvider identityProvider = createStrictMock(IdentityProvider.class);
 		NotificationSender notificationSender = createStrictMock(NotificationSender.class);
+		TargetGroupRepository targetGroupRepository = createStrictMock(TargetGroupRepository.class);
 
-		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, identityProvider, logRepository);
+		aws = new AwsFacade(monitor, cfnRepository, vpcRepository, elbRepository, cloudRepository, notificationSender, targetGroupRepository, identityProvider, logRepository);
 	}
 	
 	@Test
