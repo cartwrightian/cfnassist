@@ -10,11 +10,11 @@ import tw.com.exceptions.CfnAssistException;
 
 public interface ResourceRepository {
 
-	public String findPhysicalIdByLogicalId(EnvironmentTag envTag,String logicalId);
+	String findPhysicalIdByLogicalId(EnvironmentTag envTag, String logicalId);
 
-	public List<String> getAllInstancesFor(SearchCriteria criteria) throws CfnAssistException;
+	List<String> getAllInstancesFor(SearchCriteria criteria) throws CfnAssistException;
 
-	public List<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException;
+	List<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException;
 	
 	List<String> getInstancesFor(String Stackname);
 

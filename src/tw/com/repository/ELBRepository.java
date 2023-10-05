@@ -110,7 +110,7 @@ public class ELBRepository {
 		SearchCriteria criteria = new SearchCriteria(projAndEnv);
 		List<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(criteria, typeTag);
 		List<Instance> instancesToAdd = filterBy(currentInstances, allMatchingInstances);
-		if (allMatchingInstances.size()==0) {
+		if (allMatchingInstances.isEmpty()) {
 			logger.warn(String.format("No instances matched %s and type tag %s (%s)", projAndEnv, typeTag, AwsFacade.TYPE_TAG));
 		} else {	
 			logger.info(String.format("Register matching %s instances with the LB %s ", instancesToAdd.size(),lbName));

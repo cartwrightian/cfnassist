@@ -2,9 +2,12 @@ package tw.com.providers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import software.amazon.awssdk.services.elasticloadbalancingv2.ElasticLoadBalancingV2Client;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.*;
+import tw.com.exceptions.CfnAssistException;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -29,36 +32,13 @@ public class LoadBalancerClientV2 {
 		return descriptions;
 	}
 
-//	public void registerInstances(List<Instance> instances, String lbName) {
-//		logger.info(String.format("Registering instances %s with loadbalancer %s", instances, lbName));
-//		RegisterInstancesWithLoadBalancerRequest.Builder regInstances = RegisterInstancesWithLoadBalancerRequest.builder();
-//		regInstances.instances(instances);
-//		regInstances.loadBalancerName(lbName);
-//		RegisterInstancesWithLoadBalancerResponse result = elbClient.registerInstancesWithLoadBalancer(regInstances.build());
-//
-//		logger.info("ELB Add instance call result: " + result.toString());
-//	}
-//
-//	public List<Instance> deregisterInstancesFromLB(List<Instance> toRemove, String loadBalancerName) {
-//
-//		DeregisterInstancesFromLoadBalancerRequest.Builder request= DeregisterInstancesFromLoadBalancerRequest.builder();
-//		request.instances(toRemove);
-//
-//		request.loadBalancerName(loadBalancerName);
-//		DeregisterInstancesFromLoadBalancerResponse result = elbClient.deregisterInstancesFromLoadBalancer(request.build());
-//		List<Instance> remaining = result.instances();
-//		logger.info(String.format("ELB %s now has %s instances registered", loadBalancerName, remaining.size()));
-//		return remaining;
-//	}
-
-	public List<Tag> getTagsFor(String loadBalancerARNs) {
+	public List<Tag> getTagsFor(TargetGroup targetGroup) {
 		DescribeTagsRequest describeTagsRequest = DescribeTagsRequest.builder().
-				resourceArns(loadBalancerARNs).
-				//loadBalancerNames(loadBalancerName).
+				resourceArns(targetGroup.targetGroupArn()).
 				build();
 		DescribeTagsResponse result = elbClient.describeTags(describeTagsRequest);
 		List<TagDescription> descriptions = result.tagDescriptions();
-		logger.info(String.format("Fetching %s tags for LB ARN %s ", descriptions.size(), loadBalancerARNs));
+		logger.info(String.format("Fetching %s tags for LB ARN %s ", descriptions.size(), targetGroup));
 		return descriptions.get(0).tags();
 	}
 
@@ -118,5 +98,30 @@ public class LoadBalancerClientV2 {
 				targetGroupArn(targetGroup.targetGroupArn()).
 				build();
 		elbClient.registerTargets(request);
+	}
+
+	public void registerInstances(TargetGroup targetGroup, Collection<String> instancesToAdd, int port) {
+		logger.info("Register " + instancesToAdd.size() + " instances for " + targetGroup + " on port " + port);
+		instancesToAdd.forEach(instanceId -> registerInstance(targetGroup, instanceId, port));
+	}
+
+	public Set<String> deregisterInstances(TargetGroup targetGroup, Collection<String> toRemoveIds, int port) throws CfnAssistException {
+		logger.info("Deregister " + toRemoveIds.size() + " instances for " + targetGroup + " on port " + port);
+		toRemoveIds.forEach(instanceId -> registerInstance(targetGroup, instanceId, port));
+
+		// returns remaining instances
+		return getInstancesFor(targetGroup);
+	}
+
+	public Set<String> getInstancesFor(TargetGroup targetGroup) throws CfnAssistException {
+		guardForInstanceTargetType(targetGroup);
+		List<TargetDescription> targets = this.describeTargets(targetGroup);
+		return targets.stream().map(TargetDescription::id).collect(Collectors.toSet());
+	}
+
+	private void guardForInstanceTargetType(TargetGroup targetGroup) throws CfnAssistException {
+		if (targetGroup.targetType()!=TargetTypeEnum.INSTANCE) {
+			throw new CfnAssistException("Unsupported target type, need instance, got " + targetGroup);
+		}
 	}
 }
