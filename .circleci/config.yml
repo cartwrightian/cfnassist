@@ -6,7 +6,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/openjdk:15-jdk-buster
+      - image: circleci/openjdk:17-jdk-buster
     resource_class: medium
     working_directory: ~/repo
 
@@ -26,7 +26,7 @@ jobs:
           path: ~/repo/build/reports/tests
   integration:
     docker:
-      - image: circleci/openjdk:15-jdk-buster-node
+      - image: circleci/circleci/openjdk:17-jdk-buster-node
     resource_class: medium
     working_directory: ~/repo
 
@@ -52,7 +52,7 @@ jobs:
           path: ~/repo/build/reports/tests
   acceptance:
     docker:
-      - image: circleci/openjdk:15-jdk-buster-node
+      - image: circleci/circleci/openjdk:17-jdk-buster-node
     resource_class: medium
     working_directory: ~/repo
 
@@ -95,7 +95,7 @@ jobs:
           command: |
             go install github.com/tcnksm/ghr@latest
             gradle release
-           
+
 workflows:
   version: 2
   build:
