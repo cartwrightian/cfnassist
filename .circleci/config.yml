@@ -26,7 +26,7 @@ jobs:
           path: ~/repo/build/reports/tests
   integration:
     docker:
-      - image: circleci/circleci/openjdk:17-jdk-buster-node
+      - image: circleci/circleci/openjdk:17-jdk-buster
     resource_class: medium
     working_directory: ~/repo
 
@@ -52,7 +52,7 @@ jobs:
           path: ~/repo/build/reports/tests
   acceptance:
     docker:
-      - image: circleci/circleci/openjdk:17-jdk-buster-node
+      - image: circleci/circleci/openjdk:17-jdk-buster
     resource_class: medium
     working_directory: ~/repo
 
