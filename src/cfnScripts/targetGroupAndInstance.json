@@ -1,0 +1,55 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"test template for cnfassist - creates a simple target group and instance",
+	"Parameters":{
+		"env":{
+			"Type":"String"
+		},
+		"vpc":{
+			"Type":"String"
+		},
+		"zoneA":{
+			"Type":"String",
+			"Default":"eu-west-1a",
+			"Description":"zoneADescription"
+		}
+	},
+	"Resources":{
+		"vpcSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"AvailabilityZone":{
+					"Ref":"zoneA"
+				},
+				"CidrBlock":"10.0.10.13/24",
+				"VpcId":{
+					"Ref":"vpc"
+				}
+			}
+		},
+		"targetGroup" : {
+			"Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
+			"Properties" : {
+				"HealthCheckEnabled": "True",
+				"Name": { "Fn::Join": [ "-", ["tramchesterTargetGroup", {"Ref":"env"}]] },
+				"Port": "8080",
+				"Protocol" : "HTTP",
+				"VpcId": { "Ref": "vpc"}
+			}
+		},
+		"simpleInstance":{
+			"Type":"AWS::EC2::Instance",
+			"Properties":{
+				"InstanceType":"t2.micro",
+				"ImageId":"ami-0f3164307ee5d695a",
+				"SubnetId":{
+					"Ref":"vpcSubnet"
+				}, 
+				"Tags": [
+                  { "Key" : "Name", "Value": "testInstance" },
+				  { "Key" : "CFN_ASSIST_TYPE", "Value": "web" }
+				]
+			}
+		}	
+	}
+}

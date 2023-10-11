@@ -19,8 +19,8 @@
 		"simpleInstance":{
 			"Type":"AWS::EC2::Instance",
 			"Properties":{
-				"InstanceType":"t1.micro",
-				"ImageId":"ami-f2191786",
+				"InstanceType":"t2.micro",
+				"ImageId":"ami-0f3164307ee5d695a",
 				"SubnetId":{
 					"Ref":"subnet"
 				},

@@ -19,7 +19,8 @@ public class FilesForTesting {
 	public static final String SUBNET_WITH_S3_PARAM = DIR.resolve("subnetWithS3Param.json").toString();
 	public static final String INSTANCE = DIR.resolve("instance.json").toString();
 	public static final String ELB_AND_INSTANCE = DIR.resolve("elbAndInstance.json").toString();
-	
+	public static final String TARGET_GROUP_AND_INSTANCE = DIR.resolve("targetGroupAndInstance.json").toString();
+
 	public static final String ORDERED_SCRIPTS_FOLDER = DIR.resolve("orderedScripts").toString();
 	public static final Path ORDERED_SCRIPTS_WITH_UPDATES_FOLDER = DIR.resolve("orderedScriptsWithUpdate");
 	public static final String STACK_UPDATE = ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.resolve("02createSubnet.update.json").toString();

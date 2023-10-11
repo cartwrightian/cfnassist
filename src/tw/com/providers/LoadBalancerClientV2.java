@@ -2,7 +2,6 @@ package tw.com.providers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import software.amazon.awssdk.services.elasticloadbalancingv2.ElasticLoadBalancingV2Client;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.*;
 import tw.com.exceptions.CfnAssistException;
@@ -24,13 +23,13 @@ public class LoadBalancerClientV2 {
 		this.elbClient = elbClient;
 	}
 
-	public List<LoadBalancer> describeLoadBalancers() {
-		DescribeLoadBalancersRequest request = DescribeLoadBalancersRequest.builder().build();
-		DescribeLoadBalancersResponse result = elbClient.describeLoadBalancers(request);
-		List<LoadBalancer> descriptions = result.loadBalancers();
-		logger.info(String.format("Found %s load balancers %s", descriptions.size(), descriptions));
-		return descriptions;
-	}
+//	public List<LoadBalancer> describeLoadBalancers() {
+//		DescribeLoadBalancersRequest request = DescribeLoadBalancersRequest.builder().build();
+//		DescribeLoadBalancersResponse result = elbClient.describeLoadBalancers(request);
+//		List<LoadBalancer> descriptions = result.loadBalancers();
+//		logger.info(String.format("Found %s load balancers %s", descriptions.size(), descriptions));
+//		return descriptions;
+//	}
 
 	public List<Tag> getTagsFor(TargetGroup targetGroup) {
 		DescribeTagsRequest describeTagsRequest = DescribeTagsRequest.builder().

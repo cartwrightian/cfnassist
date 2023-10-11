@@ -51,8 +51,7 @@ public class TestCommandLineStackOperations {
 	public void beforeEveryTestRun() {
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
-//		EnvironmentSetupForTests.getMainProjectAndEnv();
-		
+
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
 		deletesStacks = new DeletesStacks(cfnClient);
 		deletesStacks.ifPresent(EnvironmentSetupForTests.TEMPORARY_STACK)
@@ -62,7 +61,9 @@ public class TestCommandLineStackOperations {
 			.ifPresent("CfnAssistTestsubnetWithParam")
 			.ifPresent("CfnAssistTestsubnet")
 			.ifPresent("CfnAssist876TestelbAndInstance")
-            .ifPresent("CfnAssistTestsimpleStackWithAZ");
+            .ifPresent("CfnAssistTestsimpleStackWithAZ")
+			.ifPresent("CfnAssist876TesttargetGroupAndInstance");
+
 		deletesStacks.act();
 		testName = test.getMethodName();
 	}
@@ -184,8 +185,10 @@ public class TestCommandLineStackOperations {
 				"-file", FilesForTesting.ELB_AND_INSTANCE,
 				"-comment", testName
 				};
+
 		Main main = new Main(createELBAndInstance);
 		int result = main.parse();
+		// delete here because subsequent ops in this tests not against the ELB or instance?? TODO
 		deletesStacks.ifPresent("CfnAssist876TestelbAndInstance");
 		assertEquals(0,result);
 		
@@ -204,9 +207,32 @@ public class TestCommandLineStackOperations {
 		main = new Main(blockCurrentIP);
 		result = main.parse();
 		assertEquals(0,result);
-		
 	}
-	
+
+	@Test
+	public void testInvokeTargetGroupUpdate() {
+		Integer buildNumber = 876;
+		Integer port = 9997;
+
+		String[] createTargetGroupAndInstance = {
+				"-env", EnvironmentSetupForTests.ENV,
+				"-project", EnvironmentSetupForTests.PROJECT,
+				"-build", buildNumber.toString(),
+				"-file", FilesForTesting.TARGET_GROUP_AND_INSTANCE,
+				"-comment", testName
+		};
+
+		Main main = new Main(createTargetGroupAndInstance);
+		int result = main.parse();
+		assertEquals(0,result);
+
+		String[] updateTargetGroup = CLIArgBuilder.updateTargetGroup("web", buildNumber, port);
+		main = new Main(updateTargetGroup);
+		result = main.parse();
+		assertEquals(0, result);
+
+	}
+
 	@Test
 	public void testInvokeViaCommandLineDeployWithFileAndSNS() {
 		String[] args = CLIArgBuilder.createSimpleStackWithSNS(testName);

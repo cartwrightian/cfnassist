@@ -74,8 +74,8 @@ public class TestTargetGroupRepository extends EasyMockSupport {
 	}
 
 	private TargetGroup createTargetGroup(String groupName, String vpcId) {
-		// TODO likely need to populate more here
-		return TargetGroup.builder().vpcId(vpcId).
+		return TargetGroup.builder().
+				vpcId(vpcId).
 				targetGroupName(groupName).build();
 	}
 
