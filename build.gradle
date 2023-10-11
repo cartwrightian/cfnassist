@@ -14,14 +14,16 @@ ext.currentGitSha = { ->
     return result.toString().replaceAll("(?:\\n|\\r)", "")
 }
 
-def buildNumber = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
+def candidate = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
+def buildNumber = System.getenv("RELEASE_NUMBER") ?: candidate
+
 def githubToken = System.getenv("GITHUB_TOKEN")
 def gitUser = System.getenv("CIRCLE_PROJECT_USERNAME") ?: System.getenv("GIT_USERNAME")
 def gitProject = System.getenv("CIRCLE_PROJECT_REPONAME") ?: System.getenv("GIT_PROJECT")
 def gitSha = System.getenv("CIRCLE_SHA1") ?: currentGitSha()
 def goPath = System.getenv("GOPATH") ?: "./go"
 
-version = '1.2.'+buildNumber
+version = '1.3.'+buildNumber
 
 repositories {
     mavenCentral()
@@ -31,12 +33,10 @@ project.ext {
     awsSdk = '2.20.160'
 }
 
-//should be     implementation("software.amazon.awssdk:s3:$awsSdkVersion")
-
 dependencies {
-    implementation 'org.slf4j:slf4j-api:1.7.36',
-            'ch.qos.logback:logback-classic:1.2.11'
-            'ch.qos.logback:logback-core:1.2.11'
+    implementation 'org.slf4j:slf4j-api:2.0.6',
+            'ch.qos.logback:logback-classic:1.4.5'
+            'ch.qos.logback:logback-core:1.4.5'
 
     implementation 'software.amazon.awssdk:protocol-core:'+awsSdk,
             'software.amazon.awssdk:aws-query-protocol:'+awsSdk,
@@ -54,15 +54,13 @@ dependencies {
     implementation 'commons-io:commons-io:2.11.0',
             'commons-cli:commons-cli:1.5.0',
             'commons-net:commons-net:3.9.0',
-            'org.apache.ant:ant:1.10.12',
-            'com.fasterxml.jackson.core:jackson-core:2.13.2',
-            'com.fasterxml.jackson.core:jackson-databind:2.13.5'
+            'org.apache.ant:ant:1.10.13',
+            'com.fasterxml.jackson.core:jackson-core:2.14.2',
+            'com.fasterxml.jackson.core:jackson-databind:2.14.2'
 
     testImplementation 'junit:junit:4.13.2',
             'org.easymock:easymock:5.2.0'
 }
-
-//mainClassName = 'tw.com.commandline.Main'
 
 application {
     mainClass = 'tw.com.commandline.Main'
@@ -120,7 +118,6 @@ task acceptance(type: Test,  dependsOn: compileJava) {
 
 distributions {
     main {
-//        baseName = project.name
         contents {
             from { 'README.md' }
             into('conf') {
@@ -130,10 +127,10 @@ distributions {
     }
 }
 
-//task release(type:Exec, dependsOn: distZip) {
-//    executable  goPath+'/bin/ghr'
-//    args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
-//}
+task release(type:Exec, dependsOn: distZip) {
+    executable  goPath+'/bin/ghr'
+    args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
+}
 
 task copyDependencies(type: Copy) {
     from configurations.default
