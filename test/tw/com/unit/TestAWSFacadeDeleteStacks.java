@@ -21,21 +21,26 @@ import tw.com.providers.NotificationSender;
 import tw.com.repository.*;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 @RunWith(EasyMockRunner.class)
 public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	private static final StackStatus DELETE_COMP_STATUS = StackStatus.DELETE_COMPLETE;
+	private final ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
+	private final String project = projectAndEnv.getProject();
+	private final EnvironmentTag environmentTag = projectAndEnv.getEnvTag();
+
 	private AwsFacade aws;
-	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
+
 	private CloudFormRepository cfnRepository;
 	private ELBRepository elbRepository;
 	private MonitorStackEvents monitor;
-	private String project = projectAndEnv.getProject();
-	private EnvironmentTag environmentTag = projectAndEnv.getEnvTag();
 	private NotificationSender notificationSender;
 	private IdentityProvider identityProvider;
+	private TargetGroupRepository targetGroupRepository;
 	private User user;
 
 	@Before
@@ -47,7 +52,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		CloudRepository cloudRepository = createStrictMock(CloudRepository.class);
 		notificationSender = createStrictMock(NotificationSender.class);
 		identityProvider = createStrictMock(IdentityProvider.class);
-		TargetGroupRepository targetGroupRepository = createStrictMock(TargetGroupRepository.class);
+		targetGroupRepository = createStrictMock(TargetGroupRepository.class);
 
 		user = EnvironmentSetupForTests.createUser();
 
@@ -126,19 +131,51 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackB));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
-		List<Instance> elbInstances = new LinkedList<>();
-		
-		elbInstances.add(Instance.builder().instanceId("matchingInstanceId").build());
-		
+		List<Instance> elbInstances = Collections.singletonList(Instance.builder().instanceId("matchingInstanceId").build());
+
 		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
+		EasyMock.expect(targetGroupRepository.findInstancesAssociatedWithTargetGroup(projectAndEnv, "typeTag"))
+				.andReturn(Collections.emptySet());
+
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
 		EasyMock.expect(cfnRepository.getInstancesFor(stackA.stackName())).andReturn(createInstancesFor("123"));
 		EasyMock.expect(cfnRepository.getInstancesFor(stackB.stackName())).andReturn(createInstancesFor("567"));
 		EasyMock.expect(cfnRepository.getInstancesFor(stackC.stackName())).andReturn(createInstancesFor("matchingInstanceId"));
-		
+
 		setDeleteExpectations(stackA.stackName(), createNameAndId(stackA));
 		setDeleteExpectations(stackB.stackName(), createNameAndId(stackB));
 		
+		replayAll();
+		aws.tidyNonLBAssocStacks(file, projectAndEnv,"typeTag");
+		verifyAll();
+	}
+
+	@Test
+	public void shouldDeleteNamedStacksNotAssociatedTargetGroup() throws InterruptedException, CfnAssistException {
+		String filename = FilesForTesting.SIMPLE_STACK;
+		File file = new File(filename);
+
+		Stack stackA = createStack("CfnAssist0057TestsimpleStack", "idA");
+		Stack stackB = createStack("CfnAssist0058TestsimpleStack", "idB");
+		Stack stackC = createStack("CfnAssist0059TestsimpleStack", "idC"); // only this one associated with LB
+
+		List<StackEntry> stacksForProj = new LinkedList<>();
+		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
+		stacksForProj.add(new StackEntry(project, environmentTag, stackB));
+		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
+
+		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(Collections.emptyList());
+		EasyMock.expect(targetGroupRepository.findInstancesAssociatedWithTargetGroup(projectAndEnv, "typeTag"))
+				.andReturn(Collections.singleton("matchingInstanceId"));
+
+		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);
+		EasyMock.expect(cfnRepository.getInstancesFor(stackA.stackName())).andReturn(createInstancesFor("123"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackB.stackName())).andReturn(createInstancesFor("567"));
+		EasyMock.expect(cfnRepository.getInstancesFor(stackC.stackName())).andReturn(createInstancesFor("matchingInstanceId"));
+
+		setDeleteExpectations(stackA.stackName(), createNameAndId(stackA));
+		setDeleteExpectations(stackB.stackName(), createNameAndId(stackB));
+
 		replayAll();
 		aws.tidyNonLBAssocStacks(file, projectAndEnv,"typeTag");
 		verifyAll();
@@ -161,11 +198,12 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 		stacksForProj.add(new StackEntry(project, environmentTag, stackA));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackB));
 		stacksForProj.add(new StackEntry(project, environmentTag, stackC));
-		List<Instance> elbInstances = new LinkedList<>();
-		
-		elbInstances.add(Instance.builder().instanceId("matchingInstanceId").build());
-		
+		List<Instance> elbInstances = Collections.singletonList(Instance.builder().instanceId("matchingInstanceId").build());
+
 		EasyMock.expect(elbRepository.findInstancesAssociatedWithLB(projectAndEnv,"typeTag")).andReturn(elbInstances);
+		EasyMock.expect(targetGroupRepository.findInstancesAssociatedWithTargetGroup(projectAndEnv, "typeTag")).
+				andReturn(Collections.emptySet());
+
 		EasyMock.expect(cfnRepository.getStacksMatching(environmentTag,"simpleStack")).andReturn(stacksForProj);	
 		EasyMock.expect(cfnRepository.getInstancesFor(stackA.stackName())).andReturn(new LinkedList<>());
 		EasyMock.expect(cfnRepository.getInstancesFor(stackB.stackName())).andReturn(createInstancesFor("567"));

@@ -2,7 +2,9 @@
 #
 # Check https://circleci.com/docs/2.0/language-java/ for more details
 #
-version: 2
+version: 2.1
+orbs:
+  go: circleci/go@1.9.0
 jobs:
   build:
     docker:
@@ -78,13 +80,18 @@ jobs:
           path: ~/repo/build/reports/tests
   release:
     docker:
-      - image: circleci/golang:1.8
+      - image: circleci/openjdk:17-jdk-buster
+    executor:
+      name: go/default
+      tag: '1.16'
     steps:
       - checkout
       - restore_cache:
           keys:
             - v1-gradle-deps-{{ checksum "build.gradle" }}
       - run: gradle dependencies --no-daemon
+      - go/install:
+          version: 1.21.3
       - run:
           name: "Publish Release on GitHub"
           command: |

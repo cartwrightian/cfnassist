@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -527,19 +528,27 @@ public class AwsFacade implements ProvidesZones {
 		
 	}
 
-	private List<String> currentlyRegisteredInstanceIDs(
-			ProjectAndEnv projectAndEnv, String typeTag)
-			throws TooManyELBException {
-		List<Instance> registeredInstances = elbRepository.findInstancesAssociatedWithLB(projectAndEnv, typeTag);
-		List<String> regInstanceIds = new LinkedList<>();
-		if (registeredInstances.isEmpty()) {
-			logger.warn("No instances associated with ELB");
-		} else {
-			for(Instance ins : registeredInstances) {
-				regInstanceIds.add(ins.instanceId());
-			}
+	private List<String> currentlyRegisteredInstanceIDs(ProjectAndEnv projectAndEnv, String typeTag) throws CfnAssistException {
+		final Set<String> elbRegistered = elbRepository.findInstancesAssociatedWithLB(projectAndEnv, typeTag).stream().
+				map(Instance::instanceId).collect(Collectors.toSet());
+		if (elbRegistered.isEmpty()) {
+			logger.info("No instances associated with ELB");
 		}
-		return regInstanceIds;
+		final Set<String> targetGroupRegistered = targetGroupRepository.findInstancesAssociatedWithTargetGroup(projectAndEnv, typeTag);
+		if (targetGroupRegistered.isEmpty()) {
+			logger.info("No instances associated with target group");
+		}
+//		List<String> regInstanceIds = new LinkedList<>();
+//		if (registeredInstances.isEmpty()) {
+//			logger.warn("No instances associated with ELB");
+//		} else {
+//			for(Instance ins : registeredInstances) {
+//				regInstanceIds.add(ins.instanceId());
+//			}
+//		}
+		List<String> result = new ArrayList<>(elbRegistered);
+		result.addAll(targetGroupRegistered);
+		return result;
 	}
 	
 	private boolean containsAny(List<String> first, List<String> second) {

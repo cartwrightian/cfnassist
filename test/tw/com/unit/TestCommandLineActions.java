@@ -233,8 +233,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 				
 		validate(CLIArgBuilder.tidyNonLBAssociatedStacks());
 	}
-	
-	
+
 	@Test
 	public void shouldCreateStackWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
