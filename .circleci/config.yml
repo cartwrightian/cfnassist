@@ -76,14 +76,6 @@ jobs:
           path: ~/repo/build/test-results
       - store_artifacts:
           path: ~/repo/build/reports/tests
-      - run:
-          name: buildRelease
-          command: gradle distZip
-      - persist_to_workspace:
-          root: build
-          paths:
-            - distributions
-
   release:
     docker:
       - image: circleci/golang:1.8
@@ -92,8 +84,6 @@ jobs:
       - restore_cache:
           keys:
             - v1-gradle-deps-{{ checksum "build.gradle" }}
-      - attach_workspace:
-          at: ./release
       - run: gradle dependencies --no-daemon
       - run:
           name: "Publish Release on GitHub"
