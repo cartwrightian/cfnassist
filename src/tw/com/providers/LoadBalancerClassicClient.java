@@ -1,5 +1,6 @@
 package tw.com.providers;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -20,8 +21,12 @@ public class LoadBalancerClassicClient {
 	public List<LoadBalancerDescription> describeLoadBalancers() {
 		DescribeLoadBalancersRequest request = DescribeLoadBalancersRequest.builder().build();
 		DescribeLoadBalancersResponse result = elbClient.describeLoadBalancers(request);
+		if (result==null) {
+			logger.warn("Found no ELBs");
+			return Collections.emptyList();
+		}
 		List<LoadBalancerDescription> descriptions = result.loadBalancerDescriptions();
-		logger.info(String.format("Found %s load balancers %s", descriptions.size(), descriptions));
+		logger.info(String.format("Found %s classic load balancers %s", descriptions.size(), descriptions));
 		return descriptions;
 	}
 

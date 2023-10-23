@@ -26,8 +26,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
 public class TestELBRepository extends EasyMockSupport {
@@ -211,6 +210,22 @@ public class TestELBRepository extends EasyMockSupport {
 		
 		assertEquals(1,  result.size());
 		assertEquals("instanceA", result.get(0).instanceId());
+	}
+
+	@Test
+	public void shouldGetNoInstancesIfELBNotFound() throws TooManyELBException {
+		String vpcId = "myVPC";
+
+		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
+
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
+		EasyMock.expect(elbClient.describeLoadBalancers()).andReturn(Collections.emptyList());
+
+		replayAll();
+		List<Instance> result = elbRepository.findInstancesAssociatedWithLB(projAndEnv,"typeNotUsedWhenOneMatchingLB");
+		verifyAll();
+
+		assertTrue(result.isEmpty());
 	}
 	
 	@Test

@@ -1,5 +1,6 @@
 package tw.com.repository;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -132,6 +133,10 @@ public class ELBRepository {
 	public List<Instance> findInstancesAssociatedWithLB(
 			ProjectAndEnv projAndEnv, String typeTag) throws TooManyELBException {
 		LoadBalancerDescription elb = findELBFor(projAndEnv, typeTag);
+		if (elb==null) {
+			logger.warn("No load balancers found");
+			return Collections.emptyList();
+		}
 		return classicClient.getInstancesFor(elb);
 	}
 
