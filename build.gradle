@@ -21,7 +21,7 @@ def githubToken = System.getenv("GITHUB_TOKEN")
 def gitUser = System.getenv("CIRCLE_PROJECT_USERNAME") ?: System.getenv("GIT_USERNAME")
 def gitProject = System.getenv("CIRCLE_PROJECT_REPONAME") ?: System.getenv("GIT_PROJECT")
 def gitSha = System.getenv("CIRCLE_SHA1") ?: currentGitSha()
-def goPath = System.getenv("GOPATH") ?: "./go"
+def goPath = System.getenv("GOPATH") ?: "../go"
 
 version = '1.3.'+buildNumber
 
@@ -91,8 +91,6 @@ task unit(type: Test, dependsOn: compileJava) {
         exceptionFormat "full"
     }
 }
-
-
 
 task integration(type: Test,  dependsOn: compileJava) {
     testLogging.showStandardStreams = true
