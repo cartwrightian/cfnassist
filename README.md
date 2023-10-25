@@ -1,19 +1,21 @@
 cfnassit
 ========
 
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/cartwrightian/cfnassist/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/cartwrightian/cfnassist/tree/master)
+
 cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudformation/) deployments into [AWS](http://aws.amazon.com/) VPCs
 
 Current Release
 ---------------
 
-[Current Version 1.2.85](https://github.com/cartwrightian/cfnassist/releases/download/1.2.86/cfnassist-1.2.85.zip)
+[Current Version 1.3.165](https://github.com/cartwrightian/cfnassist/releases/download/1.3.165/cfnassist-1.3.165.zip)
 
-Dependencies refresh release.
+Added support for target group updates (targetGroupUpdate), works in same way as targetGroupUpdate. 
+Extended tidyOldStacks to include classic and new load balancers.
 
 Previous Releases
 -----------------
-
-[Version 1.1.37](https://github.com/cartwrightian/cfnassist/releases/download/untagged-5f7a9a72351e56c2313c/cfnassist-1.1.37.zip)
+[Version 1.2.85](https://github.com/cartwrightian/cfnassist/releases/download/1.2.86/cfnassist-1.2.85.zip)
 
 Build Status
 ------------
@@ -267,10 +269,11 @@ You can declare the parameters exactly as you would for cloud formation. You can
 
 *Note: You'll need to escape the ; character as appropriate for your shell/cli*
 
-9.Switch over ELB instances using Build Number
-----------------------------------------------
+9.Switch over ELB instances or Target Group using Build Number
+--------------------------------------------------------------
 
 This lets you switch over the instances an ELB is pointing at based on *build number* and a special tag **CFN_ASSIST_TYPE**. 
+You can also update a target group in the same way if using the "V2" load balancers.
 
 You need to set this *type tag* on the instances yourself, for example including the following in your instance definition:
 
@@ -281,18 +284,22 @@ You need to set this *type tag* on the instances yourself, for example including
 
 Now you can switch over the ELB using
 
-`cfnassist -env Dev -build 876 -elbUpdate web`
+`cfnassist -env Dev -build 876 -elbUpdate web` 
+
+Or for "V2" load balancers that use target group, not here you need to give the target port for the instance.
+
+`cfnassist -env Dev -build 876 -targetGroupUpdate  web 8080`
 
 This will find all the instances created in cloud formation stacks for the project/env *and* that have the 
 appropriate **CFN_ASSIST_TYPE** tag. 
 
 Next cfnassist finds the ELB for the VPC for the project and environment, addes the instances it found above to the ELB and 
-*removes* any instances not matching the build number from the ELB.
+*removes* any instances not matching the build number from the ELB or target group.
 
 You can 'rollback' the ELB to point at the previous instances by giving their build number, so you may not want to immediately delete 
 previous instances until sure all is ok with the new ones.
 
-If more than one ELB is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you 
+If more than one ELB, or target group, is found then cfnassist will check if the tag **CFN_ASSIST_TYPE** is present and matches the type tag you 
 give above, if it is the tool will use that ELB, otherwise an error will be thrown. 
 
 10.Reset the delta tag on a VPC
@@ -421,7 +428,7 @@ are no longer associated with an ELB.
 Ihis will locate the ELB for the project/env using the tag **CFN_ASSIST_TYPE** to choose one if multiple are present, in this case
 the tage would need to be set to `typeTag`.
 Next all stacks created from the template `templateFile.json` are located and their instances scanned. 
-If the stack has no instances associated with the ELB then it will be deleted.
+If the stack has no instances associated with the ELB, or target group, then it will be deleted.
 
 18.Generate VPC diagrams
 ------------------------
