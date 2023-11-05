@@ -21,10 +21,7 @@ import tw.com.repository.ELBRepository;
 import tw.com.repository.ResourceRepository;
 import tw.com.repository.VpcRepository;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -129,19 +126,19 @@ public class TestELBRepository extends EasyMockSupport {
 		Instance insB1 = createInstance("instanceB1"); // new
 		Instance insB2 = createInstance("instanceB2"); // new
 
-		List<Instance> instancesThatMatch = new LinkedList<>();
-		instancesThatMatch.add(insA1);
-		instancesThatMatch.add(insA2);
-		instancesThatMatch.add(insB1);
-		instancesThatMatch.add(insB2);
+		Set<Instance> instancesThatMatch = new HashSet<>(Arrays.asList(insA1, insA2, insB1, insB2));
+//		instancesThatMatch.add(insA1);
+//		instancesThatMatch.add(insA2);
+//		instancesThatMatch.add(insB1);
+//		instancesThatMatch.add(insB2);
 		
-		List<Instance> instancesToAdd = new LinkedList<>();
-		instancesToAdd.add(insB1);
-		instancesToAdd.add(insB2);
+		List<Instance> instancesToAdd = Arrays.asList(insB1, insB2);
+//		instancesToAdd.add(insB1);
+//		instancesToAdd.add(insB2);
 		
-		List<Instance> toRemove = new LinkedList<>();
-		toRemove.add(insA1);
-		toRemove.add(insA2);
+		List<Instance> toRemove = Arrays.asList(insA1, insA2);
+//		toRemove.add(insA1);
+//		toRemove.add(insA2);
 		
 		String vpcId = "myVPC";
 		Integer newBuildNumber = 11;

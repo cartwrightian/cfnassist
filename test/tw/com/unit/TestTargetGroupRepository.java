@@ -127,61 +127,126 @@ public class TestTargetGroupRepository extends EasyMockSupport {
 		assertEquals("lb2Name", result.targetGroupName());
 		verifyAll();
 	}
-	
-	@Test
-	public void shouldRegisterELBs() throws CfnAssistException {
-		String instanceIdA1 = "instanceA1";
-		String instanceIdA2 = "instanceA2";
-		String instanceIdB1 = "instanceB1";
-		String instanceIdB2 = "instanceB2";
 
-		List<software.amazon.awssdk.services.elasticloadbalancing.model.Instance> instancesInTheVPC = Arrays.asList(
-				createInstance(instanceIdA1),
-				createInstance(instanceIdA2),
-				createInstance(instanceIdB1),
-				createInstance(instanceIdB2));
-		
-		Set<String> instancesToAdd = new HashSet<>();
-		instancesToAdd.add(instanceIdB1);
-		instancesToAdd.add(instanceIdB2);
-		
-		Set<String> toRemove = new HashSet<>();
-		toRemove.add(instanceIdA1);
-		toRemove.add(instanceIdA2);
-		
+	@Test
+	public void shouldUpdateInstancesForOneALBs() throws CfnAssistException {
 		String vpcId = "myVPC";
 		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
 
 		Integer newBuildNumber = 11;
 		projAndEnv.addBuildNumber(newBuildNumber);
 
-		TargetGroup targetGroupA = TargetGroup.builder().targetGroupName("targetGroupA").vpcId(vpcId).build(); 
-		TargetGroup targetGroupB = TargetGroup.builder().targetGroupName("targetGroupB").vpcId(vpcId).build();
+		TargetGroup targetGroup = TargetGroup.builder().targetGroupName("targetGroupA").vpcId(vpcId).build();
+
+		String existingInstance = "existingInstance"; // i.e. build number 10
+		String newInstance = "newInstance";
+
+		Set<String> instancesToAdd = new HashSet<>(List.of(newInstance));
+
+		Set<String> toRemove = new HashSet<>(List.of(existingInstance));
 
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
-		EasyMock.expect(loadBalancerClient.describerTargetGroups()).andReturn(Collections.singletonList(targetGroupA));
-		EasyMock.expect(loadBalancerClient.getInstancesFor(targetGroupA)).andReturn(new HashSet<>(Arrays.asList(instanceIdA1, instanceIdA2)));
-		EasyMock.expect(loadBalancerClient.getInstancesFor(targetGroupB)).andReturn(new HashSet<>(Arrays.asList(instanceIdA1, instanceIdA2, instanceIdB1, instanceIdB2)));
 
 		SearchCriteria criteria = new SearchCriteria(projAndEnv);
-		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(criteria, "typeTag")).andReturn(instancesInTheVPC);
+		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(criteria, "typeTag")).
+				andStubReturn(Collections.singleton(createInstance(newInstance)));
 
-		// the new instances not present in target group one, so add them
-		loadBalancerClient.registerInstances(targetGroupA, instancesToAdd, port);
+		EasyMock.expect(loadBalancerClient.describerTargetGroups()).andStubReturn(Collections.singletonList(targetGroup));
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroup)).andReturn(new HashSet<>(List.of(existingInstance)));
+
+		// the new instance not present in target group so add
+		loadBalancerClient.registerInstances(targetGroup, instancesToAdd, port);
 		EasyMock.expectLastCall();
 
-		EasyMock.expect(loadBalancerClient.describerTargetGroups()).andReturn(Collections.singletonList(targetGroupB));
+		loadBalancerClient.deregisterInstances(targetGroup, toRemove, port);
+		EasyMock.expectLastCall();
 
-		//EasyMock.expect(loadBalancerClient.deregisterInstances(targetGroupA, toRemove, port)).andReturn(instancesToAdd);
-		EasyMock.expect(loadBalancerClient.deregisterInstances(targetGroupB, toRemove, port)).andReturn(instancesToAdd);
-
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroup)).andReturn(new HashSet<>(List.of(newInstance, existingInstance)));
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroup)).andReturn(new HashSet<>(List.of(newInstance)));
 
 		replayAll();
 		Set<String> result = elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag", port);
-		assertEquals(2, result.size());
-		assertTrue(result.contains(instanceIdB1));
-		assertTrue(result.contains(instanceIdB2));
-		verifyAll();			
+		assertEquals(1, result.size());
+		assertTrue(result.contains(newInstance));
+		verifyAll();
+	}
+
+	@Test
+	public void shouldUpdateInstancesForOneALBsAlreadyRegistered() throws CfnAssistException {
+		String vpcId = "myVPC";
+		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
+
+		Integer newBuildNumber = 11;
+		projAndEnv.addBuildNumber(newBuildNumber);
+
+		TargetGroup targetGroup = TargetGroup.builder().targetGroupName("targetGroupA").vpcId(vpcId).build();
+
+		String existingInstance = "existingInstance"; // i.e. build number 10
+
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
+
+		SearchCriteria criteria = new SearchCriteria(projAndEnv);
+		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(criteria, "typeTag")).
+				andStubReturn(Collections.singleton(createInstance(existingInstance)));
+
+		EasyMock.expect(loadBalancerClient.describerTargetGroups()).andStubReturn(Collections.singletonList(targetGroup));
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroup)).andStubReturn(new HashSet<>(List.of(existingInstance)));
+
+		replayAll();
+		Set<String> result = elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag", port);
+		assertEquals(1, result.size());
+		assertTrue(result.contains(existingInstance));
+		verifyAll();
+	}
+
+	@Test
+	public void shouldUpdateInstancesForOneALBsOthersPresent() throws CfnAssistException {
+		String vpcId = "myVPC";
+		Vpc vpc = Vpc.builder().vpcId(vpcId).build();
+
+		Integer newBuildNumber = 11;
+		projAndEnv.addBuildNumber(newBuildNumber);
+
+		TargetGroup targetGroupA = TargetGroup.builder().targetGroupName("targetGroupA").vpcId(vpcId).build();
+		TargetGroup targetGroupB = TargetGroup.builder().targetGroupName("targetGroupB").vpcId(vpcId).build();
+
+		String existingInstance = "existingInstance"; // i.e. build number 10
+		String newInstance = "newInstance";
+
+		Set<String> instancesToAdd = new HashSet<>(List.of(newInstance));
+
+		Set<String> toRemove = new HashSet<>(List.of(existingInstance));
+
+		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
+
+		SearchCriteria criteria = new SearchCriteria(projAndEnv);
+		EasyMock.expect(cfnRepository.getAllInstancesMatchingType(criteria, "typeTag")).
+				andStubReturn(Collections.singleton(createInstance(newInstance)));
+
+		EasyMock.expect(loadBalancerClient.describerTargetGroups()).andStubReturn(Arrays.asList(targetGroupA,targetGroupB));
+
+		Tag tagA = Tag.builder().key(AwsFacade.TYPE_TAG).value("typeTag").build();
+		Tag tagB = Tag.builder().key(AwsFacade.TYPE_TAG).value("shouldNotMatch").build();
+		EasyMock.expect(loadBalancerClient.getTagsFor(targetGroupA)).andStubReturn(Collections.singletonList(tagA));
+		EasyMock.expect(loadBalancerClient.getTagsFor(targetGroupB)).andStubReturn(Collections.singletonList(tagB));
+
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroupA)).andReturn(new HashSet<>(List.of(existingInstance)));
+
+		// the new instance not present in target group so add
+		loadBalancerClient.registerInstances(targetGroupA, instancesToAdd, port);
+		EasyMock.expectLastCall();
+
+		loadBalancerClient.deregisterInstances(targetGroupA, toRemove, port);
+		EasyMock.expectLastCall();
+
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroupA)).andReturn(new HashSet<>(List.of(newInstance, existingInstance)));
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroupA)).andReturn(new HashSet<>(List.of(newInstance)));
+
+		replayAll();
+		Set<String> result = elbRepository.updateInstancesMatchingBuild(projAndEnv, "typeTag", port);
+		assertEquals(1, result.size());
+		assertTrue(result.contains(newInstance));
+		verifyAll();
 	}
 
 //	private TargetGroup createElbDescriptionWithInstances(String vpcId, Instance... instances) {
@@ -209,7 +274,7 @@ public class TestTargetGroupRepository extends EasyMockSupport {
 
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projAndEnv)).andStubReturn(vpc);
 		EasyMock.expect(loadBalancerClient.describerTargetGroups()).andReturn(loadBalancerDescriptions);
-		EasyMock.expect(loadBalancerClient.getInstancesFor(targetGroup)).andReturn(Collections.singleton(instanceId));
+		EasyMock.expect(loadBalancerClient.getRegisteredInstancesFor(targetGroup)).andReturn(Collections.singleton(instanceId));
 		
 		replayAll();
 		Set<String> result = elbRepository.findInstancesAssociatedWithTargetGroup(projAndEnv,"typeNotUsedWhenOneMatchingLB");

@@ -40,7 +40,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private static final String VPC_ID = "vpcId";
 	private final Vpc vpc = Vpc.builder().vpcId(VPC_ID).build();
 	private AwsFacade aws;
-	private ProjectAndEnv projectAndEnv = getMainProjectAndEnv();
+	private final ProjectAndEnv projectAndEnv = getMainProjectAndEnv();
 	private CloudFormRepository cfnRepository;
 	private VpcRepository vpcRepository;
 	private MonitorStackEvents monitor;

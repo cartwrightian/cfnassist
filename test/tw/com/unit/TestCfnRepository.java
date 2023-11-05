@@ -7,6 +7,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.*;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.*;
 import tw.com.entity.*;
@@ -16,10 +17,7 @@ import tw.com.providers.CFNClient;
 import tw.com.repository.CfnRepository;
 import tw.com.repository.CloudRepository;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -402,12 +400,13 @@ public class TestCfnRepository extends EasyMockSupport {
 		EasyMock.expect(cloudRepository.getTagsForInstance(instanceIdB)).andStubReturn(withTags("0042", "wrongTypeTag"));
 		replayAll();
 		
-		List<Instance> result = repository.getAllInstancesMatchingType(criteria,typeTag);
+		Set<Instance> result = repository.getAllInstancesMatchingType(criteria,typeTag);
 		assertEquals(result.size(),1);
 		result = repository.getAllInstancesMatchingType(criteria, typeTag); // cached call
 		assertEquals(result.size(),1);
 
-		assertEquals(instanceIdA, result.get(0).instanceId());
+		List<Instance> resultAsList = new ArrayList<>(result);
+		assertEquals(instanceIdA, resultAsList.get(0).instanceId());
 		verifyAll();
 	}
 	

@@ -9,8 +9,7 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.*;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.LoadBalancerClientV2;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
@@ -18,6 +17,7 @@ import static tw.com.EnvironmentSetupForTests.MAIN_VPC_FOR_TEST;
 
 public class TestLoadBalancerClientV2 {
     public static final String CFNASSIST_TEST_TARGET_GROUP = "cfnassistTestTargetGroup";
+
     private static final int INSTANCE_PORT = 9998;
 
     private static TargetGroup targetGroup;
@@ -66,25 +66,30 @@ public class TestLoadBalancerClientV2 {
 
     @Test
     public void shouldDescribeInstances() throws InterruptedException {
-        List<TargetDescription> initial = client.describeTargets(targetGroup);
+        List<TargetDescription> initial = client.describeTargets(targetGroup, EnumSet.allOf(TargetHealthStateEnum.class));
         assertTrue(initial.isEmpty());
 
+        waitForInstanceAvailable();
         registerInstance();
 
-        List<TargetDescription> results = client.describeTargets(targetGroup);
+        List<TargetDescription> results = client.describeTargets(targetGroup, EnumSet.of(TargetHealthStateEnum.UNUSED));
         assertFalse(results.isEmpty());
         assertEquals(instance.instanceId(), results.get(0).id());
     }
 
     @Test
-    public void shouldRegisterInstance() {
-        List<TargetDescription> initial = client.describeTargets(targetGroup);
+    public void shouldRegisterInstance() throws InterruptedException {
+        List<TargetDescription> initial = client.describeTargets(targetGroup, EnumSet.allOf(TargetHealthStateEnum.class));
         assertTrue(initial.toString(), initial.isEmpty());
+
+        waitForInstanceAvailable();
 
         client.registerInstance(targetGroup, instance.instanceId(), INSTANCE_PORT);
 
-        List<TargetDescription> results = client.describeTargets(targetGroup);
+        // will be unused as target group not associated with a LB
+        List<TargetDescription> results = client.describeTargets(targetGroup, EnumSet.of(TargetHealthStateEnum.UNUSED));
         assertFalse(results.isEmpty());
+
         assertEquals(instance.instanceId(), results.get(0).id());
     }
 
@@ -97,7 +102,7 @@ public class TestLoadBalancerClientV2 {
         DescribeTargetHealthRequest describeTargetHealthRequest = DescribeTargetHealthRequest.builder().
                 targetGroupArn(targetGroup.targetGroupArn()).build();
 
-        int countDown = 5;
+        int countDown = 10;
         boolean dereg = false;
         while (!dereg && countDown>0) {
             sleep(500);

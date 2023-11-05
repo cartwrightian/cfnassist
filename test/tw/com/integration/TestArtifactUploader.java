@@ -16,6 +16,8 @@ import tw.com.providers.ArtifactUploader;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -100,19 +102,20 @@ public class TestArtifactUploader {
 
     @Test
     public void expectUploadDirWithFolderURLReturnedBack() {
-        List<Parameter> arts = new LinkedList<>();
 
         // any folder with files would do here
-        String folderPath = FilesForTesting.ORDERED_SCRIPTS_FOLDER;
+        String folderPath = FilesForTesting.ORDERED_SCRIPTS_FOLDER; // 2 items
 
         File folder = new File(folderPath);
+
         FilenameFilter filter = (dir, name) -> name.endsWith(".json");
         String[] filesOnDisc = folder.list(filter);
-        Parameter folderParam = createParameter("folder",folderPath);
-        arts.add(folderParam);
+        assertNotNull(filesOnDisc);
+
+        Parameter folderParam = createParameter("folder", folderPath);
 
         ArtifactUploader uploader = new ArtifactUploader(s3Client, EnvironmentSetupForTests.BUCKET_NAME, BUILD_NUMBER);
-        List<Parameter> results = uploader.uploadArtifacts(arts);
+        List<Parameter> results = uploader.uploadArtifacts(Collections.singletonList(folderParam));
 
         assertEquals(1, results.size());
         String s3Prefix = EnvironmentSetupForTests.S3_PREFIX+"/"+BUILD_NUMBER;
@@ -120,7 +123,8 @@ public class TestArtifactUploader {
 
         List<S3Object> objectSummaries = EnvironmentSetupForTests.getBucketObjects(s3Client);
 
-        assertEquals(filesOnDisc.length, objectSummaries.size());
+        assertEquals(objectSummaries.toString(), filesOnDisc.length, objectSummaries.size());
+
         for(String file : filesOnDisc) {
             EnvironmentSetupForTests.isContainedIn(objectSummaries, String.format("%s/%s", s3Prefix, FilenameUtils.getName(file)));
         }
