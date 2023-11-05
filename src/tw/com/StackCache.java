@@ -18,10 +18,10 @@ import java.util.*;
 public class StackCache {
 	private static final Logger logger = LoggerFactory.getLogger(StackCache.class);
 
-	private List<StackEntry> theEntries;
-	private CFNClient formationClient;
-	private StackResources stackResources;
-	private String project;
+	private final List<StackEntry> theEntries;
+	private final CFNClient formationClient;
+	private final StackResources stackResources;
+	private final String project;
 	
 	public StackCache(CFNClient formationClient, String project) {
 		this.formationClient = formationClient;
@@ -37,14 +37,14 @@ public class StackCache {
 	
 	private void getAllStacksForProject() {
 		// TODO handle "next token"?
-		if (theEntries.size() == 0) {
+		if (theEntries.isEmpty()) {
 			logger.info("No cached stacks, loading all stacks");
 	
 			List<Stack> stacks = formationClient.describeAllStacks();
 			populateEntriesIfProjectMatches(stacks);
 			logger.info(String.format("Loaded %s stacks", theEntries.size()));
 		} else {
-			logger.info("Cache hit on stacks");
+			logger.debug("Cache hit on stacks");
 		}
 	}
 	
@@ -52,7 +52,7 @@ public class StackCache {
 		logger.info(String.format("Populating stack entries for %s stacks", stacks.size()));
 		for(Stack stack : stacks) {
 
-			logger.info(String.format("Checking stack %s for tag", stack.stackName()));
+			logger.debug(String.format("Checking stack %s for tag", stack.stackName()));
 		
 			List<Tag> tags = stack.tags();
             Map<String, String> keyValues = convertToMap(tags);
@@ -63,16 +63,20 @@ public class StackCache {
 			for(Tag tag : tags) {
 				String key = tag.key();
 				String value = tag.value();
-				if (key.equals(AwsFacade.ENVIRONMENT_TAG)) {
-					env = value;
-					count--;
-				} else if (key.equals(AwsFacade.PROJECT_TAG)) {
-					proj = value;
-					count--;
-				} else if (key.equals(AwsFacade.BUILD_TAG)) {
-					build = Integer.parseInt(value);
-					count--;
-				}
+                switch (key) {
+                    case AwsFacade.ENVIRONMENT_TAG -> {
+                        env = value;
+                        count--;
+                    }
+                    case AwsFacade.PROJECT_TAG -> {
+                        proj = value;
+                        count--;
+                    }
+                    case AwsFacade.BUILD_TAG -> {
+                        build = Integer.parseInt(value);
+                        count--;
+                    }
+                }
 				if (count==0) break; // small optimisation 
 			}
             //String index = keyValues.get(AwsFacade.INDEX_TAG);
@@ -89,16 +93,16 @@ public class StackCache {
     private void addEntryIfProjectAndEnvMatches(Stack stack, String env, String proj, Integer build, Map<String, String> keyValues) {
 		String stackName = stack.stackName();
 		if (!proj.equals(project) || (env.isEmpty())) {
-			logger.warn(String.format("Could not match expected tags (%s and %s) for project '%s' and stackname %s", 
+			logger.debug(String.format("Could not match expected tags (%s and %s) for project '%s' and stackname %s",
 					AwsFacade.ENVIRONMENT_TAG, AwsFacade.PROJECT_TAG, proj, stackName));
 			return;
 		}
 			
-		logger.info(String.format("Stack %s matched %s and %s", stackName, env, proj));
+		logger.debug(String.format("Stack %s matched %s and %s", stackName, env, proj));
 		EnvironmentTag envTag = new EnvironmentTag(env);
 		StackEntry entry = new StackEntry(proj, envTag, stack);
 		if (build!=null) {
-			logger.info(String.format("Saving associated build number (%s) into stack %s", build, stackName));
+			logger.debug(String.format("Saving associated build number (%s) into stack %s", build, stackName));
 			entry.setBuildNumber(build);
 		}
         if (keyValues.containsKey(AwsFacade.INDEX_TAG)) {
@@ -114,7 +118,7 @@ public class StackCache {
 		StackStatus stackStatus = stack.stackStatus();
 		theEntries.add(entry);
 		stackResources.removeResources(stackName);
-		logger.info(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));			 
+		logger.debug(String.format("Added stack %s matched, environment is %s, status was %s", stackName, envTag, stackStatus));
 	}
 
     private void addUpdateIndexTag(Map<String, String> keyValues, StackEntry entry) {
@@ -130,7 +134,7 @@ public class StackCache {
     private void addIndexTag(Map<String, String> keyValues, String stackName, StackEntry entry) {
         String index = keyValues.get(AwsFacade.INDEX_TAG);
         int number = Integer.parseInt(index);
-        logger.info(String.format("Saving associated index (%s) into stack %s", number, stackName));
+        logger.debug(String.format("Saving associated index (%s) into stack %s", number, stackName));
         entry.setIndex(number);
     }
 
@@ -153,10 +157,10 @@ public class StackCache {
 
 		List<StackResource> resources;
 		if (stackResources.containsStack(stackName)) {
-			logger.info("Cache hit on stack resources for stack " + stackName);
+			logger.debug("Cache hit on stack resources for stack " + stackName);
 			resources = stackResources.getStackResources(stackName);
 		} else {
-			logger.info("Cache miss, loading resources for stack " + stackName);
+			logger.debug("Cache miss, loading resources for stack " + stackName);
 			resources = formationClient.describeStackResources(stackName);
 		
 			stackResources.addStackResources(stackName, resources);

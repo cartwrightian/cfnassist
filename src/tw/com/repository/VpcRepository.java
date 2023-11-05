@@ -18,26 +18,26 @@ import software.amazon.awssdk.services.ec2.model.Vpc;
 
 public class VpcRepository {
 	private static final Logger logger = LoggerFactory.getLogger(VpcRepository.class);
-	private CloudClient cloudClient;
-	private HashMap<ProjectAndEnv, String> idCache; // used to avoid search by tag unless needed
+	private final CloudClient cloudClient;
+	private final HashMap<ProjectAndEnv, String> idCache; // used to avoid search by tag unless needed
 	
 	public VpcRepository(CloudClient cloudClient) {
 		this.cloudClient = cloudClient;
-		idCache = new HashMap<ProjectAndEnv, String>();
+		idCache = new HashMap<>();
 	}
 	
 	public Vpc getCopyOfVpc(ProjectAndEnv projectAndEnv) {
 		if (idCache.containsKey(projectAndEnv)) {
 			String vpcId = idCache.get(projectAndEnv);
-			logger.info(String.format("Cache hit for %s, found VPC ID %s", projectAndEnv, vpcId));		
+			logger.debug(String.format("Cache hit for %s, found VPC ID %s", projectAndEnv, vpcId));
 			return getVpcById(vpcId);
 		} else 
 		{
-			logger.info(String.format("Checking for TAGs %s:%s and %s:%s to find VPC", AwsFacade.PROJECT_TAG, 
+			logger.debug(String.format("Checking for TAGs %s:%s and %s:%s to find VPC", AwsFacade.PROJECT_TAG,
 					projectAndEnv.getProject(), AwsFacade.ENVIRONMENT_TAG, projectAndEnv.getEnv()));
 			Vpc result = findVpcUsingProjectAndEnv(projectAndEnv);
 			if (result==null) {	
-				logger.error("Could not find VPC for " + projectAndEnv);
+				logger.error("Could not find VPC matching " + projectAndEnv);
 			} else {
 				idCache.put(projectAndEnv, result.vpcId());
 			}
@@ -64,7 +64,7 @@ public class VpcRepository {
 				String possibleEnv = getTagByName(vpc, AwsFacade.ENVIRONMENT_TAG);
 				logger.debug(String.format("Found Possible VPC with %s:%s ID is %s", AwsFacade.ENVIRONMENT_TAG, possibleEnv, vpcId));
 				if (key.getEnv().equals(possibleEnv)) {
-					logger.info("Matched tags, vpc id is " + vpcId);
+					logger.debug("Matched tags, vpc id is " + vpcId);
 					return vpc;
 				}
 			}

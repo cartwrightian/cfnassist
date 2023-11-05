@@ -1,6 +1,7 @@
 package tw.com.repository;
 
 import java.util.List;
+import java.util.Set;
 
 
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
@@ -14,7 +15,7 @@ public interface ResourceRepository {
 
 	List<String> getAllInstancesFor(SearchCriteria criteria) throws CfnAssistException;
 
-	List<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException;
+	Set<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException;
 	
 	List<String> getInstancesFor(String Stackname);
 

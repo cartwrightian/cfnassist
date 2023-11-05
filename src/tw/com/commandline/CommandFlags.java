@@ -27,8 +27,8 @@ public class CommandFlags {
 	private Option artifactParam;
 	private Option bucketParam;
 
-	private String executableName;
-	private Options commandLineOptions;
+	private final String executableName;
+	private final Options commandLineOptions;
 
 	private String project;
 	private String env;
@@ -125,15 +125,15 @@ public class CommandFlags {
 		logger.debug("Checking for arg " + argName);
 		if (cmd.hasOption(argName)) {
 			String optionValue = cmd.getOptionValue(argName);
-			logger.info("Got value " + optionValue);
+			logger.debug("Got value " + optionValue);
 			return optionValue;
 		}
 		
 		if (!environmentalVar.isEmpty()) {
-			logger.info(String.format("Argument not given %s, try environmental var %s", argName, environmentalVar));
+			logger.debug(String.format("Argument not given %s, try environmental var %s", argName, environmentalVar));
 			String fromEnv = System.getenv(environmentalVar);
 			if (fromEnv!=null) {
-				logger.info("Got value " + fromEnv);
+				logger.debug("Got value " + fromEnv);
 				return fromEnv;
 			}
 		}
@@ -156,7 +156,7 @@ public class CommandFlags {
 			return results;
 		}
 
-		logger.info("Process additional parameters");
+		logger.debug("Process additional parameters");
 
 		List<String> valuesList = Arrays.asList(cmd.getOptionValues(argName));
 		logger.debug(String.format("Found %s arguments inside of parameter", valuesList.size()));
@@ -169,7 +169,7 @@ public class CommandFlags {
 			}
 			Parameter pair = Parameter.builder().parameterKey(parts[0]).parameterValue(parts[1]).build();
 			results.add(pair);
-			logger.info("Add parameter " + keyValue);
+			logger.debug("Add parameter " + keyValue);
 		}
 		
 		return results;

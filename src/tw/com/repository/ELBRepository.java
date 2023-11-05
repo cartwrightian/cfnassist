@@ -3,6 +3,7 @@ package tw.com.repository;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +110,7 @@ public class ELBRepository {
 		String lbName = elb.loadBalancerName();
 		
 		SearchCriteria criteria = new SearchCriteria(projAndEnv);
-		List<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(criteria, typeTag);
+		Set<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(criteria, typeTag);
 		List<Instance> instancesToAdd = filterBy(currentInstances, allMatchingInstances);
 		if (allMatchingInstances.isEmpty()) {
 			logger.warn(String.format("No instances matched %s and type tag %s (%s)", projAndEnv, typeTag, AwsFacade.TYPE_TAG));
@@ -120,7 +121,7 @@ public class ELBRepository {
 		return instancesToAdd;
 	}
 
-	private List<Instance> filterBy(List<Instance> currentInstances, List<Instance> allMatchingInstances) {
+	private List<Instance> filterBy(List<Instance> currentInstances, Set<Instance> allMatchingInstances) {
 		List<Instance> result = new LinkedList<>();
 		for(Instance candidate : allMatchingInstances) {
 			if (!currentInstances.contains(candidate)) {

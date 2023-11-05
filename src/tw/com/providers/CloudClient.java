@@ -25,7 +25,7 @@ public class CloudClient { //implements ProgressListener {
     }
 
     public Vpc describeVpc(String vpcId) {
-        logger.info("Get VPC by ID " + vpcId);
+        logger.debug("Get VPC by ID " + vpcId);
 
         DescribeVpcsRequest describeVpcsRequest = DescribeVpcsRequest.
                 builder().vpcIds(vpcId).
@@ -36,7 +36,7 @@ public class CloudClient { //implements ProgressListener {
     }
 
     public List<Vpc> describeVpcs() {
-        logger.info("Get All VPCs");
+        logger.debug("Get All VPCs");
 
         DescribeVpcsResponse describeVpcsResults = ec2Client.describeVpcs();
         return describeVpcsResults.vpcs();

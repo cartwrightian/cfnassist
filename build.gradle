@@ -66,6 +66,12 @@ application {
     mainClass = 'tw.com.commandline.Main'
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'tw.com.commandline.Main'
+    }
+}
+
 sourceSets {
     main {
         java {
@@ -125,10 +131,10 @@ distributions {
     }
 }
 
-task release(type:Exec, dependsOn: distZip) {
-    executable  goPath+'/bin/ghr'
-    args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
-}
+//task release(type:Exec, dependsOn: distZip) {
+//    executable  goPath+'/bin/ghr'
+//    args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
+//}
 
 task copyDependencies(type: Copy) {
     from configurations.default

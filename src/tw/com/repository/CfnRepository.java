@@ -26,9 +26,9 @@ public class CfnRepository implements CloudFormRepository {
 	private static final long MAX_CHECK_INTERVAL_MILLIS = 5000;
 
     private final String project;
-    private CFNClient formationClient;
-	private CloudRepository cloudRepository;
-	private StackCache stackCache;
+    private final CFNClient formationClient;
+	private final CloudRepository cloudRepository;
+	private final StackCache stackCache;
 	
 	public CfnRepository(CFNClient formationClient, CloudRepository cloudRepository, String project) {
 		this.formationClient = formationClient;
@@ -220,7 +220,7 @@ public class CfnRepository implements CloudFormRepository {
 		for (StackResource resource : resources) {
 			String type = resource.resourceType();
 			if (type.equals(AWS_EC2_INSTANCE_TYPE)) {
-				logger.info("Matched instance: "+ resource.physicalResourceId());
+				logger.debug("Matched instance: "+ resource.physicalResourceId());
 				instanceIds.add(resource.physicalResourceId());
 			}
 		}
@@ -265,14 +265,14 @@ public class CfnRepository implements CloudFormRepository {
 		return formationClient.validateTemplate(templateBody);
 	}
 
-	private CFNClient.DriftStatus getStackDrift(String name) throws InterruptedException {
-		String refId = formationClient.detectDrift(name);
-		while (formationClient.driftDetectionInProgress(refId)) {
-			logger.info(format("Waiting for stack drift detection to finish ref: %s name %s", refId, name));
-			Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
-		}
-		return formationClient.getDriftDetectionResult(name, refId);
-	}
+//	private CFNClient.DriftStatus getStackDrift(String name) throws InterruptedException {
+//		String refId = formationClient.detectDrift(name);
+//		while (formationClient.driftDetectionInProgress(refId)) {
+//			logger.info(format("Waiting for stack drift detection to finish ref: %s name %s", refId, name));
+//			Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
+//		}
+//		return formationClient.getDriftDetectionResult(name, refId);
+//	}
 
 	@Override
 	public List<StackEntry> getStackDrifts(ProjectAndEnv projectAndEnv) {
@@ -285,7 +285,7 @@ public class CfnRepository implements CloudFormRepository {
 		while (!stillInProgress.isEmpty()) {
 			try {
 				Thread.sleep(STATUS_CHECK_INTERVAL_MILLIS);
-				stillInProgress = stillInProgress.stream().filter(id -> formationClient.driftDetectionInProgress(id)).collect(Collectors.toList());
+				stillInProgress = stillInProgress.stream().filter(formationClient::driftDetectionInProgress).collect(Collectors.toList());
 			} catch (InterruptedException e) {
 				logger.warn("Exception while checking drift status", e);
 				break;
@@ -326,19 +326,19 @@ public class CfnRepository implements CloudFormRepository {
 	}
 
 	@Override
-	public List<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException {
+	public Set<Instance> getAllInstancesMatchingType(SearchCriteria criteria, String typeTag) throws CfnAssistException {
 		Collection<String> instancesIds = getAllInstancesFor(criteria);
 		
-		List<Instance> instances = new LinkedList<>();
+		Set<Instance> instances = new HashSet<>();
 		for (String id : instancesIds) {
 			if (instanceHasCorrectType(typeTag, id)) {
-				logger.info(format("Adding instance %s as it matched %s %s",id, AwsFacade.TYPE_TAG, typeTag));
+				logger.info(format("Got instance %s matching %s %s",id, AwsFacade.TYPE_TAG, typeTag));
 				instances.add(Instance.builder().instanceId(id).build());
 			} else {
-				logger.info(format("Not adding instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, typeTag));
+				logger.info(format("Instance %s as did not match %s %s",id, AwsFacade.TYPE_TAG, typeTag));
 			}	
 		}
-		logger.info(format("Found %s instances matching %s and type: %s", instances.size(), criteria, typeTag));
+		logger.debug(format("Found %s instances matching %s and type: %s", instances.size(), criteria, typeTag));
 		return instances;
 	}
 	

@@ -13,7 +13,7 @@ public class StackResources {
 	private static final Logger logger = LoggerFactory.getLogger(StackResources.class);
 
 	// (StackName) -> [Stack Resources]
-	private Map<String,List<StackResource>> theResources;
+	private final Map<String,List<StackResource>> theResources;
 	
 	public StackResources() {
 		theResources = new HashMap<>();
@@ -24,13 +24,12 @@ public class StackResources {
 	}
 
 	public List<StackResource> getStackResources(String stackName) {
-		List<StackResource> resource = theResources.get(stackName);
-		return resource;
+        return theResources.get(stackName);
 	}
 
 	public void addStackResources(String stackName,
 			List<StackResource> resources) {
-		logger.info("Adding resources for stack: " + stackName);
+		logger.debug("Adding resources for stack: " + stackName);
 		theResources.put(stackName, resources);		
 	}
 

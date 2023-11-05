@@ -2,6 +2,7 @@ package tw.com.repository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.annotations.NotNull;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Tag;
@@ -36,7 +37,8 @@ public class TargetGroupRepository {
 		String vpcID = getVpcId(projAndEnv);
 		List<TargetGroup> foundForVPC = new LinkedList<>();
 		
-		logger.info(format("Searching for load balancers for %s (will use tag %s:%s if >1 found)", vpcID, AwsFacade.TYPE_TAG,type));
+		logger.debug(format("Searching for load balancers for %s (will use tag %s:%s if >1 found)", vpcID, AwsFacade.TYPE_TAG,type));
+
 		List<TargetGroup> loadBalancers = loadBalancerClient.describerTargetGroups();
 		for (TargetGroup targetGroup : loadBalancers) {
 			String diagName = "Name:" + targetGroup.targetGroupName() + " ARN:"+targetGroup.targetGroupArn();
@@ -47,7 +49,7 @@ public class TargetGroupRepository {
 					logger.info(format("Matched ELB %s for VPC: %s", diagName, vpcID));
 					foundForVPC.add(targetGroup);
 				} else {
-					logger.info(format("Not matched ELB %s as VPC id %s does not match: %s", diagName, possible, vpcID));
+					logger.debug(format("Not matched ELB %s as VPC id %s does not match: %s", diagName, possible, vpcID));
 				}
 			} else {
 				logger.debug("No VPC ID for ELB " + diagName);
@@ -98,29 +100,53 @@ public class TargetGroupRepository {
 		return vpc.vpcId();
 	}
 
-	private Set<String> addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String typeTag, int port) throws CfnAssistException {
+	private void addInstancesThatMatchBuildAndType(ProjectAndEnv projAndEnv, String typeTag, int port) throws CfnAssistException {
 		if (!projAndEnv.hasBuildNumber()) {
 			throw new MustHaveBuildNumber();
 		}
+		TargetGroup targetGroup = getTargetGroup(projAndEnv, typeTag);
+		Set<String> currentInstances = loadBalancerClient.getRegisteredInstancesFor(targetGroup);
+
+		Set<Instance> instancesThatMatch = findInstancesMatchingFor(projAndEnv, typeTag);
+		if (instancesThatMatch == null) {
+			return;
+		}
+
+		Set<String> allMatchingInstanceIds = instancesThatMatch.stream().map(Instance::instanceId).collect(Collectors.toSet());
+
+		logger.info("Following instances ids matched " + allMatchingInstanceIds);
+
+		Set<String> instancesToAdd = filterBy(currentInstances, allMatchingInstanceIds);
+		if (instancesToAdd.isEmpty()) {
+			logger.warn("Likely instances already registered, none left after removing registered instances " + currentInstances);
+			return;
+		}
+
+		logger.info(format("Register matching %s instances with the targetgroup %s ", instancesToAdd.size(), targetGroup.targetGroupName()));
+		loadBalancerClient.registerInstances(targetGroup, instancesToAdd, port);
+
+	}
+
+	private TargetGroup getTargetGroup(ProjectAndEnv projAndEnv, String typeTag) throws CfnAssistException {
 		TargetGroup targetGroup = findTargetGroupFor(projAndEnv, typeTag);
 		if (targetGroup==null) {
 			String msg = "Found no target group for " + projAndEnv + " and tag " + typeTag;
 			logger.warn(msg);
 			throw new CfnAssistException(msg);
 		}
-		Set<String> currentInstances = loadBalancerClient.getInstancesFor(targetGroup);
+		return targetGroup;
+	}
 
+	@NotNull
+	private Set<Instance> findInstancesMatchingFor(ProjectAndEnv projAndEnv, String typeTag) throws CfnAssistException {
 		SearchCriteria criteria = new SearchCriteria(projAndEnv);
-		List<Instance> allMatchingInstances = cfnRepository.getAllInstancesMatchingType(criteria, typeTag);
-		Set<String> allMatchingInstanceIds = allMatchingInstances.stream().map(Instance::instanceId).collect(Collectors.toSet());
-		Set<String> instancesToAdd = filterBy(currentInstances, allMatchingInstanceIds);
-		if (allMatchingInstances.isEmpty()) {
-			logger.warn(format("%s No instances matched %s and type tag %s (%s)", targetGroup, projAndEnv, typeTag, AwsFacade.TYPE_TAG));
-		} else {	
-			logger.info(format("Register matching %s instances with the targetgroup %s ", instancesToAdd.size(), targetGroup));
-			loadBalancerClient.registerInstances(targetGroup, instancesToAdd, port);
+		Set<Instance> instancesThatMatch = cfnRepository.getAllInstancesMatchingType(criteria, typeTag);
+
+		if (instancesThatMatch.isEmpty()) {
+			logger.warn("Did not find any instances that match " + criteria + " and typeTag " + typeTag);
+			return null;
 		}
-		return instancesToAdd;
+		return instancesThatMatch;
 	}
 
 	private Set<String> filterBy(Set<String> currentInstances, Set<String> allMatchingInstances) {
@@ -135,57 +161,63 @@ public class TargetGroupRepository {
 
 	public Set<String> findInstancesAssociatedWithTargetGroup(ProjectAndEnv projAndEnv, String typeTag) throws CfnAssistException {
 		TargetGroup targetGroup = findTargetGroupFor(projAndEnv, typeTag);
-		return loadBalancerClient.getInstancesFor(targetGroup);
+		return loadBalancerClient.getRegisteredInstancesFor(targetGroup);
 	}
 
-	// returns remaining instances
-	private Set<String> removeInstancesNotMatching(ProjectAndEnv projAndEnv, Set<String> matchingInstancesIds, String typeTag,
-												   int port) throws CfnAssistException {
+	private void removeInstancesNotMatching(ProjectAndEnv projAndEnv, String typeTag, int port) throws CfnAssistException {
 		TargetGroup targetGroup = findTargetGroupFor(projAndEnv, typeTag);
-		logger.info("Checking if instances should be removed from target group " + targetGroup);
-		Set<String> currentInstances = loadBalancerClient.getInstancesFor(targetGroup);
+		String targetGroupName = targetGroup.targetGroupName();
+		logger.info("Checking if instances should be removed from target group " + targetGroupName + " for " + projAndEnv);
+		Set<String> currentInstances = loadBalancerClient.getRegisteredInstancesFor(targetGroup);
+
+		Set<String> matchingInstancesIds = findInstancesMatchingFor(projAndEnv, typeTag).
+				stream().map(Instance::instanceId).collect(Collectors.toSet());
 
 		Set<String> toRemove = new HashSet<>();
 		for(String instanceId : currentInstances) {
 			if (matchingInstancesIds.contains(instanceId)) {
-				logger.info(format("Instance %s matched %s, will not be removed from %s ", instanceId, projAndEnv, targetGroup));
+				logger.info(format("Instance %s matched criteria, will not be removed from %s ", instanceId, targetGroupName));
 			} else {
-				logger.info(format("Instance %s did not match %s, will be removed from %s ", instanceId, projAndEnv, targetGroup));
+				logger.info(format("Instance %s did not match, will be removed from %s ", instanceId, targetGroupName));
 				toRemove.add(instanceId);
 			}
 		}
 		
 		if (toRemove.isEmpty()) {
-			logger.info("No instances to remove from ELB " + targetGroup);
-			return Collections.emptySet();
+			logger.info("No instances to remove from ELB " + targetGroup.targetGroupName());
+			return;
 		}
-		return removeInstances(targetGroup, toRemove, port);
+
+		removeInstances(targetGroup, toRemove, port);
 	}
 
-	private Set<String> removeInstances(TargetGroup targetGroup, Collection<String> toRemove, int port) throws CfnAssistException {
-		logger.info("Removing instances from " + targetGroup);
+	private void removeInstances(TargetGroup targetGroup, Collection<String> toRemove, int port) throws CfnAssistException {
+		logger.info(format("Removing %s instances from %s", toRemove.size(), targetGroup.targetGroupName()));
 
-		return loadBalancerClient.deregisterInstances(targetGroup, toRemove, port);
-
+		loadBalancerClient.deregisterInstances(targetGroup, toRemove, port);
 	}
 
 	public Set<String> updateInstancesMatchingBuild(ProjectAndEnv projAndEnv, String typeTag, int port) throws CfnAssistException {
-		Set<String> matchinginstances = addInstancesThatMatchBuildAndType(projAndEnv, typeTag, port);
-		return removeInstancesNotMatching(projAndEnv, matchinginstances, typeTag, port);
+		addInstancesThatMatchBuildAndType(projAndEnv, typeTag, port);
+		removeInstancesNotMatching(projAndEnv, typeTag, port);
+
+		TargetGroup targetGroup = getTargetGroup(projAndEnv, typeTag);
+
+		return loadBalancerClient.getRegisteredInstancesFor(targetGroup);
 	}
 
-	// TODO filter on the request, but api does not seeem to support that currently
-	public List<TargetGroup> findELBForVPC(String vpcId) {
-		List<TargetGroup> result = loadBalancerClient.describerTargetGroups(); // seems to be no filter for vpc on elbs
-		
-		List<TargetGroup> filtered = new LinkedList<>();
-		for(TargetGroup targetGroup : result) {
-			if (targetGroup.vpcId()!=null) {
-				if (targetGroup.vpcId().equals(vpcId)) {
-					filtered.add(targetGroup);
-				}
-			}
-		}
-		return filtered;
-	}
+//	// TODO filter on the request, but api does not seem to support that currently
+//	public List<TargetGroup> findELBForVPC(String vpcId) {
+//		List<TargetGroup> result = loadBalancerClient.describerTargetGroups(); // seems to be no filter for vpc on elbs
+//
+//		List<TargetGroup> filtered = new LinkedList<>();
+//		for(TargetGroup targetGroup : result) {
+//			if (targetGroup.vpcId()!=null) {
+//				if (targetGroup.vpcId().equals(vpcId)) {
+//					filtered.add(targetGroup);
+//				}
+//			}
+//		}
+//		return filtered;
+//	}
 }
