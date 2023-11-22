@@ -31,7 +31,7 @@ public abstract class PopulatesParameters {
 		boolean isDeclared = false;
 		for(TemplateParameter declaration : declared) {
 			isDeclared = (declaration.parameterKey().equals(parameterName));
-			if (isDeclared==true) break;
+			if (isDeclared) break;
 		}
 		if (!isDeclared) {
 			logger.info(String.format("Not populating parameter %s as it is not declared in the json file", parameterName));
