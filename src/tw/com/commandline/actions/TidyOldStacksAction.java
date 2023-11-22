@@ -22,8 +22,8 @@ public class TidyOldStacksAction extends SharedAction {
 	
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... args) throws
+			Collection<Parameter> cfnParams,
+					   String... args) throws
 			IOException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade facade = factory.createFacade();
@@ -33,7 +33,7 @@ public class TidyOldStacksAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... args)
+                         String... args)
 			throws CommandLineException {
 		if (args.length!=2) {
 			throw new CommandLineException("Missing arguments for command");

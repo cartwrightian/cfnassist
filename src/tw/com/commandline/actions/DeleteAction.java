@@ -24,7 +24,7 @@ public class DeleteAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-					   Collection<Parameter> artifacts, String... args) throws
+					   String... args) throws
 			IOException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		String filename = args[0];
@@ -36,7 +36,7 @@ public class DeleteAction extends SharedAction {
 	
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+                         String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		// caused nested deleted in ant task to fail, passing artifacts causes no harm/action so comment out for now
 		//guardForNoArtifacts(artifacts);

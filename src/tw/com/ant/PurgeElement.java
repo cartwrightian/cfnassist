@@ -17,13 +17,13 @@ public class PurgeElement implements ActionElement {
 	public PurgeElement() {
 	}
 
-	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams)
 			throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
 
 		CommandLineAction actionToInvoke = new PurgeAction();
 
-		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts);
-		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts);
+		actionToInvoke.validate(projectAndEnv, cfnParams);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams);
 	}
 
 }

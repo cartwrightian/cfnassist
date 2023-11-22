@@ -23,7 +23,7 @@ public class DeleteByNameAction extends SharedAction {
 
     @Override
     public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-                       Collection<Parameter> artifacts, String... args) throws
+                       String... args) throws
             IOException,
             InterruptedException, CfnAssistException, MissingArgumentException {
         String name = args[0];
@@ -34,7 +34,7 @@ public class DeleteByNameAction extends SharedAction {
 
     @Override
     public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-                         Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+                         String... argumentForAction) throws CommandLineException {
         guardForProjectAndEnv(projectAndEnv);
     }
 

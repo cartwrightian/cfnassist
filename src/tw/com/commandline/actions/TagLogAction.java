@@ -21,7 +21,7 @@ public class TagLogAction extends SharedAction {
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
-			Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
+					   String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
 		logger.info("Invoking removeLogs for " + projectAndEnv + " and " + args[0]);
 		AwsFacade aws = factory.createFacade();
 		String groupName = args[0];
@@ -30,7 +30,7 @@ public class TagLogAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction)
+                         String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 	}

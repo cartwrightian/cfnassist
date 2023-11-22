@@ -16,11 +16,11 @@ public class SetTagAction implements ActionElement {
     private String value;
 
     @Override
-    public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
+    public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams) throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
         CommandLineAction action = new tw.com.commandline.actions.AddTagAction();
 
-        action.validate(projectAndEnv, cfnParams, artifacts, name, value);
-        action.invoke(factory, projectAndEnv, cfnParams, artifacts, name, value);
+        action.validate(projectAndEnv, cfnParams, name, value);
+        action.invoke(factory, projectAndEnv, cfnParams, name, value);
     }
 
     public void setName(String name) {

@@ -31,15 +31,15 @@ public class AllowhostElement implements ActionElement {
 	
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+			Collection<Parameter> cfnParams)
 			throws
             InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		
 		AllowHostAction action = new AllowHostAction();
 		
-		action.validate(projectAndEnv, cfnParams, artifacts, tag, host, port);
-		action.invoke(factory, projectAndEnv, cfnParams, artifacts, tag, host, port);
+		action.validate(projectAndEnv, cfnParams, tag, host, port);
+		action.invoke(factory, projectAndEnv, cfnParams, tag, host, port);
 
 	}
 

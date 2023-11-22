@@ -29,14 +29,14 @@ public class BlockCurrentIPElement implements ActionElement {
 	
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+			Collection<Parameter> cfnParams)
 			throws IOException, InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		
 		BlockCurrentIPAction action = new BlockCurrentIPAction();
 		
-		action.validate(projectAndEnv, cfnParams, artifacts, tag, port);
-		action.invoke(factory, projectAndEnv, cfnParams, artifacts, tag, port);
+		action.validate(projectAndEnv, cfnParams, tag, port);
+		action.invoke(factory, projectAndEnv, cfnParams, tag, port);
 
 	}
 

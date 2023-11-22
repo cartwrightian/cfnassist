@@ -24,8 +24,8 @@ public class CommandFlags {
 	private Option snsParam;
 	private Option capIAMParam;
 	private Option commentParam;
-	private Option artifactParam;
-	private Option bucketParam;
+//	private Option artifactParam;
+//	private Option bucketParam;
 
 	private final String executableName;
 	private final Options commandLineOptions;
@@ -36,9 +36,7 @@ public class CommandFlags {
 	private Boolean sns;
 	private Boolean capabilityIAM;
 	private String comment;
-	private String s3bucket;
 	private Collection<Parameter> cfnParams;
-	private Collection<Parameter> artifacts;
 
 	public CommandFlags(String executableName, Options commandLineOptions) {
 		this.executableName = executableName;
@@ -55,8 +53,6 @@ public class CommandFlags {
 		commandLineOptions.addOption(snsParam);
 		commandLineOptions.addOption(capIAMParam);
 		commandLineOptions.addOption(commentParam);
-		commandLineOptions.addOption(artifactParam);
-		commandLineOptions.addOption(bucketParam);
 	}
 	
 	public void populateFlags(CommandLine commandLine, HelpFormatter formatter) throws MissingArgumentException, InvalidStackParameterException {
@@ -70,9 +66,8 @@ public class CommandFlags {
 		capabilityIAM = checkForArgumentPresent(commandLine, capIAMParam);
 		comment = checkForArgument(commandLine, formatter, commentParam, "", false);
 		cfnParams = checkForKeyValueParameters(commandLine, keysValuesParam);
-		artifacts = checkForKeyValueParameters(commandLine, artifactParam);
-		boolean bucketRequired = (!artifacts.isEmpty());
-		s3bucket = checkForArgument(commandLine, formatter, bucketParam, AwsFacade.ENV_S3_BUCKET, bucketRequired);
+//		artifacts = checkForKeyValueParameters(commandLine, artifactParam);
+//		s3bucket = checkForArgument(commandLine, formatter, bucketParam, AwsFacade.ENV_S3_BUCKET, bucketRequired);
 	}
 	
 	@SuppressWarnings("static-access")
@@ -94,10 +89,10 @@ public class CommandFlags {
 
         commentParam = createParam("comment", "Add a comment within the tag " + Tagging.COMMENT_TAG);
 
-        artifactParam = createParamMultiArgs("artifacts","Provide files to be uploaded to S3 bucket, param values will " +
-                "be replaced with the S3 URLs and passed into the template file");
+//        artifactParam = createParamMultiArgs("artifacts","Provide files to be uploaded to S3 bucket, param values will " +
+//                "be replaced with the S3 URLs and passed into the template file");
 
-        bucketParam = createParam("bucket", "Bucket name to use for S3 artifacts");
+//        bucketParam = createParam("bucket", "Bucket name to use for S3 artifacts");
 	}
 
     private Option createParamMultiArgs(String name, String description) {
@@ -218,17 +213,17 @@ public class CommandFlags {
 		return sns;
 	}
 
-	public Collection<Parameter> getUploadParams() {
-		return artifacts;
-	}
-
-	public String getS3Bucket() {
-		return s3bucket;
-	}
-
-	public boolean haveS3Bucket() {
-		return !s3bucket.isEmpty();
-	}
+//	public Collection<Parameter> getUploadParams() {
+//		return artifacts;
+//	}
+//
+//	public String getS3Bucket() {
+//		return s3bucket;
+//	}
+//
+//	public boolean haveS3Bucket() {
+//		return !s3bucket.isEmpty();
+//	}
 	
 	public boolean haveCapabilityIAM() {
 		return capabilityIAM;

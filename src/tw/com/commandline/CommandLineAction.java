@@ -17,11 +17,11 @@ public interface CommandLineAction {
 	String getArgName();
 
 	void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argument) throws
+				String... argument) throws
 			IOException, InterruptedException, CfnAssistException, MissingArgumentException;
 
 	void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException;
+				  String... argumentForAction) throws CommandLineException;
 
 	boolean usesProject();
 	boolean usesComment();

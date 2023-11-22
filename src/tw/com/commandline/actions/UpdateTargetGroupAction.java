@@ -9,7 +9,6 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 
 public class UpdateTargetGroupAction extends SharedAction {
@@ -21,7 +20,7 @@ public class UpdateTargetGroupAction extends SharedAction {
 	
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... args)
+					   String... args)
 			throws IOException, InterruptedException,
 			CfnAssistException, MissingArgumentException {
 
@@ -32,9 +31,8 @@ public class UpdateTargetGroupAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+                         String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
-		guardForNoArtifacts(artifacts);
 		if (!projectAndEnv.hasBuildNumber()) {
 			throw new CommandLineException("You must provide the build parameter");
 		}

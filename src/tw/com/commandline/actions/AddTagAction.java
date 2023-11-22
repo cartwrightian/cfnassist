@@ -22,7 +22,7 @@ public class AddTagAction extends SharedAction  {
     }
 
     @Override
-    public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
+    public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
                        String... args) throws IOException, InterruptedException, CfnAssistException, MissingArgumentException {
         String tagName = args[0];
         String tagValue = args[1];
@@ -32,10 +32,9 @@ public class AddTagAction extends SharedAction  {
     }
 
     @Override
-    public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+    public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, String... argumentForAction) throws CommandLineException {
         guardForProjectAndEnv(projectAndEnv);
         guardForNoBuildNumber(projectAndEnv);
-        guardForNoArtifacts(artifacts);
     }
 
     @Override

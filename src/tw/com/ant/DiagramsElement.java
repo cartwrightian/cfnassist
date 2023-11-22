@@ -26,7 +26,7 @@ public class DiagramsElement implements ActionElement {
 	
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+			Collection<Parameter> cfnParams)
 			throws IOException, InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		String path = target.getAbsolutePath();
@@ -38,8 +38,8 @@ public class DiagramsElement implements ActionElement {
 		
 		CreateDiagramAction action = new CreateDiagramAction();
 		
-		action.validate(projectAndEnv, cfnParams, artifacts, path);
-		action.invoke(factory, projectAndEnv, cfnParams, artifacts, path);
+		action.validate(projectAndEnv, cfnParams, path);
+		action.invoke(factory, projectAndEnv, cfnParams, path);
 
 	}
 

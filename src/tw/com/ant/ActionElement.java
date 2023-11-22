@@ -13,6 +13,6 @@ import java.util.Collection;
 public interface ActionElement {
 
 	void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-				 Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+				 Collection<Parameter> cfnParams)
 			throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException;
 }

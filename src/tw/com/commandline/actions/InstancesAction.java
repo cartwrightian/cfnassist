@@ -22,7 +22,7 @@ public class InstancesAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-					   Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws
+					   Collection<Parameter> cfnParams, String... argument) throws
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
 		SearchCriteria criteria = new SearchCriteria(projectAndEnv);
@@ -32,10 +32,9 @@ public class InstancesAction extends SharedAction {
 	
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+						 String... argumentForAction) throws CommandLineException {
 		guardForProject(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);
-		guardForNoArtifacts(artifacts);
 	}
 	
 	private void render(List<InstanceSummary> results) {

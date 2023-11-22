@@ -1,14 +1,9 @@
 package tw.com.commandline.actions;
 
 import org.apache.commons.cli.Option;
-import software.amazon.awssdk.services.cloudformation.model.Parameter;
-import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineAction;
 import tw.com.commandline.CommandLineException;
 import tw.com.entity.ProjectAndEnv;
-import tw.com.providers.ArtifactUploader;
-
-import java.util.Collection;
 
 public abstract class SharedAction implements CommandLineAction {
 
@@ -69,48 +64,12 @@ public abstract class SharedAction implements CommandLineAction {
 		}
 	}
 
-	protected void guardForNoArtifacts(Collection<Parameter> artifacts)
-			throws CommandLineException {
-		if (!artifacts.isEmpty()) {
-			throw new CommandLineException(
-					"artifacts are not valid with action: " + getArgName());
-		}
-	}
-
-	protected void guardForBucketName(ProjectAndEnv projectAndEnv)
-			throws CommandLineException {
-		if (!projectAndEnv.hasBucketName()) {
-			throw new CommandLineException(
-					"You must provide bucket name if you specify artitacts");
-		}
-	}
-
 	protected void guardForBuildNumber(ProjectAndEnv projectAndEnv)
 			throws CommandLineException {
 		if (!projectAndEnv.hasBuildNumber()) {
 			throw new CommandLineException(
 					"You must provide build number if you specify artitacts");
 		}
-	}
-
-	protected void guardForArtifactAndRequiredParams(
-			ProjectAndEnv projectAndEnv, Collection<Parameter> artifacts)
-			throws CommandLineException {
-		if (!artifacts.isEmpty()) {
-			guardForBuildNumber(projectAndEnv);
-			guardForBucketName(projectAndEnv);
-		}
-	}
-
-	protected void uploadArtifacts(FacadeFactory factory,
-			ProjectAndEnv projectAndEnv, Collection<Parameter> artifacts,
-			Collection<Parameter> cfnParams) {
-		if (artifacts.isEmpty()) {
-			return;
-		}
-
-		ArtifactUploader artifactUploader = factory.createArtifactUploader(projectAndEnv);
-		cfnParams.addAll(artifactUploader.uploadArtifacts(artifacts));
 	}
 
 	protected void guardForSNSNotSet(ProjectAndEnv projectAndEnv) throws CommandLineException {

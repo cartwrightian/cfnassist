@@ -23,8 +23,8 @@ public class DirAction extends SharedAction {
 		createOptionWithArg("dir","The directory/folder containing delta templates to apply");
 	}
 
-	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, 
-			String... args) throws IOException, CfnAssistException, InterruptedException, MissingArgumentException {
+	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
+					   String... args) throws IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
 
 		String folderPath = args[0];
@@ -37,11 +37,10 @@ public class DirAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction)
+                         String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);		
 		guardForNoBuildNumber(projectAndEnv);	
-		guardForNoArtifacts(artifacts);
 	}
 
 	@Override

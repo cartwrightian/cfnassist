@@ -24,8 +24,8 @@ public class CreateDiagramAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argument) throws
+			Collection<Parameter> cfnParams,
+					   String... argument) throws
             IOException,
 			InterruptedException, CfnAssistException, MissingArgumentException {
 		DiagramCreator diagramCreator = factory.createDiagramCreator();
@@ -36,9 +36,8 @@ public class CreateDiagramAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argumentForAction) throws CommandLineException {
-		guardForNoArtifacts(artifacts);
+			Collection<Parameter> cfnParams,
+                         String... argumentForAction) throws CommandLineException {
 		guardForNoBuildNumber(projectAndEnv);
 		guardForSNSNotSet(projectAndEnv);
 	}

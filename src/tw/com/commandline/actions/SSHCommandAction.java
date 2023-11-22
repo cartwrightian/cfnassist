@@ -27,7 +27,7 @@ public class SSHCommandAction extends SharedAction {
 
     @Override
     public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-                       Collection<Parameter> artifacts, String... argument) throws IOException, InterruptedException, CfnAssistException, MissingArgumentException {
+                       String... argument) throws IOException, InterruptedException, CfnAssistException, MissingArgumentException {
 
         AwsFacade aws = factory.createFacade();
         CommandExecutor commandExecutor = factory.getCommandExecutor();
@@ -39,10 +39,9 @@ public class SSHCommandAction extends SharedAction {
 
     @Override
     public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-                         Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+                         String... argumentForAction) throws CommandLineException {
         guardForProjectAndEnv(projectAndEnv);
         guardForNoBuildNumber(projectAndEnv);
-        guardForNoArtifacts(artifacts);
     }
 
     @Override

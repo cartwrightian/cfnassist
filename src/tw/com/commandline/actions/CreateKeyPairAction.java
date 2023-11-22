@@ -24,7 +24,7 @@ public class CreateKeyPairAction extends SharedAction {
 
     @Override
     public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-                       Collection<Parameter> artifacts, String... argument) throws IOException, InterruptedException,
+                       String... argument) throws IOException, InterruptedException,
             CfnAssistException, MissingArgumentException {
         AwsFacade facade = factory.createFacade();
 
@@ -42,7 +42,7 @@ public class CreateKeyPairAction extends SharedAction {
     }
 
     @Override
-    public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+    public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, String... argumentForAction) throws CommandLineException {
         guardForProjectAndEnv(projectAndEnv);
     }
 

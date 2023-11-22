@@ -21,12 +21,12 @@ public class InitElement implements ActionElement {
     }
 
     @Override
-    public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
+    public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams) throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
 
         CommandLineAction actionToInvoke = new InitAction();
 
-        actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, vpcId);
-        actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, vpcId);
+        actionToInvoke.validate(projectAndEnv, cfnParams, vpcId);
+        actionToInvoke.invoke(factory, projectAndEnv, cfnParams, vpcId);
     }
 
     public void setVpcId(String vpcId) {

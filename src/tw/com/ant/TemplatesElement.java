@@ -29,7 +29,7 @@ public class TemplatesElement implements ActionElement {
 	
 
 	@Override
-	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) 
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams)
 			throws IOException, InterruptedException, CfnAssistException,
 			CommandLineException, MissingArgumentException {
 		String absolutePath = target.getAbsolutePath();
@@ -43,7 +43,7 @@ public class TemplatesElement implements ActionElement {
 		if (actionToInvoke==null) {
 			throw new BuildException("Unable to action on path, expect file or folder, path was: " + absolutePath);
 		} 
-		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, absolutePath);
-		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, absolutePath);		
+		actionToInvoke.validate(projectAndEnv, cfnParams, absolutePath);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, absolutePath);
 	}
 }

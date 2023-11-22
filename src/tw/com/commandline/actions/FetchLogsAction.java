@@ -23,7 +23,7 @@ public class FetchLogsAction extends SharedAction {
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
-			Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
+					   String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
 		logger.info("Invoking get logs for " + projectAndEnv + " and " + args[0]);
 		AwsFacade aws = factory.createFacade();
 		int hours = Integer.parseInt(args[0]);
@@ -38,7 +38,7 @@ public class FetchLogsAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction)
+                         String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 	}

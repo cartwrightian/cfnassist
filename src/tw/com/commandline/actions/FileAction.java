@@ -24,19 +24,17 @@ public class FileAction extends SharedAction {
 	}
 	
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... args) throws IOException, CfnAssistException, InterruptedException, MissingArgumentException {
+					   String... args) throws IOException, CfnAssistException, InterruptedException, MissingArgumentException {
 		File templateFile = new File(args[0]);
 		AwsFacade aws = factory.createFacade();
-		uploadArtifacts(factory, projectAndEnv, artifacts, cfnParams);
 		StackNameAndId stackId = aws.applyTemplate(templateFile, projectAndEnv, cfnParams);
 		logger.info("Created stack name "+stackId);
 	}
 	
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+						 String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
-		guardForArtifactAndRequiredParams(projectAndEnv, artifacts);
 	}
 
 	@Override

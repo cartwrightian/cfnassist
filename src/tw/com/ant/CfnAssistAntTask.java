@@ -22,14 +22,14 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	private boolean snsMonitoring;
 	private boolean capabilityIAM;
 	private final Collection<Param> params;
-	private final Collection<Param> artifactParams;
+//	private final Collection<Param> artifactParams;
 	
 	private final List<ActionElement> actionElements;
 	
 	public CfnAssistAntTask() {
 		snsMonitoring = false;
 		params = new LinkedList<>();
-		artifactParams = new LinkedList<>();
+//		artifactParams = new LinkedList<>();
 		actionElements = new LinkedList<>();
 	}
 
@@ -83,15 +83,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 	public void addConfiguredTargetGroupUpdate(TargetGroupUpdateElement targetGroupUpdateElement) {
 		actionElements.add(targetGroupUpdateElement);
 	}
-	
-	public void addConfiguredS3Create(S3Create s3create) {
-		actionElements.add(s3create);
-	}
-	
-	public void addConfiguredS3Delete(S3Delete s3delete) {
-		actionElements.add(s3delete);
-	}
-	
+
 	public void addConfiguredTidyStacks(TidyStacksElement tidyStacksElement) {
 		actionElements.add(tidyStacksElement);
 	}
@@ -126,8 +118,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		}
 
 		Collection<Parameter> cfnParameters = createParameterList();
-		Collection<Parameter> artifacts = createArtifactList();	
-		
+
 		FacadeFactory factory = new FacadeFactory();
 		factory.setProject(cfnProject);
 		if (snsMonitoring) {
@@ -136,7 +127,7 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		
 		try {
 			for(ActionElement element : actionElements) {
-				element.execute(factory, projectAndEnv, cfnParameters, artifacts);
+				element.execute(factory, projectAndEnv, cfnParameters);
 			}
 		} catch (IOException | MissingArgumentException |  
 				InterruptedException | 
@@ -154,25 +145,17 @@ public class CfnAssistAntTask extends org.apache.tools.ant.Task {
 		return cfnParameters;
 	}
 
-	private Collection<Parameter> createArtifactList() {
-		Collection<Parameter> uploadParams = new LinkedList<>();
-		for(Param upload : artifactParams) {
-			uploadParams.add(upload.getParamter());
-		}
-		return uploadParams;
-	}
-
 	 public Param createParam() {
 		 Param param = new Param();
 		 params.add(param);
 		 return param;
 	 }
 
-	 public Param createArtifact() {
-		 Param param = new Param();
-		 artifactParams.add(param);
-		 return param;
-	 }
+//	 public Param createArtifact() {
+//		 Param param = new Param();
+//		 artifactParams.add(param);
+//		 return param;
+//	 }
 
 	public class Param {
 		private String name;

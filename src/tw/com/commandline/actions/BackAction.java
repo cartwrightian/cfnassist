@@ -22,7 +22,7 @@ public class BackAction extends SharedAction {
 	}
 
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
-			Collection<Parameter> artifacts, String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
+					   String... args) throws CfnAssistException, MissingArgumentException, InterruptedException {
 		logger.info("Invoking stepback for " + projectAndEnv);
 		AwsFacade aws = factory.createFacade();
 		aws.stepbackLastChange(projectAndEnv);
@@ -30,11 +30,10 @@ public class BackAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction)
+                         String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);	
-		guardForNoArtifacts(artifacts);
 	}
 
 	@Override

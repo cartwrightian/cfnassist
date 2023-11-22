@@ -29,7 +29,7 @@ public class TidyStacksElement implements ActionElement {
 
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+			Collection<Parameter> cfnParams)
 			throws IOException,
 			InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
@@ -37,8 +37,8 @@ public class TidyStacksElement implements ActionElement {
 		TidyOldStacksAction actionToInvoke = new TidyOldStacksAction();
 		String absolutePath = target.getAbsolutePath();
 
-		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, absolutePath, typeTag);
-		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, absolutePath, typeTag);
+		actionToInvoke.validate(projectAndEnv, cfnParams, absolutePath, typeTag);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, absolutePath, typeTag);
 
 	}
 

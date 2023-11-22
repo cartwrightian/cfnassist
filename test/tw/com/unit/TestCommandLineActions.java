@@ -43,14 +43,14 @@ public class TestCommandLineActions extends EasyMockSupport {
 
 	private AwsFacade facade;
 	private FacadeFactory factory;
-	private ArtifactUploader artifactUploader;
+//	private ArtifactUploader artifactUploader;
 	private DiagramCreator diagramCreator;
 
 	private ProjectAndEnv projectAndEnv;
 	private StackNameAndId stackNameAndId;
 	private Collection<Parameter> params;
 	
-	private String comment = "theComment";
+	private final String comment = "theComment";
 	private ProvidesCurrentIp ipProvider;
 
 	@Before
@@ -58,7 +58,6 @@ public class TestCommandLineActions extends EasyMockSupport {
 		
 		factory = createMock(FacadeFactory.class);
 		facade = createMock(AwsFacade.class);
-		artifactUploader = createMock(ArtifactUploader.class);
 		diagramCreator = createMock(DiagramCreator.class);
 		ipProvider = createStrictMock(ProvidesCurrentIp.class);
 		
@@ -337,76 +336,12 @@ public class TestCommandLineActions extends EasyMockSupport {
         validate(CLIArgBuilder.deleteByNameSimpleStackWithBuildNumber("simpleStack", "0915"));
     }
 	
-	@Test
-	public void testUploadArtifactsAndInvokeStackCreate() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
-		Integer buildNumber = 9987;
-		// src files to upload
-		Collection<Parameter> arts = new LinkedList<>();
-		arts.add(createParameter("urlA", FilesForTesting.ACL));
-		arts.add(createParameter("urlB", FilesForTesting.SUBNET_STACK_JSON));
-		// locations after upload
-		Parameter uploadA = createParameter("urlA", "fileAUploadLocation");
-		Parameter uploadB = createParameter("urlB", "fileBUploadLocation");
-		List<Parameter> uploaded = new LinkedList<>();
-		uploaded.add(uploadA);
-		uploaded.add(uploadB);
-		
-		setFactoryExpectations();
-		factory.setSNSMonitoring();
 
-		projectAndEnv.addBuildNumber(buildNumber);
-		EasyMock.expect(factory.createArtifactUploader(projectAndEnv)).andReturn(artifactUploader);
-		EasyMock.expect(artifactUploader.uploadArtifacts(arts)).andReturn(uploaded);
-		params.add(uploadA);
-		params.add(uploadB);
-		
-		projectAndEnv.setUseSNS();
-		File file = new File(FilesForTesting.SUBNET_WITH_S3_PARAM);
-		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
-		
-		validate(CLIArgBuilder.createSubnetStackWithArtifactUpload(buildNumber, comment));
-	}
 
 	private Parameter createParameter(String key, String value) {
 		return Parameter.builder().parameterKey(key).parameterValue(value).build();
 	}
 
-	@Test
-	public void shouldUploadArtifacts() {
-		Integer buildNumber = 9987;
-		Collection<Parameter> arts = new LinkedList<>();
-		arts.add(createParameter("art1",FilesForTesting.ACL));
-		arts.add(createParameter("art2",FilesForTesting.SUBNET_STACK_JSON));
-		List<Parameter> uploaded = new LinkedList<>();
-		
-		factory.setProject(EnvironmentSetupForTests.PROJECT);
-		
-		projectAndEnv.addBuildNumber(buildNumber);
-		EasyMock.expect(factory.createArtifactUploader(projectAndEnv)).andReturn(artifactUploader);
-		EasyMock.expect(artifactUploader.uploadArtifacts(arts)).andReturn(uploaded);
-		
-		validate(CLIArgBuilder.uploadArtifacts(buildNumber));
-	}
-	
-	@Test
-	public void shouldDeleteArtifacts() {
-		Integer buildNumber = 9987;
-		String filenameA = "fileA";
-		String filenameB = "fileB";
-
-		factory.setProject(EnvironmentSetupForTests.PROJECT);
-        EasyMock.expectLastCall();
-
-        projectAndEnv.addBuildNumber(buildNumber);
-		EasyMock.expect(factory.createArtifactUploader(projectAndEnv)).andReturn(artifactUploader);
-		artifactUploader.delete(filenameA);
-        EasyMock.expectLastCall();
-        artifactUploader.delete(filenameB);
-        EasyMock.expectLastCall();
-
-        validate(CLIArgBuilder.deleteArtifacts(buildNumber, filenameA, filenameB));
-	}
-	
 	@Test
 	public void shouldRequestCreationOfDiagrams() throws CfnAssistException, IOException {
 		Recorder recorder = new FileRecorder(Paths.get("./diagrams"));
@@ -598,37 +533,6 @@ public class TestCommandLineActions extends EasyMockSupport {
         validate(CLIArgBuilder.purge("-sns"));
     }
 
-    @Test
-	public void shouldNotAllowSNSWithS3Create() {
-		String artifacts = format("art1=%s;art2=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
-		
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT,
-				"-s3create",
-				"-artifacts", artifacts,
-				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", "0042",
-				"-sns"
-				};
-		expectCommandLineFailureStatus(args);
-	}
-	
-	@Test
-	public void shouldNotAllowSNSWithS3Delete() {
-		String artifacts = format("art1=%s;art2=%s", "fileA", "fileB");
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT,
-				"-s3delete",
-				"-artifacts", artifacts,
-				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-build", "0042",
-				"-sns"
-				};
-		expectCommandLineFailureStatus(args);
-	}
-	
 	@Test
 	public void shouldNotAllowBuildNumberWithStackTidy() {
 		String[] args = { 
@@ -671,35 +575,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 				};
 		expectCommandLineFailureStatus(args);
 	}
-	
-	@Test
-	public void testMustGiveTheBuildNumberWhenUploadingArtifacts() {
-		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", FilesForTesting.SUBNET_WITH_PARAM,
-				"-artifacts", uploads,
-				"-bucket", EnvironmentSetupForTests.BUCKET_NAME,
-				"-sns"
-				};
-		expectCommandLineFailureStatus(args);
-	}
-	
-	@Test
-	public void testMustGiveTheBucketWhenUploadingArtifacts() {
-		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT, 
-				"-file", FilesForTesting.SUBNET_WITH_PARAM,
-				"-artifacts", uploads,
-				"-build", "9987",
-				"-sns"
-				};
-		expectCommandLineFailureStatus(args);
-	}
-	
+
 	@Test
 	public void testMustGiveFileAndTypeTagWhenInvokingStackTidyCommand() {
 		String[] args = { 
@@ -709,22 +585,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 				};
 		expectCommandLineFailureStatus(args);
 	}
-	
-	@Test
-	public void testUploadArgumentParsingFailsWithoutBucket() {
-		
-		String uploads = format("urlA=%s;urlB=%s", FilesForTesting.ACL, FilesForTesting.SUBNET_STACK_JSON);
-		String[] args = { 
-				"-env", EnvironmentSetupForTests.ENV, 
-				"-project", EnvironmentSetupForTests.PROJECT,
-				"-file", FilesForTesting.SUBNET_WITH_S3_PARAM,
-				"-artifacts", uploads,
-				"-build", "9987",
-				"-sns"
-				};
-		expectCommandLineFailureStatus(args);
-	}
-	
+
 	private void expectCommandLineFailureStatus(String[] args) {
 		Main main = new Main(args);
 		int result = main.parse(factory,true);

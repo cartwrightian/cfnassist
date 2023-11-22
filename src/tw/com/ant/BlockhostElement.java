@@ -4,7 +4,6 @@ import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import org.apache.commons.cli.MissingArgumentException;
 import tw.com.FacadeFactory;
 import tw.com.commandline.CommandLineException;
-import tw.com.commandline.actions.AllowHostAction;
 import tw.com.commandline.actions.BlockHostAction;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
@@ -32,15 +31,15 @@ public class BlockhostElement implements ActionElement {
 	
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+			Collection<Parameter> cfnParams)
 			throws
             InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		
 		BlockHostAction action = new BlockHostAction();
 		
-		action.validate(projectAndEnv, cfnParams, artifacts, tag, host, port);
-		action.invoke(factory, projectAndEnv, cfnParams, artifacts, tag, host, port);
+		action.validate(projectAndEnv, cfnParams, tag, host, port);
+		action.invoke(factory, projectAndEnv, cfnParams, tag, host, port);
 
 	}
 

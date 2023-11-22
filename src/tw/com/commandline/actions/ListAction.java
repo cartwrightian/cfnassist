@@ -22,7 +22,7 @@ public class ListAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-					   Collection<Parameter> cfnParams, Collection<Parameter> artifacts, String... argument) throws
+					   Collection<Parameter> cfnParams, String... argument) throws
             IOException,
             InterruptedException, CfnAssistException, MissingArgumentException {
 		AwsFacade aws = factory.createFacade();
@@ -32,10 +32,9 @@ public class ListAction extends SharedAction {
 	
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction) throws CommandLineException {
+                         String... argumentForAction) throws CommandLineException {
 		guardForProject(projectAndEnv);
 		guardForNoBuildNumber(projectAndEnv);
-		guardForNoArtifacts(artifacts);
 	}
 	
 	private void render(List<StackEntry> results) {

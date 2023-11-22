@@ -23,7 +23,7 @@ public class InitAction extends SharedAction {
 
 	@Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> unused,
-			Collection<Parameter> artifacts, String... args) throws
+					   String... args) throws
             IOException, InterruptedException, CfnAssistException, MissingArgumentException {
 		String vpcId = args[0];
 		logger.info("Invoke init of tags for VPC: " + vpcId);
@@ -33,11 +33,10 @@ public class InitAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams,
-			Collection<Parameter> artifacts, String... argumentForAction)
+                         String... argumentForAction)
 			throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);	
 		guardForNoBuildNumber(projectAndEnv);	
-		guardForNoArtifacts(artifacts);
 	}
 
 	@Override

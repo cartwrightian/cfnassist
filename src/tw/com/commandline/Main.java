@@ -15,12 +15,12 @@ import java.util.Collection;
 public class Main {
 	private static Logger logger = null;//
 	
-	private Options commandLineOptions;
-	private String[] args;
-	private String executableName;
+	private final Options commandLineOptions;
+	private final String[] args;
+	private final String executableName;
 	
-	private CommandFlags flags;
-	private Actions commandActions;
+	private final CommandFlags flags;
+	private final Actions commandActions;
 
 	public Main(String[] args) {
 
@@ -63,9 +63,9 @@ public class Main {
 			if (flags.getSns()) {
 				projectAndEnv.setUseSNS();
 			}
-			if (flags.haveS3Bucket()) {
-				projectAndEnv.setS3Bucket(flags.getS3Bucket());
-			}
+//			if (flags.haveS3Bucket()) {
+//				projectAndEnv.setS3Bucket(flags.getS3Bucket());
+//			}
 			if (flags.haveCapabilityIAM()) {
 				projectAndEnv.setUseCapabilityIAM();
 			}
@@ -76,15 +76,15 @@ public class Main {
 			logger.info("Invoking for " + projectAndEnv);
 			
 			String[] argsForAction = commandLine.getOptionValues(action.getArgName());
-			Collection<Parameter> artifacts = flags.getUploadParams();
-			action.validate(projectAndEnv, flags.getAdditionalParameters(), artifacts, argsForAction);
+//			Collection<Parameter> artifacts = flags.getUploadParams();
+			action.validate(projectAndEnv, flags.getAdditionalParameters(), argsForAction);
 			
 			setFactoryOptionsForAction(factory, action);
 
 			Collection<Parameter> additionalParams = flags.getAdditionalParameters();
 			
 			if (act) {				
-				action.invoke(factory, projectAndEnv, additionalParams, artifacts, argsForAction);
+				action.invoke(factory, projectAndEnv, additionalParams, argsForAction);
 			} else {
 				logger.info("Not invoking");
 			}
@@ -115,19 +115,5 @@ public class Main {
 			factory.setSNSMonitoring();
 		}
 	}
-
-	// TODO CHANGE TO USE DEFAULT REGION PROVIDERS BUILT INTO THE SDK
-//	private Regions populateRegion(String regionName) throws MissingArgumentException {
-//		logger.info("Check for region using name "+regionName);
-//		try {
-//            Regions result = Regions.fromName(regionName);
-//            return result;
-//        }
-//        catch(IllegalArgumentException noSuchRegion) {
-//            String msg = "Unable for find region for " + regionName;
-//            logger.error(msg);
-//            throw new MissingArgumentException(msg);
-//        }
-//	}
 
 }

@@ -24,7 +24,7 @@ public class DeleteElement implements ActionElement {
 		this.target = target;
 	}
 	
-	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams, Collection<Parameter> artifacts) 
+	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv, Collection<Parameter> cfnParams)
 			throws IOException, InterruptedException, CfnAssistException, CommandLineException, MissingArgumentException {
 		String absolutePath = target.getAbsolutePath();
 		
@@ -34,8 +34,8 @@ public class DeleteElement implements ActionElement {
 		
 		CommandLineAction actionToInvoke = new DeleteAction();
 
-		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, absolutePath);
-		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, absolutePath);		
+		actionToInvoke.validate(projectAndEnv, cfnParams, absolutePath);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, absolutePath);
 	}
 
 }

@@ -12,11 +12,9 @@ import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancing
 import software.amazon.awssdk.services.elasticloadbalancingv2.ElasticLoadBalancingV2Client;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.rds.RdsClient;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import tw.com.commandline.CommandExecutor;
-import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.AmazonVPCFacade;
 import tw.com.pictures.DiagramCreator;
@@ -35,7 +33,6 @@ public class FacadeFactory implements ProvidesNow {
     private CloudFormationClient cfnClient;
 	private SqsClient sqsClient;
 	private SnsClient snsClient;
-	private S3Client s3Client;
 	private Ec2Client ec2Client;
 	private ElasticLoadBalancingClient elbClient;
 	private ElasticLoadBalancingV2Client elbClientV2;
@@ -44,7 +41,7 @@ public class FacadeFactory implements ProvidesNow {
     private CloudWatchLogsClient awsLogClient;
 
     // providers
-	private ArtifactUploader artifactUploader;
+//	private ArtifactUploader artifactUploader;
 	private CloudClient cloudClient;
 	private CFNClient formationClient;
 	private LoadBalancerClassicClient loadBalancerClient;
@@ -94,7 +91,6 @@ public class FacadeFactory implements ProvidesNow {
 		sqsClient = SqsClient.create();
 		elbClient = ElasticLoadBalancingClient.create();
 		elbClientV2 = ElasticLoadBalancingV2Client.create();
-		s3Client = S3Client.create();
 		rdsClient = RdsClient.create();
 		awsLogClient = CloudWatchLogsClient.create();
 		iamClient = IamClient.builder().
@@ -144,14 +140,14 @@ public class FacadeFactory implements ProvidesNow {
 		return awsFacade;	
 	}
 
-    public ArtifactUploader createArtifactUploader(ProjectAndEnv projectAndEnv) {
-		init();
-		if (artifactUploader==null) {
-			artifactUploader = new ArtifactUploader(s3Client, projectAndEnv.getS3Bucket(),
-					projectAndEnv.getBuildNumber());
-		}
-		return artifactUploader;
-	}
+//    public ArtifactUploader createArtifactUploader(ProjectAndEnv projectAndEnv) {
+//		init();
+//		if (artifactUploader==null) {
+//			artifactUploader = new ArtifactUploader(s3Client, projectAndEnv.getS3Bucket(),
+//					projectAndEnv.getBuildNumber());
+//		}
+//		return artifactUploader;
+//	}
 
 	public DiagramCreator createDiagramCreator() {
 		init();

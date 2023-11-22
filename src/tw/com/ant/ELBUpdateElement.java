@@ -24,14 +24,14 @@ public class ELBUpdateElement implements ActionElement {
 
 	@Override
 	public void execute(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-						Collection<Parameter> cfnParams, Collection<Parameter> artifacts)
+						Collection<Parameter> cfnParams)
 			throws IOException,
 			InterruptedException,
 			CfnAssistException, CommandLineException, MissingArgumentException {
 		ElbAction actionToInvoke = new ElbAction(); 
 		
-		actionToInvoke.validate(projectAndEnv, cfnParams, artifacts, typeTag);
-		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, artifacts, typeTag);
+		actionToInvoke.validate(projectAndEnv, cfnParams, typeTag);
+		actionToInvoke.invoke(factory, projectAndEnv, cfnParams, typeTag);
 
 	}
 

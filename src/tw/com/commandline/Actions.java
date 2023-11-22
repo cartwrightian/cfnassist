@@ -14,7 +14,7 @@ import java.util.List;
 public class Actions {
 	private static final Logger logger = LoggerFactory.getLogger(Actions.class);
 
-	private List<CommandLineAction> actions;
+	private final List<CommandLineAction> actions;
 	
 	public Actions() {
 		actions = new LinkedList<>();
@@ -60,8 +60,6 @@ public class Actions {
 		actions.add(new DeleteByNameAction());
 		actions.add(new ListAction());
 		actions.add(new ListDriftAction());
-		actions.add(new S3CreateAction());
-		actions.add(new S3DeleteAction());
 		actions.add(new TidyOldStacksAction());
 		actions.add(new CreateDiagramAction());
 		actions.add(new AllowCurrentIPAction());

@@ -9,7 +9,6 @@ import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.ProvidesCurrentIp;
 
-import java.io.IOException;
 import java.util.Collection;
 
 public class BlockCurrentIPAction extends SharedAction {
@@ -22,8 +21,8 @@ public class BlockCurrentIPAction extends SharedAction {
 
     @Override
 	public void invoke(FacadeFactory factory, ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argument) throws
+			Collection<Parameter> cfnParams,
+					   String... argument) throws
 			InterruptedException,
 			CfnAssistException, MissingArgumentException {
 		
@@ -36,8 +35,8 @@ public class BlockCurrentIPAction extends SharedAction {
 
 	@Override
 	public void validate(ProjectAndEnv projectAndEnv,
-			Collection<Parameter> cfnParams, Collection<Parameter> artifacts,
-			String... argumentForAction) throws CommandLineException {
+			Collection<Parameter> cfnParams,
+                         String... argumentForAction) throws CommandLineException {
 		guardForProjectAndEnv(projectAndEnv);
 
 		try {
