@@ -29,7 +29,7 @@ repositories {
     mavenCentral()
 }
 
-project.ext {
+ext {
     awsSdk = '2.20.160'
 }
 
@@ -38,25 +38,25 @@ dependencies {
             'ch.qos.logback:logback-classic:1.5.17'
             'ch.qos.logback:logback-core:1.5.17'
 
-    implementation 'software.amazon.awssdk:protocol-core:'+awsSdk,
-            'software.amazon.awssdk:aws-query-protocol:'+awsSdk,
-            'software.amazon.awssdk:ec2:'+awsSdk,
-            'software.amazon.awssdk:cloudformation:'+awsSdk,
-            'software.amazon.awssdk:elasticloadbalancing:'+awsSdk,
-            'software.amazon.awssdk:elasticloadbalancingv2:'+awsSdk,
-            'software.amazon.awssdk:sns:'+awsSdk,
-            'software.amazon.awssdk:sqs:'+awsSdk,
-            'software.amazon.awssdk:iam:'+awsSdk,
-            'software.amazon.awssdk:rds:'+awsSdk,
-            'software.amazon.awssdk:s3:'+awsSdk,
-            'software.amazon.awssdk:cloudwatchlogs:'+awsSdk
+    implementation "software.amazon.awssdk:protocol-core:$awsSdk",
+            "software.amazon.awssdk:aws-query-protocol:$awsSdk",
+            "software.amazon.awssdk:ec2:$awsSdk",
+            "software.amazon.awssdk:cloudformation:$awsSdk",
+            "software.amazon.awssdk:elasticloadbalancing:$awsSdk",
+            "software.amazon.awssdk:elasticloadbalancingv2:$awsSdk",
+            "software.amazon.awssdk:sns:$awsSdk",
+            "software.amazon.awssdk:sqs:$awsSdk",
+            "software.amazon.awssdk:iam:$awsSdk",
+            "software.amazon.awssdk:rds:$awsSdk",
+            "software.amazon.awssdk:s3:$awsSdk",
+            "software.amazon.awssdk:cloudwatchlogs:$awsSdk"
 
-    implementation 'commons-io:commons-io:2.14.0',
+    implementation 'commons-io:commons-io:2.18.0',
             'commons-cli:commons-cli:1.9.0',
-            'commons-net:commons-net:3.9.0',
-            'org.apache.ant:ant:1.10.13',
-            'com.fasterxml.jackson.core:jackson-core:2.14.2',
-            'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+            'commons-net:commons-net:3.11.1',
+            'org.apache.ant:ant:1.10.15',
+            'com.fasterxml.jackson.core:jackson-core:2.18.3',
+            'com.fasterxml.jackson.core:jackson-databind:2.18.3'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1',
             'org.junit.platform:junit-platform-launcher:1.12.1',
@@ -90,7 +90,7 @@ sourceSets {
 
 
 tasks.register('unit', Test) {
-    dependsOn compileJava
+    dependsOn 'compileJava'
     useJUnitPlatform()
     environment 'testEnvVar', 'testValue'
     filter {
@@ -103,7 +103,7 @@ tasks.register('unit', Test) {
 }
 
 tasks.register('integration', Test) {
-    dependsOn compileJava
+    dependsOn 'compileJava'
     useJUnitPlatform()
     filter {
         includeTestsMatching "tw.com.integration.*"
@@ -115,7 +115,7 @@ tasks.register('integration', Test) {
 }
 
 tasks.register('acceptance', Test) {
-    dependsOn compileJava
+    dependsOn 'compileJava'
     useJUnitPlatform()
     filter {
         includeTestsMatching "tw.com.acceptance.*"
