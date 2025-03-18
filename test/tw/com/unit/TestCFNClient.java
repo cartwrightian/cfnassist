@@ -1,11 +1,10 @@
 package tw.com.unit;
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.*;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.MonitorStackEvents;
@@ -20,22 +19,19 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import static junit.framework.TestCase.*;
-
-@RunWith(EasyMockRunner.class)
-public class TestCFNClient extends EasyMockSupport {
+class TestCFNClient extends EasyMockSupport {
 
     private CFNClient client;
     private software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         cfnClient = createMock(software.amazon.awssdk.services.cloudformation.CloudFormationClient.class);
         client = new CFNClient(cfnClient);
     }
 
     @Test
-    public void shouldDescribeStack() throws WrongNumberOfStacksException {
+    void shouldDescribeStack() throws WrongNumberOfStacksException {
 
         DescribeStacksRequest request = DescribeStacksRequest.builder().stackName("stackName").build();
         Stack stack = Stack.builder().build();
@@ -46,11 +42,11 @@ public class TestCFNClient extends EasyMockSupport {
         replayAll();
         Stack result = client.describeStack("stackName");
         verifyAll();
-        assertEquals(result, stack);
+        Assertions.assertEquals(result, stack);
     }
 
     @Test
-    public void shouldDescribesAllStacks() {
+    void shouldDescribesAllStacks() {
 
         Stack stackA = Stack.builder().build();
         Stack stackB = Stack.builder().build();
@@ -60,13 +56,13 @@ public class TestCFNClient extends EasyMockSupport {
         replayAll();
         List<Stack> result = client.describeAllStacks();
         verifyAll();
-        assertEquals(2, result.size());
-        assertTrue(result.contains(stackA));
-        assertTrue(result.contains(stackB));
+        Assertions.assertEquals(2, result.size());
+        Assertions.assertTrue(result.contains(stackA));
+        Assertions.assertTrue(result.contains(stackB));
     }
 
     @Test
-    public void shouldCreateStack() throws CfnAssistException {
+    void shouldCreateStack() throws CfnAssistException {
         Collection<Tag> tags = new LinkedList<>();
         tags.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_ASSIST_PROJECT", "CfnAssist"));
         tags.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_ASSIST_ENV", "Test"));
@@ -91,12 +87,12 @@ public class TestCFNClient extends EasyMockSupport {
                 "stackName", parameters, monitor, tagging);
         verifyAll();
 
-        assertEquals("stackName", result.getStackName());
-        assertEquals("stackId", result.getStackId());
+        Assertions.assertEquals("stackName", result.getStackName());
+        Assertions.assertEquals("stackId", result.getStackId());
     }
 
     @Test
-    public void shouldDeleteStack() {
+    void shouldDeleteStack() {
 
         DeleteStackRequest deleteRequest = DeleteStackRequest.builder().stackName("stackName").build();
         DeleteStackResponse result = DeleteStackResponse.builder().build();
@@ -108,7 +104,7 @@ public class TestCFNClient extends EasyMockSupport {
     }
 
     @Test
-    public void shouldGetStackEvents() {
+    void shouldGetStackEvents() {
 
         DescribeStackEventsRequest eventRequest = DescribeStackEventsRequest.builder().stackName("stackName").build();
         StackEvent eventA = StackEvent.builder().build();
@@ -121,9 +117,9 @@ public class TestCFNClient extends EasyMockSupport {
         List<StackEvent> result = client.describeStackEvents("stackName");
         verifyAll();
 
-        assertEquals(2, result.size());
-        assertTrue(result.contains(eventA));
-        assertTrue(result.contains(eventB));
+        Assertions.assertEquals(2, result.size());
+        Assertions.assertTrue(result.contains(eventA));
+        Assertions.assertTrue(result.contains(eventB));
     }
 
     public void shouldGetStackResources() {
@@ -137,9 +133,9 @@ public class TestCFNClient extends EasyMockSupport {
         List<StackResource> result = client.describeStackResources("stackName");
         verifyAll();
 
-        assertEquals(2, result.size());
-        assertTrue(result.contains(resA));
-        assertTrue(result.contains(resB));
+        Assertions.assertEquals(2, result.size());
+        Assertions.assertTrue(result.contains(resA));
+        Assertions.assertTrue(result.contains(resB));
     }
 
     private ListStacksRequest listActionStackRequest() {
@@ -162,7 +158,7 @@ public class TestCFNClient extends EasyMockSupport {
     }
 
     @Test
-    public void shouldTestStackExists() {
+    void shouldTestStackExists() {
 
         ListStacksRequest listStackRequest = listActionStackRequest();
         StackSummary stackSummary = StackSummary.builder().
@@ -172,23 +168,23 @@ public class TestCFNClient extends EasyMockSupport {
         EasyMock.expect(cfnClient.listStacks(listStackRequest)).andReturn(summary);
 
         replayAll();
-        assertTrue(client.stackExists("stackName"));
+        Assertions.assertTrue(client.stackExists("stackName"));
         verifyAll();
     }
 
     @Test
-    public void shouldTestStackNotExists() {
+    void shouldTestStackNotExists() {
         ListStacksRequest listStackRequest = listActionStackRequest();
         ListStacksResponse summary = ListStacksResponse.builder().build();
         EasyMock.expect(cfnClient.listStacks(listStackRequest)).andReturn(summary);
 
         replayAll();
-        assertFalse(client.stackExists("stackName"));
+        Assertions.assertFalse(client.stackExists("stackName"));
         verifyAll();
     }
 
     @Test
-    public void shouldUpdateStack() throws NotReadyException {
+    void shouldUpdateStack() throws NotReadyException {
         Collection<Parameter> parameters = new LinkedList<>();
         Parameter parameter = Parameter.builder().parameterKey("paramKey").parameterValue("paramValue").build();
         parameters.add(parameter);
@@ -209,12 +205,12 @@ public class TestCFNClient extends EasyMockSupport {
         StackNameAndId result = client.updateStack("{json}", parameters, monitor, "stackName");
         verifyAll();
 
-        assertEquals("stackName", result.getStackName());
-        assertEquals("stackId", result.getStackId());
+        Assertions.assertEquals("stackName", result.getStackName());
+        Assertions.assertEquals("stackId", result.getStackId());
     }
 
     @Test
-    public void shouldValidateTemplate() {
+    void shouldValidateTemplate() {
         Collection<TemplateParameter> parameters = new LinkedList<>();
         TemplateParameter parameter = TemplateParameter.builder().parameterKey("paramKey").build();
         parameters.add(parameter);
@@ -227,8 +223,8 @@ public class TestCFNClient extends EasyMockSupport {
         List<TemplateParameter> result = client.validateTemplate("{json}");
         verifyAll();
 
-        assertEquals(1, result.size());
-        assertTrue(result.contains(parameter));
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertTrue(result.contains(parameter));
 
 
     }

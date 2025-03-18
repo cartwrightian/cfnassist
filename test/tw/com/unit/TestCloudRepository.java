@@ -1,12 +1,11 @@
 package tw.com.unit;
 
+import org.junit.jupiter.api.Assertions;
 import software.amazon.awssdk.services.ec2.model.*;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.exceptions.WrongNumberOfInstancesException;
@@ -28,14 +27,13 @@ import java.util.Map;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(EasyMockRunner.class)
-public class TestCloudRepository extends EasyMockSupport {
+class TestCloudRepository extends EasyMockSupport {
 	
 	CloudRepository repository;
 	private CloudClient cloudClient;
     private String home;
 
-    @Before
+    @BeforeEach
 	public void beforeEachTestRuns() {
 		cloudClient = createStrictMock(CloudClient.class);
 		repository = new CloudRepository(cloudClient);
@@ -43,7 +41,7 @@ public class TestCloudRepository extends EasyMockSupport {
     }
 	
 	@Test
-	public void shouldReturnSubnetsForGivenVPCId() {
+    void shouldReturnSubnetsForGivenVPCId() {
 		String vpcId = "vpcId";
 		String subnetId = "subnetId";
 		
@@ -53,12 +51,12 @@ public class TestCloudRepository extends EasyMockSupport {
 		repository.getSubnetsForVpc(vpcId);
 		List<Subnet> result = repository.getSubnetsForVpc(vpcId); // cached
 		verifyAll();
-		assertEquals(1, result.size());
-		assertEquals(subnetId, result.get(0).subnetId());
+		Assertions.assertEquals(1, result.size());
+		Assertions.assertEquals(subnetId, result.get(0).subnetId());
 	}
 
 	@Test
-	public void shouldReturnAvailabilityZones() {
+    void shouldReturnAvailabilityZones() {
 		AvailabilityZone zone = AvailabilityZone.builder().regionName("regionName").zoneName("regionaNameA").build();
 		Map<String, AvailabilityZone> zones = new HashMap<>();
 		zones.put("A", zone);
@@ -69,11 +67,11 @@ public class TestCloudRepository extends EasyMockSupport {
 		Map<String, AvailabilityZone> result = repository.getZones(); // cached
 		verifyAll();
 
-		assertEquals(zone, result.get("A"));
+		Assertions.assertEquals(zone, result.get("A"));
 	}
 	
 	@Test
-	public void shouldGetSubnetById() {
+    void shouldGetSubnetById() {
 		String vpcId = "vpcId";
 		String subnetId = "subnetId";
 		
@@ -84,11 +82,11 @@ public class TestCloudRepository extends EasyMockSupport {
 		Subnet result = repository.getSubnetById(subnetId); // cached
 		verifyAll();
 
-		assertEquals(subnetId, result.subnetId());
+		Assertions.assertEquals(subnetId, result.subnetId());
 	}
 	
 	@Test
-	public void getShouldBeAbleToFindEIPsForAVPC() throws CfnAssistException {
+    void getShouldBeAbleToFindEIPsForAVPC() throws CfnAssistException {
 		String vpcId = "vpcId";	
 		String matchingAddress = "42.41.40.39";
 		List<Address> addresses = new LinkedList<>();
@@ -110,12 +108,12 @@ public class TestCloudRepository extends EasyMockSupport {
 		List<Address> result = repository.getEIPForVPCId(vpcId); //cached
 		verifyAll();
 		
-		assertEquals(1, result.size());
-		assertEquals(matchingAddress, result.get(0).privateIpAddress());
+		Assertions.assertEquals(1, result.size());
+		Assertions.assertEquals(matchingAddress, result.get(0).privateIpAddress());
 	}
 	
 	@Test
-	public void shouldBeAbleToGetGroupsByNameAndId() throws CfnAssistException  {
+    void shouldBeAbleToGetGroupsByNameAndId() throws CfnAssistException  {
 		String groupId = "groupId";
 		String groupName = "groupName";
 		
@@ -132,12 +130,12 @@ public class TestCloudRepository extends EasyMockSupport {
 		repository.getSecurityGroupById(groupId); //cached
 		verifyAll();
 		
-		assertEquals(groupName, resultById.groupName());
-		assertEquals(groupId, resultByName.groupId());
+		Assertions.assertEquals(groupName, resultById.groupName());
+		Assertions.assertEquals(groupId, resultByName.groupId());
 	}
 	
 	@Test
-	public void shouldBeAbleToGetInstanceById() throws CfnAssistException {
+    void shouldBeAbleToGetInstanceById() throws CfnAssistException {
 		String instanceId = "instanceId1";
 		String subnetId = "subnetId";
 		List<Instance> instances = createInstances(instanceId, subnetId);
@@ -148,11 +146,11 @@ public class TestCloudRepository extends EasyMockSupport {
 		Instance result = repository.getInstanceById(instanceId);
 		repository.getInstanceById(instanceId); // cached
 		verifyAll();
-		assertEquals(instanceId, result.instanceId());
+		Assertions.assertEquals(instanceId, result.instanceId());
 	}
 	
 	@Test
-	public void shouldFindInstancesForASubnet() {
+    void shouldFindInstancesForASubnet() {
 		String subnetId = "subnetId";
 		String instanceId = "instanceId";
 		String instanceIdB = "instanceId1";
@@ -166,11 +164,11 @@ public class TestCloudRepository extends EasyMockSupport {
 		List<Instance> result = repository.getInstancesForSubnet(subnetId);
 		repository.getInstancesForSubnet(subnetId); // cached
 		verifyAll();
-		assertEquals(2, result.size());
+		Assertions.assertEquals(2, result.size());
 	}
 	
 	@Test
-	public void shouldGetRouteTablesForVPC() {
+    void shouldGetRouteTablesForVPC() {
 		String vpcId = "vpcId";
 		String tableId = "tableId";
 
@@ -185,12 +183,12 @@ public class TestCloudRepository extends EasyMockSupport {
 		List<RouteTable> result = repository.getRouteTablesForVPC(vpcId);
 		repository.getRouteTablesForVPC(vpcId); //cached
 		verifyAll();
-		assertEquals(1,  result.size());
-		assertEquals(tableId, result.get(0).routeTableId());
+		Assertions.assertEquals(1, result.size());
+		Assertions.assertEquals(tableId, result.get(0).routeTableId());
 	}
 	
 	@Test
-	public void shouldGetACLSForVPC() {
+    void shouldGetACLSForVPC() {
 		String vpcId = "vpcId";
 		String aclId = "aclId";
 
@@ -205,12 +203,12 @@ public class TestCloudRepository extends EasyMockSupport {
 		List<NetworkAcl> result = repository.getALCsForVPC(vpcId);
 		repository.getALCsForVPC(vpcId); //cached
 		verifyAll();
-		assertEquals(1,  result.size());
-		assertEquals(aclId, result.get(0).networkAclId());
+		Assertions.assertEquals(1, result.size());
+		Assertions.assertEquals(aclId, result.get(0).networkAclId());
 	}
 
 	@Test
-	public void shouldAddIpsAndPortToASecurityGroup() throws UnknownHostException {
+    void shouldAddIpsAndPortToASecurityGroup() throws UnknownHostException {
 		String groupId = "groupId";
 		Integer port = 8081;
 		InetAddress addressA = Inet4Address.getByName("192.168.0.1");
@@ -228,7 +226,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldRemoveIpAndPortFromASecurityGroup() throws UnknownHostException {
+    void shouldRemoveIpAndPortFromASecurityGroup() throws UnknownHostException {
 		String groupId = "groupId";
 		Integer port = 8081;
 
@@ -247,7 +245,7 @@ public class TestCloudRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldGetTagsForAnInstance() throws WrongNumberOfInstancesException {
+    void shouldGetTagsForAnInstance() throws WrongNumberOfInstancesException {
 		String instanceId = "someId";
 		
 		Tag tag = EnvironmentSetupForTests.createEc2Tag("theKey","theValue");
@@ -258,14 +256,14 @@ public class TestCloudRepository extends EasyMockSupport {
 		List<Tag> results = repository.getTagsForInstance(instanceId);
 		verifyAll();
 		
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 		Tag result = results.get(0);
-		assertEquals("theKey", result.key());
-		assertEquals("theValue", result.value());
+		Assertions.assertEquals("theKey", result.key());
+		Assertions.assertEquals("theValue", result.value());
 	}
 
 	@Test
-	public void shouldCreateKeyPairAndSaveToFile() throws CfnAssistException, IOException {
+    void shouldCreateKeyPairAndSaveToFile() throws CfnAssistException, IOException {
         SavesFile savesFile = createStrictMock(SavesFile.class);
 
         Path filename = Paths.get(format("%s/.ssh/keyName.pem", home));
@@ -283,7 +281,7 @@ public class TestCloudRepository extends EasyMockSupport {
     }
 
 	@Test
-    public void shouldGetIPForAnEIPAllocationId() {
+    void shouldGetIPForAnEIPAllocationId() {
         List<Address> addresses = new LinkedList<>();
         addresses.add(Address.builder().allocationId("allocationId").publicIp("10.1.2.3").build());
         EasyMock.expect(cloudClient.getEIPs()).andReturn(addresses);
@@ -292,7 +290,7 @@ public class TestCloudRepository extends EasyMockSupport {
         String result = repository.getIpFor("allocationId");
         verifyAll();
 
-        assertEquals("10.1.2.3", result);
+        Assertions.assertEquals("10.1.2.3", result);
     }
 
 	private List<Subnet> createSubnets(String vpcId, String subnetId) {

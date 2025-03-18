@@ -1,5 +1,6 @@
 package tw.com.unit;
 
+import org.junit.jupiter.api.*;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
@@ -7,11 +8,7 @@ import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awssdk.services.iam.model.User;
 import tw.com.*;
 import tw.com.entity.*;
@@ -28,10 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-import static org.junit.Assert.*;
-
-@RunWith(EasyMockRunner.class)
-public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpectations {
+class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpectations {
 	private AwsFacade aws;
 	private NotificationSender notificationSender;
 	private IdentityProvider identityProvider;
@@ -39,7 +33,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 	
 	private static final String THIRD_FILE = "03createRoutes.json";
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() throws IOException {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
@@ -59,7 +53,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParameters() throws IOException, InterruptedException, CfnAssistException {
+    void shouldApplySimpleTemplateNoParameters() throws IOException, InterruptedException, CfnAssistException {
 		List<File> files = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 
         EasyMock.expect(cloudRepository.getZones()).andStubReturn(new HashMap<>());
@@ -75,13 +69,13 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		replayAll();
 		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER,
                 projectAndEnv, new LinkedList<>());
-		assertEquals(files.size(), result.size());	
+		Assertions.assertEquals(files.size(), result.size());
 		validateStacksCreated(files, 1, result);
 		verifyAll();	
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParametersOnlyNeeded() throws IOException, InterruptedException, CfnAssistException {
+    void shouldApplySimpleTemplateNoParametersOnlyNeeded() throws IOException, InterruptedException, CfnAssistException {
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		List<File> files = allFiles.subList(1, 2);
 
@@ -97,13 +91,13 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		
 		replayAll();
 		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
-		assertEquals(files.size(), result.size());
+		Assertions.assertEquals(files.size(), result.size());
 		validateStacksCreated(files, 2, result);
 		verifyAll();	
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParametersNoneNeeded() throws IOException, InterruptedException, CfnAssistException {
+    void shouldApplySimpleTemplateNoParametersNoneNeeded() throws IOException, InterruptedException, CfnAssistException {
 		List<File> allFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 		
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("2");
@@ -111,12 +105,12 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 	
 		replayAll();
 		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
-		assertEquals(0, result.size());
+		Assertions.assertEquals(0, result.size());
 		verifyAll();	
 	}
 	
 	@Test
-	public void shouldApplyNewFileAsNeeded() throws IOException, InterruptedException, CfnAssistException {
+    void shouldApplyNewFileAsNeeded() throws IOException, InterruptedException, CfnAssistException {
 		List<File> originalFiles = loadFiles(new File(FilesForTesting.ORDERED_SCRIPTS_FOLDER));
 
         EasyMock.expect(cloudRepository.getZones()).andReturn(new HashMap<>());
@@ -137,16 +131,16 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 
 		replayAll();
 		ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
-		assertEquals(0, result.size());
+		Assertions.assertEquals(0, result.size());
 
 		copyInFile(THIRD_FILE);
 		result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_FOLDER, projectAndEnv, new LinkedList<>());
-		assertEquals(1, result.size());
+		Assertions.assertEquals(1, result.size());
 		verifyAll();	
 	}
 
     @Test
-    public void shouldApplyFilesInAFolderWithUpdate() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplyFilesInAFolderWithUpdate() throws CfnAssistException, IOException, InterruptedException {
         List<File> allFiles = loadFiles(FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toFile());
 
         EasyMock.expect(cloudRepository.getZones()).andReturn(new HashMap<>());
@@ -169,11 +163,11 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
         ArrayList<StackNameAndId> result = aws.applyTemplatesFromFolder(FilesForTesting.ORDERED_SCRIPTS_WITH_UPDATES_FOLDER.toString(),
                 projectAndEnv, cfnParams);
         verifyAll();
-        assertEquals(2, result.size());
+        Assertions.assertEquals(2, result.size());
     }
 
 	@Test
-	public void shouldRollbackTemplatesWithNoUpdateBasedOnIndex() throws CfnAssistException {
+    void shouldRollbackTemplatesWithNoUpdateBasedOnIndex() throws CfnAssistException {
 		String stackA = "CfnAssistTest01createSubnet";
         StackEntry stackEntryA = new StackEntry(projectAndEnv.getProject(), projectAndEnv.getEnvTag(),
                 Stack.builder().stackName(stackA).build());
@@ -210,19 +204,19 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		replayAll();
 		List<String> result = aws.rollbackTemplatesByIndexTag(projectAndEnv);
 		verifyAll();
-		assertEquals(2, result.size());
-		assertTrue(result.contains(stackA));
-		assertTrue(result.contains(stackB));
+		Assertions.assertEquals(2, result.size());
+		Assertions.assertTrue(result.contains(stackA));
+		Assertions.assertTrue(result.contains(stackB));
 	}
 
-    @Ignore
+    @Disabled
     @Test
-    public void shouldRollbackWithDeltas() {
-       fail("no way to do this until we can unpdate tags on a stack");
+    void shouldRollbackWithDeltas() {
+       Assertions.fail("no way to do this until we can unpdate tags on a stack");
     }
 
     @Test
-    public void shouldStepBackLastChangeOnAVpc() throws CfnAssistException {
+    void shouldStepBackLastChangeOnAVpc() throws CfnAssistException {
         String stackB = "CfnAssistTest02createAcls";
         StackNameAndId stackBNameAndId = new StackNameAndId(stackB, "id2");
 
@@ -250,14 +244,14 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
         replayAll();
         List<String> result = aws.stepbackLastChange(projectAndEnv);
         verifyAll();
-        assertEquals(1, result.size());
-        assertTrue(result.contains(stackB));
+        Assertions.assertEquals(1, result.size());
+        Assertions.assertTrue(result.contains(stackB));
     }
 
-    @Ignore
+    @Disabled
     @Test
-    public void shouldStepBackLastChangeOnAVpcWhenUpdate()  {
-        fail("Cannot support this until way to update tag on an existing stack");
+    void shouldStepBackLastChangeOnAVpcWhenUpdate()  {
+        Assertions.fail("Cannot support this until way to update tag on an existing stack");
     }
 
 	private void setExpectationsForValidationPass(List<File> allFiles)
@@ -274,7 +268,7 @@ public class TestAwsFacadeDeltaApplicationAndRollbacks extends UpdateStackExpect
 		for(File file : files) {
 			String expectedName = aws.createStackName(file, projectAndEnv);
 			StackNameAndId expected = new StackNameAndId(expectedName, count.toString());
-			assertTrue(result.contains(expected));
+			Assertions.assertTrue(result.contains(expected));
 			count++;
 		}
 	}

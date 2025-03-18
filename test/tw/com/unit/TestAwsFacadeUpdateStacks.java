@@ -1,9 +1,8 @@
 package tw.com.unit;
 
-import org.easymock.EasyMockRunner;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import tw.com.*;
@@ -23,11 +22,10 @@ import static org.junit.Assert.assertEquals;
 import static tw.com.EnvironmentSetupForTests.createTemplateWithDefault;
 
 
-@RunWith(EasyMockRunner.class)
-public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
+class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 	private AwsFacade aws;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
@@ -43,7 +41,7 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 	}
 	
 	@Test
-	public void voidShouldUpdateAnExistingStackNoParams() throws IOException, CfnAssistException, InterruptedException {
+    void voidShouldUpdateAnExistingStackNoParams() throws IOException, CfnAssistException, InterruptedException {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
@@ -55,12 +53,12 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(stackNameAndId, result);
+		Assertions.assertEquals(stackNameAndId, result);
 		verifyAll();	
 	}
 	
 	@Test
-	public void voidShouldUpdateAnExistingStackWithBuiltInParams() throws IOException, CfnAssistException, InterruptedException {
+    void voidShouldUpdateAnExistingStackWithBuiltInParams() throws IOException, CfnAssistException, InterruptedException {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
@@ -77,12 +75,12 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(stackNameAndId, result);
+		Assertions.assertEquals(stackNameAndId, result);
 		verifyAll();	
 	}
 	
 	@Test
-	public void voidShouldUpdateAnExistingStackUserParams() throws IOException, CfnAssistException, InterruptedException {
+    void voidShouldUpdateAnExistingStackUserParams() throws IOException, CfnAssistException, InterruptedException {
 		String filename = FilesForTesting.SUBNET_STACK_DELTA;
 		String stackName = "CfnAssistTestsubnet";
 		
@@ -98,7 +96,7 @@ public class TestAwsFacadeUpdateStacks extends UpdateStackExpectations {
 		replayAll();
 
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParameters);
-		assertEquals(stackNameAndId, result);
+		Assertions.assertEquals(stackNameAndId, result);
 		verifyAll();	
 	}
 

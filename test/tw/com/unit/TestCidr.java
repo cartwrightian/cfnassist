@@ -1,40 +1,39 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import tw.com.entity.Cidr;
 import tw.com.exceptions.CfnAssistException;
 
-public class TestCidr {
+class TestCidr {
 	
 	@Test
-	public void shouldHaveDefaultCidr() {
+    void shouldHaveDefaultCidr() {
 		Cidr cidr = Cidr.Default();
-		assertTrue(cidr.isDefault());
+		Assertions.assertTrue(cidr.isDefault());
 	}
 	
-	@Test 
-	public void shouldParseDefaultCidr() throws CfnAssistException {
+	@Test
+    void shouldParseDefaultCidr() throws CfnAssistException {
 		Cidr cidr = Cidr.parse("0.0.0.0/0");
 		
-		assertTrue(cidr.isDefault());
+		Assertions.assertTrue(cidr.isDefault());
 	}
 	
 	@Test
-	public void shouldParseCidr() throws CfnAssistException {
+    void shouldParseCidr() throws CfnAssistException {
 		Cidr cidr = Cidr.parse("192.168.0.2/32");
 		
-		assertFalse(cidr.isDefault());
-		assertEquals("192.168.0.2/32", cidr.toString());
+		Assertions.assertFalse(cidr.isDefault());
+		Assertions.assertEquals("192.168.0.2/32", cidr.toString());
 	}
 	
 	@Test
-	public void shouldThrowOnBadFormat() {	
+    void shouldThrowOnBadFormat() {
 		try {
 			Cidr.parse("notvalid/xx");
-			fail("Should have thrown");
+			Assertions.fail("Should have thrown");
 		} catch (CfnAssistException expected) {
 			// no op
 		}

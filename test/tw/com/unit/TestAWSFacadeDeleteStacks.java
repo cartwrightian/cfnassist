@@ -1,11 +1,9 @@
 package tw.com.unit;
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
@@ -21,13 +19,11 @@ import tw.com.providers.NotificationSender;
 import tw.com.repository.*;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-@RunWith(EasyMockRunner.class)
-public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
+class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	private static final StackStatus DELETE_COMP_STATUS = StackStatus.DELETE_COMPLETE;
 	private final ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
 	private final String project = projectAndEnv.getProject();
@@ -43,7 +39,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	private TargetGroupRepository targetGroupRepository;
 	private User user;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
@@ -61,7 +57,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDeleteStack() throws InterruptedException, CfnAssistException {
+    void shouldDeleteStack() throws InterruptedException, CfnAssistException {
 		String fullName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
@@ -76,7 +72,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldDeleteByName() throws CfnAssistException, InterruptedException {
+    void shouldDeleteByName() throws CfnAssistException, InterruptedException {
         String fullName = "CfnAssistTestsimpleStack";
         String stackId = "stackId";
         StackNameAndId stackNameAndId = new StackNameAndId(fullName, stackId);
@@ -89,7 +85,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDeleteStackWithBuildNumber() throws InterruptedException, CfnAssistException {
+    void shouldDeleteStackWithBuildNumber() throws InterruptedException, CfnAssistException {
 		String fullName = "CfnAssist57TestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
@@ -105,7 +101,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 
     @Test
-    public void shouldDeleteByNameWithBuildNumber() throws CfnAssistException, InterruptedException {
+    void shouldDeleteByNameWithBuildNumber() throws CfnAssistException, InterruptedException {
         String fullName = "CfnAssist57TestsimpleStack";
         String stackId = "stackId";
         StackNameAndId stackNameAndId = new StackNameAndId(fullName, stackId);
@@ -119,7 +115,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
     }
 	
 	@Test
-	public void shouldDeleteNamedStacksNotAssociatedWithLB() throws InterruptedException, CfnAssistException {
+    void shouldDeleteNamedStacksNotAssociatedWithLB() throws InterruptedException, CfnAssistException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		
@@ -151,7 +147,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldDeleteNamedStacksNotAssociatedTargetGroup() throws InterruptedException, CfnAssistException {
+    void shouldDeleteNamedStacksNotAssociatedTargetGroup() throws InterruptedException, CfnAssistException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);
 
@@ -186,7 +182,7 @@ public class TestAWSFacadeDeleteStacks extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldDeleteNamedStacksNotAssociatedWithLBWhileIgnoringStacksWithNoInstances() throws InterruptedException, CfnAssistException {
+    void shouldDeleteNamedStacksNotAssociatedWithLBWhileIgnoringStacksWithNoInstances() throws InterruptedException, CfnAssistException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		File file = new File(filename);	
 		

@@ -1,8 +1,9 @@
 package tw.com.unit;
 
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
@@ -19,14 +20,14 @@ import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
-public class TestCfnBuiltInParams implements ProvidesZones {
+class TestCfnBuiltInParams implements ProvidesZones {
 
     private CfnBuiltInParams parameters;
     private LinkedList<Parameter> results;
     private LinkedList<TemplateParameter> declaredParameters;
     private String vpcId;
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
 
         vpcId = "vpcId";
@@ -37,24 +38,24 @@ public class TestCfnBuiltInParams implements ProvidesZones {
     }
 
     @Test
-    public void shouldNotPopulateEnvAndEpvParametersIfNotDeclared() {
+    void shouldNotPopulateEnvAndEpvParametersIfNotDeclared() {
 
         parameters.addParameters(results, declaredParameters, EnvironmentSetupForTests.getMainProjectAndEnv(), this);
 
-        assertTrue(results.isEmpty());
+        Assertions.assertTrue(results.isEmpty());
     }
 
     @Test
-    public void shouldPopulateEnvAndVPCIfDeclared() {
+    void shouldPopulateEnvAndVPCIfDeclared() {
         declaredParameters.add(createParam("env"));
         declaredParameters.add(createParam("vpc"));
 
         ProjectAndEnv projAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
         parameters.addParameters(results, declaredParameters, projAndEnv, this);
 
-        assertEquals(2, results.size());
-        assertTrue(isPresentIn(results, "env", projAndEnv.getEnv()));
-        assertTrue(isPresentIn(results, "vpc", vpcId));
+        Assertions.assertEquals(2, results.size());
+        Assertions.assertTrue(isPresentIn(results, "env", projAndEnv.getEnv()));
+        Assertions.assertTrue(isPresentIn(results, "vpc", vpcId));
 
     }
 
@@ -63,7 +64,7 @@ public class TestCfnBuiltInParams implements ProvidesZones {
     }
 
     @Test
-    public void shouldPopulateEnvVpcAndBuildIfDeclared()  {
+    void shouldPopulateEnvVpcAndBuildIfDeclared()  {
         declaredParameters.add(createParam("env"));
         declaredParameters.add(createParam("vpc"));
         declaredParameters.add(createParam("build"));
@@ -72,15 +73,15 @@ public class TestCfnBuiltInParams implements ProvidesZones {
         projAndEnv.addBuildNumber(5426);
         parameters.addParameters(results, declaredParameters, projAndEnv, this);
 
-        assertEquals(3, results.size());
-        assertTrue(isPresentIn(results, "env", projAndEnv.getEnv()));
-        assertTrue(isPresentIn(results, "vpc", vpcId));
-        assertTrue(isPresentIn(results, "build", "5426"));
+        Assertions.assertEquals(3, results.size());
+        Assertions.assertTrue(isPresentIn(results, "env", projAndEnv.getEnv()));
+        Assertions.assertTrue(isPresentIn(results, "vpc", vpcId));
+        Assertions.assertTrue(isPresentIn(results, "build", "5426"));
 
     }
 
     @Test
-    public void shouldPopulateEnvVpcIfDeclaredButBuildNotDeclared() {
+    void shouldPopulateEnvVpcIfDeclaredButBuildNotDeclared() {
         declaredParameters.add(createParam("env"));
         declaredParameters.add(createParam("vpc"));
 
@@ -88,9 +89,9 @@ public class TestCfnBuiltInParams implements ProvidesZones {
         projAndEnv.addBuildNumber(5426);
         parameters.addParameters(results, declaredParameters, projAndEnv, this);
 
-        assertEquals(2, results.size());
-        assertTrue(isPresentIn(results, "env", projAndEnv.getEnv()));
-        assertTrue(isPresentIn(results, "vpc", vpcId));
+        Assertions.assertEquals(2, results.size());
+        Assertions.assertTrue(isPresentIn(results, "env", projAndEnv.getEnv()));
+        Assertions.assertTrue(isPresentIn(results, "vpc", vpcId));
     }
 
     private boolean isPresentIn(Collection<Parameter> results, String key, String value) {

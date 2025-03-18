@@ -1,11 +1,10 @@
 package tw.com.unit;
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
@@ -19,10 +18,7 @@ import tw.com.repository.CloudRepository;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
-
-@RunWith(EasyMockRunner.class)
-public class TestCfnRepository extends EasyMockSupport {
+class TestCfnRepository extends EasyMockSupport {
 	
 	private ProjectAndEnv mainProjectAndEnv = new ProjectAndEnv(EnvironmentSetupForTests.PROJECT, EnvironmentSetupForTests.ENV);
 
@@ -33,7 +29,7 @@ public class TestCfnRepository extends EasyMockSupport {
 
 	private CloudRepository cloudRepository;
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		formationClient = createMock(CFNClient.class);
 		
@@ -43,7 +39,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 
 	@Test
-	public void testGetAllStacks() {
+    void testGetAllStacks() {
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist");
 		List<Stack> list = new LinkedList<>();
 		list.add(Stack.builder().tags(tags).stackName("matchingStack").build());
@@ -53,15 +49,15 @@ public class TestCfnRepository extends EasyMockSupport {
 
 		replayAll();
 		List<StackEntry> results = repository.getStacks();
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 		results = repository.getStacks(); // second call should hit cache
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 
 		verifyAll();	
 	}
 
 	@Test
-	public void shouldGetDrifts() {
+    void shouldGetDrifts() {
 		List<Tag> tags = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist");
 
 		List<Stack> stacks = new LinkedList<>();
@@ -78,15 +74,15 @@ public class TestCfnRepository extends EasyMockSupport {
 
 		replayAll();
 		List<StackEntry> results = repository.getStackDrifts(mainProjectAndEnv);
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 		CFNClient.DriftStatus driftStatus = results.get(0).getDriftStatus();
-		assertEquals(42, driftStatus.getDriftedStackResourceCount());
-		assertEquals(StackDriftStatus.DRIFTED, driftStatus.getStackDriftStatus());
+		Assertions.assertEquals(42, driftStatus.getDriftedStackResourceCount());
+		Assertions.assertEquals(StackDriftStatus.DRIFTED, driftStatus.getStackDriftStatus());
 		verifyAll();
 	}
 	
 	@Test
-	public void testGetStacksByEnv() {
+    void testGetStacksByEnv() {
 		List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist");
 		List<Tag> tagsB = new LinkedList<>();
 		tagsB.add(EnvironmentSetupForTests.createCfnStackTAG("CFN_ASSIST_ENV", "WrongTest"));
@@ -100,9 +96,9 @@ public class TestCfnRepository extends EasyMockSupport {
 
 		replayAll();
 		List<StackEntry> results = repository.getStacks(envTag);
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 		results = repository.getStacks(envTag); // second call should hit cache
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 
 		verifyAll();	
 	}
@@ -112,7 +108,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 
     @Test
-    public void shouldGetStackByEndAndIndex() throws WrongNumberOfStacksException {
+    void shouldGetStackByEndAndIndex() throws WrongNumberOfStacksException {
         List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
@@ -131,7 +127,7 @@ public class TestCfnRepository extends EasyMockSupport {
         StackEntry result = repository.getStacknameByIndex(envTag, 4);
         verifyAll();
 
-        assertEquals("matchingStack", result.getStackName());
+        Assertions.assertEquals("matchingStack", result.getStackName());
     }
 
 	private Stack createStackWithTags(String stackName, List<Tag> tags) {
@@ -143,7 +139,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldGetStackNameByUpdateIndexSingle() throws WrongNumberOfStacksException {
+    void shouldGetStackNameByUpdateIndexSingle() throws WrongNumberOfStacksException {
         List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
@@ -163,11 +159,11 @@ public class TestCfnRepository extends EasyMockSupport {
         StackEntry result = repository.getStacknameByIndex(envTag, 4);
         verifyAll();
 
-        assertEquals("matchingStack", result.getStackName());
+        Assertions.assertEquals("matchingStack", result.getStackName());
 	}
 
     @Test
-    public void shouldGetStackNameByUpdateIndexMultiple() throws WrongNumberOfStacksException {
+    void shouldGetStackNameByUpdateIndexMultiple() throws WrongNumberOfStacksException {
         List<Tag> tagsA = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsB = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
         List<Tag> tagsC = EnvironmentSetupForTests.createExpectedStackTags("comment",noBuildNumber, mainProjectAndEnv.getProject());
@@ -187,11 +183,11 @@ public class TestCfnRepository extends EasyMockSupport {
         StackEntry result = repository.getStacknameByIndex(envTag, 4);
         verifyAll();
 
-        assertEquals("matchingStack", result.getStackName());
+        Assertions.assertEquals("matchingStack", result.getStackName());
     }
 	
-	@Test 
-	public void testShouldFindResourcesByIdInsideOfAStack()  {
+	@Test
+    void testShouldFindResourcesByIdInsideOfAStack()  {
 		String logicalId = "logicalIdOfResource";
 		String expectedPhyId = "physicalIdOfResource";
 		String stackName = "testStackName";
@@ -209,9 +205,9 @@ public class TestCfnRepository extends EasyMockSupport {
 		replayAll();
 		
 		String physicalId = repository.findPhysicalIdByLogicalId(envTag, logicalId);		
-		assertEquals(expectedPhyId, physicalId);
+		Assertions.assertEquals(expectedPhyId, physicalId);
 		physicalId = repository.findPhysicalIdByLogicalId(envTag, logicalId);	 // hits cache	
-		assertEquals(expectedPhyId, physicalId);
+		Assertions.assertEquals(expectedPhyId, physicalId);
 		
 		verifyAll();
 	}
@@ -221,7 +217,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldWaitForStatusToChange() throws WrongNumberOfStacksException, InterruptedException {
+    void testShouldWaitForStatusToChange() throws WrongNumberOfStacksException, InterruptedException {
 		String stackName = "testStack";
 
 		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_IN_PROGRESS);
@@ -230,12 +226,12 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		StackStatus result = repository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(StackMonitor.CREATE_ABORTS));
-		assertEquals(StackStatus.CREATE_COMPLETE, result);
+		Assertions.assertEquals(StackStatus.CREATE_COMPLETE, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void testWaitForStatusShouldAbort() throws WrongNumberOfStacksException, InterruptedException {
+    void testWaitForStatusShouldAbort() throws WrongNumberOfStacksException, InterruptedException {
 		String stackName = "testStack";
 
 		EasyMock.expect(formationClient.currentStatus(stackName)).andReturn(StackStatus.CREATE_IN_PROGRESS);
@@ -244,22 +240,22 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		StackStatus result = repository.waitForStatusToChangeFrom(stackName, StackStatus.CREATE_IN_PROGRESS, Arrays.asList(StackMonitor.CREATE_ABORTS));
-		assertEquals(StackStatus.CREATE_FAILED, result);
+		Assertions.assertEquals(StackStatus.CREATE_FAILED, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void testShouldCheckIfStackExists() {
+    void testShouldCheckIfStackExists() {
 		String stackName = "testStack";
 
 		EasyMock.expect(formationClient.stackExists(stackName)).andReturn(true);
 		replayAll();
-		assertTrue(repository.stackExists(stackName));
+		Assertions.assertTrue(repository.stackExists(stackName));
 		verifyAll();
 	}
 	
 	@Test
-	public void testShouldGetCurrentStackStatus() throws WrongNumberOfStacksException {
+    void testShouldGetCurrentStackStatus() throws WrongNumberOfStacksException {
 		String stackName = "testStack";
 		Stack inProgressStack = createStackWithNameAndStatus(stackName, StackStatus.CREATE_IN_PROGRESS,
 				EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist"));
@@ -276,14 +272,14 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		StackStatus result = repository.getStackStatus(stackName);
-		assertEquals(StackStatus.CREATE_IN_PROGRESS, result);
+		Assertions.assertEquals(StackStatus.CREATE_IN_PROGRESS, result);
 		result = repository.getStackStatus(stackName);
-		assertEquals(StackStatus.CREATE_IN_PROGRESS, result);
+		Assertions.assertEquals(StackStatus.CREATE_IN_PROGRESS, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldThrowIfNoSuchStack() {
+    void shouldThrowIfNoSuchStack() {
 		List<Stack> stacks = new LinkedList<>();
 		stacks.add(createStackWithNameAndStatus("ThisIsNotTheStackYouAreLookingFor", StackStatus.CREATE_COMPLETE,
 				new LinkedList<>()));
@@ -293,7 +289,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		replayAll();
         try {
             repository.getStackStatus("thisStackShouldNotExist");
-            fail("should not have reached here, exception expected");
+            Assertions.fail("should not have reached here, exception expected");
         } catch (WrongNumberOfStacksException e) {
             // expected
         }
@@ -301,7 +297,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldGetIdForAStackName() throws WrongNumberOfStacksException {
+    void testShouldGetIdForAStackName() throws WrongNumberOfStacksException {
 		String stackName = "testStack";
 		String stackId = "theIdOfTheStack";
 		Stack stack = Stack.builder().tags(EnvironmentSetupForTests.createExpectedStackTags("",noBuildNumber, "CfnAssist")).
@@ -312,13 +308,13 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		StackNameAndId result = repository.getStackNameAndId(stackName);
-		assertEquals(stackName, result.getStackName());
-		assertEquals(stackId, result.getStackId());
+		Assertions.assertEquals(stackName, result.getStackName());
+		Assertions.assertEquals(stackId, result.getStackId());
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldFindInstancesForProjectBasedOnCriteria() {
+    void shouldFindInstancesForProjectBasedOnCriteria() {
 		String stackName = "testStack";
 		String stackId = "theIdOfTheStack";
 		String instanceId = "theInstanceId";
@@ -328,11 +324,11 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		List<String> result = repository.getAllInstancesFor(criteria);
-		assertEquals(result.size(),1);
+		Assertions.assertEquals(result.size(), 1);
 		result = repository.getAllInstancesFor(criteria); // cached call
-		assertEquals(result.size(),1);
+		Assertions.assertEquals(result.size(), 1);
 
-		assertEquals(instanceId, result.get(0));
+		Assertions.assertEquals(instanceId, result.get(0));
 		verifyAll();
 	}
 
@@ -353,7 +349,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldFindInstancesForStack() {
+    void shouldFindInstancesForStack() {
 		String stackName = "testStack";
 		String instanceId = "theInstanceId";
 		
@@ -365,17 +361,17 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		List<String> result = repository.getInstancesFor(stackName);
-		assertEquals(result.size(),1);
+		Assertions.assertEquals(result.size(), 1);
 		result = repository.getInstancesFor(stackName); // cached call
 		verifyAll();
 		
-		assertEquals(result.size(),1);
-		assertEquals(instanceId, result.get(0));
+		Assertions.assertEquals(result.size(), 1);
+		Assertions.assertEquals(instanceId, result.get(0));
 
 	}
 	
 	@Test
-	public void shouldFindInstancesForProjAndEnvMakingTypeTag() throws CfnAssistException {
+    void shouldFindInstancesForProjAndEnvMakingTypeTag() throws CfnAssistException {
 		String stackName = "testStack";
 		String stackId = "theIdOfTheStack";
 		String instanceIdA = "InstanceIdA";
@@ -401,17 +397,17 @@ public class TestCfnRepository extends EasyMockSupport {
 		replayAll();
 		
 		Set<Instance> result = repository.getAllInstancesMatchingType(criteria,typeTag);
-		assertEquals(result.size(),1);
+		Assertions.assertEquals(result.size(), 1);
 		result = repository.getAllInstancesMatchingType(criteria, typeTag); // cached call
-		assertEquals(result.size(),1);
+		Assertions.assertEquals(result.size(), 1);
 
 		List<Instance> resultAsList = new ArrayList<>(result);
-		assertEquals(instanceIdA, resultAsList.get(0).instanceId());
+		Assertions.assertEquals(instanceIdA, resultAsList.get(0).instanceId());
 		verifyAll();
 	}
 	
 	@Test
-	public void testShouldGetStackByName() throws WrongNumberOfStacksException {
+    void testShouldGetStackByName() throws WrongNumberOfStacksException {
 		String stackName = "testStack";
 		
 		List<Stack> list = new LinkedList<>();
@@ -422,16 +418,16 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		Stack result = repository.getStack(stackName);
-		assertEquals(stackName, result.stackName());
-		assertEquals("correctId", result.stackId());
+		Assertions.assertEquals(stackName, result.stackName());
+		Assertions.assertEquals("correctId", result.stackId());
 		result = repository.getStack(stackName); // cached on this call
-		assertEquals(stackName, result.stackName());
-		assertEquals("correctId", result.stackId());
+		Assertions.assertEquals(stackName, result.stackName());
+		Assertions.assertEquals("correctId", result.stackId());
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldGetStacksMatchingProjectEnvAndName() {
+    void shouldGetStacksMatchingProjectEnvAndName() {
 		List<Stack> list = new LinkedList<>();
 
 		list.add(createStackWithTagsAndId("CfnAssist1TestsimpleStack", "idA", createTags(1)));
@@ -446,9 +442,9 @@ public class TestCfnRepository extends EasyMockSupport {
 		List<StackEntry> result = repository.getStacksMatching(mainProjectAndEnv.getEnvTag(),"simpleStack");
 		verifyAll();
 		
-		assertEquals(2, result.size());
-		assertEquals("idA", result.get(0).getStack().stackId());
-		assertEquals("idB", result.get(1).getStack().stackId());
+		Assertions.assertEquals(2, result.size());
+		Assertions.assertEquals("idA", result.get(0).getStack().stackId());
+		Assertions.assertEquals("idB", result.get(1).getStack().stackId());
 	}
 	
 	private List<Tag> createTags(Integer buildNumber) {
@@ -456,7 +452,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldDeleteStack() {
+    void shouldDeleteStack() {
 		// this smells, at least until we pull cache updates down into repository
 		
 		formationClient.deleteStack("stackName");
@@ -468,7 +464,7 @@ public class TestCfnRepository extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStack() throws CfnAssistException {
+    void shouldCreateStack() throws CfnAssistException {
 		// this smells, at least until we pull cache updates down into repository
 		
 		Collection<Parameter> parameters = new LinkedList<>();
@@ -480,13 +476,13 @@ public class TestCfnRepository extends EasyMockSupport {
 		replayAll();
 		
 		StackNameAndId result = repository.createStack(projAndEnv, "contents", "stackName", parameters, monitor, tagging);
-		assertEquals("stackName", result.getStackName());
-		assertEquals("someStackId", result.getStackId());
+		Assertions.assertEquals("stackName", result.getStackName());
+		Assertions.assertEquals("someStackId", result.getStackId());
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldUpdateStack() throws CfnAssistException {
+    void shouldUpdateStack() throws CfnAssistException {
 		// this smells, at least until we pull cache updates down into repository
 		
 		Collection<Parameter> parameters = new LinkedList<>();
@@ -496,13 +492,13 @@ public class TestCfnRepository extends EasyMockSupport {
 		replayAll();
 		
 		StackNameAndId result = repository.updateStack("contents", parameters, monitor, "stackName");
-		assertEquals("stackName", result.getStackName());
-		assertEquals("someStackId", result.getStackId());
+		Assertions.assertEquals("stackName", result.getStackName());
+		Assertions.assertEquals("someStackId", result.getStackId());
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldUpdateStackWithSNS() throws CfnAssistException {
+    void shouldUpdateStackWithSNS() throws CfnAssistException {
 		// this smells, at least until we pull cache updates down into repository
 		SNSMonitor snsMonitor = createMock(SNSMonitor.class);
 		
@@ -512,13 +508,13 @@ public class TestCfnRepository extends EasyMockSupport {
 		replayAll();
 		
 		StackNameAndId result = repository.updateStack("contents", parameters, snsMonitor, "stackName");
-		assertEquals("stackName", result.getStackName());
-		assertEquals("someStackId", result.getStackId());
+		Assertions.assertEquals("stackName", result.getStackName());
+		Assertions.assertEquals("someStackId", result.getStackId());
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldValidateTemplates() {
+    void shouldValidateTemplates() {
 		
 		List<TemplateParameter> params = new LinkedList<>();
 		params.add(TemplateParameter.builder().defaultValue("aDefaultValue").build());
@@ -526,7 +522,7 @@ public class TestCfnRepository extends EasyMockSupport {
 		
 		replayAll();
 		List<TemplateParameter> result = repository.validateStackTemplate("someContents");
-		assertEquals(1, result.size());
+		Assertions.assertEquals(1, result.size());
 	}
 
 	private List<software.amazon.awssdk.services.ec2.model.Tag> withTags(String buildNumber, String typeTag) {
