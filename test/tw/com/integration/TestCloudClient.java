@@ -89,7 +89,7 @@ public class TestCloudClient {
 			matched = candidate.tags().contains(expectedTag);
 			if (matched) break;
 		}
-		assertTrue(matched);
+		assertTrue("Did not find " + expectedTag + " in " + results, matched);
 	}
 
 	@Test

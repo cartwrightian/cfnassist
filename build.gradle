@@ -35,8 +35,8 @@ project.ext {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.6',
-            'ch.qos.logback:logback-classic:1.4.5'
-            'ch.qos.logback:logback-core:1.4.5'
+            'ch.qos.logback:logback-classic:1.4.12'
+            'ch.qos.logback:logback-core:1.4.12'
 
     implementation 'software.amazon.awssdk:protocol-core:'+awsSdk,
             'software.amazon.awssdk:aws-query-protocol:'+awsSdk,
@@ -51,7 +51,7 @@ dependencies {
             'software.amazon.awssdk:s3:'+awsSdk,
             'software.amazon.awssdk:cloudwatchlogs:'+awsSdk
 
-    implementation 'commons-io:commons-io:2.11.0',
+    implementation 'commons-io:commons-io:2.14.0',
             'commons-cli:commons-cli:1.5.0',
             'commons-net:commons-net:3.9.0',
             'org.apache.ant:ant:1.10.13',
@@ -133,7 +133,7 @@ distributions {
 
 task release(type:Exec, dependsOn: distZip) {
     executable  goPath+'/bin/ghr'
-    args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
+    //args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
 }
 
 task copyDependencies(type: Copy) {

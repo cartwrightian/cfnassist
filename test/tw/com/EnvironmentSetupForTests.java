@@ -51,11 +51,11 @@ public class EnvironmentSetupForTests {
 	// User/Env specific constants, these will need to change for others running these tests!
     public static final String BUCKET_NAME="cfnassists3testbucket";
     //public static final String AVAILABILITY_ZONE = "eu-west-1c";
-    public static final String S3_PREFIX = "https://s3.amazonaws.com/"+BUCKET_NAME;
+    //public static final String S3_PREFIX = "https://s3.amazonaws.com/"+BUCKET_NAME;
 
     private static final String AMI_FOR_INSTANCE =  "ami-0f3164307ee5d695a"; //"ami-08935252a36e25f85";
 	public static final String MAIN_VPC_FOR_TEST = "vpc-38d62752";
-	public static final String VPC_ID_FOR_ALT_ENV =  "vpc-24e4624f"; //"vpc-21e5ee43";
+	public static final String VPC_ID_FOR_ALT_ENV =  "vpc-051fdd29f9b6effde"; //"vpc-21e5ee43";
 	public static final String TEST_SUBNET_FOR_MAIN_VPC = "subnet-0c70801c424a8f4f1";
     //
 	///////////////
