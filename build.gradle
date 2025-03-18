@@ -1,5 +1,4 @@
 
-
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'application'
@@ -11,7 +10,7 @@ ext.currentGitSha = { ->
         args 'rev-parse', 'HEAD'
         standardOutput = result
     }
-    return result.toString().replaceAll("(?:\\n|\\r)", "")
+    return result.toString().replaceAll("[\\n\\r]", "")
 }
 
 def candidate = System.getenv("CIRCLE_BUILD_NUM") ?: "0"
@@ -140,7 +139,7 @@ distributions {
 tasks.register('release', Exec) {
     dependsOn distZip
     executable goPath + '/bin/ghr'
-    //args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
+    args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
 }
 
 tasks.register('copyDependencies', Copy) {
