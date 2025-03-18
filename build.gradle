@@ -60,7 +60,7 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1',
             'org.junit.platform:junit-platform-launcher:1.12.1',
-            'org.easymock:easymock:5.2.0'
+            'org.easymock:easymock:5.5.0'
 
 }
 
