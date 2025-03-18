@@ -1,15 +1,14 @@
 package tw.com.unit;
 
-import software.amazon.awssdk.services.cloudformation.model.*;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockSupport;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
 import software.amazon.awssdk.services.ec2.model.Vpc;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.iam.model.User;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
@@ -29,13 +28,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static tw.com.EnvironmentSetupForTests.createTemplate;
 import static tw.com.EnvironmentSetupForTests.getMainProjectAndEnv;
 
-@RunWith(EasyMockRunner.class)
-public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
+class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private static final StackStatus CREATE_COMP_STATUS = StackStatus.CREATE_COMPLETE;
 	private static final String VPC_ID = "vpcId";
 	private final Vpc vpc = Vpc.builder().vpcId(VPC_ID).build();
@@ -49,7 +45,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	private CloudRepository cloudRepository;
 	private User user;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 
 		monitor = createMock(MonitorStackEvents.class);
@@ -69,7 +65,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateNoParameters() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateNoParameters() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -82,12 +78,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateParametersWithOutDescriptions() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateParametersWithOutDescriptions() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -101,12 +97,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateOutputParameters() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateOutputParameters() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -124,7 +120,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
@@ -135,7 +131,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 
 	@Test
-	public void shouldApplySimpleTemplateNoParametersWithComment() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateNoParametersWithComment() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -149,12 +145,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
         projectAndEnv.setComment("aComment");
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 
 	@Test
-	public void shouldThrowOnCreateWhenStackExistsAndNotRolledBack() throws IOException, CfnAssistException, InterruptedException  {
+    void shouldThrowOnCreateWhenStackExistsAndNotRolledBack() throws IOException, CfnAssistException, InterruptedException  {
 		String stackName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -181,7 +177,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 	
 	@Test
-	public void shouldHandleCreateWhenStackInRolledBackStatus() throws IOException, CfnAssistException, InterruptedException  {
+    void shouldHandleCreateWhenStackInRolledBackStatus() throws IOException, CfnAssistException, InterruptedException  {
 		String stackName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -213,12 +209,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(stackNameAndId, result);
+		Assertions.assertEquals(stackNameAndId, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldHandleCreateWhenStackRolledBackInProgressStatus() throws IOException, CfnAssistException, InterruptedException {
+    void shouldHandleCreateWhenStackRolledBackInProgressStatus() throws IOException, CfnAssistException, InterruptedException {
 		String stackName = "CfnAssistTestsimpleStack";
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -250,12 +246,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(stackNameAndId, result);
+		Assertions.assertEquals(stackNameAndId, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParamsWithBuild() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateEnvAndVpcBuiltInParamsWithBuild() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssist43TestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -275,12 +271,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 
 	@Test
-	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParamsWithBuildAndZones() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateEnvAndVpcBuiltInParamsWithBuildAndZones() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK_WITH_AZ;
 		String stackName = "CfnAssist43TestsimpleStackWithAZ";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -309,7 +305,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 
@@ -318,7 +314,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	}
 
 	@Test
-	public void shouldApplySimpleTemplateInputParameters() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateInputParameters() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -334,7 +330,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		List<Parameter> userParams = new LinkedList<>();
 		addParam(userParams, "subnet", "subnetValue");
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
@@ -342,7 +338,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	// needs environmental variable set to testEnvVar set to testValue
 	///////
 	@Test
-	public void shouldApplySimpleTemplateEnvVarParameters() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateEnvVarParameters() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -358,7 +354,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		replayAll();
 		List<Parameter> userParams = new LinkedList<>();
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
@@ -366,7 +362,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 	// needs environmental variable set to testEnvVar set to testValue
 	///////
 	@Test
-	public void shouldApplySimpleTemplateEnvVarParametersNoEchoSet() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateEnvVarParametersNoEchoSet() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -383,12 +379,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		replayAll();
 		List<Parameter> userParams = new LinkedList<>();
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplyAutoDiscoveryTemplateInputParameters() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplyAutoDiscoveryTemplateInputParameters() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -420,12 +416,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		replayAll();
 		List<Parameter> userParams = new LinkedList<>();
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplyAutoDiscoveryVPCTagParameters() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplyAutoDiscoveryVPCTagParameters() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -457,12 +453,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		replayAll();
 		List<Parameter> userParams = new LinkedList<>();
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateInputParametersNotPassBuild() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateInputParametersNotPassBuild() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssist56TestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -479,12 +475,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		List<Parameter> userParams = new LinkedList<>();
 		addParam(userParams, "subnet", "subnetValue");
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateEnvAndVpcBuiltInAndUserParams() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateEnvAndVpcBuiltInAndUserParams() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -504,12 +500,12 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		addParam(userParams, "subnet", "subnetValue");
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(new File(filename), projectAndEnv, userParams);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldApplySimpleTemplateEnvAndVpcBuiltInParams() throws CfnAssistException, IOException, InterruptedException {
+    void shouldApplySimpleTemplateEnvAndVpcBuiltInParams() throws CfnAssistException, IOException, InterruptedException {
 		String filename = FilesForTesting.SIMPLE_STACK;
 		String stackName = "CfnAssistTestsimpleStack";
 		String contents = EnvironmentSetupForTests.loadFile(filename);
@@ -526,7 +522,7 @@ public class TestAwsFacadeCreatesStacks extends EasyMockSupport  {
 		
 		replayAll();
 		StackNameAndId result = aws.applyTemplate(filename, projectAndEnv);
-		assertEquals(result, stackNameAndId);
+		Assertions.assertEquals(result, stackNameAndId);
 		verifyAll();
 	}
 	

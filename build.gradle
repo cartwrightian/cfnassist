@@ -58,8 +58,6 @@ dependencies {
             'com.fasterxml.jackson.core:jackson-core:2.14.2',
             'com.fasterxml.jackson.core:jackson-databind:2.14.2'
 
-    //testImplementation 'junit:junit:4.13.2'
-
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1',
             'org.junit.platform:junit-platform-launcher:1.12.1',
             'org.junit.vintage:junit-vintage-engine:5.6.2',
@@ -92,7 +90,8 @@ sourceSets {
 }
 
 
-task unit(type: Test, dependsOn: compileJava) {
+tasks.register('unit', Test) {
+    dependsOn compileJava
     environment 'testEnvVar', 'testValue'
     filter {
         includeTestsMatching "tw.com.unit.*"
@@ -103,7 +102,8 @@ task unit(type: Test, dependsOn: compileJava) {
     }
 }
 
-task integration(type: Test,  dependsOn: compileJava) {
+tasks.register('integration', Test) {
+    dependsOn compileJava
     testLogging.showStandardStreams = true
     filter {
         includeTestsMatching "tw.com.integration.*"
@@ -114,7 +114,8 @@ task integration(type: Test,  dependsOn: compileJava) {
     }
 }
 
-task acceptance(type: Test,  dependsOn: compileJava) {
+tasks.register('acceptance', Test) {
+    dependsOn compileJava
     testLogging.showStandardStreams = true
     filter {
         includeTestsMatching "tw.com.acceptance.*"
@@ -136,12 +137,13 @@ distributions {
     }
 }
 
-task release(type:Exec, dependsOn: distZip) {
-    executable  goPath+'/bin/ghr'
+tasks.register('release', Exec) {
+    dependsOn distZip
+    executable goPath + '/bin/ghr'
     //args '-t', githubToken, '-u', gitUser, '-r', gitProject, '-c', gitSha, '-delete', version, './build/distributions'
 }
 
-task copyDependencies(type: Copy) {
+tasks.register('copyDependencies', Copy) {
     from configurations.default
     into 'build/dependencies'
 }

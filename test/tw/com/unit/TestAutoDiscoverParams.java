@@ -1,13 +1,14 @@
 package tw.com.unit;
 
 
+import org.easymock.EasyMock;
+import org.easymock.EasyMockSupport;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.FilesForTesting;
 import tw.com.exceptions.CannotFindVpcException;
@@ -23,15 +24,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-import static junit.framework.TestCase.assertEquals;
-
-public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZones {
+class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZones {
     private VpcRepository vpcRepository;
     private AutoDiscoverParams autoDiscover;
     private LinkedList<Parameter> results;
     private LinkedList<TemplateParameter> declaredParameters;
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         vpcRepository = createMock(VpcRepository.class);
         CloudFormRepository cfnRepository = createMock(CloudFormRepository.class);
@@ -43,7 +42,7 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
     }
 
     @Test
-    public void shouldAddCorrectValueForTaggedParameter() throws IOException, CannotFindVpcException, InvalidStackParameterException {
+    void shouldAddCorrectValueForTaggedParameter() throws IOException, CannotFindVpcException, InvalidStackParameterException {
 
         declaredParameters.add(TemplateParameter.builder().description(AutoDiscoverParams.CFN_TAG_ON_OUTPUT).parameterKey("paramKey").build());
         EasyMock.expect(vpcRepository.getVpcTag("paramKey", EnvironmentSetupForTests.getMainProjectAndEnv())).andReturn("tagValue");
@@ -52,14 +51,14 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
         autoDiscover.addParameters(results, declaredParameters, EnvironmentSetupForTests.getMainProjectAndEnv(), this);
         verifyAll();
 
-        assertEquals(1, results.size());
+        Assertions.assertEquals(1, results.size());
         Parameter result = results.getFirst();
-        assertEquals("paramKey", result.parameterKey());
-        assertEquals("tagValue", result.parameterValue());
+        Assertions.assertEquals("paramKey", result.parameterKey());
+        Assertions.assertEquals("tagValue", result.parameterValue());
     }
 
     @Test
-    public void shouldAddCorrectValueForZone() throws IOException, CannotFindVpcException, InvalidStackParameterException {
+    void shouldAddCorrectValueForZone() throws IOException, CannotFindVpcException, InvalidStackParameterException {
 
         declaredParameters.add(TemplateParameter.builder().description(AutoDiscoverParams.CFN_TAG_ZONE+"A").parameterKey("paramKey").build());
 
@@ -67,10 +66,10 @@ public class TestAutoDiscoverParams extends EasyMockSupport implements ProvidesZ
         autoDiscover.addParameters(results, declaredParameters, EnvironmentSetupForTests.getMainProjectAndEnv(), this);
         verifyAll();
 
-        assertEquals(1, results.size());
+        Assertions.assertEquals(1, results.size());
         Parameter result = results.getFirst();
-        assertEquals("paramKey", result.parameterKey());
-        assertEquals("aviailabilityZoneA", result.parameterValue());
+        Assertions.assertEquals("paramKey", result.parameterKey());
+        Assertions.assertEquals("aviailabilityZoneA", result.parameterValue());
     }
 
     @Override

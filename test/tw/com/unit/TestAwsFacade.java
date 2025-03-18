@@ -1,11 +1,10 @@
 package tw.com.unit;
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackDriftStatus;
@@ -32,10 +31,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.*;
 
-import static org.junit.Assert.*;
-
-@RunWith(EasyMockRunner.class)
-public class TestAwsFacade extends EasyMockSupport {
+class TestAwsFacade extends EasyMockSupport {
 
 	private AwsFacade aws;
 	private ProjectAndEnv projectAndEnv = EnvironmentSetupForTests.getMainProjectAndEnv();
@@ -44,7 +40,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	private CloudRepository cloudRepository;
 	private LogRepository logRepository;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		MonitorStackEvents monitor = createMock(MonitorStackEvents.class);
 		cfnRepository = createMock(CloudFormRepository.class);
@@ -60,7 +56,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldInitTagsOnVpc() throws CfnAssistException {
+    void shouldInitTagsOnVpc() throws CfnAssistException {
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(null);
 		vpcRepository.initAllTags("targetVpc", projectAndEnv);
 		EasyMock.expectLastCall();
@@ -71,7 +67,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldSetTagOnVPC() {
+    void shouldSetTagOnVPC() {
 		vpcRepository.setVpcTag(projectAndEnv, "tagKey", "tagValue");
 		EasyMock.expectLastCall();
 
@@ -81,13 +77,13 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldInitTagsOnVpcThrowIfAlreadyExists() throws CfnAssistException {
+    void shouldInitTagsOnVpcThrowIfAlreadyExists() throws CfnAssistException {
 		EasyMock.expect(vpcRepository.getCopyOfVpc(projectAndEnv)).andReturn(Vpc.builder().vpcId("existingId").build());
 		
 		replayAll();
 		try {
 			aws.initEnvAndProjectForVPC("targetVpc", projectAndEnv);
-			fail("expected exception");
+			Assertions.fail("expected exception");
 		}
 		catch(TagsAlreadyInit expected) {
 			// expected
@@ -96,23 +92,23 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldGetDeltaIndex() throws CfnAssistException {
+    void shouldGetDeltaIndex() throws CfnAssistException {
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("42");
 		
 		replayAll();
 		int result = aws.getDeltaIndex(projectAndEnv);
-		assertEquals(42, result);
+		Assertions.assertEquals(42, result);
 		verifyAll();
 	}
 	
 	@Test
-	public void shouldGetDeltaIndexThrowsOnNonNumeric() throws CfnAssistException {
+    void shouldGetDeltaIndexThrowsOnNonNumeric() throws CfnAssistException {
 		EasyMock.expect(vpcRepository.getVpcIndexTag(projectAndEnv)).andReturn("NaN");
 		
 		replayAll();
 		try {
 			aws.getDeltaIndex(projectAndEnv);
-			fail("expected exception");
+			Assertions.fail("expected exception");
 		}
 		catch(BadVPCDeltaIndexException expectedException) {
 			// no op
@@ -121,7 +117,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldSetAndResetDeltaIndex() throws CannotFindVpcException {
+    void shouldSetAndResetDeltaIndex() throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projectAndEnv,"99");
 		EasyMock.expectLastCall();
 		vpcRepository.setVpcIndexTag(projectAndEnv,"0");
@@ -134,7 +130,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 
 	@Test
-    public void shouldDeleteLogsOverNWeeksOld() {
+    void shouldDeleteLogsOverNWeeksOld() {
 
 		List<String> groups = Arrays.asList("groupA","groupB");
         EasyMock.expect(logRepository.logGroupsFor(projectAndEnv)).andReturn(groups);
@@ -149,7 +145,7 @@ public class TestAwsFacade extends EasyMockSupport {
     }
 
     @Test
-    public void shouldTagCloudWatchLogWithEnvAndProject() {
+    void shouldTagCloudWatchLogWithEnvAndProject() {
 
         logRepository.tagCloudWatchLog(projectAndEnv, "groupToTag");
         EasyMock.expectLastCall();
@@ -160,7 +156,7 @@ public class TestAwsFacade extends EasyMockSupport {
     }
 
     @Test
-    public void shouldFetchLogs() {
+    void shouldFetchLogs() {
         Path filename = Paths.get("filename.log");
         EasyMock.expect(logRepository.fetchLogs(projectAndEnv, Duration.ofHours(42))).
 				andReturn(Collections.singletonList(filename));
@@ -169,19 +165,19 @@ public class TestAwsFacade extends EasyMockSupport {
         List<Path> result = aws.fetchLogs(projectAndEnv, 42);
         verifyAll();
 
-        assertFalse(result.isEmpty());
-        assertEquals(filename, result.get(0));
+        Assertions.assertFalse(result.isEmpty());
+        Assertions.assertEquals(filename, result.get(0));
     }
 	
 	@Test
-	public void shouldThrowForUnknownProjectAndEnvCombinationOnDeltaSet() throws CannotFindVpcException {
+    void shouldThrowForUnknownProjectAndEnvCombinationOnDeltaSet() throws CannotFindVpcException {
 		vpcRepository.setVpcIndexTag(projectAndEnv, "99");
 		EasyMock.expectLastCall().andThrow(new CannotFindVpcException(projectAndEnv));
 		
 		replayAll();
 		try {
 			aws.setDeltaIndex(projectAndEnv, 99);
-			fail("Should have thrown exception");
+			Assertions.fail("Should have thrown exception");
 		}
 		catch(CannotFindVpcException expected) {
 			// expected
@@ -189,20 +185,20 @@ public class TestAwsFacade extends EasyMockSupport {
 		verifyAll();
 	}
 	
-	@Test 
-	public void shouldListStacksEnvSupplied() {
+	@Test
+    void shouldListStacksEnvSupplied() {
 		List<StackEntry> stacks = new LinkedList<>();
 		stacks.add(new StackEntry("proj", projectAndEnv.getEnvTag(), Stack.builder().build()));
 		EasyMock.expect(cfnRepository.getStacks(projectAndEnv)).andReturn(stacks);
 		
 		replayAll();
 		List<StackEntry> results = aws.listStacks(projectAndEnv);
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 		verifyAll();
 	}
 
 	@Test
-	public void shouldListStackDrift() {
+    void shouldListStackDrift() {
 		List<StackEntry> stacks = new LinkedList<>();
 		Stack stack = Stack.builder().stackName("nameB").build();
 		StackEntry entry = new StackEntry("proj", projectAndEnv.getEnvTag(), stack);
@@ -213,15 +209,15 @@ public class TestAwsFacade extends EasyMockSupport {
 
 		replayAll();
 		List<StackEntry> results = aws.listStackDrift(projectAndEnv);
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 		StackEntry stackEntry = results.get(0);
-		assertEquals("nameB", stackEntry.getStackName());
-		assertEquals(StackDriftStatus.DRIFTED, stackEntry.getDriftStatus().getStackDriftStatus());
+		Assertions.assertEquals("nameB", stackEntry.getStackName());
+		Assertions.assertEquals(StackDriftStatus.DRIFTED, stackEntry.getDriftStatus().getStackDriftStatus());
 		verifyAll();
 	}
 
 	@Test
-	public void shouldListSummaryOfInstancesWithEnv() throws CfnAssistException {
+    void shouldListSummaryOfInstancesWithEnv() throws CfnAssistException {
 		String idA = "instanceIdA";
 		String idB = "instanceIdB";
 		List<Tag> tagsA = new LinkedList<>();
@@ -247,13 +243,13 @@ public class TestAwsFacade extends EasyMockSupport {
 		List<InstanceSummary> results = aws.listInstances(criteria);
 		verifyAll();
 		
-		assertEquals(2, results.size());
-		assertTrue(results.contains(new InstanceSummary(idA, "10.1.2.3", tagsA)));
-		assertTrue(results.contains(new InstanceSummary(idB, "10.8.7.6", tagsB)));
+		Assertions.assertEquals(2, results.size());
+		Assertions.assertTrue(results.contains(new InstanceSummary(idA, "10.1.2.3", tagsA)));
+		Assertions.assertTrue(results.contains(new InstanceSummary(idB, "10.8.7.6", tagsB)));
 	}
 	
 	@Test
-	public void shouldInvokeValidation() {
+    void shouldInvokeValidation() {
 		List<TemplateParameter> params = new LinkedList<>();
 		params.add(TemplateParameter.builder().description("a parameter").build());
 		EasyMock.expect(cfnRepository.validateStackTemplate("someContents")).andReturn(params);
@@ -261,46 +257,46 @@ public class TestAwsFacade extends EasyMockSupport {
 		replayAll();
 		List<TemplateParameter> results = aws.validateTemplate("someContents");
 		verifyAll();
-		assertEquals(1, results.size());
+		Assertions.assertEquals(1, results.size());
 	}
 
 	@Test
-	public void cannotAddEnvParameter() throws IOException, CfnAssistException, InterruptedException {
+    void cannotAddEnvParameter() throws IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("env");
 	}
 	
 	@Test
-	public void cannotAddvpcParameter() throws IOException, CfnAssistException, InterruptedException {
+    void cannotAddvpcParameter() throws IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("vpc");
 	}
 	
 	@Test
-	public void cannotAddbuildParameter() throws IOException, CfnAssistException, InterruptedException {
+    void cannotAddbuildParameter() throws IOException, CfnAssistException, InterruptedException {
 		checkParameterCannotBePassed("build");
 	}
 	
 	@Test
-	public void createStacknameFromEnvAndFile() {
+    void createStacknameFromEnvAndFile() {
 		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv);
-		assertEquals("CfnAssistTestsimpleStack", stackName);
+		Assertions.assertEquals("CfnAssistTestsimpleStack", stackName);
 	}
 	
 	@Test
-	public void shouldCreateStacknameFromEnvAndFileWithDelta() {
+    void shouldCreateStacknameFromEnvAndFileWithDelta() {
 		String stackName = aws.createStackName(new File(FilesForTesting.STACK_UPDATE), projectAndEnv);
-		assertEquals("CfnAssistTest02createSubnet", stackName);
+		Assertions.assertEquals("CfnAssistTest02createSubnet", stackName);
 	}
 	
-	@Test 
-	public void shouldIncludeBuildNumberWhenFormingStackname() {
+	@Test
+    void shouldIncludeBuildNumberWhenFormingStackname() {
 		projectAndEnv.addBuildNumber(42);
 		String stackName = aws.createStackName(new File(FilesForTesting.SIMPLE_STACK),projectAndEnv);
 		
-		assertEquals("CfnAssist42TestsimpleStack", stackName);	
+		Assertions.assertEquals("CfnAssist42TestsimpleStack", stackName);
 	}
 
 	@Test
-    public void shouldCreateKeyPairAndTagVPC() throws CfnAssistException {
+    void shouldCreateKeyPairAndTagVPC() throws CfnAssistException {
 		Path filename = Paths.get("fileForPem.pem");
 
         SavesFile destination = createStrictMock(SavesFile.class);
@@ -317,11 +313,11 @@ public class TestAwsFacade extends EasyMockSupport {
 		CloudClient.AWSPrivateKey result = aws.createKeyPair(projectAndEnv, destination, filename);
         verifyAll();
 
-		assertEquals("CfnAssist_Test", result.getKeyName());
+		Assertions.assertEquals("CfnAssist_Test", result.getKeyName());
     }
 
 	@Test
-	public void shouldNotCreateKeyPairIfFileAlreadyExists() {
+    void shouldNotCreateKeyPairIfFileAlreadyExists() {
 		SavesFile destination = createStrictMock(SavesFile.class);
 		Path filename = Paths.get("fileForPem.pem");
 
@@ -330,7 +326,7 @@ public class TestAwsFacade extends EasyMockSupport {
 		replayAll();
 		try {
 			aws.createKeyPair(projectAndEnv, destination, filename);
-			fail("should have thrown");
+			Assertions.fail("should have thrown");
 		}
 		catch(CfnAssistException expected) {
 			// no-op
@@ -339,7 +335,7 @@ public class TestAwsFacade extends EasyMockSupport {
 	}
 
 	@Test
-    public void shouldFormCorrectTestForSSHCommand() throws CfnAssistException {
+    void shouldFormCorrectTestForSSHCommand() throws CfnAssistException {
         String home = System.getenv("HOME");
         EasyMock.expect(vpcRepository.getVpcTag(AwsFacade.KEYNAME_TAG, projectAndEnv)).andReturn("project_env_keypair");
         EasyMock.expect(vpcRepository.getVpcTag(AwsFacade.NAT_EIP, projectAndEnv)).andReturn("eipAllocationId");
@@ -355,7 +351,7 @@ public class TestAwsFacade extends EasyMockSupport {
             }
             result.append(text);
         });
-        assertEquals(String.format("ssh -i %s/.ssh/project_env.pem ec2-user@10.1.2.3", home), result.toString());
+        Assertions.assertEquals(String.format("ssh -i %s/.ssh/project_env.pem ec2-user@10.1.2.3", home), result.toString());
     }
 	
 	private void checkParameterCannotBePassed(String parameterName)
@@ -368,7 +364,7 @@ public class TestAwsFacade extends EasyMockSupport {
 		
 		try {
 			aws.applyTemplate(new File(FilesForTesting.SIMPLE_STACK), projectAndEnv, parameters);
-			fail("Should have thrown exception");
+			Assertions.fail("Should have thrown exception");
 		}
 		catch (InvalidStackParameterException exception) {
 			// expected
