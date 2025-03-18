@@ -51,7 +51,7 @@ dependencies {
             'software.amazon.awssdk:s3:'+awsSdk,
             'software.amazon.awssdk:cloudwatchlogs:'+awsSdk
 
-    implementation 'commons-io:commons-io:2.14.0',
+    implementation 'commons-io:commons-io:2.18.0',
             'commons-cli:commons-cli:1.5.0',
             'commons-net:commons-net:3.9.0',
             'org.apache.ant:ant:1.10.13',
