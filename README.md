@@ -8,13 +8,20 @@ cfnassit is to a tool help with [cloud formation](http://aws.amazon.com/cloudfor
 Current Release
 ---------------
 
-[Current Version 1.3.165](https://github.com/cartwrightian/cfnassist/releases/download/1.3.165/cfnassist-1.3.165.zip)
+[Current version 1.3.210](https://github.com/cartwrightian/cfnassist/releases/download/1.3.210/cfnassist-1.3.210.zip)
 
-Added support for target group updates (targetGroupUpdate), works in same way as targetGroupUpdate. 
-Extended tidyOldStacks to include classic and new load balancers.
+Update to JVM 21.x
+Updated all dependencies, including AWS SDK 2.31.1
 
 Previous Releases
 -----------------
+
+[Previous Version 1.3.165](https://github.com/cartwrightian/cfnassist/releases/download/1.3.165/cfnassist-1.3.165.zip)
+
+JVM 17.x
+Added support for target group updates (targetGroupUpdate), works in same way as targetGroupUpdate. 
+Extended tidyOldStacks to include classic and new load balancers.
+
 [Version 1.2.85](https://github.com/cartwrightian/cfnassist/releases/download/1.2.86/cfnassist-1.2.85.zip)
 
 Build Status
