@@ -16,7 +16,7 @@ import tw.com.providers.LoadBalancerClientV2;
 import java.util.*;
 
 import static java.lang.Thread.sleep;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static tw.com.EnvironmentSetupForTests.MAIN_VPC_FOR_TEST;
 
 public class TestLoadBalancerClientV2 {
@@ -84,7 +84,7 @@ public class TestLoadBalancerClientV2 {
     @Test
     public void shouldRegisterInstance() throws InterruptedException {
         List<TargetDescription> initial = client.describeTargets(targetGroup, EnumSet.allOf(TargetHealthStateEnum.class));
-        assertTrue(initial.toString(), initial.isEmpty());
+        assertTrue(initial.isEmpty(), initial.toString());
 
         waitForInstanceAvailable();
 
@@ -119,7 +119,7 @@ public class TestLoadBalancerClientV2 {
             }
             countDown--;
         }
-        assertTrue("did not unregister", dereg);
+        assertTrue(dereg, "did not unregister");
     }
 
 
@@ -199,7 +199,7 @@ public class TestLoadBalancerClientV2 {
 
                 DescribeTargetHealthResponse shouldNotFind = getGroupHealth();
                 if (shouldNotFind.hasTargetHealthDescriptions()) {
-                    assertTrue("unexpected " + shouldNotFind, shouldNotFind.targetHealthDescriptions().isEmpty());
+                    assertTrue(shouldNotFind.targetHealthDescriptions().isEmpty(), "unexpected " + shouldNotFind);
                 }
             }
         }

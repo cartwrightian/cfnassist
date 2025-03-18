@@ -6,7 +6,6 @@ import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Tag;
@@ -23,7 +22,7 @@ import tw.com.repository.VpcRepository;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestELBRepository extends EasyMockSupport {
 	

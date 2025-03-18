@@ -1,11 +1,9 @@
 package tw.com.unit;
 
 import software.amazon.awssdk.services.ec2.model.*;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 
 import tw.com.EnvironmentSetupForTests;
 import tw.com.VpcTestBuilder;

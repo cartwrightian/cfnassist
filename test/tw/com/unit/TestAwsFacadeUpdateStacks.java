@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static tw.com.EnvironmentSetupForTests.createTemplateWithDefault;
 
 

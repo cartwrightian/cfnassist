@@ -16,10 +16,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 
-import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-
 class TestCfnBuiltInParams implements ProvidesZones {
 
     private CfnBuiltInParams parameters;

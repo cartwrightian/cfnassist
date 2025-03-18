@@ -2,11 +2,9 @@ package tw.com.unit;
 
 import software.amazon.awssdk.services.ec2.model.*;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import software.amazon.awssdk.services.rds.model.DBInstance;
 import tw.com.EnvironmentSetupForTests;
@@ -17,7 +15,7 @@ import tw.com.pictures.dot.Recorder;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class TestVPCDiagramBuilder extends EasyMockSupport {
 	private VPCDiagramBuilder builder;

@@ -10,9 +10,7 @@ import tw.com.entity.Tagging;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestTagging {
 

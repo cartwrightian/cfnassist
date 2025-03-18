@@ -1,7 +1,5 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,6 +9,8 @@ import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.InstanceSummary;
 
 import software.amazon.awssdk.services.ec2.model.Tag;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestInstanceSummary {
 

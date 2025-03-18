@@ -34,7 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static java.lang.String.format;
-import static org.junit.Assert.assertEquals;
 
 class TestCommandLineActions extends EasyMockSupport {
 

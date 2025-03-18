@@ -2,10 +2,9 @@ package tw.com.unit;
 
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.StackCache;
@@ -16,8 +15,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
 import static tw.com.EnvironmentSetupForTests.createCfnStackTAG;
 
 public class TestStackCache extends EasyMockSupport {
@@ -41,17 +38,17 @@ public class TestStackCache extends EasyMockSupport {
         List<StackEntry> result = stackCache.getEntries();
         verifyAll();
 
-        assertEquals(1, result.size());
+        Assertions.assertEquals(1, result.size());
         StackEntry stack = result.get(0);
-        assertEquals(EnvironmentSetupForTests.PROJECT, stack.getProject());
-        assertEquals(EnvironmentSetupForTests.ENV, stack.getEnvTag().getEnv());
-        assertEquals(new Integer(42), stack.getBuildNumber());
-        assertEquals(new Integer(8), stack.getIndex());
+        Assertions.assertEquals(EnvironmentSetupForTests.PROJECT, stack.getProject());
+        Assertions.assertEquals(EnvironmentSetupForTests.ENV, stack.getEnvTag().getEnv());
+        Assertions.assertEquals(42, stack.getBuildNumber());
+        Assertions.assertEquals(8, stack.getIndex());
         Set<Integer> updateIndexs = stack.getUpdateIndex();
-        assertEquals(3,updateIndexs.size());
-        assertTrue(updateIndexs.contains(9));
-        assertTrue(updateIndexs.contains(10));
-        assertTrue(updateIndexs.contains(11));
+        Assertions.assertEquals(3, updateIndexs.size());
+        Assertions.assertTrue(updateIndexs.contains(9));
+        Assertions.assertTrue(updateIndexs.contains(10));
+        Assertions.assertTrue(updateIndexs.contains(11));
 
     }
 

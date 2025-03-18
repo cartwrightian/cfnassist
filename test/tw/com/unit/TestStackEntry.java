@@ -5,13 +5,11 @@ import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.StackEntry;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestStackEntry {
 	
@@ -42,17 +40,17 @@ public class TestStackEntry {
         entry.setIndex(56);
 
         assertTrue(entry.hasIndex());
-        assertEquals(new Integer(56), entry.getIndex());
+        assertEquals(56, entry.getIndex());
     }
 
     @Test
     public void shouldHaveUpdateIndex() {
         StackEntry entry = new StackEntry("Project", new EnvironmentTag("Env"), createAStack("theStackName"));
-        Set<Integer> updates = new HashSet<>(Arrays.asList(42));
+        Set<Integer> updates = new HashSet<>(List.of(42));
         entry.setUpdateIndex(updates);
 
         assertTrue(entry.hasUpdateIndex());
-        assertEquals(new HashSet<>(Arrays.asList(42)), entry.getUpdateIndex());
+        assertEquals(new HashSet<>(List.of(42)), entry.getUpdateIndex());
     }
 
     @Test
@@ -61,9 +59,9 @@ public class TestStackEntry {
         StackEntry entryB = new StackEntry("project", new EnvironmentTag("Env1"), createAStack(""));
         StackEntry entryC = new StackEntry("project", new EnvironmentTag("Env2"), createAStack(""));
 
-        assertTrue(entryA.equals(entryB));
-        assertTrue(entryB.equals(entryA));
-        assertFalse(entryC.equals(entryA));
+        assertEquals(entryA, entryB);
+        assertEquals(entryB, entryA);
+        assertNotEquals(entryC, entryA);
     }
 
 }

@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static tw.com.EnvironmentSetupForTests.TEST_SUBNET_FOR_MAIN_VPC;
 
 public class TestLoadBalancerClient  {

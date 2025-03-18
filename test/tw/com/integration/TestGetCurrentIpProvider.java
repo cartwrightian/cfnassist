@@ -1,13 +1,13 @@
 package tw.com.integration;
 
-import static org.junit.Assert.*;
-
 import java.net.InetAddress;
 
 import org.junit.jupiter.api.Test;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.providers.ProvidesCurrentIp;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestGetCurrentIpProvider {
 

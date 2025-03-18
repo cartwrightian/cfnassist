@@ -21,8 +21,7 @@ import tw.com.providers.SNSEventSource;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestSNSEventSource {
 	
@@ -75,7 +74,8 @@ public class TestSNSEventSource {
 				queueUrl(anotherEventSource.getQueueURL()).
 				waitTimeSeconds(10);
 		ReceiveMessageResponse result = sqsClient.receiveMessage(request.build());
-		assertTrue(result.messages().size()>0);
+
+        assertFalse(result.messages().isEmpty());
 	}
 
 	private void publish(String snsArn, String aMessage) {

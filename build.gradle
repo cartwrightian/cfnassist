@@ -60,7 +60,6 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1',
             'org.junit.platform:junit-platform-launcher:1.12.1',
-            'org.junit.vintage:junit-vintage-engine:5.6.2',
             'org.easymock:easymock:5.2.0'
 
 }
@@ -92,6 +91,7 @@ sourceSets {
 
 tasks.register('unit', Test) {
     dependsOn compileJava
+    useJUnitPlatform()
     environment 'testEnvVar', 'testValue'
     filter {
         includeTestsMatching "tw.com.unit.*"
@@ -104,7 +104,7 @@ tasks.register('unit', Test) {
 
 tasks.register('integration', Test) {
     dependsOn compileJava
-    testLogging.showStandardStreams = true
+    useJUnitPlatform()
     filter {
         includeTestsMatching "tw.com.integration.*"
     }
@@ -116,7 +116,7 @@ tasks.register('integration', Test) {
 
 tasks.register('acceptance', Test) {
     dependsOn compileJava
-    testLogging.showStandardStreams = true
+    useJUnitPlatform()
     filter {
         includeTestsMatching "tw.com.acceptance.*"
     }

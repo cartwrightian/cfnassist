@@ -1,10 +1,7 @@
 package tw.com.acceptance;
 
-import org.junit.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.TestName;
-import org.junit.rules.Timeout;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
@@ -24,9 +21,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestCommandLineStackOperations {
 
@@ -43,14 +39,13 @@ public class TestCommandLineStackOperations {
 		cfnClient = EnvironmentSetupForTests.createCFNClient();
 	}
 	
-	@Rule public TestName test = new TestName();
 	String testName = "";
 	
-	@Rule
-    public Timeout globalTimeout = new Timeout(5*60, TimeUnit.SECONDS);
+//	@Rule
+//    public Timeout globalTimeout = new Timeout(5*60, TimeUnit.SECONDS);
 	
 	@BeforeEach
-	public void beforeEveryTestRun() {
+	public void beforeEveryTestRun(TestInfo info) {
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
 
@@ -67,7 +62,7 @@ public class TestCommandLineStackOperations {
 			.ifPresent("CfnAssist876TesttargetGroupAndInstance");
 
 		deletesStacks.act();
-		testName = test.getMethodName();
+		testName = info.getDisplayName();
 	}
 	
 	@AfterEach
@@ -316,7 +311,7 @@ public class TestCommandLineStackOperations {
 		String[] argsDeploy = CLIArgBuilder.deployFromDir(FilesForTesting.ORDERED_SCRIPTS_FOLDER, "-sns", testName);
 		Main main = new Main(argsDeploy);
 		int result = main.parse();
-		assertEquals("deploy failed",0,result);
+		assertEquals(0,result, "deploy failed");
 		
 		String[] stepback = CLIArgBuilder.back("-sns");
 		
@@ -329,8 +324,8 @@ public class TestCommandLineStackOperations {
 		
 		vpcRepository.initAllTags(altEnvVPC.vpcId(), altProjectAndEnv);
 		
-		assertEquals("first back failed",0,resultA);
-		assertEquals("second back failed",0,resultB);
+		assertEquals(0,resultA, "first back failed");
+		assertEquals(0,resultB, "second back failed");
 	}
 
 	private void invokeForDirAndThenPurge(ProjectAndEnv projAndEnv,
@@ -340,7 +335,7 @@ public class TestCommandLineStackOperations {
 		String[] argsDeploy = CLIArgBuilder.deployFromDir(orderedScriptsFolder, sns, testName);
 		Main main = new Main(argsDeploy);
 		int result = main.parse();
-		assertEquals("deploy failed",0,result);
+		assertEquals(0,result, "deploy failed");
 		
 		String[] rollbackDeploy = CLIArgBuilder.purge(sns);
 		main = new Main(rollbackDeploy);
@@ -351,7 +346,7 @@ public class TestCommandLineStackOperations {
 		//cfnClient.setRegions(EnvironmentSetupForTests.getRegion());
 		
 		// check
-		assertEquals("purge failed",0,result);
+		assertEquals(0,result, "purge failed");
 	}
 	
 	@Disabled("cant find way to label at existing stack via apis")

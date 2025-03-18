@@ -69,7 +69,7 @@ class TestDeletionsPending implements SetsDeltaIndex {
 		pending.markIdAsDeleted("112");
 		
 		pending.updateDeltaIndex(this);
-		Assertions.assertEquals(new Integer(1), setDelta);
+		Assertions.assertEquals(1, setDelta);
 	}
 
 	@Override

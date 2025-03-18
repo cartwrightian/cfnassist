@@ -1,6 +1,5 @@
 package tw.com.integration;
 
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.AfterEach;
 import software.amazon.awssdk.regions.Region;
@@ -17,8 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.core.StringEndsWith.endsWith;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TestCloudClient {
 	
@@ -57,8 +55,8 @@ class TestCloudClient {
 		DescribeVpcsResponse queryResult = ec2Client.describeVpcs(DescribeVpcsRequest.builder().vpcIds(VpcId).build());
 		List<Tag> results = queryResult.vpcs().get(0).tags();
 		
-		Assertions.assertTrue(results.contains(tagA));
-		Assertions.assertTrue(results.contains(tagB));
+		assertTrue(results.contains(tagA));
+		assertTrue(results.contains(tagB));
 		
 		// Now delete
 		
@@ -76,7 +74,7 @@ class TestCloudClient {
     void testCanQueryVpcById() {
 		Vpc result = cloudClient.describeVpc(VpcId);
 		List<Tag> tags = result.tags();
-		Assertions.assertTrue(tags.contains(expectedTag));
+		assertTrue(tags.contains(expectedTag));
 	}
 	
 	@Test
@@ -88,7 +86,7 @@ class TestCloudClient {
 			matched = candidate.tags().contains(expectedTag);
 			if (matched) break;
 		}
-		Assertions.assertTrue(matched, "Did not find " + expectedTag + " in " + results);
+		assertTrue(matched, "Did not find " + expectedTag + " in " + results);
 	}
 
 	@Test
@@ -98,8 +96,8 @@ class TestCloudClient {
 
 		Assertions.assertEquals(3, zones.size());
 		zones.forEach((name, zone) -> Assertions.assertEquals(region.id(), zone.regionName()));
-        Assertions.assertTrue(zones.containsKey("a"));
-        Assertions.assertTrue(zones.containsKey("b"));
+        assertTrue(zones.containsKey("a"));
+        assertTrue(zones.containsKey("b"));
 	}
 
 	@Test
@@ -122,8 +120,9 @@ class TestCloudClient {
         ec2Client.deleteKeyPair(deleteRequest);
 
         Assertions.assertEquals(testKeypairName, keyPair.getKeyName());
-        MatcherAssert.assertThat(keyPair.getMaterial(), startsWith("-----BEGIN RSA PRIVATE KEY-----"));
-        MatcherAssert.assertThat(keyPair.getMaterial(), endsWith("-----END RSA PRIVATE KEY-----"));
+		String material = keyPair.getMaterial();
+		assertTrue(material.startsWith("-----BEGIN RSA PRIVATE KEY-----"));
+		assertTrue(material.endsWith("-----END RSA PRIVATE KEY-----"));
 	}
 
 }

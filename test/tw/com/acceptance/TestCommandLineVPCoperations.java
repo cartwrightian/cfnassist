@@ -12,7 +12,7 @@ import tw.com.commandline.Main;
 import tw.com.providers.CloudClient;
 import tw.com.repository.VpcRepository;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestCommandLineVPCoperations {
 	

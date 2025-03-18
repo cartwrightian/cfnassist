@@ -41,8 +41,8 @@ import java.util.List;
 import java.util.Set;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EnvironmentSetupForTests {
 	private static final Logger logger = LoggerFactory.getLogger(EnvironmentSetupForTests.class);

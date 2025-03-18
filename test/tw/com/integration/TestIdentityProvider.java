@@ -7,8 +7,8 @@ import software.amazon.awssdk.services.iam.model.User;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.IdentityProvider;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TestIdentityProvider {
 

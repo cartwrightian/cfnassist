@@ -1,11 +1,9 @@
 package tw.com.unit;
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 
 import software.amazon.awssdk.services.ec2.model.*;
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;

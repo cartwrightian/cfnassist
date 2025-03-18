@@ -1,11 +1,12 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
 
 import org.junit.jupiter.api.Test;
 
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.entity.StackNotification;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestSNSMessageParsing {
 
