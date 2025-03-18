@@ -3,9 +3,9 @@ package tw.com.integration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.MissingArgumentException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import software.amazon.awssdk.services.iam.model.User;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.*;
@@ -30,13 +30,13 @@ public class TestSNSNotificationSender {
 	private SNSNotificationSender snsNotificationSender;
 	private QueuePolicyManager policyManager;
 	
-	@BeforeClass
+	@BeforeAll
 	public static void beforeAllTestsRun() {
 		snsClient = EnvironmentSetupForTests.createSNSClient();
 		sqsClient = EnvironmentSetupForTests.createSQSClient();
 	}
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		snsNotificationSender = new SNSNotificationSender(snsClient);
 		policyManager = new QueuePolicyManager(sqsClient);

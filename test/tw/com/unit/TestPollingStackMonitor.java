@@ -3,11 +3,9 @@ package tw.com.unit;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.PollingStackMonitor;
@@ -26,7 +24,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(EasyMockRunner.class)
 public class TestPollingStackMonitor extends EasyMockSupport implements SetsDeltaIndex {
 	
 	private CloudFormRepository cfnRepository;
@@ -35,7 +32,7 @@ public class TestPollingStackMonitor extends EasyMockSupport implements SetsDelt
 	private StackNameAndId stackId;
 	private int lastDeltaIndex;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		cfnRepository = createMock(CloudFormRepository.class);
 		monitor = new PollingStackMonitor(cfnRepository);

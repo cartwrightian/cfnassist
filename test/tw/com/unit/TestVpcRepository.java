@@ -5,8 +5,8 @@ import software.amazon.awssdk.services.ec2.model.Vpc;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.ProjectAndEnv;
@@ -20,14 +20,13 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 
-@RunWith(EasyMockRunner.class)
 public class TestVpcRepository extends EasyMockSupport {
 	
 	private VpcRepository repository;
 	private CloudClient cloudClient;
 	private ProjectAndEnv projectAndEnv;
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestIsRun() {	
 		cloudClient = createMock(CloudClient.class);
 		repository = new VpcRepository(cloudClient);

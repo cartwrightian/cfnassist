@@ -2,9 +2,9 @@ package tw.com.unit;
 
 
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.SavesFile;
 
@@ -25,14 +25,14 @@ public class TestSavesFile {
     private SavesFile savesFile;
     private Path filename;
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         FileUtils.deleteQuietly(testFile);
         savesFile = new SavesFile();
         filename = Paths.get(testFile.getAbsolutePath());
     }
 
-    @After
+    @AfterEach
     public void afterEachTestRuns() {
         FileUtils.deleteQuietly(testFile);
     }

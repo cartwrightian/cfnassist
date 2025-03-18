@@ -1,6 +1,10 @@
 package tw.com.integration;
 
-import org.junit.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.*;
 import tw.com.AwsFacade;
@@ -30,7 +34,7 @@ public class TestLogClientAndRepository {
     private static CloudWatchLogsClient awsLogs;
     private LogClient logClient;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeAnyTestsRun() {
         awsLogs = EnvironmentSetupForTests.createAWSLogsClient();
         Map<String, String> tags = new HashMap<>();
@@ -44,18 +48,18 @@ public class TestLogClientAndRepository {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterAllTestRun() {
         awsLogs.deleteLogGroup(DeleteLogGroupRequest.builder().logGroupName(TEST_LOG_GROUP).build());
         //awsLogs.shutdown();
     }
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         logClient = new LogClient(awsLogs);
     }
 
-    @After
+    @AfterEach
     public void afterEachTestRuns() {
         // delete all streams for group TEST_LOG_GROUP
         DescribeLogStreamsResponse existing = awsLogs.describeLogStreams(DescribeLogStreamsRequest.builder().

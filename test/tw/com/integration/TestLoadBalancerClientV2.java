@@ -1,6 +1,10 @@
 package tw.com.integration;
 
-import org.junit.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
 import software.amazon.awssdk.services.elasticloadbalancingv2.ElasticLoadBalancingV2Client;
@@ -27,7 +31,7 @@ public class TestLoadBalancerClientV2 {
 
     private LoadBalancerClientV2 client;
 
-    @BeforeClass
+    @BeforeAll
     public static void onceBeforeSuiteOfTestsRun() {
         awsELBClient = EnvironmentSetupForTests.createELBClientV2();
         awsEC2Client = EnvironmentSetupForTests.createEC2Client();
@@ -36,18 +40,18 @@ public class TestLoadBalancerClientV2 {
         instance = EnvironmentSetupForTests.createSimpleInstance(awsEC2Client);
     }
 
-    @AfterClass
+    @AfterAll
     public static void onceAfterAllTestsHaveRun() {
         deleteTargetGroup();
         deleteInstance();
     }
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         client = new LoadBalancerClientV2(awsELBClient);
     }
 
-    @After
+    @AfterEach
     public void afterEachTestRuns() {
         deregisterAnyInstances();
     }

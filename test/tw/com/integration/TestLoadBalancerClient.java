@@ -1,14 +1,14 @@
 package tw.com.integration;
 
+import org.junit.jupiter.api.*;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.TerminateInstancesRequest;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
 import software.amazon.awssdk.services.elasticloadbalancing.model.*;
+import software.amazon.awssdk.services.elasticloadbalancing.model.Tag;
 import tw.com.AwsFacade;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.LoadBalancerClassicClient;
@@ -28,7 +28,7 @@ public class TestLoadBalancerClient  {
 	private static Ec2Client ec2Client;
 	private static Instance instance;
 	
-	@BeforeClass
+	@BeforeAll
 	public static void onceBeforeSuiteOfTestsRun() {
 		elbClient = EnvironmentSetupForTests.createELBClient();
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
@@ -37,13 +37,13 @@ public class TestLoadBalancerClient  {
 		instance = EnvironmentSetupForTests.createSimpleInstance(ec2Client);
 	}
 	
-	@AfterClass
+	@AfterAll
 	public static void onceAfterAllTestsHaveRun() {
 		deleteLoadBalancer();
 		deleteInstance();
 	}
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		client = new LoadBalancerClassicClient(elbClient);
 	}

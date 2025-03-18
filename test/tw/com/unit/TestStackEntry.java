@@ -1,6 +1,6 @@
 package tw.com.unit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.StackEntry;

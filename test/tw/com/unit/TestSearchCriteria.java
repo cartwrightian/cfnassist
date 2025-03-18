@@ -1,7 +1,7 @@
 package tw.com.unit;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.entity.EnvironmentTag;
 import tw.com.entity.SearchCriteria;
@@ -25,7 +25,7 @@ public class TestSearchCriteria {
     private StackEntry entryF;
     private StackEntry entryG;
 
-    @Before
+    @BeforeEach
 	public void beforeEachTestRuns() {
 		Stack stack = Stack.builder().build();
 		entryA = new StackEntry("project", new EnvironmentTag("anEnv"), stack);

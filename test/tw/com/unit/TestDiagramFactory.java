@@ -1,28 +1,24 @@
 package tw.com.unit;
 
-import static org.junit.Assert.*;
-
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.*;
 
 import software.amazon.awssdk.services.ec2.model.Subnet;
 
-@RunWith(EasyMockRunner.class)
-public class TestDiagramFactory extends EasyMockSupport {
+class TestDiagramFactory extends EasyMockSupport {
 	
 	private DiagramFactory factory;
 	private VPCDiagramBuilder parentDiagramBuilder;
 	private NetworkChildDiagram childNetworkDiagram;
 	private tw.com.pictures.SecurityChildDiagram childSecurityDiagram;
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		parentDiagramBuilder = createStrictMock(VPCDiagramBuilder.class);
 		childNetworkDiagram = createStrictMock(NetworkChildDiagram.class);
@@ -32,7 +28,7 @@ public class TestDiagramFactory extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldAddSubnetDiagrm() throws CfnAssistException {
+    void shouldAddSubnetDiagrm() throws CfnAssistException {
 		
 		Subnet subnet = Subnet.builder().subnetId("subnetId").cidrBlock("cidrBlock").build();
 		EasyMock.expect(parentDiagramBuilder.createNetworkDiagramForSubnet(subnet)).andReturn(childNetworkDiagram);
@@ -42,7 +38,7 @@ public class TestDiagramFactory extends EasyMockSupport {
 		SubnetDiagramBuilder result = factory.createSubnetDiagramBuilder(parentDiagramBuilder, subnet);
 		verifyAll();	
 		
-		assertSame(childNetworkDiagram, result.getNetworkDiagram());
+		Assertions.assertSame(childNetworkDiagram, result.getNetworkDiagram());
 	}
 
 }

@@ -3,8 +3,8 @@ package tw.com.unit;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 
 import software.amazon.awssdk.services.ec2.model.*;
@@ -19,7 +19,6 @@ import tw.com.pictures.SubnetDiagramBuilder;
 import tw.com.pictures.VPCDiagramBuilder;
 import tw.com.pictures.VPCVisitor;
 
-@RunWith(EasyMockRunner.class)
 public class TestVPCVisitor extends EasyMockSupport {
 	
 	private DiagramBuilder diagramBuilder;
@@ -30,7 +29,7 @@ public class TestVPCVisitor extends EasyMockSupport {
 	private SubnetDiagramBuilder subnetDiagramBuilder;
 	private SubnetDiagramBuilder dbSubnetDiagramBuilder;
 
-	@Before
+	@BeforeEach
 	public void beforeEveryTestRuns() {
 		awsFacade = createStrictMock(AmazonVPCFacade.class);
 		

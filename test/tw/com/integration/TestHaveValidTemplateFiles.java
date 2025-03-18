@@ -1,8 +1,8 @@
 package tw.com.integration;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.providers.CFNClient;
@@ -16,7 +16,7 @@ import static org.junit.Assert.fail;
 
 public class TestHaveValidTemplateFiles {
 
-	@Before
+	@BeforeEach
 	public void beforeTestsRun() {
 	}
 	

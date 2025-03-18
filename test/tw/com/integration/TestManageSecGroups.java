@@ -1,9 +1,7 @@
 package tw.com.integration;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
@@ -27,12 +25,12 @@ public class TestManageSecGroups {
     private static String groupId = "";
     private static Ec2Client ec2Client;
 
-    @BeforeClass
+    @BeforeAll
     public static void onceBeforeAllTestsRuns() {
         ec2Client = EnvironmentSetupForTests.createEC2Client();
     }
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         client = new CloudClient(ec2Client, new DefaultAwsRegionProviderChain());
 
@@ -64,7 +62,7 @@ public class TestManageSecGroups {
 
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterAllTestsRun() {
         deleteGroupIfPresent();
     }

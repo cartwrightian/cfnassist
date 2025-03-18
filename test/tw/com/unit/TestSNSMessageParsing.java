@@ -2,7 +2,7 @@ package tw.com.unit;
 
 import static org.junit.Assert.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import tw.com.entity.StackNotification;

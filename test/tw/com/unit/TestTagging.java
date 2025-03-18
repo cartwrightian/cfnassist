@@ -1,8 +1,8 @@
 package tw.com.unit;
 
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Tag;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.entity.Tagging;
@@ -18,7 +18,7 @@ public class TestTagging {
 
     private Tagging tagging;
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         tagging = new Tagging();
     }

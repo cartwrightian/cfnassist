@@ -2,16 +2,14 @@ package tw.com.unit;
 
 import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackDriftStatus;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
-import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
 import tw.com.*;
 import tw.com.commandline.CommandExecutor;
 import tw.com.commandline.Main;
@@ -38,8 +36,7 @@ import java.util.List;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(EasyMockRunner.class)
-public class TestCommandLineActions extends EasyMockSupport {
+class TestCommandLineActions extends EasyMockSupport {
 
 	private AwsFacade facade;
 	private FacadeFactory factory;
@@ -53,7 +50,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	private final String comment = "theComment";
 	private ProvidesCurrentIp ipProvider;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		
 		factory = createMock(FacadeFactory.class);
@@ -69,7 +66,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldInitVPCWithEnvironmentAndProject() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void shouldInitVPCWithEnvironmentAndProject() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		String[] args = CLIArgBuilder.initVPC(EnvironmentSetupForTests.ENV, EnvironmentSetupForTests.PROJECT, "vpcID");
 		setVPCopExpectations();		
 		facade.initEnvAndProjectForVPC("vpcID", projectAndEnv);		
@@ -77,7 +74,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldSetTagOnVPC() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    void shouldSetTagOnVPC() throws InterruptedException, MissingArgumentException, CfnAssistException {
 		String[] args = CLIArgBuilder.tagVPC("TEST_TAG_NAME", "TestTagValue");
 		setVPCopExpectations();
 		facade.setTagForVpc(projectAndEnv, "TEST_TAG_NAME", "TestTagValue");
@@ -85,7 +82,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldResetVPCIndexEnvironmentAndProject() throws MissingArgumentException, CfnAssistException, InterruptedException {		
+    void shouldResetVPCIndexEnvironmentAndProject() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -99,7 +96,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 
 	// TODO stop extra parameters on this call?
 	@Test
-	public void shouldResetVPCIndexEnvironmentAndProjectWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException {		
+    void shouldResetVPCIndexEnvironmentAndProjectWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -113,7 +110,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStackNoIAMCapabailies() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldCreateStackNoIAMCapabailies() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 		File file = new File(FilesForTesting.SIMPLE_STACK);
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
@@ -122,7 +119,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStackWithIAMCapabailies() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldCreateStackWithIAMCapabailies() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 		File file = new File(FilesForTesting.STACK_IAM_CAP);
 		projectAndEnv.setUseCapabilityIAM();
@@ -132,7 +129,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldUpdateStack() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 		File file = new File(FilesForTesting.SUBNET_STACK_DELTA);
 		EasyMock.expect(facade.applyTemplate(file, projectAndEnv, params)).andReturn(stackNameAndId);
@@ -141,7 +138,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldUpdateStackSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldUpdateStackSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 		factory.setSNSMonitoring();
 		File file = new File(FilesForTesting.SUBNET_STACK_DELTA);		
@@ -152,7 +149,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStackWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldCreateStackWithParams() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 
 		File file = new File(FilesForTesting.SUBNET_WITH_PARAM);	
@@ -163,7 +160,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldCreateStacksFromDir() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 
 		ArrayList<StackNameAndId> stacks = new ArrayList<>();
@@ -173,7 +170,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldCreateStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldCreateStacksFromDirWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 		factory.setSNSMonitoring();
 
@@ -185,7 +182,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void testShouldListInstances() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void testShouldListInstances() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		SearchCriteria criteria = new SearchCriteria(projectAndEnv);
 
 		setFactoryExpectations();
@@ -197,7 +194,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void shouldUpdateELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
 		Integer buildNumber = 42;
 		String typeTag = "web";
@@ -210,7 +207,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldUpdateTargetGroup() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void shouldUpdateTargetGroup() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
 		Integer buildNumber = 42;
 		String typeTag = "web";
@@ -224,7 +221,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldTidyOldInstances() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void shouldTidyOldInstances() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
 		
 		File file = new File(FilesForTesting.SIMPLE_STACK);		
@@ -234,7 +231,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldCreateStackWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldCreateStackWithSNS() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 		factory.setSNSMonitoring();
 
@@ -246,7 +243,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void shouldListStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		String stackName = "theStackName";
 		String project = "theProject";
 		String stackId = "theStackId";
@@ -265,7 +262,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldListDriftStatusForStacks() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    void shouldListDriftStatusForStacks() throws InterruptedException, MissingArgumentException, CfnAssistException {
 		String stackName = "theStackName";
 		String project = "theProject";
 		String stackId = "theStackId";
@@ -287,7 +284,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldCreateStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
+    void shouldCreateStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException, IOException {
 		setFactoryExpectations();
 		File file = new File(FilesForTesting.SIMPLE_STACK);
 		projectAndEnv.addBuildNumber(915);
@@ -297,7 +294,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDeleteByFileStack() throws MissingArgumentException, CfnAssistException, InterruptedException
+    void shouldDeleteByFileStack() throws MissingArgumentException, CfnAssistException, InterruptedException
 	{
 		setFactoryExpectations();
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
@@ -307,7 +304,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldDeleteByFileStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException
+    void shouldDeleteByFileStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException
 	{
 		setFactoryExpectations();
 		File file = new File(FilesForTesting.SIMPLE_STACK);	
@@ -318,7 +315,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
     @Test
-    public void shouldDeleteByNameStack() throws MissingArgumentException, CfnAssistException, InterruptedException
+    void shouldDeleteByNameStack() throws MissingArgumentException, CfnAssistException, InterruptedException
     {
         setFactoryExpectations();
         facade.deleteStackByName("simpleStack", projectAndEnv);
@@ -327,7 +324,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldDeleteByNameStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException
+    void shouldDeleteByNameStackWithBuildNumber() throws MissingArgumentException, CfnAssistException, InterruptedException
     {
         setFactoryExpectations();
         projectAndEnv.addBuildNumber(915);
@@ -343,7 +340,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void shouldRequestCreationOfDiagrams() throws CfnAssistException, IOException {
+    void shouldRequestCreationOfDiagrams() throws CfnAssistException, IOException {
 		Recorder recorder = new FileRecorder(Paths.get("./diagrams"));
 		EasyMock.expect(factory.createDiagramCreator()).andReturn(diagramCreator);
 		diagramCreator.createDiagrams(recorder);
@@ -353,7 +350,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testShouldAllowCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void testShouldAllowCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		setFactoryExpectations();
 		String type = "elbTypeTag";
 		Integer port = 8080;
@@ -366,7 +363,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
     @Test
-    public void testShouldBlockCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void testShouldBlockCurrentIpOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException {
         setFactoryExpectations();
         String type = "elbTypeTag";
         Integer port = 8080;
@@ -379,7 +376,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void testShouldAllowHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
+    void testShouldAllowHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
         setFactoryExpectations();
         String type = "elbTypeTag";
         Integer port = 8080;
@@ -393,7 +390,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldTidyOldCloudwatchLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    void shouldTidyOldCloudwatchLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
 	    setFactoryExpectations();
 
 	    int days = 4;
@@ -405,7 +402,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldTagCloudwatchLog() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    void shouldTagCloudwatchLog() throws InterruptedException, MissingArgumentException, CfnAssistException {
 	    setFactoryExpectations();
 
 	    facade.tagCloudWatchLog(projectAndEnv, "logGroupName");
@@ -415,7 +412,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldGetLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    void shouldGetLogs() throws InterruptedException, MissingArgumentException, CfnAssistException {
 	    setFactoryExpectations();
         Integer hours = 42;
         EasyMock.expect(facade.fetchLogs(projectAndEnv, hours)).andReturn(new LinkedList<>());
@@ -424,7 +421,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void testShouldBlockHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
+    void testShouldBlockHostOnELB() throws MissingArgumentException, CfnAssistException, InterruptedException, UnknownHostException {
         setFactoryExpectations();
         String type = "elbTypeTag";
         Integer port = 8080;
@@ -438,7 +435,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
 	@Test
-    public void shouldCreateKeypairWithNoFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    void shouldCreateKeypairWithNoFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
         String home = System.getenv("HOME");
         Path filename = Paths.get(format("%s/.ssh/CfnAssist_Test.pem",home));
 
@@ -456,7 +453,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldCreateKeypairWithFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
+    void shouldCreateKeypairWithFilename() throws InterruptedException, MissingArgumentException, CfnAssistException {
         Path filename = Paths.get("someFilename");
         SavesFile savesFile = EasyMock.createMock(SavesFile.class);
 		CloudClient.AWSPrivateKey keyPair = new CloudClient.AWSPrivateKey("keyName", "material");
@@ -470,7 +467,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
 	@Test
-    public void shouldExecuteSSHCommandDefaultUser() throws InterruptedException, MissingArgumentException, CfnAssistException, IOException {
+    void shouldExecuteSSHCommandDefaultUser() throws InterruptedException, MissingArgumentException, CfnAssistException, IOException {
         CommandExecutor commandExecutor = createMock(CommandExecutor.class);
 
         setFactoryExpectations();
@@ -486,7 +483,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldExecuteSSHCommandProvidedUser() throws InterruptedException, MissingArgumentException, CfnAssistException, IOException {
+    void shouldExecuteSSHCommandProvidedUser() throws InterruptedException, MissingArgumentException, CfnAssistException, IOException {
         CommandExecutor commandExecutor = createMock(CommandExecutor.class);
 
         setFactoryExpectations();
@@ -502,7 +499,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldPurgeAllStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void shouldPurgeAllStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
         setFactoryExpectations();
 
         ArrayList<String> stacks = new ArrayList<>();
@@ -512,7 +509,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void testShouldStepBackOneChange() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void testShouldStepBackOneChange() throws MissingArgumentException, CfnAssistException, InterruptedException {
         setFactoryExpectations();
 
         List<String> deleted = new LinkedList<>();
@@ -522,7 +519,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
     @Test
-    public void shouldPurgeStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
+    void shouldPurgeStacks() throws MissingArgumentException, CfnAssistException, InterruptedException {
         setFactoryExpectations();
         factory.setSNSMonitoring();
 
@@ -534,7 +531,7 @@ public class TestCommandLineActions extends EasyMockSupport {
     }
 
 	@Test
-	public void shouldNotAllowBuildNumberWithStackTidy() {
+    void shouldNotAllowBuildNumberWithStackTidy() {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -545,7 +542,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void shouldNotAllowBuildParameterWithDirAction() {
+    void shouldNotAllowBuildParameterWithDirAction() {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -556,7 +553,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 	
 	@Test
-	public void testInvokeInitViaCommandLineMissingValue() {
+    void testInvokeInitViaCommandLineMissingValue() {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -566,7 +563,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 		
 	@Test
-	public void testCommandLineWithExtraIncorrectParams() {
+    void testCommandLineWithExtraIncorrectParams() {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -577,7 +574,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	}
 
 	@Test
-	public void testMustGiveFileAndTypeTagWhenInvokingStackTidyCommand() {
+    void testMustGiveFileAndTypeTagWhenInvokingStackTidyCommand() {
 		String[] args = { 
 				"-env", EnvironmentSetupForTests.ENV, 
 				"-project", EnvironmentSetupForTests.PROJECT, 
@@ -589,7 +586,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 	private void expectCommandLineFailureStatus(String[] args) {
 		Main main = new Main(args);
 		int result = main.parse(factory,true);
-		assertEquals(EnvironmentSetupForTests.FAILURE_STATUS, result);
+		Assertions.assertEquals(EnvironmentSetupForTests.FAILURE_STATUS, result);
 	}
 
 	private String validate(String[] args) {
@@ -609,7 +606,7 @@ public class TestCommandLineActions extends EasyMockSupport {
 
 		verifyAll();
 
-		assertEquals(output, 0,result);
+		Assertions.assertEquals(0, result, output);
 		return output;
 	}
 

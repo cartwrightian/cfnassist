@@ -2,8 +2,8 @@ package tw.com.acceptance;
 
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.*;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import tw.com.CLIArgBuilder;
 import tw.com.EnvironmentSetupForTests;
 import tw.com.commandline.Main;
@@ -25,7 +25,7 @@ public class TestKeyPairCreationAndSave {
 
     private static Ec2Client ec2Client;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeAllTestsRun() {
         ec2Client = EnvironmentSetupForTests.createEC2Client();
     }

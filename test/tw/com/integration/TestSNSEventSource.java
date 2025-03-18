@@ -1,10 +1,9 @@
 package tw.com.integration;
 
 import org.apache.commons.cli.MissingArgumentException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.DeleteTopicRequest;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
@@ -32,13 +31,13 @@ public class TestSNSEventSource {
 	
 	SNSEventSource eventSource;
 
-	@BeforeClass
+	@BeforeAll
 	public static void beforeAllTestsRun() {
 		snsClient = EnvironmentSetupForTests.createSNSClient();
 		sqsClient = EnvironmentSetupForTests.createSQSClient();
 	}
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		eventSource = new SNSEventSource(snsClient, sqsClient);
 	}
@@ -83,7 +82,7 @@ public class TestSNSEventSource {
 		snsClient.publish(PublishRequest.builder().topicArn(snsArn).message(aMessage).build());
 	}
 
-	@Test 
+	@Test
 	public void shouldReceiveNotifications() throws MissingArgumentException, NotReadyException, FailedToCreateQueueException, InterruptedException {
 		String stackId = UUID.randomUUID().toString();
 		String messageContents = String.format("StackName='temporaryStack'\nStackId='%s'\nEventId='9afc1e30-9eff-11e3-b6e7-506cf935a496'\nLogicalResourceId='temporaryStack'\nPhysicalResourceId='arn:aws:cloudformation:eu-west-1:619378453009:stack/temporaryStack/8c343e50-9eff-11e3-b6e7-506cf935a496'\nResourceType='AWS::CloudFormation::Stack'\nTimestamp='2014-02-26T16:04:00.438Z'\nResourceStatus='CREATE_COMPLETE'\nResourceStatusReason=''\nResourceProperties=''\n",

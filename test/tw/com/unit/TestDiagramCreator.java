@@ -5,11 +5,9 @@ import java.io.IOException;
 import java.nio.file.Paths;
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
@@ -18,14 +16,13 @@ import tw.com.pictures.DiagramCreator;
 import tw.com.pictures.dot.FileRecorder;
 import tw.com.pictures.dot.Recorder;
 
-@RunWith(EasyMockRunner.class)
-public class TestDiagramCreator extends EasyMockSupport {
+class TestDiagramCreator extends EasyMockSupport {
 	
 	private AmazonVPCFacade awsFacade;
 	private Recorder recorder;
 	private VpcTestBuilder vpcTestBuilder;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() throws CfnAssistException {
 		awsFacade = createStrictMock(AmazonVPCFacade.class);
 		recorder = createMock(Recorder.class);
@@ -36,7 +33,7 @@ public class TestDiagramCreator extends EasyMockSupport {
 	}
 		
 	@Test
-	public void invokeDiagramCreationWithMockedRecorder() throws IOException, CfnAssistException {
+    void invokeDiagramCreationWithMockedRecorder() throws IOException, CfnAssistException {
 		
 		recorder.beginFor(vpcTestBuilder.getVpc(), "network_diagram");
 		EasyMock.expectLastCall();
@@ -59,7 +56,7 @@ public class TestDiagramCreator extends EasyMockSupport {
 	}
 
 	@Test
-	public void invokeDiagramCreationWithRealRecorder() throws IOException, CfnAssistException {
+    void invokeDiagramCreationWithRealRecorder() throws IOException, CfnAssistException {
 		
 		Recorder realRecorder = new FileRecorder(Paths.get("."));
 		DiagramCreator creator = new DiagramCreator(awsFacade);

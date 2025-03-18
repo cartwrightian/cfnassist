@@ -4,8 +4,8 @@ import software.amazon.awssdk.services.ec2.model.*;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.elasticloadbalancing.model.LoadBalancerDescription;
 import software.amazon.awssdk.services.rds.model.DBInstance;
@@ -19,7 +19,6 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertSame;
 
-@RunWith(EasyMockRunner.class)
 public class TestVPCDiagramBuilder extends EasyMockSupport {
 	private VPCDiagramBuilder builder;
 	private Diagram networkDiagram;
@@ -30,7 +29,7 @@ public class TestVPCDiagramBuilder extends EasyMockSupport {
 	private String vpcId = "theVpcId";
 	private PortRange portRange = PortRange.builder().from(1023).to(1128).build();
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		vpc = Vpc.builder().vpcId(vpcId).build();
 		networkDiagram = createStrictMock(Diagram.class);

@@ -1,7 +1,7 @@
 package tw.com.integration;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.User;
 import tw.com.EnvironmentSetupForTests;
@@ -15,7 +15,7 @@ public class TestIdentityProvider {
     private IdentityProvider identityProvider;
     private IamClient iamClient;
 
-    @Before
+    @BeforeEach
     public void shouldRunBeforeEachTest() {
         iamClient = EnvironmentSetupForTests.createIamClient();
         identityProvider = new IdentityProvider(iamClient);

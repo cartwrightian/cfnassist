@@ -4,9 +4,8 @@ import org.apache.commons.cli.MissingArgumentException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.easymock.internal.EasyMockProperties;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.StackEvent;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
@@ -17,7 +16,6 @@ import tw.com.entity.DeletionsPending;
 import tw.com.entity.StackNameAndId;
 import tw.com.entity.StackNotification;
 import tw.com.exceptions.*;
-import tw.com.repository.CfnRepository;
 import tw.com.repository.CheckStackExists;
 import tw.com.repository.StackRepository;
 
@@ -28,7 +26,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(EasyMockRunner.class)
 public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackExists, SetsDeltaIndex {
 	
 	private SNSMonitor monitor;
@@ -42,7 +39,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 	private static final int LIMIT = 50;
 	private StackRepository stackRepository;
 
-	@Before 
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		eventSource = createMock(NotificationProvider.class);
 		stackRepository = createMock(StackRepository.class);
@@ -111,7 +108,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 		verifyAll();
 	}
 	
-	@Test 
+	@Test
 	public void shouldThrowWhenExpectedStatusNotWithinTimeout() throws MissingArgumentException, InterruptedException, CfnAssistException {
 		isStackFound= true;
 		StackStatus inProgress = StackStatus.CREATE_IN_PROGRESS;
@@ -142,7 +139,7 @@ public class TestSNSStackMonitor extends EasyMockSupport implements CheckStackEx
 		}
 	}
 	
-	@Test 
+	@Test
 	public void shouldThrowIfNotifIsNotInit() throws WrongStackStatus {
 		isStackFound= true;
 		EasyMock.expect(eventSource.isInit()).andReturn(false);

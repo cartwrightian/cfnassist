@@ -1,6 +1,8 @@
 package tw.com.acceptance;
 
 import org.junit.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
@@ -35,7 +37,7 @@ public class TestCommandLineStackOperations {
 	private static CloudFormationClient cfnClient;
 	private DeletesStacks deletesStacks;
 	
-	@BeforeClass
+	@BeforeAll
 	public static void beforeAllTestsRun() {
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
 		cfnClient = EnvironmentSetupForTests.createCFNClient();
@@ -47,7 +49,7 @@ public class TestCommandLineStackOperations {
 	@Rule
     public Timeout globalTimeout = new Timeout(5*60, TimeUnit.SECONDS);
 	
-	@Before
+	@BeforeEach
 	public void beforeEveryTestRun() {
 		vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		altProjectAndEnv = EnvironmentSetupForTests.getAltProjectAndEnv();
@@ -68,7 +70,7 @@ public class TestCommandLineStackOperations {
 		testName = test.getMethodName();
 	}
 	
-	@After
+	@AfterEach
 	public void afterEachTestIsRun() {
 		deletesStacks.act();
 	}
@@ -352,7 +354,7 @@ public class TestCommandLineStackOperations {
 		assertEquals("purge failed",0,result);
 	}
 	
-	@Ignore("cant find way to label at existing stack via apis")
+	@Disabled("cant find way to label at existing stack via apis")
 	@Test
 	public void testInvokeViaCommandLineTagExistingStack() throws IOException {
 		EnvironmentSetupForTests.createTemporarySimpleStack(cfnClient, altEnvVPC.vpcId(),"");

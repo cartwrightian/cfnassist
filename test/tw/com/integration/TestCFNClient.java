@@ -2,8 +2,7 @@ package tw.com.integration;
 
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.io.FileUtils;
-import org.junit.*;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.*;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.model.*;
 import software.amazon.awssdk.services.cloudformation.model.Tag;
@@ -32,9 +31,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
-
-public class TestCFNClient {
+class TestCFNClient {
 	
 	private static software.amazon.awssdk.services.cloudformation.CloudFormationClient cfnClient;
 	private static Ec2Client ec2Client;
@@ -48,7 +45,7 @@ public class TestCFNClient {
 	private DeletesStacks deletesStacks;
 	private Vpc mainTestVPC;
 
-	@BeforeClass
+	@BeforeAll
 	public static void onceBeforeClassRuns() {
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
 		regionProvider = new DefaultAwsRegionProviderChain();
@@ -63,10 +60,10 @@ public class TestCFNClient {
 			ifPresent("createIAMStackTest").act();
 	}
 	
-	@Rule public TestName test = new TestName();
+	//@Rule public TestName test = new TestName();
 	private SNSMonitor snsMonitor;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() throws MissingArgumentException, CfnAssistException, InterruptedException {
 		formationClient = new CFNClient(cfnClient);
 		CloudClient cloudClient = new CloudClient(ec2Client, regionProvider);
@@ -82,52 +79,52 @@ public class TestCFNClient {
 		mainTestVPC = vpcRepository.getCopyOfVpc(projAndEnv);
 	}
 	
-	@After
+	@AfterEach
 	public void afterEachTestHasRun() {
 		deletesStacks.act();
 	}
 	
 	@Test
-	public void shouldCreateAndDeleteSimpleStack() throws IOException, CfnAssistException, InterruptedException {
+    void shouldCreateAndDeleteSimpleStack(TestInfo testInfo) throws IOException, CfnAssistException, InterruptedException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SIMPLE_STACK), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters("someVpcId");
 		String stackName = "createStackTest";
-		String comment = test.getMethodName();
+		String comment = testInfo.getDisplayName();
 		List<Tag> expectedTags = EnvironmentSetupForTests.createExpectedStackTags(comment,-1, "CfnAssist");
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, createTagging(comment));
 		deletesStacks.ifPresent(stackName);
 		
-		assertEquals(stackName, nameAndId.getStackName());
+		Assertions.assertEquals(stackName, nameAndId.getStackName());
 		
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE, status);
+		Assertions.assertEquals(StackStatus.CREATE_COMPLETE, status);
 
 		DescribeStacksResponse queryResult = cfnClient.describeStacks(DescribeStacksRequest.builder().
 				stackName(stackName).build());
-		assertEquals(1, queryResult.stacks().size());
+		Assertions.assertEquals(1, queryResult.stacks().size());
 		Stack stack = queryResult.stacks().get(0);
-		assertEquals(stack.stackId(), nameAndId.getStackId());
+		Assertions.assertEquals(stack.stackId(), nameAndId.getStackId());
 		
 		List<Tag> stackTags = stack.tags();
-		assertEquals(expectedTags.size(), stackTags.size());
+		Assertions.assertEquals(expectedTags.size(), stackTags.size());
 		assert(stackTags.containsAll(expectedTags));
 		
 		///////
 		// now delete
 		formationClient.deleteStack(stackName);
 		status = polligMonitor.waitForDeleteFinished(nameAndId);
-		assertEquals(StackStatus.DELETE_COMPLETE, status);
+		Assertions.assertEquals(StackStatus.DELETE_COMPLETE, status);
 
 		status = formationClient.currentStatus(stackName);
-		assertEquals(StackStatus.DELETE_COMPLETE, status);
+		Assertions.assertEquals(StackStatus.DELETE_COMPLETE, status);
 		
 		try {
 			cfnClient.describeStacks(DescribeStacksRequest.builder().stackName(stackName).build());
-			fail("throws if stack does not exist");
+			Assertions.fail("throws if stack does not exist");
 		}
 		catch(CloudFormationException expectedException) {
-			assertEquals(400, expectedException.statusCode());
+			Assertions.assertEquals(400, expectedException.statusCode());
 		}	
 	}
 
@@ -138,17 +135,17 @@ public class TestCFNClient {
     }
 
     @Test
-	public void shouldThrowIfCapabilitiesNotSetCorrectly() throws IOException, CfnAssistException {
+    void shouldThrowIfCapabilitiesNotSetCorrectly(TestInfo test) throws IOException, CfnAssistException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.STACK_IAM_CAP), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters("someVpcId");
 		String stackName = "createIAMStackTest";
-		String comment = test.getMethodName();
+		String comment = test.getDisplayName();
 		deletesStacks.ifPresent(stackName);
 		// should trigger capability exception
 		try {
 			formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, createTagging(comment));
-			fail("Was expecting MissingCapabilities");
+			Assertions.fail("Was expecting MissingCapabilities");
 		}
 		catch(MissingCapabilities expected) {
 			// expected exception
@@ -156,12 +153,12 @@ public class TestCFNClient {
 	}
 	
 	@Test
-	public void shouldCreateAndDeleteSimpleStackNeedingIAMCapbility() throws IOException, CfnAssistException, InterruptedException {
+    void shouldCreateAndDeleteSimpleStackNeedingIAMCapbility(TestInfo test) throws IOException, CfnAssistException, InterruptedException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.STACK_IAM_CAP), Charset.defaultCharset());
 		
 		Collection<Parameter> parameters = createStandardParameters("someVpcId");
 		String stackName = "createIAMStackTest"; 
-		String comment = test.getMethodName();
+		String comment = test.getDisplayName();
 		projAndEnv.setUseCapabilityIAM();
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor, createTagging(comment));
 		deletesStacks.ifPresent(stackName);
@@ -169,7 +166,7 @@ public class TestCFNClient {
 		// this  create will fail, but due to lack of user perms and not because of capabilities exception
 		try {	
 			polligMonitor.waitForCreateFinished(nameAndId);
-			fail("show have failed to create");
+			Assertions.fail("show have failed to create");
 		}
 		catch(WrongStackStatus expected) {
 			// expected
@@ -177,7 +174,7 @@ public class TestCFNClient {
 	}
 
 	@Test
-	public void shouldQueryCreatedStack() throws IOException, CfnAssistException, InterruptedException {
+    void shouldQueryCreatedStack(TestInfo test) throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
 		String cidr = "10.0.42.0/24";
 		
@@ -189,17 +186,17 @@ public class TestCFNClient {
 
 		deletesStacks.ifPresent(stackName);
 
-		assertFalse(formationClient.stackExists(stackName));
+		Assertions.assertFalse(formationClient.stackExists(stackName));
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
-				polligMonitor, createTagging(test.getMethodName()));
+				polligMonitor, createTagging(test.getDisplayName()));
 
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE, status);
-		assertTrue(formationClient.stackExists(stackName));
+		Assertions.assertEquals(StackStatus.CREATE_COMPLETE, status);
+		Assertions.assertTrue(formationClient.stackExists(stackName));
 		
 		// query all stacks
 		List<Stack> resultStacks = formationClient.describeAllStacks();
-		assertTrue(resultStacks.size()>0);
+		Assertions.assertTrue(resultStacks.size()>0);
 		boolean seen = false;
 		for(Stack candidate : resultStacks) {
 			if (candidate.stackName().equals("queryStackTest")) {
@@ -207,45 +204,45 @@ public class TestCFNClient {
 				break;
 			}
 		}
-		assertTrue(seen);
+		Assertions.assertTrue(seen);
 		
 		// query single stack
 		Stack resultStack = formationClient.describeStack("queryStackTest");
-		assertEquals("queryStackTest", resultStack.stackName());
+		Assertions.assertEquals("queryStackTest", resultStack.stackName());
 		
 		// query events
 		List<StackEvent> resultEvents = formationClient.describeStackEvents("queryStackTest");
-		assertTrue(resultEvents.size()>0); // TODO what can we check here?
+		Assertions.assertTrue(resultEvents.size()>0); // TODO what can we check here?
 		
 		// query resources
 		assertCIDR(nameAndId, cidr, vpcId);
 	}
 
 	@Test
-	public void shouldDetectDrift() throws IOException, CfnAssistException, InterruptedException {
+    void shouldDetectDrift(TestInfo test) throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_YAML), Charset.defaultCharset());
 
 		Collection<Parameter> parameters = createStandardParameters(vpcId);
 		String stackName = "createStackTest";
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor,
-				createTagging(test.getMethodName()));
+				createTagging(test.getDisplayName()));
 		deletesStacks.ifPresent(stackName);
 
-		assertEquals(stackName, nameAndId.getStackName());
+		Assertions.assertEquals(stackName, nameAndId.getStackName());
 
 		StackStatus stackStatus = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE, stackStatus);
+		Assertions.assertEquals(StackStatus.CREATE_COMPLETE, stackStatus);
 
 		CFNClient.DriftStatus status = getStackDrift(stackName);
-		assertEquals(StackDriftStatus.IN_SYNC, status.getStackDriftStatus());
-		assertEquals(0, status.getDriftedStackResourceCount());
+		Assertions.assertEquals(StackDriftStatus.IN_SYNC, status.getStackDriftStatus());
+		Assertions.assertEquals(0, status.getDriftedStackResourceCount());
 
 		// find the id of the subnet from the stack
 		List<StackResource> resources = formationClient.describeStackResources(stackName);
-		assertEquals(1, resources.size());
+		Assertions.assertEquals(1, resources.size());
 		StackResource subnetResource = resources.get(0);
-		assertEquals("testSubnet", subnetResource.logicalResourceId());
+		Assertions.assertEquals("testSubnet", subnetResource.logicalResourceId());
 		String subnetId = subnetResource.physicalResourceId();
 
 		// delete the subnet directly
@@ -259,13 +256,13 @@ public class TestCFNClient {
 				Thread.sleep(1000);
 			}
 		} catch (Ec2Exception expected) {
-			assertEquals(400, expected.statusCode());
+			Assertions.assertEquals(400, expected.statusCode());
 		}
 
 		// now check if stack has drifted
 		status = getStackDrift(stackName);
-		assertEquals(StackDriftStatus.DRIFTED, status.getStackDriftStatus());
-		assertEquals(1, status.getDriftedStackResourceCount());
+		Assertions.assertEquals(StackDriftStatus.DRIFTED, status.getStackDriftStatus());
+		Assertions.assertEquals(1, status.getDriftedStackResourceCount());
 
 	}
 
@@ -278,7 +275,7 @@ public class TestCFNClient {
 	}
 
 	@Test
-	public void shouldCreateAndThenUpdateAStack() throws IOException, CfnAssistException, InterruptedException {
+    void shouldCreateAndThenUpdateAStack(TestInfo test) throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
 
@@ -288,12 +285,12 @@ public class TestCFNClient {
 		deletesStacks.ifPresent(stackName);
 
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, polligMonitor,
-                createTagging(test.getMethodName()));
+                createTagging(test.getDisplayName()));
 
-		assertEquals(stackName, nameAndId.getStackName());
+		Assertions.assertEquals(stackName, nameAndId.getStackName());
 
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE, status);
+		Assertions.assertEquals(StackStatus.CREATE_COMPLETE, status);
 
 		assertCIDR(nameAndId, "10.0.42.0/24", vpcId);
 
@@ -303,16 +300,16 @@ public class TestCFNClient {
 		String newContents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_DELTA), Charset.defaultCharset());
 		nameAndId = formationClient.updateStack(newContents, parameters, polligMonitor, stackName);
 		
-		assertEquals(stackName, nameAndId.getStackName());
+		Assertions.assertEquals(stackName, nameAndId.getStackName());
 		
 		status = polligMonitor.waitForUpdateFinished(nameAndId);
-		assertEquals(StackStatus.UPDATE_COMPLETE, status);
+		Assertions.assertEquals(StackStatus.UPDATE_COMPLETE, status);
 
 		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);
 	}
 	
 	@Test
-	public void shouldCreateAndThenUpdateAStackAddingSNS() throws IOException, CfnAssistException, InterruptedException {
+    void shouldCreateAndThenUpdateAStackAddingSNS(TestInfo test) throws IOException, CfnAssistException, InterruptedException {
 		String vpcId = mainTestVPC.vpcId();
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
 		
@@ -321,12 +318,12 @@ public class TestCFNClient {
 		deletesStacks.ifPresent(stackName);
 
 		StackNameAndId nameAndId = formationClient.createStack(projAndEnv, contents, stackName, parameters, 
-				polligMonitor, createTagging(test.getMethodName()));
+				polligMonitor, createTagging(test.getDisplayName()));
 
-		assertEquals(stackName, nameAndId.getStackName());
+		Assertions.assertEquals(stackName, nameAndId.getStackName());
 		
 		StackStatus status = polligMonitor.waitForCreateFinished(nameAndId);
-		assertEquals(StackStatus.CREATE_COMPLETE, status);
+		Assertions.assertEquals(StackStatus.CREATE_COMPLETE, status);
 		
 		assertCIDR(nameAndId, "10.0.42.0/24", vpcId);
 		
@@ -336,21 +333,21 @@ public class TestCFNClient {
 		String newContents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_DELTA), Charset.defaultCharset());
 		nameAndId = formationClient.updateStack(newContents, parameters, snsMonitor, stackName);
 		
-		assertEquals(stackName, nameAndId.getStackName());
+		Assertions.assertEquals(stackName, nameAndId.getStackName());
 		
 		status = snsMonitor.waitForUpdateFinished(nameAndId);
-		assertEquals(StackStatus.UPDATE_COMPLETE, status);
+		Assertions.assertEquals(StackStatus.UPDATE_COMPLETE, status);
 
 		assertCIDR(nameAndId, "10.0.99.0/24", vpcId);	
 		
 	}
 	
 	@Test
-	public void shouldValidateTemplatesJSON() throws IOException {
+    void shouldValidateTemplatesJSON() throws IOException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_JSON), Charset.defaultCharset());
 		List<TemplateParameter> result =  formationClient.validateTemplate(contents);
 		
-		assertEquals(4, result.size());
+		Assertions.assertEquals(4, result.size());
 		
 		int i;
 		for(i=0; i<4; i++) {
@@ -359,18 +356,18 @@ public class TestCFNClient {
 		}
 		TemplateParameter zoneAParameter = result.get(i);
 		
-		assertEquals("zoneA", zoneAParameter.parameterKey());
-		assertEquals("eu-west-1a", zoneAParameter.defaultValue());
-		assertEquals("zoneADescription", zoneAParameter.description());
+		Assertions.assertEquals("zoneA", zoneAParameter.parameterKey());
+		Assertions.assertEquals("eu-west-1a", zoneAParameter.defaultValue());
+		Assertions.assertEquals("zoneADescription", zoneAParameter.description());
 	}
 
 
 	@Test
-	public void shouldValidateTemplatesYAML() throws IOException {
+    void shouldValidateTemplatesYAML() throws IOException {
 		String contents = FileUtils.readFileToString(new File(FilesForTesting.SUBNET_STACK_YAML), Charset.defaultCharset());
 		List<TemplateParameter> result =  formationClient.validateTemplate(contents);
 
-		assertEquals(4, result.size());
+		Assertions.assertEquals(4, result.size());
 
 		int i;
 		for(i=0; i<4; i++) {
@@ -379,24 +376,24 @@ public class TestCFNClient {
 		}
 		TemplateParameter zoneAParameter = result.get(i);
 
-		assertEquals("zoneA", zoneAParameter.parameterKey());
-		assertEquals("eu-west-1a", zoneAParameter.defaultValue());
-		assertEquals("zoneADescription", zoneAParameter.description());
+		Assertions.assertEquals("zoneA", zoneAParameter.parameterKey());
+		Assertions.assertEquals("eu-west-1a", zoneAParameter.defaultValue());
+		Assertions.assertEquals("zoneADescription", zoneAParameter.description());
 	}
 
 	private void assertCIDR(StackNameAndId nameAndId, String initialCidr, String vpcId) {
 		List<StackResource> resultResources = formationClient.describeStackResources(nameAndId.getStackName());
-		assertEquals(1, resultResources.size());
+		Assertions.assertEquals(1, resultResources.size());
 		String subnetId = resultResources.get(0).physicalResourceId();
 		Subnet subnet = getSubnetDetails(subnetId);	
-		assertEquals(initialCidr, subnet.cidrBlock());
-		assertEquals(vpcId, subnet.vpcId());
+		Assertions.assertEquals(initialCidr, subnet.cidrBlock());
+		Assertions.assertEquals(vpcId, subnet.vpcId());
 	}
 	
 	private Subnet getSubnetDetails(String physicalId) {
 		DescribeSubnetsRequest describeSubnetsRequest = DescribeSubnetsRequest.builder().subnetIds(physicalId).build();
 		DescribeSubnetsResponse result = ec2Client.describeSubnets(describeSubnetsRequest);
-		assertEquals(1, result.subnets().size());
+		Assertions.assertEquals(1, result.subnets().size());
 		return result.subnets().get(0);
 	}
 	

@@ -3,8 +3,8 @@ package tw.com.unit;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.ec2.model.Vpc;
 import software.amazon.awssdk.services.elasticloadbalancing.model.Instance;
@@ -25,7 +25,6 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
-@RunWith(EasyMockRunner.class)
 public class TestTargetGroupRepository extends EasyMockSupport {
 	
 	private TargetGroupRepository elbRepository;
@@ -35,7 +34,7 @@ public class TestTargetGroupRepository extends EasyMockSupport {
 	private final ProjectAndEnv projAndEnv = new ProjectAndEnv("proj", "testEnv");
 	private final int port = 4242;
 
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		loadBalancerClient = createMock(LoadBalancerClientV2.class);
 		vpcRepository  = createMock(VpcRepository.class);

@@ -4,7 +4,7 @@ package tw.com.unit;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import tw.com.EnvironmentSetupForTests;
@@ -20,7 +20,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static tw.com.EnvironmentSetupForTests.createCfnStackTAG;
 
-@RunWith(EasyMockRunner.class)
 public class TestStackCache extends EasyMockSupport {
 
     @Test

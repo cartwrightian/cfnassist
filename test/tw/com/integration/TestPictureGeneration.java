@@ -1,7 +1,7 @@
 package tw.com.integration;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.elasticloadbalancing.ElasticLoadBalancingClient;
@@ -28,7 +28,7 @@ public class TestPictureGeneration {
 	private CloudRepository cloudRepository;
 	private ELBRepository elbRepository;
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		Ec2Client ec2Client = EnvironmentSetupForTests.createEC2Client();
 		ElasticLoadBalancingClient awsElbClient = EnvironmentSetupForTests.createELBClient();

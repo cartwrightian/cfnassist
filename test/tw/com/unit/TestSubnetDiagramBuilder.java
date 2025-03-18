@@ -3,8 +3,8 @@ package tw.com.unit;
 import software.amazon.awssdk.services.ec2.model.*;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 
 import tw.com.EnvironmentSetupForTests;
@@ -12,14 +12,13 @@ import tw.com.VpcTestBuilder;
 import tw.com.exceptions.CfnAssistException;
 import tw.com.pictures.*;
 
-@RunWith(EasyMockRunner.class)
 public class TestSubnetDiagramBuilder extends EasyMockSupport {
 
 	private NetworkChildDiagram networkDiagram;
 	private tw.com.pictures.SecurityChildDiagram securityDiagram;
 	private SubnetDiagramBuilder subnetDiagramBuilder;
 	
-	@Before
+	@BeforeEach
 	public void beforeEachTestRuns() {
 		networkDiagram = createStrictMock(NetworkChildDiagram.class);
 		securityDiagram = createStrictMock(tw.com.pictures.SecurityChildDiagram.class);

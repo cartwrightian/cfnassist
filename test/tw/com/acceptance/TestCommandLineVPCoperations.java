@@ -1,8 +1,8 @@
 package tw.com.acceptance;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.Vpc;
@@ -19,13 +19,13 @@ public class TestCommandLineVPCoperations {
 	private static Ec2Client ec2Client;
 	private Vpc altEnvVPC;
 	
-	@Before
+	@BeforeEach
 	public void beforeEveryTestRun() {
 		VpcRepository vpcRepository = new VpcRepository(new CloudClient(ec2Client, new DefaultAwsRegionProviderChain()));
 		altEnvVPC = EnvironmentSetupForTests.findAltVpc(vpcRepository);	
 	}
 
-	@BeforeClass
+	@BeforeAll
 	public static void beforeAllTestsOnce() {
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
 	}

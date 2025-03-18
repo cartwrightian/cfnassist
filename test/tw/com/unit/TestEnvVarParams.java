@@ -1,10 +1,10 @@
 package tw.com.unit;
 
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.TemplateParameter;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
 import tw.com.entity.ProjectAndEnv;
 import tw.com.exceptions.CannotFindVpcException;
 import tw.com.exceptions.InvalidStackParameterException;
@@ -24,7 +24,7 @@ public class TestEnvVarParams implements ProvidesZones {
 	private EnvVarParams envVarParams;
 	private ProjectAndEnv projAndEnv;
 
-	@Before
+	@BeforeEach
 	public void beforeEveryTestRuns() {
 		envVarParams = new EnvVarParams();
 		projAndEnv = new ProjectAndEnv("cfnassist", "test");

@@ -3,8 +3,8 @@ package tw.com.unit;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogStream;
 import software.amazon.awssdk.services.cloudwatchlogs.model.OutputLogEvent;
@@ -19,7 +19,6 @@ import tw.com.repository.LogRepository;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,7 +30,6 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 
-@RunWith(EasyMockRunner.class)
 public class TestLogRepository  extends EasyMockSupport {
     private LogClient logClient;
     private ProjectAndEnv projectAndEnv;
@@ -39,7 +37,7 @@ public class TestLogRepository  extends EasyMockSupport {
     private ZonedDateTime timestamp;
     private SavesFile savesFile;
 
-    @Before
+    @BeforeEach
     public void beforeEachTestRuns() {
         timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
         timestamp = timestamp.minusMinutes(timestamp.getMinute()).minusHours(timestamp.getHour()); // use midnight
