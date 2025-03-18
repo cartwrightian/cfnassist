@@ -20,7 +20,9 @@ import tw.com.repository.VpcRepository;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -32,15 +34,15 @@ public class TestCommandLineStackOperations {
 	private static Ec2Client ec2Client;
 	private static CloudFormationClient cfnClient;
 	private DeletesStacks deletesStacks;
-	
+	String testName;
+
 	@BeforeAll
 	public static void beforeAllTestsRun() {
 		ec2Client = EnvironmentSetupForTests.createEC2Client();
 		cfnClient = EnvironmentSetupForTests.createCFNClient();
 	}
 	
-	String testName = "";
-	
+
 //	@Rule
 //    public Timeout globalTimeout = new Timeout(5*60, TimeUnit.SECONDS);
 	
@@ -62,7 +64,9 @@ public class TestCommandLineStackOperations {
 			.ifPresent("CfnAssist876TesttargetGroupAndInstance");
 
 		deletesStacks.act();
-		testName = info.getDisplayName();
+		testName = "coundNotFindTestName";
+		Optional<Method> findMethod = info.getTestMethod();
+		findMethod.ifPresent(item -> testName = item.getName());
 	}
 	
 	@AfterEach
