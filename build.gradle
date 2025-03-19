@@ -34,7 +34,7 @@ ext {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.17',
-            'ch.qos.logback:logback-classic:1.5.17'
+            'ch.qos.logback:logback-classic:1.5.18'
             'ch.qos.logback:logback-core:1.5.17'
 
     implementation "software.amazon.awssdk:protocol-core:$awsSdk",
