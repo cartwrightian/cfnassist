@@ -29,7 +29,7 @@ repositories {
 }
 
 ext {
-    awsSdk = '2.31.1'
+    awsSdk = '2.31.5'
 }
 
 dependencies {
