@@ -58,7 +58,7 @@ dependencies {
             'com.fasterxml.jackson.core:jackson-databind:2.18.3'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1',
-            'org.junit.platform:junit-platform-launcher:1.12.1',
+            'org.junit.platform:junit-platform-launcher:1.12.2',
             'org.easymock:easymock:5.5.0'
 
 }
