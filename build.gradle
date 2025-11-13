@@ -51,7 +51,7 @@ dependencies {
             "software.amazon.awssdk:cloudwatchlogs:$awsSdk"
 
     implementation 'commons-io:commons-io:2.18.0',
-            'commons-cli:commons-cli:1.9.0',
+            'commons-cli:commons-cli:1.11.0',
             'commons-net:commons-net:3.11.1',
             'org.apache.ant:ant:1.10.15',
             'com.fasterxml.jackson.core:jackson-core:2.18.3',
